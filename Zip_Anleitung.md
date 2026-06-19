@@ -8,7 +8,8 @@ In download.html im projekte-Array einen neuen Eintrag eintragen:
 {
     name:         'Projektname',
     version:      'v1.0.0',
-    beschreibung: 'Kurze Beschreibung.',
-    datei:        'dateiname.zip',   // ← exakter Dateiname im /downloads/ Ordner
-    groesse:      '12 MB'
+    beschreibung: 'Beschreibung.',
+    datei:        'datei.zip',
+    groesse:      '5 MB',
+    preis:        4.90
 },

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xiruprojekts – Checkout</title>
+    <link rel="stylesheet" href="Stylesheet.css">
+</head>
+<body>
+
+    <nav class="menu">
+        <h1>Xiruprojekts</h1>
+        <a href="index.html">Start</a>
+        <a href="main.html">Main</a>
+        <a href="download.html">Downloads</a>
+        <a href="betatesting.html">Beta Testing</a>
+        <a href="ueberuns.html">Über uns</a>
+    </nav>
+
+    <main class="content">
+        <h1>Checkout</h1>
+
+        <div class="form-card" style="max-width: 540px;">
+            <h2 class="form-title">Bestellzusammenfassung</h2>
+
+            <div class="co-summary" id="co-summary">
+                <div class="co-row">
+                    <span class="co-label">Produkt</span>
+                    <span class="co-value" id="co-name">—</span>
+                </div>
+                <div class="co-row">
+                    <span class="co-label">Version</span>
+                    <span class="co-value" id="co-version">—</span>
+                </div>
+                <div class="co-row co-row--total">
+                    <span class="co-label">Preis</span>
+                    <span class="co-value" id="co-preis">—</span>
+                </div>
+            </div>
+
+            <h2 class="form-title" style="margin-top: 2rem;">Ihre Angaben</h2>
+            <p class="form-subtitle">Bitte füllen Sie alle Felder aus um fortzufahren.</p>
+
+            <form id="checkoutForm" novalidate>
+                <fieldset class="form-section">
+                    <legend>Persönliche Angaben</legend>
+                    <div class="form-group">
+                        <label for="co-vorname">Vorname <span class="required">*</span></label>
+                        <input type="text" id="co-vorname" name="vorname" placeholder="Max" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="co-nachname">Nachname <span class="required">*</span></label>
+                        <input type="text" id="co-nachname" name="nachname" placeholder="Mustermann" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="co-email">E-Mail-Adresse <span class="required">*</span></label>
+                        <input type="email" id="co-email" name="email" placeholder="max@beispiel.ch" required>
+                    </div>
+                </fieldset>
+
+                <fieldset class="form-section">
+                    <legend>Zahlung</legend>
+                    <p class="form-subtitle" style="margin-bottom: 0;">Zahlungsabwicklung folgt — hier kann später eine Zahlungsmethode eingebunden werden (z. B. Stripe, PayPal).</p>
+                </fieldset>
+
+                <div class="form-section co-agb">
+                    <div class="form-group form-group--checkbox">
+                        <input type="checkbox" id="co-agb" name="agb" required>
+                        <label for="co-agb">Ich akzeptiere die <a href="nutzerbedingungen.html" target="_blank">Nutzungsbedingungen</a>. <span class="required">*</span></label>
+                    </div>
+                </div>
+
+                <div id="co-feedback" class="form-feedback" aria-live="polite"></div>
+
+                <div class="form-actions">
+                    <a href="download.html" class="co-back">&#8592; Zurück</a>
+                    <button type="submit" class="btn-submit">Jetzt kaufen</button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 Xiruprojekts. Kaum Rechte vorbehalten da wir broke sind ;). &nbsp;|&nbsp; <a href="nutzerbedingungen.html">Nutzungsbedingungen</a></p>
+    </footer>
+
+    <script>
+        // URL-Parameter auslesen
+        const params = new URLSearchParams(window.location.search);
+        const name    = params.get('name')    || 'Unbekannt';
+        const version = params.get('version') || '—';
+        const preis   = parseFloat(params.get('preis') || '0');
+        const datei   = params.get('datei')   || '';
+
+        document.getElementById('co-name').textContent    = name;
+        document.getElementById('co-version').textContent = version;
+        document.getElementById('co-preis').textContent   = preis === 0 ? 'Kostenlos' : `CHF ${preis.toFixed(2)}`;
+        document.title = `Xiruprojekts – Checkout: ${name}`;
+
+        // Formular
+        const form     = document.getElementById('checkoutForm');
+        const feedback = document.getElementById('co-feedback');
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (!form.checkValidity()) { form.reportValidity(); return; }
+
+            // Hier später Zahlungslogik einbauen
+            feedback.textContent = `Vielen Dank! Ihre Bestellung für „${name}“ wurde entgegengenommen. Sie erhalten in Kürze eine Bestätigung.`;
+            feedback.className = 'form-feedback success';
+            form.querySelector('.btn-submit').disabled = true;
+        });
+    </script>
+
+</body>
+</html>

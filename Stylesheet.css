@@ -148,3 +148,207 @@ footer {
     h1 { font-size: 1.75rem; }
     h2 { font-size: 1.4rem; }
 }
+
+/* =============================================
+   Bewerbungsformular (weißes, formelles Layout)
+   ============================================= */
+.form-card {
+    background-color: #ffffff;
+    color: #1a1a1a;
+    border: 1px solid #d0d0d0;
+    border-radius: var(--border-radius);
+    padding: var(--spacing-xl) var(--spacing-xl);
+    margin-top: var(--spacing-lg);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18);
+    max-width: 760px;
+}
+
+.form-title {
+    color: #111111;
+    font-size: 1.6rem;
+    margin-bottom: var(--spacing-sm);
+    border-bottom: 2px solid #1a1a1a;
+    padding-bottom: var(--spacing-sm);
+}
+
+.form-subtitle {
+    color: #555555;
+    font-size: 0.9rem;
+    margin-bottom: var(--spacing-lg);
+}
+
+.form-section {
+    border: 1px solid #d0d0d0;
+    border-radius: var(--border-radius);
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+}
+
+.form-section legend {
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #333333;
+    padding: 0 var(--spacing-sm);
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: var(--spacing-md);
+}
+
+.form-group:last-child {
+    margin-bottom: 0;
+}
+
+.form-group label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #222222;
+    margin-bottom: 0.3rem;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    font-family: var(--font-family);
+    font-size: 1rem;
+    color: #1a1a1a;
+    background-color: #fafafa;
+    border: 1px solid #b0b0b0;
+    border-radius: 4px;
+    padding: 0.55rem 0.75rem;
+    transition: border-color var(--transition), box-shadow var(--transition);
+    outline: none;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    border-color: #333333;
+    box-shadow: 0 0 0 3px rgba(50, 50, 50, 0.12);
+    background-color: #ffffff;
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 120px;
+}
+
+.form-group--checkbox {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 0.6rem;
+}
+
+.form-group--checkbox input[type="checkbox"] {
+    margin-top: 0.2rem;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    accent-color: #1a1a1a;
+}
+
+.form-group--checkbox label {
+    font-size: 0.875rem;
+    color: #333333;
+    font-weight: 400;
+}
+
+.required {
+    color: #c0392b;
+    margin-left: 2px;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: var(--spacing-lg);
+}
+
+.btn-submit {
+    background-color: #1a1a1a;
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    padding: 0.75rem 2.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: background-color var(--transition);
+}
+
+.btn-submit:hover {
+    background-color: #333333;
+}
+
+.form-feedback {
+    font-size: 0.9rem;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: 4px;
+    margin-top: var(--spacing-md);
+    display: none;
+}
+
+.form-feedback.success {
+    display: block;
+    background-color: #eafaf1;
+    color: #1e8449;
+    border: 1px solid #a9dfbf;
+}
+
+.form-feedback.error {
+    display: block;
+    background-color: #fdf2f2;
+    color: #c0392b;
+    border: 1px solid #f5b7b1;
+}
+
+/* =============================================
+   Bewerbertabelle (main.html)
+   ============================================= */
+.bewerber-tabelle {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+    color: var(--color-text);
+}
+
+.bewerber-tabelle th {
+    background-color: var(--color-surface);
+    color: var(--color-text-muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 0.6rem 0.75rem;
+    border-bottom: 2px solid var(--color-border);
+    text-align: left;
+}
+
+.bewerber-tabelle td {
+    padding: 0.65rem 0.75rem;
+    border-bottom: 1px solid var(--color-border);
+    vertical-align: top;
+}
+
+.bewerber-tabelle tr:last-child td {
+    border-bottom: none;
+}
+
+.bewerber-tabelle tr:hover td {
+    background-color: var(--color-surface);
+}
+
+@media (max-width: 768px) {
+    .form-card {
+        padding: var(--spacing-lg) var(--spacing-md);
+    }
+
+    .bewerber-tabelle {
+        display: block;
+        overflow-x: auto;
+    }
+}

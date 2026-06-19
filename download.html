@@ -11,7 +11,6 @@
     <nav class="menu">
         <h1>Xiruprojekts</h1>
         <a href="index.html">Start</a>
-        <a href="main.html">Main</a>
         <a href="download.html">Downloads</a>
         <a href="betatesting.html">Beta Testing</a>
         <a href="ueberuns.html">Über uns</a>
@@ -69,8 +68,8 @@
                 : `<span class="dl-card__preis">CHF ${p.preis.toFixed(2)}</span>`;
 
             const actionBtn = kostenlos
-                ? `<a href="downloads/${p.datei}" download class="dl-btn">&#11015; Download</a>`
-                : `<a href="Checkout.html?name=${encodeURIComponent(p.name)}&version=${encodeURIComponent(p.version)}&preis=${p.preis}&datei=${encodeURIComponent(p.datei)}" class="dl-btn dl-btn--pay">&#128179; Kaufen</a>`;
+                ? `<a href="downloads/${p.datei}" download class="dl-btn">Download</a>`
+                : `<a href="Checkout.html?name=${encodeURIComponent(p.name)}&version=${encodeURIComponent(p.version)}&preis=${p.preis}&datei=${encodeURIComponent(p.datei)}" class="dl-btn dl-btn--pay">$ Kaufen</a>`;
 
             grid.insertAdjacentHTML('beforeend', `
                 <div class="dl-card">
@@ -82,7 +81,7 @@
                     <div class="dl-card__footer">
                         <div class="dl-card__meta">
                             ${preisLabel}
-                            ${p.groesse !== '—' ? `<span class="dl-card__size">&#128190; ${p.groesse}</span>` : ''}
+                            ${p.groesse !== '—' ? `<span class="dl-card__size">${p.groesse}</span>` : ''}
                         </div>
                         ${actionBtn}
                     </div>

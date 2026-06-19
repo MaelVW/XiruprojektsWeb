@@ -11,7 +11,6 @@
     <nav class="menu">
         <h1>Xiruprojekts</h1>
         <a href="index.html">Start</a>
-        <a href="main.html">Main</a>
         <a href="download.html">Downloads</a>
         <a href="betatesting.html">Beta Testing</a>
         <a href="ueberuns.html">Über uns</a>
@@ -60,7 +59,7 @@
 
                 <fieldset class="form-section">
                     <legend>Zahlung</legend>
-                    <p class="form-subtitle" style="margin-bottom: 0;">Zahlungsabwicklung folgt — hier kann später eine Zahlungsmethode eingebunden werden (z. B. Stripe, PayPal).</p>
+                    <p class="form-subtitle" style="margin-bottom: 0;">Zahlung kommt in naher Zukunft.</p>
                 </fieldset>
 
                 <div class="form-section co-agb">
@@ -97,6 +96,8 @@
         document.getElementById('co-preis').textContent   = preis === 0 ? 'Kostenlos' : `CHF ${preis.toFixed(2)}`;
         document.title = `Xiruprojekts – Checkout: ${name}`;
 
+
+
         // Formular
         const form     = document.getElementById('checkoutForm');
         const feedback = document.getElementById('co-feedback');
@@ -105,8 +106,7 @@
             e.preventDefault();
             if (!form.checkValidity()) { form.reportValidity(); return; }
 
-            // Hier später Zahlungslogik einbauen
-            feedback.textContent = `Vielen Dank! Ihre Bestellung für „${name}“ wurde entgegengenommen. Sie erhalten in Kürze eine Bestätigung.`;
+            feedback.textContent = `Vielen Dank! Ihre Bestellung für „${name}" wurde entgegengenommen. Bitte stellen Sie sicher dass die TWINT-Zahlung über CHF ${preis.toFixed(2)} abgeschlossen wurde. Sie erhalten in Kürze eine Bestätigung.`;
             feedback.className = 'form-feedback success';
             form.querySelector('.btn-submit').disabled = true;
         });

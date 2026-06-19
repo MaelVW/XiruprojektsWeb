@@ -102,22 +102,84 @@ if (form) {
 const liste = document.getElementById('bewerber-liste');
 
 if (liste) {
-    const bewerber = JSON.parse(localStorage.getItem('bewerber') || '[]');
+    function renderListe() {
+        const bewerber  = JSON.parse(localStorage.getItem('bewerber') || '[]');
+        const statusMap = JSON.parse(localStorage.getItem('bewerber_status') || '{}');
 
-    if (bewerber.length === 0) {
-        liste.innerHTML = '<p>Keine Bewerbungen vorhanden.</p>';
-    } else {
-        const rows = bewerber.map(b => `
-            <tr>
-                <td>${new Date(b.eingereichtAm).toLocaleDateString('de-DE')}</td>
-                <td>${b.vorname} ${b.nachname}</td>
-                <td>${b.email}</td>
-                <td>${b.alter}</td>
-                <td>${b.betriebssystem}</td>
-                <td>${b.erfahrung}</td>
-                <td>${b.motivation}</td>
-            </tr>
-        `).join('');
+        if (bewerber.length === 0) {
+            liste.innerHTML = '<p>Keine Bewerbungen vorhanden.</p>';
+            return;
+        }
+
+        // ── Duplikat-Erkennung ────────────────────────────────────
+        // Gleiche Person = gleiche E-Mail UND gleicher Name (Vor- + Nachname)
+        function gleichePerson(a, b) {
+            return a.email.toLowerCase()    === b.email.toLowerCase()   &&
+                   a.vorname.toLowerCase()  === b.vorname.toLowerCase() &&
+                   a.nachname.toLowerCase() === b.nachname.toLowerCase();
+        }
+
+        // Gruppen bilden (Union-Find)
+        const gruppe = bewerber.map((_, i) => i);
+        function find(i) { return gruppe[i] === i ? i : (gruppe[i] = find(gruppe[i])); }
+        function union(i, j) { gruppe[find(i)] = find(j); }
+
+        for (let i = 0; i < bewerber.length; i++) {
+            for (let j = i + 1; j < bewerber.length; j++) {
+                if (gleichePerson(bewerber[i], bewerber[j])) union(i, j);
+            }
+        }
+
+        // Gruppen zusammenfassen: repräsentant = neueste Bewerbung der Gruppe
+        const gruppenMap = {};
+        bewerber.forEach((b, i) => {
+            const rep = find(i);
+            if (!gruppenMap[rep]) gruppenMap[rep] = [];
+            gruppenMap[rep].push({ ...b, _idx: i });
+        });
+
+        // ── Tabelle rendern ───────────────────────────────────────
+        const rows = Object.values(gruppenMap).map(gruppe => {
+            // Neueste Bewerbung als Haupteintrag
+            const b = gruppe.sort((a, z) => new Date(z.eingereichtAm) - new Date(a.eingereichtAm))[0];
+            const count = gruppe.length;
+            const key = b.id;
+            const st = statusMap[key] || 'offen';
+
+            const statusBadge = st === 'angenommen'
+                ? '<span class="bl-badge bl-badge--an">Angenommen</span>'
+                : st === 'abgelehnt'
+                ? '<span class="bl-badge bl-badge--ab">Abgelehnt</span>'
+                : '';
+
+            const nameLabel = count > 1
+                ? `${b.vorname} ${b.nachname} <span class="bl-dup">(${count}x beworben)</span>`
+                : `${b.vorname} ${b.nachname}`;
+
+            const aktionBtn = st === 'offen' ? `
+                <div class="bl-aktionen-inner">
+                    <button class="bl-btn bl-btn--an" data-id="${key}">Annehmen</button>
+                    <button class="bl-btn bl-btn--ab" data-id="${key}">Ablehnen</button>
+                </div>
+            ` : `
+                <div class="bl-aktionen-inner">
+                    <button class="bl-btn bl-btn--reset" data-id="${key}">Zurücksetzen</button>
+                </div>
+            `;
+
+            return `
+                <tr class="bl-row bl-row--${st}">
+                    <td>${new Date(b.eingereichtAm).toLocaleDateString('de-DE')}</td>
+                    <td>${nameLabel}</td>
+                    <td>${b.email}</td>
+                    <td>${b.alter}</td>
+                    <td>${b.betriebssystem}</td>
+                    <td>${b.erfahrung}</td>
+                    <td class="bl-motivation">${b.motivation}</td>
+                    <td>${statusBadge}</td>
+                    <td class="bl-aktionen">${aktionBtn}</td>
+                </tr>`;
+        }).join('');
 
         liste.innerHTML = `
             <table class="bewerber-tabelle">
@@ -130,10 +192,26 @@ if (liste) {
                         <th>OS</th>
                         <th>Erfahrung</th>
                         <th>Motivation</th>
+                        <th>Status</th>
+                        <th>Aktion</th>
                     </tr>
                 </thead>
                 <tbody>${rows}</tbody>
-            </table>
-        `;
+            </table>`;
+
+        // Button-Events
+        liste.querySelectorAll('.bl-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id   = parseInt(btn.dataset.id);
+                const map  = JSON.parse(localStorage.getItem('bewerber_status') || '{}');
+                if (btn.classList.contains('bl-btn--an'))    map[id] = 'angenommen';
+                else if (btn.classList.contains('bl-btn--ab')) map[id] = 'abgelehnt';
+                else delete map[id];
+                localStorage.setItem('bewerber_status', JSON.stringify(map));
+                renderListe();
+            });
+        });
     }
+
+    renderListe();
 }

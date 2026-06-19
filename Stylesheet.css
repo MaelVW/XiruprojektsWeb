@@ -331,7 +331,7 @@ footer {
 .bewerber-tabelle td {
     padding: 0.65rem 0.75rem;
     border-bottom: 1px solid var(--color-border);
-    vertical-align: top;
+    vertical-align: middle;
 }
 
 .bewerber-tabelle tr:last-child td {
@@ -604,4 +604,145 @@ footer {
     .tos-card {
         padding: var(--spacing-lg) var(--spacing-md);
     }
+}
+
+/* =============================================
+   TWINT Zahlungsbox
+   ============================================= */
+.twint-box {
+    background-color: #ffffff;
+    border: 2px solid #e0e0e0;
+    border-radius: var(--border-radius);
+    padding: var(--spacing-lg);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.twint-logo svg {
+    width: 120px;
+    height: auto;
+}
+
+.twint-instruction {
+    font-size: 0.9rem;
+    color: #444;
+    max-width: 380px;
+    margin: 0;
+}
+
+#twint-qr canvas {
+    border: 6px solid #ffffff;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+    border-radius: 4px;
+}
+
+.twint-number {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #111;
+    letter-spacing: 0.05em;
+    margin: 0;
+}
+
+.twint-note {
+    font-size: 0.8rem;
+    color: #666;
+    max-width: 380px;
+    margin: 0;
+}
+
+/* =============================================
+   Bewerberliste – Status, Buttons, Duplikate
+   ============================================= */
+.bl-row--angenommen td {
+    background-color: rgba(46, 204, 113, 0.08);
+}
+
+.bl-row--abgelehnt td {
+    background-color: rgba(192, 57, 43, 0.07);
+    opacity: 0.6;
+}
+
+.bl-badge {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+
+.bl-badge--an {
+    background-color: #d4efdf;
+    color: #1e8449;
+}
+
+.bl-badge--ab {
+    background-color: #fadbd8;
+    color: #c0392b;
+}
+
+.bl-dup {
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: var(--color-text-muted);
+}
+
+.bl-motivation {
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.bl-aktionen {
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.bl-aktionen-inner {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+}
+
+.bl-btn {
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.3rem 0.75rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color var(--transition);
+    white-space: nowrap;
+}
+
+.bl-btn--an {
+    background-color: #2ecc71;
+    color: #fff;
+}
+
+.bl-btn--an:hover {
+    background-color: #27ae60;
+}
+
+.bl-btn--ab {
+    background-color: #e74c3c;
+    color: #fff;
+}
+
+.bl-btn--ab:hover {
+    background-color: #c0392b;
+}
+
+.bl-btn--reset {
+    background-color: var(--color-border);
+    color: var(--color-text);
+}
+
+.bl-btn--reset:hover {
+    background-color: var(--color-text-muted);
 }

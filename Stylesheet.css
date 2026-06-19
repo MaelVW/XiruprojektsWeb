@@ -352,3 +352,98 @@ footer {
         overflow-x: auto;
     }
 }
+
+/* =============================================
+   Download-Bibliothek
+   ============================================= */
+.dl-intro {
+    color: var(--color-text-muted);
+    margin-bottom: var(--spacing-lg);
+}
+
+.dl-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+.dl-card {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.dl-card:hover {
+    border-color: var(--color-primary);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+.dl-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-sm);
+}
+
+.dl-card__name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--color-text);
+}
+
+.dl-card__version {
+    font-size: 0.75rem;
+    font-weight: 600;
+    background-color: var(--color-primary);
+    color: #fff;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+
+.dl-card__desc {
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+    flex: 1;
+}
+
+.dl-card__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: auto;
+}
+
+.dl-card__size {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+}
+
+.dl-btn {
+    display: inline-block;
+    padding: 0.5rem 1.25rem;
+    background-color: var(--color-primary);
+    color: #fff;
+    border-radius: var(--border-radius);
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background-color var(--transition);
+    white-space: nowrap;
+}
+
+.dl-btn:hover {
+    background-color: var(--color-primary-dark);
+    color: #fff;
+}
+
+@media (max-width: 768px) {
+    .dl-grid {
+        grid-template-columns: 1fr;
+    }
+}

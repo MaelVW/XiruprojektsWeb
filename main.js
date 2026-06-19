@@ -13,7 +13,7 @@ if (form) {
     }
 
     function startCooldown() {
-        let remaining = 15;
+        let remaining = 5;
         submitBtn.disabled = true;
         submitBtn.style.opacity = '0.6';
         submitBtn.style.cursor = 'not-allowed';

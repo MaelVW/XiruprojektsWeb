@@ -19,20 +19,55 @@
 
     <main class="content">
         <h1>Downloads</h1>
-        <div class="card">
-            <h2>Aktuelle Version</h2>
-            <p>Lade die neueste Version des Projekts herunter.</p>
-            <a href="#" class="btn">Download starten</a>
-        </div>
-        <div class="card">
-            <h2>Ältere Versionen</h2>
-            <p>Ältere Releases werden hier aufgelistet.</p>
-        </div>
+        <p class="dl-intro">Hier findest du alle offiziellen Releases unserer Projekte. Klicke auf einen Download-Button um die entsprechende Version zu erhalten.</p>
+
+        <div class="dl-grid" id="dl-grid"></div>
     </main>
 
     <footer>
         <p>&copy; 2026 Xiru. Kaum Rechte vorbehalten da wir broke sind ;).</p>
     </footer>
+
+    <script>
+        // ── Hier neue Einträge hinzufügen ─────────────────────────
+        // datei: Name der ZIP-Datei im Ordner /downloads/
+        const projekte = [
+            {
+                name:        'Xiru Core',
+                version:     'v1.0.0',
+                beschreibung: 'Die Hauptanwendung des Xiru-Projekts.',
+                datei:       'xiru-core-v1.0.0.zip',
+                groesse:     '—'
+            },
+            // Weiteres Projekt einfach hier eintragen:
+            // {
+            //     name:        'Projektname',
+            //     version:     'v1.0.0',
+            //     beschreibung: 'Kurze Beschreibung.',
+            //     datei:       'dateiname.zip',
+            //     groesse:     '12 MB'
+            // },
+        ];
+        // ─────────────────────────────────────────────────────────
+
+        const grid = document.getElementById('dl-grid');
+
+        projekte.forEach(p => {
+            grid.insertAdjacentHTML('beforeend', `
+                <div class="dl-card">
+                    <div class="dl-card__header">
+                        <span class="dl-card__name">${p.name}</span>
+                        <span class="dl-card__version">${p.version}</span>
+                    </div>
+                    <p class="dl-card__desc">${p.beschreibung}</p>
+                    <div class="dl-card__footer">
+                        <span class="dl-card__size">${p.groesse !== '—' ? '&#128190; ' + p.groesse : ''}</span>
+                        <a href="downloads/${p.datei}" download class="dl-btn">&#11015; Download</a>
+                    </div>
+                </div>
+            `);
+        });
+    </script>
 
 </body>
 </html>

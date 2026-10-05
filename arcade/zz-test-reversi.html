@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="de" data-page="arcade/zz-test.html">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reversi · Xiruprojekts</title>
+    <meta name="description" content="Reversi gegen die KI: Schliesse gegnerische Steine ein und dreh sie um. Drei Stufen, mögliche Züge werden markiert.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="css/reversi.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/arcade.js"></script>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">▶ Spielhalle · Brett</span>
+        <h1>Reversi</h1>
+        <p class="lead">Setze so, dass du gegnerische Steine zwischen zwei eigenen einschliesst – dann drehen sie sich um. Wer am Ende mehr Steine hat, gewinnt. Ecken sind Gold wert.</p>
+    </header>
+
+    <div class="game">
+        <div>
+            <div class="game__hud" id="hud"></div>
+            <div class="game__stage rv-stage" id="stage">
+                <div class="rv-wrap">
+                    <div class="rv-board" id="board" role="grid" aria-label="Reversi-Brett"></div>
+                    <div class="rv-toast" id="note" hidden></div>
+                </div>
+                <div class="game__overlay" id="ov" hidden></div>
+            </div>
+            <div class="rv-bar mt-1">
+                <p class="rv-turn" id="turn" aria-live="polite"></p>
+                <button class="btn btn--sm" type="button" id="btn-new">↻ Neue Partie</button>
+            </div>
+        </div>
+        <aside class="game__side">
+            <div class="card">
+                <h3>Steuerung</h3>
+                <ul class="keys-help">
+                    <li>Markiertes Feld anklicken oder antippen</li>
+                    <li><kbd>←</kbd> <kbd>↑</kbd> <kbd>→</kbd> <kbd>↓</kbd> + <kbd>Enter</kbd> – mit Cursor setzen</li>
+                    <li><kbd>N</kbd> – neue Partie</li>
+                    <li>Kein Zug möglich? Dann wird automatisch gepasst.</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Modus</h3>
+                <div class="row" id="levels">
+                    <button class="chip" type="button" data-level="leicht">KI leicht</button>
+                    <button class="chip is-active" type="button" data-level="mittel">KI mittel</button>
+                    <button class="chip" type="button" data-level="schwer">KI schwer</button>
+                </div>
+                <p class="small muted mt-2" id="mode-desc"></p>
+                <label class="check mt-2"><input type="checkbox" id="hints" checked> Mögliche Züge anzeigen</label>
+            </div>
+            <div class="card">
+                <h3>Rekord</h3>
+                <p class="stat__value" id="best">–</p>
+                <p class="small muted">Punkte bei einem Sieg: Steinvorsprung × Stufe (leicht 1, mittel 2, schwer 3).</p>
+            </div>
+        </aside>
+    </div>
+</main>
+<script src="js/reversi.js"></script>
+</body>
+</html>

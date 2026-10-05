@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Farbfolge · Xiruprojekts</title>
+    <meta name="description" content="Farbfolge: Merke dir die leuchtende Sequenz und spiele sie nach. Jede Runde wird sie länger – und schneller.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="css/farbfolge.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/arcade.js"></script>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">▶ Spielhalle · Geschick</span>
+        <h1>Farbfolge</h1>
+        <p class="lead">Die Felder leuchten nacheinander auf – merk dir die Reihenfolge und spiel sie nach. Jede Runde kommt ein Ton dazu, und das Tempo zieht an. Wie weit kommst du?</p>
+    </header>
+
+    <div class="game">
+        <div>
+            <div class="game__hud" id="hud"></div>
+            <div class="game__stage ff-stage" id="stage">
+                <div class="ff-wrap">
+                    <svg class="ff-board" id="board" viewBox="0 0 300 300" aria-label="Farbfelder"></svg>
+                    <button class="ff-hub" id="hub" type="button">
+                        <span class="ff-hub__big" id="hub-big">▶</span>
+                        <span class="ff-hub__small" id="hub-small">Start</span>
+                    </button>
+                </div>
+                <div class="game__overlay" id="ov" hidden></div>
+            </div>
+            <p class="small muted center mt-1" id="status">Tipp: Vor dem Start kannst du frei auf den Feldern spielen.</p>
+        </div>
+        <aside class="game__side">
+            <div class="card">
+                <h3>Steuerung</h3>
+                <ul class="keys-help">
+                    <li>Felder anklicken oder antippen</li>
+                    <li><kbd>1</kbd> – <kbd>4</kbd> (Profi: <kbd>1</kbd> – <kbd>6</kbd>) – Feld drücken</li>
+                    <li><kbd>Leertaste</kbd> oder <kbd>Enter</kbd> – Start</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Modus</h3>
+                <div class="row" id="modes">
+                    <button class="chip is-active" type="button" data-mode="normal">Normal · 4 Felder</button>
+                    <button class="chip" type="button" data-mode="profi">Profi · 6 Felder</button>
+                </div>
+                <p class="small muted mt-2" id="mode-desc">Vier Felder, vier Töne. Jede geschaffte Runde gibt einen Punkt.</p>
+            </div>
+            <div class="card">
+                <h3>Rekord</h3>
+                <p class="stat__value" id="best">–</p>
+                <p class="small muted">Punkte = geschaffte Runden. Im Profimodus zählt jede Runde doppelt.</p>
+            </div>
+        </aside>
+    </div>
+</main>
+<script src="js/farbfolge.js"></script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake · Xiruprojekts</title>
+    <meta name="description" content="Snake – der Klassiker in der Xiru-Spielhalle.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/arcade.js"></script>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">▶ Spielhalle · Action</span>
+        <h1>Snake</h1>
+        <p class="lead">Friss die Disketten, werde länger, beiss dich nicht selbst. Mit jeder Diskette wird die Schlange schneller.</p>
+    </header>
+
+    <div class="game">
+        <div>
+            <div class="game__hud" id="hud"></div>
+            <div class="game__stage" id="stage">
+                <canvas id="cv"></canvas>
+                <div class="game__overlay" id="ov"></div>
+            </div>
+            <div class="touch-pad">
+                <div class="dpad">
+                    <button data-key="ArrowUp" aria-label="Hoch">▲</button>
+                    <button data-key="ArrowLeft" aria-label="Links">◀</button>
+                    <button data-key="ArrowDown" aria-label="Runter">▼</button>
+                    <button data-key="ArrowRight" aria-label="Rechts">▶</button>
+                </div>
+            </div>
+        </div>
+        <aside class="game__side">
+            <div class="card">
+                <h3>Steuerung</h3>
+                <ul class="keys-help">
+                    <li><kbd>←</kbd> <kbd>↑</kbd> <kbd>→</kbd> <kbd>↓</kbd> oder <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> – lenken</li>
+                    <li><kbd>Leertaste</kbd> – Pause</li>
+                    <li>Auf dem Handy: Wischen oder Pfeiltasten</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Modus</h3>
+                <div class="row" id="modes">
+                    <button class="chip is-active" data-mode="klassisch">Klassisch</button>
+                    <button class="chip" data-mode="wand">Ohne Wände</button>
+                </div>
+                <p class="small muted mt-2" id="mode-desc">Wände sind tödlich.</p>
+            </div>
+            <div class="card">
+                <h3>Rekord</h3>
+                <p class="stat__value" id="best">–</p>
+            </div>
+        </aside>
+    </div>
+</main>
+<script src="js/snake.js"></script>
+</body>
+</html>

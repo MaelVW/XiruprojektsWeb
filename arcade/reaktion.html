@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reaktionstest · Xiruprojekts</title>
+    <meta name="description" content="Reaktionstest: Warte auf Grün und klicke so schnell du kannst. Fünf Runden, der Durchschnitt zählt.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="css/reaktion.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/arcade.js"></script>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">▶ Spielhalle · Geschick</span>
+        <h1>Reaktionstest</h1>
+        <p class="lead">Das Feld wird rot – warte. Sobald es grün wird: klicken, so schnell du kannst! Fünf Runden, dein Durchschnitt zählt. Wer zu früh drückt, muss die Runde wiederholen.</p>
+    </header>
+
+    <div class="game">
+        <div>
+            <div class="game__hud" id="hud"></div>
+            <div class="game__stage rx-stage" id="stage">
+                <div class="rx-pad is-idle" id="pad" role="button" tabindex="0" aria-live="polite"></div>
+            </div>
+            <ol class="rx-rounds" id="rounds" aria-label="Runden"></ol>
+
+            <div class="card mt-2" id="result-card" hidden>
+                <div class="row">
+                    <h3 class="mb-0">Deine Runde</h3>
+                    <span class="spacer"></span>
+                    <span class="badge badge--accent" id="result-badge"></span>
+                </div>
+                <div class="rx-stats mt-2" id="result-stats"></div>
+                <div class="rx-charts mt-2">
+                    <figure>
+                        <figcaption class="small muted">Die fünf Versuche</figcaption>
+                        <div id="chart-rounds"></div>
+                    </figure>
+                    <figure>
+                        <figcaption class="small muted">Verteilung deiner letzten Versuche</figcaption>
+                        <div id="chart-hist"></div>
+                    </figure>
+                </div>
+            </div>
+        </div>
+        <aside class="game__side">
+            <div class="card">
+                <h3>Steuerung</h3>
+                <ul class="keys-help">
+                    <li>Klick oder Tipp auf das Feld</li>
+                    <li><kbd>Leertaste</kbd> oder <kbd>Enter</kbd> – reagieren</li>
+                    <li>Rot heisst warten, Grün heisst los!</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Modus</h3>
+                <div class="row" id="modes">
+                    <button class="chip is-active" type="button" data-mode="klassisch">Klassisch</button>
+                    <button class="chip" type="button" data-mode="fies">Fies</button>
+                </div>
+                <p class="small muted mt-2" id="mode-desc">Rot, warten, Grün – klicken.</p>
+            </div>
+            <div class="card">
+                <h3>Rekord</h3>
+                <p class="stat__value" id="best">–</p>
+                <p class="small muted">Bester Durchschnitt aus fünf Runden. Kleiner ist besser.</p>
+            </div>
+            <div class="card card--flat">
+                <h3>Gut zu wissen</h3>
+                <p class="small muted">Die meisten Menschen liegen zwischen 200 und 300 ms. Maus, Bildschirm und Browser schlucken auch ein paar Millisekunden – also nicht ärgern.</p>
+            </div>
+        </aside>
+    </div>
+</main>
+<script src="js/reaktion.js"></script>
+</body>
+</html>

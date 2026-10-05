@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Datenträger · Xiruprojekts</title>
+    <meta name="description" content="Von der Diskette bis zur PCIe-5.0-SSD: wie viel passt drauf und wie schnell kommt es wieder runter?">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">▣ Hardware-Archiv</span>
+        <h1>Datenträger</h1>
+        <p class="lead">Von der Diskette bis zur PCIe-5.0-SSD: wie viel passt drauf und wie schnell kommt es wieder runter?</p>
+    </header>
+
+    <div class="card card--flat mb-3">
+        <div class="row">
+            <input class="input" type="search" id="hw-q" placeholder="Datenträger durchsuchen …" style="max-width:320px" aria-label="Suchen">
+            <div class="row" id="hw-filter" role="group" aria-label="Art"><button class="chip is-active" data-filter="">Alle</button><button class="chip" data-filter="Magnetisch">Magnetisch</button><button class="chip" data-filter="Optisch">Optisch</button><button class="chip" data-filter="Flash">Flash</button></div>
+            <span class="spacer"></span>
+            <div class="row" role="group" aria-label="Ansicht">
+                <button class="chip is-active" data-view="table">Tabelle</button>
+                <button class="chip" data-view="tiles">Kacheln</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="hw-table" class="table-wrap">
+        <table class="table" data-sortable><thead><tr><th data-sort="text">Name</th><th data-sort="text">Art</th><th data-sort="num" class="num">Seit</th><th data-sort="text">Kapazität</th><th data-sort="num" class="num">Lesen</th><th data-sort="text">Zugriff</th></tr></thead><tbody><tr data-f="Magnetisch" data-q="3,5-zoll-diskette (hd)  "><td><a href="laufwerke/diskette-3-5.html"><strong>3,5-Zoll-Diskette (HD)</strong></a></td><td>Magnetisch</td><td class="num">1987</td><td>1,44 MB</td><td class="num" data-v="0.06">ca. 0,06 MB/s</td><td>ca. 100–200 ms</td></tr><tr data-f="Optisch" data-q="cd-rom  "><td><a href="laufwerke/cd-rom.html"><strong>CD-ROM</strong></a></td><td>Optisch</td><td class="num">1985</td><td>650–700 MB</td><td class="num" data-v="7.8">1× = 0,15 MB/s · 52× bis ca. 7,8 MB/s</td><td>ca. 80–120 ms</td></tr><tr data-f="Magnetisch" data-q="festplatte (3,5 zoll, 7200 u/min)  "><td><a href="laufwerke/hdd-7200.html"><strong>Festplatte (3,5 Zoll, 7200 U/min)</strong></a></td><td>Magnetisch</td><td class="num">1956</td><td>1–30+ TB</td><td class="num" data-v="280">ca. 200–290 MB/s</td><td>ca. 8–12 ms</td></tr><tr data-f="Flash" data-q="sata-ssd  "><td><a href="laufwerke/sata-ssd.html"><strong>SATA-SSD</strong></a></td><td>Flash</td><td class="num">2008</td><td>120 GB–8 TB</td><td class="num" data-v="560">bis ca. 560 MB/s</td><td>ca. 0,1 ms</td></tr><tr data-f="Flash" data-q="nvme-ssd (pcie 3.0 x4)  "><td><a href="laufwerke/nvme-gen3.html"><strong>NVMe-SSD (PCIe 3.0 x4)</strong></a></td><td>Flash</td><td class="num">2015</td><td>256 GB–4 TB</td><td class="num" data-v="3500">bis ca. 3500 MB/s</td><td>ca. 0,02–0,05 ms</td></tr><tr data-f="Flash" data-q="nvme-ssd (pcie 4.0 x4)  "><td><a href="laufwerke/nvme-gen4.html"><strong>NVMe-SSD (PCIe 4.0 x4)</strong></a></td><td>Flash</td><td class="num">2019</td><td>500 GB–8 TB</td><td class="num" data-v="7450">bis ca. 7450 MB/s</td><td>ca. 0,02–0,05 ms</td></tr><tr data-f="Flash" data-q="nvme-ssd (pcie 5.0 x4)  "><td><a href="laufwerke/nvme-gen5.html"><strong>NVMe-SSD (PCIe 5.0 x4)</strong></a></td><td>Flash</td><td class="num">2023</td><td>1–4 TB</td><td class="num" data-v="14900">bis ca. 14’900 MB/s</td><td>ca. 0,02–0,05 ms</td></tr></tbody></table>
+    </div>
+    <div id="hw-tiles" class="grid" hidden><a class="tile" data-f="Magnetisch" href="laufwerke/diskette-3-5.html" data-reveal style="--d:0.00s"><span class="tile__meta"><span class="badge">Magnetisch</span></span><span class="tile__title">3,5-Zoll-Diskette (HD)</span><span class="tile__desc">Datenträger · Magnetisch</span></a><a class="tile" data-f="Optisch" href="laufwerke/cd-rom.html" data-reveal style="--d:0.04s"><span class="tile__meta"><span class="badge">Optisch</span></span><span class="tile__title">CD-ROM</span><span class="tile__desc">Datenträger · Optisch</span></a><a class="tile" data-f="Magnetisch" href="laufwerke/hdd-7200.html" data-reveal style="--d:0.08s"><span class="tile__meta"><span class="badge">Magnetisch</span></span><span class="tile__title">Festplatte (3,5 Zoll, 7200 U/min)</span><span class="tile__desc">Datenträger · Magnetisch</span></a><a class="tile" data-f="Flash" href="laufwerke/sata-ssd.html" data-reveal style="--d:0.12s"><span class="tile__meta"><span class="badge">Flash</span></span><span class="tile__title">SATA-SSD</span><span class="tile__desc">Datenträger · Flash</span></a><a class="tile" data-f="Flash" href="laufwerke/nvme-gen3.html" data-reveal style="--d:0.16s"><span class="tile__meta"><span class="badge">Flash</span></span><span class="tile__title">NVMe-SSD (PCIe 3.0 x4)</span><span class="tile__desc">Datenträger · Flash</span></a><a class="tile" data-f="Flash" href="laufwerke/nvme-gen4.html" data-reveal style="--d:0.20s"><span class="tile__meta"><span class="badge">Flash</span></span><span class="tile__title">NVMe-SSD (PCIe 4.0 x4)</span><span class="tile__desc">Datenträger · Flash</span></a><a class="tile" data-f="Flash" href="laufwerke/nvme-gen5.html" data-reveal style="--d:0.24s"><span class="tile__meta"><span class="badge">Flash</span></span><span class="tile__title">NVMe-SSD (PCIe 5.0 x4)</span><span class="tile__desc">Datenträger · Flash</span></a></div>
+    <p class="small muted mt-2"><span id="hw-count">7</span> Einträge · Klick auf eine Spaltenüberschrift sortiert. <a href="vergleich.html">Zum Vergleich →</a></p>
+</main>
+<script>
+XIRU.ready(function () {
+    let filter = '', q = '';
+    const rows = XIRU.$$('#hw-table tbody tr'), tiles = XIRU.$$('#hw-tiles .tile');
+    function apply() {
+        let n = 0;
+        rows.forEach(r => { const ok = (!filter || r.dataset.f === filter) && (!q || r.dataset.q.includes(q)); r.hidden = !ok; if (ok) n++; });
+        tiles.forEach((t, i) => { t.hidden = rows[i].hidden; });
+        XIRU.$('#hw-count').textContent = n;
+    }
+    XIRU.$('#hw-filter').addEventListener('click', e => {
+        const b = e.target.closest('[data-filter]'); if (!b) return;
+        filter = b.dataset.filter;
+        XIRU.$$('#hw-filter .chip').forEach(c => c.classList.toggle('is-active', c === b));
+        apply();
+    });
+    XIRU.$('#hw-q').addEventListener('input', e => { q = e.target.value.trim().toLowerCase(); apply(); });
+    XIRU.$$('[data-view]').forEach(b => b.addEventListener('click', () => {
+        XIRU.$$('[data-view]').forEach(c => c.classList.toggle('is-active', c === b));
+        XIRU.$('#hw-table').hidden = b.dataset.view !== 'table';
+        XIRU.$('#hw-tiles').hidden = b.dataset.view !== 'tiles';
+        if (b.dataset.view === 'tiles') XIRU.initReveal();
+    }));
+});
+</script>
+</body>
+</html>

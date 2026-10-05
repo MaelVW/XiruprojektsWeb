@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sudoku · Xiruprojekts</title>
+    <meta name="description" content="Sudoku mit Generator, drei Schwierigkeiten, Notizen, Konflikt-Hervorhebung und Hinweisen.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="css/sudoku.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/arcade.js"></script>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">▶ Spielhalle · Puzzle</span>
+        <h1>Sudoku</h1>
+        <p class="lead">Jede Zeile, jede Spalte und jeder 3×3-Block enthält die Zahlen 1 bis 9 genau einmal. Jedes Rätsel wird frisch erzeugt und hat garantiert genau eine Lösung.</p>
+    </header>
+
+    <div class="game">
+        <div>
+            <div class="game__hud" id="hud">
+                <div><span>Stufe</span><b id="h-diff">Leicht</b></div>
+                <div><span>Zeit</span><b id="h-time">0:00</b></div>
+                <div><span>Hinweise</span><b id="h-hints">0</b></div>
+                <div><span>Rätsel</span><b id="h-seed">–</b></div>
+            </div>
+            <div class="game__stage sd-stage" id="stage">
+                <div class="sd-board" id="board" role="grid" aria-label="Sudoku-Feld"></div>
+                <div class="game__overlay" id="ov" hidden></div>
+            </div>
+            <div class="sd-pad" id="pad">
+                <div class="sd-digits" id="digits"></div>
+                <div class="sd-actions">
+                    <button class="btn btn--sm" type="button" id="btn-notes" aria-pressed="false">✎ Notizen <kbd>N</kbd></button>
+                    <button class="btn btn--sm" type="button" id="btn-erase">⌫ Löschen</button>
+                    <button class="btn btn--sm" type="button" id="btn-undo">↶ Zurück <kbd>Z</kbd></button>
+                    <button class="btn btn--sm" type="button" id="btn-hint">💡 Hinweis <kbd>H</kbd></button>
+                </div>
+            </div>
+        </div>
+        <aside class="game__side">
+            <div class="card">
+                <h3>Steuerung</h3>
+                <ul class="keys-help">
+                    <li>Feld anklicken oder mit <kbd>←</kbd><kbd>↑</kbd><kbd>→</kbd><kbd>↓</kbd> wählen</li>
+                    <li><kbd>1</kbd>–<kbd>9</kbd> – Zahl eintragen, <kbd>⌫</kbd>/<kbd>Entf</kbd>/<kbd>0</kbd> – löschen</li>
+                    <li><kbd>N</kbd> – Notizmodus, <kbd>Shift</kbd> + Zahl – einzelne Notiz</li>
+                    <li><kbd>H</kbd> – Hinweis, <kbd>Z</kbd> – rückgängig</li>
+                    <li>Auf dem Handy: Feld antippen, dann den Zahlenblock benutzen</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Schwierigkeit</h3>
+                <div class="row" id="diffs">
+                    <button class="chip is-active" data-diff="leicht">Leicht</button>
+                    <button class="chip" data-diff="mittel">Mittel</button>
+                    <button class="chip" data-diff="schwer">Schwer</button>
+                </div>
+                <p class="small muted mt-1" id="diff-desc"></p>
+                <button class="btn btn--sm btn--primary mt-1" type="button" id="btn-new">Neues Rätsel</button>
+            </div>
+            <div class="card">
+                <h3>Rekord</h3>
+                <p class="stat__value" id="best">–</p>
+                <p class="small muted mb-1">Punkte: Grundwert je Stufe (1000 / 2000 / 3500) minus Sekunden, jeder Hinweis kostet 120.</p>
+                <ul class="sd-records small" id="records"></ul>
+            </div>
+        </aside>
+    </div>
+</main>
+<script src="js/sudoku.js"></script>
+</body>
+</html>

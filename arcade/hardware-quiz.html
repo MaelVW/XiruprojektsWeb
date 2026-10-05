@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Höher oder Tiefer · Xiruprojekts</title>
+    <meta name="description" content="Welche Grafikkarte hat mehr Speicher? Welcher Prozessor taktet höher? Das Hardware-Quiz.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/arcade.js"></script>
+    <script src="../assets/js/hardware-data.js"></script>
+    <style>
+        .hl { display: grid; grid-template-columns: 1fr auto 1fr; gap: 1rem; align-items: stretch; }
+        @media (max-width: 720px) { .hl { grid-template-columns: 1fr; } .hl__vs { justify-self: center; } }
+        .hl__card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; text-align: center; display: flex; flex-direction: column; gap: .5rem; justify-content: center; min-height: 260px; position: relative; overflow: hidden; }
+        .hl__card.slide { animation: popIn .45s var(--ease); }
+        .hl__type { font-size: 2.4rem; }
+        .hl__name { font-size: 1.35rem; font-weight: 800; }
+        .hl__prop { color: var(--text-muted); font-size: .9rem; }
+        .hl__value { font-size: 2.4rem; font-weight: 900; color: var(--rc); font-variant-numeric: tabular-nums; min-height: 3rem; }
+        .hl__vs { display: grid; place-items: center; font-weight: 900; font-size: 1.3rem; width: 64px; height: 64px; border-radius: 50%; background: var(--surface-3); align-self: center; border: 2px solid var(--border-strong); }
+        .hl__vs.ok { background: var(--success); color: #062; border-color: transparent; animation: popIn .3s; }
+        .hl__vs.bad { background: var(--danger); color: #300; border-color: transparent; animation: shake .4s; }
+        .hl__buttons { display: flex; flex-direction: column; gap: .5rem; margin-top: .5rem; }
+        .streak { font-size: 3rem; font-weight: 900; line-height: 1; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">▶ Spielhalle · Wissen</span>
+        <h1>Höher oder Tiefer</h1>
+        <p class="lead">Links siehst du den Wert, rechts musst du raten: Ist er höher oder tiefer? Jede richtige Antwort verlängert deine Serie.</p>
+    </header>
+    <div class="game">
+        <div>
+            <div class="game__hud" id="hud"></div>
+            <div class="game__stage" id="stage" style="padding:1.25rem;place-items:stretch">
+                <div class="hl" id="board"></div>
+                <div class="game__overlay" id="ov"></div>
+            </div>
+        </div>
+        <aside class="game__side">
+            <div class="card center"><h3>Serie</h3><div class="streak accent" id="streak">0</div><p class="small muted mt-1" id="best"></p></div>
+            <div class="card">
+                <h3>Kategorie</h3>
+                <div class="row" id="modes">
+                    <button class="chip is-active" data-mode="mix">Gemischt</button>
+                    <button class="chip" data-mode="cpu">Nur CPUs</button>
+                    <button class="chip" data-mode="gpu">Nur GPUs</button>
+                </div>
+            </div>
+            <div class="card">
+                <h3>Steuerung</h3>
+                <ul class="keys-help"><li><kbd>↑</kbd> oder <kbd>H</kbd> – höher</li><li><kbd>↓</kbd> oder <kbd>T</kbd> – tiefer</li><li>Gleich zählt immer als richtig.</li></ul>
+            </div>
+        </aside>
+    </div>
+</main>
+<script>
+XIRU.ready(function () {
+    const G = XIRU.Game, hw = XIRU.hw || { cpu: [], gpu: [] };
+    const PROPS = {
+        cpu: [['Kerne', c => c.cores, v => v], ['Threads', c => c.threads, v => v], ['Boost-Takt', c => c.boost, v => XIRU.fmt(v, 1) + ' GHz'],
+              ['L3-Cache', c => c.l3, v => v + ' MB'], ['TDP', c => c.tdp, v => v + ' W'], ['UVP zum Start', c => c.price, v => v + ' USD'],
+              ['Erscheinungsjahr', c => c.year, v => v], ['Spiele-Index', c => c.game, v => v]],
+        gpu: [['Grafikspeicher', g => g.vram, v => v + ' GB'], ['Speicherbandbreite', g => g.bandwidth, v => XIRU.fmt(v) + ' GB/s'], ['Shader-Einheiten', g => g.shaders, v => XIRU.fmt(v)],
+              ['Leistungsaufnahme', g => g.tdp, v => v + ' W'], ['UVP zum Start', g => g.price, v => v + ' USD'], ['Raster-Index', g => g.perf, v => v],
+              ['Boost-Takt', g => g.boost, v => XIRU.fmt(v) + ' MHz'], ['Erscheinungsjahr', g => g.year, v => v]]
+    };
+    const ov = G.overlay('#ov');
+    let mode = 'mix', cat, prop, left, right, streak = 0, busy = false, playing = false;
+
+    function pickRound(keepLeft) {
+        cat = mode === 'mix' ? XIRU.pick(['cpu', 'gpu']) : mode;
+        if (keepLeft && left && left.__cat !== cat) keepLeft = false;
+        prop = XIRU.pick(PROPS[cat]);
+        const pool = hw[cat];
+        left = keepLeft ? right : XIRU.pick(pool);
+        do { right = XIRU.pick(pool); } while (right.id === left.id);
+        left.__cat = right.__cat = cat;
+    }
+    function card(item, showValue, cls) {
+        return '<div class="hl__card ' + (cls || '') + '"><div class="hl__type">' + (cat === 'cpu' ? '⬛' : '▤') + '</div>' +
+            '<div class="hl__name">' + XIRU.esc(item.name) + '</div><div class="hl__prop">' + XIRU.esc(prop[0]) + '</div>' +
+            '<div class="hl__value" data-v="' + prop[1](item) + '">' + (showValue ? XIRU.esc(prop[2](prop[1](item))) : '?') + '</div>' +
+            (showValue ? '' : '<div class="hl__buttons"><button class="btn btn--primary" data-g="up">▲ Höher</button><button class="btn" data-g="down">▼ Tiefer</button></div>') + '</div>';
+    }
+    function render(slide) {
+        XIRU.$('#board').innerHTML = card(left, true) + '<div class="hl__vs" id="vs">VS</div>' + card(right, false, slide ? 'slide' : '');
+        G.hud('#hud', { Serie: streak, Kategorie: cat === 'cpu' ? 'Prozessoren' : 'Grafikkarten' });
+        XIRU.$('#streak').textContent = streak;
+        XIRU.$('#best').textContent = G.bestLabel('hardware-quiz');
+    }
+    function guess(dir) {
+        if (busy || !playing) return;
+        busy = true;
+        const a = prop[1](left), b = prop[1](right);
+        const ok = a === b || (dir === 'up' ? b > a : b < a);
+        const valEl = XIRU.$('#board .hl__card:last-child .hl__value');
+        XIRU.$('#board .hl__card:last-child .hl__buttons').remove();
+        const t0 = performance.now();
+        (function count(now) {
+            const k = Math.min(1, (now - t0) / 650), v = b * (1 - Math.pow(1 - k, 3));
+            valEl.textContent = prop[2](Number.isInteger(b) ? Math.round(v) : Math.round(v * 10) / 10);
+            if (k < 1) requestAnimationFrame(count); else valEl.textContent = prop[2](b);
+        })(t0);
+        setTimeout(() => {
+            const vs = XIRU.$('#vs');
+            vs.classList.add(ok ? 'ok' : 'bad'); vs.textContent = ok ? '✓' : '✕';
+            if (ok) {
+                streak++; G.sfx.coin();
+                if (a === b) XIRU.egg('g-hardware-quiz-gleich');
+                if (streak >= 10) XIRU.egg('g-hardware-quiz-10');
+                if (streak >= 25) XIRU.egg('g-hardware-quiz-25');
+                setTimeout(() => { pickRound(true); render(true); busy = false; }, 900);
+            } else {
+                G.sfx.die(); playing = false;
+                const r = XIRU.score('hardware-quiz', streak);
+                setTimeout(() => ov.show({ icon: '📉', title: 'Daneben!', html: true,
+                    text: XIRU.esc(right.name) + ' hat ' + XIRU.esc(prop[2](b)) + '.<br>Serie: <strong>' + streak + '</strong>' + (r.isNew && streak ? ' – neuer Rekord!' : ''),
+                    button: 'Nochmal', onClick: start }), 700);
+            }
+        }, 700);
+    }
+    function start() { streak = 0; busy = false; playing = true; pickRound(false); render(true); ov.hide(); }
+
+    XIRU.$('#board').addEventListener('click', e => { const b = e.target.closest('[data-g]'); if (b) guess(b.dataset.g); });
+    G.keys.onPress(k => { if (k === 'ArrowUp' || k === 'h') guess('up'); if (k === 'ArrowDown' || k === 't') guess('down'); });
+    XIRU.$('#modes').addEventListener('click', e => {
+        const b = e.target.closest('[data-mode]'); if (!b) return;
+        mode = b.dataset.mode; XIRU.$$('#modes .chip').forEach(c => c.classList.toggle('is-active', c === b));
+        start();
+    });
+    pickRound(false); render(false);
+    ov.show({ icon: '❓', title: 'Höher oder Tiefer', text: 'Wie gut kennst du die Datenblätter aus dem Archiv?', button: 'Los geht\'s', onClick: start });
+});
+</script>
+</body>
+</html>

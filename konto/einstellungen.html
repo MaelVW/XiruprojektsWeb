@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Einstellungen · Xiruprojekts</title>
+    <meta name="description" content="Design, Animationen, Ton und deine lokalen Daten.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <style>
+        .themes { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); }
+        .theme { cursor: pointer; text-align: left; font: inherit; color: var(--text); padding: 0; overflow: hidden; }
+        .theme__preview { height: 92px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; padding: 12px; }
+        .theme__preview span { border-radius: 6px; }
+        .theme__body { padding: .75rem 1rem 1rem; }
+        .theme.is-active { border-color: var(--rc); box-shadow: var(--glow); }
+        .theme.is-active .theme__body::after { content: "✓ Aktiv"; display: inline-block; margin-top: .3rem; font-size: .75rem; font-weight: 800; color: var(--rc); }
+        .theme.is-locked { cursor: not-allowed; }
+        .theme.is-locked .theme__preview { filter: grayscale(1) blur(1px); opacity: .5; }
+        .toggle-row { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: .9rem 0; border-bottom: 1px solid var(--border); }
+        .toggle-row:last-child { border-bottom: 0; }
+        .switch { position: relative; width: 52px; height: 30px; flex-shrink: 0; }
+        .switch input { opacity: 0; width: 100%; height: 100%; position: absolute; cursor: pointer; margin: 0; z-index: 1; }
+        .switch span { position: absolute; inset: 0; border-radius: 99px; background: var(--surface-3); border: 1px solid var(--border-strong); transition: background .2s; }
+        .switch span::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: var(--text); transition: transform .25s var(--ease); }
+        .switch input:checked + span { background: var(--rc); }
+        .switch input:checked + span::after { transform: translateX(22px); background: var(--accent-ink); }
+        .switch input:focus-visible + span { outline: 2px solid var(--rc); outline-offset: 2px; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">⚓ Heimathafen</span>
+        <h1>Einstellungen</h1>
+        <p class="lead">Mach es dir gemütlich. Einstellungen gelten für <span id="who">dich</span> in diesem Browser.</p>
+    </header>
+
+    <h2>Design</h2>
+    <div class="themes mb-4" id="themes"></div>
+
+    <div class="grid-2">
+        <section class="card">
+            <h2>Erlebnis</h2>
+            <div class="toggle-row"><div><strong>Animationen</strong><div class="small muted">Partikel, Einblendungen, Effekte. Aus = ruhiger und sparsamer.</div></div>
+                <label class="switch"><input type="checkbox" data-set="anim" aria-label="Animationen"><span></span></label></div>
+            <div class="toggle-row"><div><strong>Töne</strong><div class="small muted">Kleine Pieps-Geräusche bei Disketten, Level-ups und in Spielen.</div></div>
+                <label class="switch"><input type="checkbox" data-set="sound" aria-label="Töne"><span></span></label></div>
+            <div class="toggle-row"><div><strong>Entdeckungs-Hinweise</strong><div class="small muted">Kurze Meldung, wenn du einen neuen Ort entdeckst.</div></div>
+                <label class="switch"><input type="checkbox" data-set="visitToasts" aria-label="Entdeckungs-Hinweise"><span></span></label></div>
+            <button class="btn btn--sm mt-2" id="test-sound" type="button">🔊 Ton testen</button>
+        </section>
+        <section class="card">
+            <h2>Deine Daten</h2>
+            <p class="muted small">Alles liegt im localStorage dieses Browsers. Wenn du die Browserdaten löschst, ist auch hier alles weg – darum: <a href="profil.html">exportieren</a>.</p>
+            <p class="small" id="usage"></p>
+            <div class="row mt-2">
+                <button class="btn btn--sm" id="reset-progress" type="button">Fortschritt zurücksetzen</button>
+                <button class="btn btn--sm btn--danger" id="wipe" type="button">Alle Xiru-Daten löschen</button>
+            </div>
+            <p class="form-msg" id="data-msg"></p>
+        </section>
+    </div>
+</main>
+<script>
+XIRU.ready(function () {
+    const $ = XIRU.$, P = XIRU.profile();
+    $('#who').textContent = XIRU.user ? XIRU.user : 'Gäste';
+    const PREVIEW = {
+        nacht: ['#0b0e1a', '#141a2e', '#5eead4', '#a78bfa', '#e8ebf7', '#2a3358'],
+        hell: ['#f5f6fb', '#ffffff', '#0d9488', '#7c3aed', '#151a30', '#d8dcec'],
+        floppy: ['#020a04', '#061a0b', '#39ff6a', '#b6ff3a', '#7dff9a', '#145c25'],
+        klassik: ['#2c1475', '#0c0f6c', '#12cfc5', '#3dae20', '#c6fb6d', '#1bab2e'],
+        rgb: ['#07070c', '#0f0f18', '#ff3df2', '#3dd8ff', '#9dff3d', '#2b2b44'],
+        crt: ['#0a0705', '#15100b', '#ffb347', '#ff6b3d', '#ffcf87', '#4a3520'],
+        pixmag: ['#0c0a09', '#1c1714', '#d4a24c', '#b4442e', '#eadcc6', '#4a3b2e']
+    };
+    function req(t) {
+        if (t.skill) { const s = XIRU.skillInfo(t.skill); return 'Skill „' + s.n + '"'; }
+        if (t.egg) { const e = XIRU.eggInfo(t.egg); return XIRU.hasEgg(t.egg) ? '' : 'Ein Geheimnis: ' + e.h; }
+        return '';
+    }
+    function renderThemes() {
+        const cur = XIRU.setting('theme') || 'auto';
+        const list = [{ id: 'auto', n: 'Automatisch', d: 'Folgt der Einstellung deines Systems (hell/dunkel).' }].concat(XIRU.themes);
+        $('#themes').innerHTML = list.map(t => {
+            const unlocked = t.id === 'auto' || XIRU.themeUnlocked(t.id);
+            const c = PREVIEW[t.id] || ['#0b0e1a', '#f5f6fb', '#5eead4', '#0d9488', '#a78bfa', '#7c3aed'];
+            return '<button class="card theme' + (cur === t.id ? ' is-active' : '') + (unlocked ? '' : ' is-locked') + '" data-t="' + t.id + '" type="button"' + (unlocked ? '' : ' aria-disabled="true"') + '>' +
+                '<div class="theme__preview" style="background:' + c[0] + '"><span style="background:' + c[1] + ';grid-column:span 3"></span><span style="background:' + c[2] + '"></span><span style="background:' + c[3] + '"></span><span style="background:' + c[5] + '"></span></div>' +
+                '<div class="theme__body"><strong>' + (unlocked ? '' : '🔒 ') + XIRU.esc(t.n) + '</strong><div class="small muted">' + XIRU.esc(unlocked ? t.d : req(t)) + '</div></div></button>';
+        }).join('');
+    }
+    $('#themes').addEventListener('click', e => {
+        const b = e.target.closest('[data-t]'); if (!b || b.classList.contains('is-locked')) { if (b) XIRU.toast('Noch gesperrt', b.querySelector('.muted').textContent, { icon: '🔒' }); return; }
+        const id = b.dataset.t;
+        XIRU.setting('theme', id === 'auto' ? null : id);
+        if (id !== 'auto') {
+            const tried = P.data.themesTried = P.data.themesTried || {};
+            tried[id] = 1; XIRU.persist();
+            const unlocked = XIRU.themes.filter(t => XIRU.themeUnlocked(t.id));
+            if (unlocked.length >= 3 && unlocked.every(t => tried[t.id])) XIRU.egg('b-theme');
+        }
+        renderThemes();
+    });
+    renderThemes();
+
+    XIRU.$$('[data-set]').forEach(cb => {
+        cb.checked = XIRU.setting(cb.dataset.set) !== false;
+        cb.addEventListener('change', () => { XIRU.setting(cb.dataset.set, cb.checked); if (cb.dataset.set === 'sound' && cb.checked) XIRU.beep(660, .1); });
+    });
+    $('#test-sound').addEventListener('click', () => { XIRU.audio(); setTimeout(() => { [523, 659, 784].forEach((f, i) => setTimeout(() => XIRU.beep(f, .1, 'triangle', .07), i * 100)); }, 50); if (XIRU.setting('sound') === false) XIRU.toast('Töne sind aus', 'Schalte sie oben ein.', { icon: '🔇' }); });
+
+    // Speicherverbrauch
+    try {
+        let bytes = 0, n = 0;
+        Object.keys(localStorage).filter(k => k.startsWith('xiru:')).forEach(k => { bytes += (k.length + (localStorage.getItem(k) || '').length) * 2; n++; });
+        $('#usage').textContent = n + ' Einträge, ca. ' + XIRU.fmt(bytes / 1024, 1) + ' KB belegt.';
+    } catch (e) { $('#usage').textContent = 'Der Browser erlaubt hier keinen Zugriff auf den Speicher.'; }
+
+    $('#reset-progress').addEventListener('click', () => {
+        const m = XIRU.modal('<h2>Fortschritt zurücksetzen?</h2><p class="muted">XP, Entdeckungen, Disketten, Skills und Rekorde von <strong>' + XIRU.esc(XIRU.user || 'Gast') + '</strong> werden gelöscht. Das Konto selbst bleibt bestehen.</p>' +
+            '<div class="row mt-2"><button class="btn btn--danger" id="ok">Zurücksetzen</button><button class="btn" data-close>Abbrechen</button></div>');
+        m.el.querySelector('#ok').addEventListener('click', () => {
+            ['skills', 'eggs', 'visited', 'days', 'scores', 'rewards', 'data'].forEach(k => { P[k] = {}; });
+            P.xp = 0; P.bonus = 0; XIRU.persist(); location.reload();
+        });
+    });
+    $('#wipe').addEventListener('click', () => {
+        const m = XIRU.modal('<h2>Alles löschen?</h2><p class="muted">Alle Konten, Spielstände, Notizen und Schlüssel dieser Website werden aus diesem Browser entfernt. Tippe <strong>LÖSCHEN</strong> zur Bestätigung.</p>' +
+            '<input class="input" id="confirm" autocomplete="off"><div class="row mt-2"><button class="btn btn--danger" id="ok">Alles löschen</button><button class="btn" data-close>Abbrechen</button></div>');
+        m.el.querySelector('#ok').addEventListener('click', () => {
+            if (m.el.querySelector('#confirm').value.trim().toUpperCase() !== 'LÖSCHEN') { m.el.querySelector('#confirm').focus(); return; }
+            try { Object.keys(localStorage).filter(k => k.startsWith('xiru:')).forEach(k => localStorage.removeItem(k)); sessionStorage.clear(); } catch (e) { }
+            location.href = XIRU.url('index.html');
+        });
+    });
+});
+</script>
+</body>
+</html>

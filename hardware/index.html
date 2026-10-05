@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hardware-Archiv · Xiruprojekts</title>
+    <meta name="description" content="Datenblätter für Prozessoren, Grafikkarten, Chipsätze, Speicher, Datenträger und Netzteile – mit Vergleich und Rechnern.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/hardware-data.js"></script>
+    <style>
+        .hw-hero { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 2rem; align-items: center; margin-bottom: 2.5rem; }
+        @media (max-width: 860px) { .hw-hero { grid-template-columns: 1fr; } }
+        .chip-art { position: relative; aspect-ratio: 1; max-width: 300px; margin: 0 auto; width: 100%; }
+        .chip-art svg { width: 100%; height: 100%; }
+        .chip-art .trace { stroke-dasharray: 220; stroke-dashoffset: 220; animation: drawLine 2.4s var(--ease) forwards; }
+        .chip-art .core { animation: pulse 2.6s infinite; --pc: var(--rc); transform-box: fill-box; }
+        .totd { display: grid; grid-template-columns: auto 1fr; gap: 1rem; align-items: center; }
+        .totd__icon { font-size: 2.2rem; }
+        .hw-search { display: flex; gap: .5rem; max-width: 520px; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <section class="hw-hero">
+        <div>
+            <span class="eyebrow">▣ Hardware-Archiv</span>
+            <h1>Alles über die Teile in deinem PC</h1>
+            <p class="lead">Datenblätter wie bei den grossen Datenbanken – nur gemütlicher. Vergleiche Prozessoren und Grafikkarten,
+                prüfe, ob dein System ausgewogen ist, und finde heraus, wie viel Watt dein Netzteil wirklich braucht.</p>
+            <form class="hw-search mt-3" id="hw-search" role="search">
+                <input class="input" type="search" id="hw-q" placeholder="z. B. 7800X3D, RTX 4070, DDR5 …" aria-label="Im Hardware-Archiv suchen" list="hw-names">
+                <datalist id="hw-names"></datalist>
+                <button class="btn btn--primary" type="submit">Suchen</button>
+            </form>
+            <p class="small muted mt-1" id="hw-search-msg"></p>
+        </div>
+        <div class="chip-art" aria-hidden="true">
+            <svg viewBox="0 0 200 200">
+                <g stroke="var(--rc)" stroke-width="2" fill="none" opacity=".7">
+                    <path class="trace" d="M100 20 V50 M60 20 V50 M140 20 V50 M100 180 V150 M60 180 V150 M140 180 V150"/>
+                    <path class="trace" style="animation-delay:.4s" d="M20 100 H50 M20 60 H50 M20 140 H50 M180 100 H150 M180 60 H150 M180 140 H150"/>
+                    <path class="trace" style="animation-delay:.8s" d="M60 20 Q60 8 40 8 M140 180 Q140 192 160 192 M20 60 Q8 60 8 40 M180 140 Q192 140 192 160"/>
+                </g>
+                <rect x="50" y="50" width="100" height="100" rx="10" fill="var(--surface-2)" stroke="var(--border-strong)" stroke-width="2"/>
+                <rect x="66" y="66" width="68" height="68" rx="6" fill="var(--surface-3)"/>
+                <g fill="var(--rc)">
+                    <rect class="core" x="72" y="72" width="26" height="26" rx="3"/>
+                    <rect class="core" style="animation-delay:.6s" x="102" y="72" width="26" height="26" rx="3"/>
+                    <rect class="core" style="animation-delay:1.2s" x="72" y="102" width="26" height="26" rx="3"/>
+                    <rect class="core" style="animation-delay:1.8s" x="102" y="102" width="26" height="26" rx="3"/>
+                </g>
+                <text x="100" y="146" text-anchor="middle" font-size="7" font-family="monospace" fill="var(--text-faint)">XIRU · 1’44 MB</text>
+            </svg>
+        </div>
+    </section>
+
+    <div class="grid grid--sm mb-4">
+        <div class="card card--flat stat"><span class="stat__value" data-count="0" id="n-cpu">0</span><span class="stat__label">Prozessoren</span></div>
+        <div class="card card--flat stat"><span class="stat__value" data-count="0" id="n-gpu">0</span><span class="stat__label">Grafikkarten</span></div>
+        <div class="card card--flat stat"><span class="stat__value" data-count="0" id="n-other">0</span><span class="stat__label">Weitere Datenblätter</span></div>
+        <div class="card card--flat stat"><span class="stat__value" data-count="0" id="n-years">0</span><span class="stat__label">Jahre Hardware-Geschichte</span></div>
+    </div>
+
+    <h2>Datenblätter</h2>
+    <div class="grid mb-4" id="cats"></div>
+
+    <div class="grid-2 mb-4">
+        <section class="card card--accent" data-reveal>
+            <h2 class="mb-2">Teil des Tages</h2>
+            <div class="totd" id="totd"></div>
+        </section>
+        <section class="card" data-reveal style="--d:.1s">
+            <h2 class="mb-2">Neu im Archiv</h2>
+            <ul class="hw-sim" id="newest"></ul>
+        </section>
+    </div>
+
+    <h2>Werkzeuge</h2>
+    <div class="grid" id="tools"></div>
+</main>
+<script>
+XIRU.ready(function () {
+    const hw = XIRU.hw || {};
+    const cats = [
+        { key: 'cpu', icon: '⬛', t: 'Prozessoren', p: 'hardware/cpu.html', d: 'AMD Ryzen und Intel Core – Kerne, Takt, Cache.' },
+        { key: 'gpu', icon: '▤', t: 'Grafikkarten', p: 'hardware/gpu.html', d: 'NVIDIA, AMD und Intel – VRAM, Bandbreite, Strom.' },
+        { key: 'chipset', icon: '▦', t: 'Chipsätze', p: 'hardware/chipsatz.html', d: 'Welches Mainboard kann was?' },
+        { key: 'memory', icon: '▥', t: 'Speicherstandards', p: 'hardware/speicher.html', d: 'DDR3 bis DDR5, GDDR7 und HBM.' },
+        { key: 'storage', icon: '💾', t: 'Datenträger', p: 'hardware/laufwerke.html', d: 'Von der Diskette bis PCIe 5.0.' },
+        { key: 'psu', icon: '⚡', t: 'Netzteile', p: 'hardware/netzteile.html', d: '80 PLUS und ATX 3.1 erklärt.' }
+    ];
+    XIRU.$('#cats').innerHTML = cats.map((c, i) =>
+        '<a class="tile" href="' + XIRU.url(c.p) + '" data-reveal style="--d:' + (i * .05) + 's"><span class="tile__icon">' + c.icon + '</span>' +
+        '<span class="tile__title">' + c.t + '</span><span class="tile__desc">' + c.d + '</span>' +
+        '<span class="tile__meta"><span class="badge badge--accent">' + ((hw[c.key] || []).length) + ' Einträge</span></span></a>').join('');
+
+    const tools = XIRU.pages.filter(p => ['hardware/vergleich.html', 'hardware/netzteil-rechner.html', 'hardware/balance.html', 'hardware/builds.html', 'hardware/sockel.html', 'hardware/zeitleiste.html', 'hardware/glossar.html', 'ki/hardware-berater.html', 'arcade/pc-bauer.html', 'arcade/hardware-quiz.html'].includes(p.p));
+    const icons = { 'hardware/vergleich.html': '⚖', 'hardware/netzteil-rechner.html': '🔌', 'hardware/balance.html': '⚖', 'hardware/builds.html': '🧰', 'hardware/sockel.html': '🧩', 'hardware/zeitleiste.html': '🕰', 'hardware/glossar.html': '📖', 'ki/hardware-berater.html': '✦', 'arcade/pc-bauer.html': '🛠', 'arcade/hardware-quiz.html': '❓' };
+    XIRU.$('#tools').innerHTML = tools.map((p, i) => {
+        const locked = !XIRU.isUnlocked(p);
+        return '<a class="tile' + (locked ? ' is-locked' : '') + '" href="' + XIRU.url(p.p) + '" data-reveal style="--d:' + (i * .04) + 's"><span class="tile__icon">' + (locked ? '🔒' : icons[p.p]) + '</span>' +
+            '<span class="tile__title">' + XIRU.esc(p.t) + '</span><span class="tile__desc">' + XIRU.esc(p.d) + '</span></a>';
+    }).join('');
+
+    const all = [].concat(hw.cpu || [], hw.gpu || [], hw.chipset || [], hw.memory || [], hw.storage || [], hw.psu || []);
+    XIRU.$('#n-cpu').dataset.count = (hw.cpu || []).length;
+    XIRU.$('#n-gpu').dataset.count = (hw.gpu || []).length;
+    XIRU.$('#n-other').dataset.count = all.length - (hw.cpu || []).length - (hw.gpu || []).length;
+    const years = all.map(x => x.year).filter(Boolean);
+    XIRU.$('#n-years').dataset.count = years.length ? new Date().getFullYear() - Math.min.apply(null, years) : 0;
+
+    // Teil des Tages: per Datum ausgewählt, für alle gleich
+    const day = Math.floor(Date.now() / 864e5);
+    const pool = [].concat(hw.cpu || [], hw.gpu || []);
+    if (pool.length) {
+        const t = pool[day % pool.length];
+        XIRU.$('#totd').innerHTML = '<div class="totd__icon">' + (t.vram ? '▤' : '⬛') + '</div><div><a href="' + XIRU.url(t.url) + '"><strong>' + XIRU.esc(t.name) + '</strong></a>' +
+            '<p class="small muted mb-0">' + XIRU.esc(t.fact || '') + '</p></div>';
+    }
+    const newest = pool.slice().sort((a, b) => (b.year * 12 + (b.month || 0)) - (a.year * 12 + (a.month || 0))).slice(0, 6);
+    XIRU.$('#newest').innerHTML = newest.map(n => '<li><a href="' + XIRU.url(n.url) + '">' + XIRU.esc(n.name) + '</a> <span class="faint small">' + n.year + '</span></li>').join('');
+
+    // Suche
+    XIRU.$('#hw-names').innerHTML = all.map(x => '<option value="' + XIRU.esc(x.name) + '">').join('');
+    XIRU.$('#hw-search').addEventListener('submit', e => {
+        e.preventDefault();
+        const q = XIRU.$('#hw-q').value.trim().toLowerCase().replace(/\s+/g, ' ');
+        if (!q) return;
+        const hit = all.find(x => x.name.toLowerCase() === q) || all.find(x => x.name.toLowerCase().includes(q)) ||
+            all.find(x => x.name.toLowerCase().replace(/[^a-z0-9]/g, '').includes(q.replace(/[^a-z0-9]/g, '')));
+        if (hit) location.href = XIRU.url(hit.url);
+        else XIRU.$('#hw-search-msg').textContent = 'Nichts gefunden. Versuch es mit einem kürzeren Begriff – oder schau in die Listen.';
+    });
+});
+</script>
+</body>
+</html>

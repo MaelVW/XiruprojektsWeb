@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2048 · Xiruprojekts</title>
+    <meta name="description" content="2048 – Kacheln verschieben, verschmelzen und die magische Zahl erreichen.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="css/2048.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/arcade.js"></script>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">▶ Spielhalle · Puzzle</span>
+        <h1>2048</h1>
+        <p class="lead">Schieb alle Kacheln gleichzeitig in eine Richtung. Zwei gleiche verschmelzen zu einer doppelt so grossen. Schaffst du die 2048 – oder sogar mehr?</p>
+    </header>
+
+    <div class="game">
+        <div>
+            <div class="game__hud t48-hud" id="hud">
+                <div><span>Punkte</span><b id="h-score">0</b><i class="t48-plus" id="h-plus"></i></div>
+                <div><span>Züge</span><b id="h-moves">0</b></div>
+                <div><span>Grösste Kachel</span><b id="h-max">2</b></div>
+            </div>
+            <div class="game__stage t48-stage" id="stage">
+                <div class="t48" id="board" aria-label="Spielfeld 4 mal 4" role="grid">
+                    <div class="t48__cells" aria-hidden="true"></div>
+                    <div class="t48__tiles" id="tiles"></div>
+                </div>
+                <div class="game__overlay" id="ov" hidden></div>
+            </div>
+            <div class="row mt-1 t48-actions">
+                <button class="btn btn--sm" id="btn-undo" type="button" disabled>↶ Rückgängig <kbd>Z</kbd></button>
+                <button class="btn btn--sm" id="btn-new" type="button">Neues Spiel <kbd>N</kbd></button>
+            </div>
+        </div>
+        <aside class="game__side">
+            <div class="card">
+                <h3>Steuerung</h3>
+                <ul class="keys-help">
+                    <li><kbd>←</kbd> <kbd>↑</kbd> <kbd>→</kbd> <kbd>↓</kbd> oder <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> – schieben</li>
+                    <li><kbd>Z</kbd> – letzten Zug rückgängig machen (1×)</li>
+                    <li><kbd>N</kbd> – neues Spiel</li>
+                    <li>Auf dem Handy: übers Spielfeld wischen</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>So geht's</h3>
+                <p class="small muted">Jeder Zug bringt eine neue 2 (selten eine 4) aufs Feld. Verschmelzen gibt Punkte in Höhe der neuen Kachel. Dein Spiel wird automatisch gespeichert – du kannst jederzeit später weitermachen.</p>
+                <p class="small muted mt-1">Profitipp: Halte die grösste Kachel in einer Ecke.</p>
+            </div>
+            <div class="card">
+                <h3>Rekord</h3>
+                <p class="stat__value" id="best">–</p>
+                <p class="small muted" id="best-tile">Grösste Kachel: –</p>
+            </div>
+        </aside>
+    </div>
+</main>
+<script src="js/2048.js"></script>
+</body>
+</html>

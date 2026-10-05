@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sockel-Kompatibilität · Xiruprojekts</title>
+    <meta name="description" content="Welcher Prozessor passt auf welches Mainboard? Sockel, Chipsätze und Arbeitsspeicher im Überblick.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/hardware-data.js"></script>
+    <style>
+        .socket-row { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 210px), 1fr)); }
+        .socket { text-align: center; cursor: pointer; }
+        .socket svg { width: 90px; height: 90px; margin: 0 auto .5rem; }
+        .socket.is-active { border-color: var(--rc); box-shadow: var(--glow); }
+        .match { display: grid; gap: .5rem; }
+        .match a { display: flex; justify-content: space-between; gap: 1rem; padding: .5rem .75rem; border-radius: 8px; background: var(--surface-2); color: var(--text); }
+        .match a:hover { background: var(--surface-3); }
+        .verdict-box { font-size: 1.15rem; font-weight: 700; padding: 1rem 1.25rem; border-radius: var(--radius-sm); }
+        .verdict-box.ok { background: color-mix(in srgb, var(--success) 14%, transparent); color: var(--success); }
+        .verdict-box.warn { background: color-mix(in srgb, var(--warning) 14%, transparent); color: var(--warning); }
+        .verdict-box.no { background: color-mix(in srgb, var(--danger) 14%, transparent); color: var(--danger); }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">▣ Hardware-Archiv</span>
+        <h1>Sockel-Kompatibilität</h1>
+        <p class="lead">Ein Prozessor passt nur auf ein Mainboard mit dem richtigen Sockel – und manchmal braucht es zusätzlich ein BIOS-Update.</p>
+    </header>
+
+    <h2>Die Sockel</h2>
+    <div class="socket-row mb-4" id="sockets"></div>
+
+    <div class="grid-2">
+        <section class="card">
+            <h2>Passt das zusammen?</h2>
+            <div class="field"><label for="cpu">Prozessor</label><select id="cpu"></select></div>
+            <div class="field"><label for="cs">Mainboard-Chipsatz</label><select id="cs"></select></div>
+            <div class="verdict-box" id="verdict"></div>
+            <p class="small muted mt-2" id="note"></p>
+        </section>
+        <section class="card">
+            <h2 id="detail-title">Details</h2>
+            <p class="muted" id="detail-desc"></p>
+            <h3 class="mt-2">Prozessoren im Archiv</h3>
+            <div class="match" id="m-cpu"></div>
+            <h3 class="mt-3">Chipsätze im Archiv</h3>
+            <div class="match" id="m-cs"></div>
+        </section>
+    </div>
+</main>
+<script>
+XIRU.ready(function () {
+    const hw = XIRU.hw || { cpu: [], chipset: [] };
+    const SOCKETS = [
+        { id: 'LGA1155', brand: 'Intel', years: '2011–2013', ram: 'DDR3', desc: 'Sockel der 2. und 3. Core-Generation (Sandy Bridge, Ivy Bridge). Heute ein Fall fürs Museum – oder den Retro-PC.' },
+        { id: 'AM4', brand: 'AMD', years: '2017–heute', ram: 'DDR4', desc: 'Ein Sockel für fünf Ryzen-Generationen (1000 bis 5000). Ältere Boards brauchen für neue CPUs oft ein BIOS-Update – und nicht jede Kombination wird unterstützt.' },
+        { id: 'LGA1700', brand: 'Intel', years: '2021–2023', ram: 'DDR4 oder DDR5', desc: 'Core 12., 13. und 14. Generation. Ob DDR4 oder DDR5 entscheidet das Mainboard – beides gleichzeitig geht nicht.' },
+        { id: 'AM5', brand: 'AMD', years: '2022–heute', ram: 'DDR5', desc: 'Ryzen 7000, 8000 und 9000. AMD hat langen Support versprochen – gute Chancen auf spätere CPU-Upgrades.' },
+        { id: 'LGA1851', brand: 'Intel', years: '2024–heute', ram: 'DDR5', desc: 'Core Ultra 200S (Arrow Lake). Nur DDR5. Kühler für LGA1700 passen in der Regel weiter.' }
+    ];
+    const pinSVG = (brand) => brand === 'AMD'
+        ? '<svg viewBox="0 0 60 60"><rect x="4" y="4" width="52" height="52" rx="4" fill="var(--surface-3)" stroke="var(--rc)"/>' + Array.from({ length: 36 }, (_, i) => '<circle cx="' + (11 + (i % 6) * 7.6) + '" cy="' + (11 + Math.floor(i / 6) * 7.6) + '" r="1.6" fill="var(--rc)"/>').join('') + '<path d="M4 16 L16 4" stroke="var(--warning)" stroke-width="3"/></svg>'
+        : '<svg viewBox="0 0 60 60"><rect x="4" y="4" width="52" height="52" rx="4" fill="var(--surface-3)" stroke="var(--accent-2)"/>' + Array.from({ length: 36 }, (_, i) => '<rect x="' + (9.5 + (i % 6) * 7.6) + '" y="' + (9.5 + Math.floor(i / 6) * 7.6) + '" width="3" height="3" fill="var(--accent-2)"/>').join('') + '<path d="M26 4 v4 M34 4 v4" stroke="var(--bg)" stroke-width="3"/></svg>';
+
+    let active = 'AM5';
+    XIRU.$('#sockets').innerHTML = SOCKETS.map(s => '<button class="tile socket" data-s="' + s.id + '" type="button">' + pinSVG(s.brand) +
+        '<span class="tile__title">' + s.id + '</span><span class="tile__desc">' + s.brand + ' · ' + s.years + ' · ' + s.ram + '</span></button>').join('');
+    XIRU.$('#sockets').addEventListener('click', e => { const b = e.target.closest('[data-s]'); if (b) { active = b.dataset.s; detail(); } });
+
+    function detail() {
+        const s = SOCKETS.find(x => x.id === active);
+        XIRU.$$('.socket').forEach(b => b.classList.toggle('is-active', b.dataset.s === active));
+        XIRU.$('#detail-title').textContent = 'Sockel ' + s.id;
+        XIRU.$('#detail-desc').textContent = s.desc;
+        const cpus = hw.cpu.filter(c => c.socket === s.id), cs = hw.chipset.filter(c => c.socket === s.id);
+        XIRU.$('#m-cpu').innerHTML = cpus.map(c => '<a href="' + XIRU.url(c.url) + '"><span>' + XIRU.esc(c.name) + '</span><span class="faint small">' + c.year + '</span></a>').join('') || '<p class="faint small">Keine im Archiv.</p>';
+        XIRU.$('#m-cs').innerHTML = cs.map(c => '<a href="' + XIRU.url(c.url) + '"><span>' + XIRU.esc(c.name) + '</span><span class="faint small">' + XIRU.esc(c.tier) + '</span></a>').join('') || '<p class="faint small">Keine im Archiv.</p>';
+    }
+
+    const byName = (a, b) => a.name.localeCompare(b.name);
+    XIRU.$('#cpu').innerHTML = hw.cpu.slice().sort(byName).map(c => '<option value="' + c.id + '">' + XIRU.esc(c.name) + ' (' + c.socket + ')</option>').join('');
+    XIRU.$('#cs').innerHTML = hw.chipset.slice().sort(byName).map(c => '<option value="' + c.id + '">' + XIRU.esc(c.name) + ' (' + c.socket + ')</option>').join('');
+    XIRU.$('#cpu').value = 'ryzen-7-9800x3d'; XIRU.$('#cs').value = 'amd-b650';
+
+    function check() {
+        const c = hw.cpu.find(x => x.id === XIRU.$('#cpu').value), b = hw.chipset.find(x => x.id === XIRU.$('#cs').value);
+        const v = XIRU.$('#verdict'), note = XIRU.$('#note');
+        if (!c || !b) return;
+        let cls = 'ok', text = '✓ Passt!', n = 'Beide nutzen Sockel ' + c.socket + '.';
+        if (c.socket !== b.socket) { cls = 'no'; text = '✕ Passt nicht'; n = 'Der Prozessor braucht Sockel ' + c.socket + ', das Board hat ' + b.socket + '.'; }
+        else {
+            const notes = [];
+            if (/K$|X3D$|X$/.test(c.name) && !b.cpuOc) notes.push('Übertakten der CPU ist mit ' + b.name + ' nicht möglich – sie läuft aber problemlos mit Werkseinstellungen.');
+            if (c.socket === 'AM4' && /5\d00/.test(c.name)) { cls = 'warn'; text = '⚠ Passt – mit BIOS-Update'; notes.push('Ryzen 5000 braucht auf vielen ' + b.name + '-Boards ein aktuelles BIOS. Viele Boards können das BIOS auch ohne CPU flashen („BIOS Flashback").'); }
+            if (c.socket === 'LGA1700' && /1[34]\d00/.test(c.name)) { cls = 'warn'; text = '⚠ Passt – evtl. BIOS-Update'; notes.push('Ältere Boards brauchen für Core 13./14. Generation ein BIOS-Update. Zudem empfiehlt Intel für Raptor Lake ein BIOS mit aktuellem Microcode.'); }
+            if (c.socket === 'AM5' && /9\d00/.test(c.name) && /650|670/.test(b.name)) { cls = 'warn'; text = '⚠ Passt – mit BIOS-Update'; notes.push('Für Ryzen 9000 brauchen Boards der 600er-Serie ein BIOS-Update (meist ab Werk schon drauf, aber prüfen!).'); }
+            if (/DDR4/.test(b.ram) && /DDR5/.test(b.ram)) notes.push('Achte beim Board auf DDR4- oder DDR5-Version – der RAM muss dazu passen.');
+            n = notes.join(' ') || n;
+        }
+        v.className = 'verdict-box ' + cls; v.textContent = text; note.textContent = n;
+        if (c.socket === b.socket) { active = c.socket; detail(); }
+        if (c.id === 'core-i7-2600k' && b.socket !== 'LGA1155') XIRU.egg('hw-gewalt');
+    }
+    XIRU.$('#cpu').addEventListener('change', check); XIRU.$('#cs').addEventListener('change', check);
+    detail(); check();
+});
+</script>
+</body>
+</html>

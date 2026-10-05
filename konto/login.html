@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anmelden · Xiruprojekts</title>
+    <meta name="description" content="Lokales Konto erstellen oder anmelden – dein Fortschritt bleibt in deinem Browser.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <style>
+        .auth { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 440px); gap: 2.5rem; align-items: center; min-height: 60vh; }
+        @media (max-width: 860px) { .auth { grid-template-columns: 1fr; } }
+        .auth__art { position: relative; aspect-ratio: 1; max-width: 420px; width: 100%; margin: 0 auto; }
+        .auth__art .orbit { position: absolute; inset: 0; border: 1px dashed var(--border-strong); border-radius: 50%; animation: spin 40s linear infinite; }
+        .auth__art .orbit:nth-child(2) { inset: 14%; animation-duration: 28s; animation-direction: reverse; }
+        .auth__art .orbit:nth-child(3) { inset: 28%; animation-duration: 18s; }
+        .auth__art .orbit span { position: absolute; top: -14px; left: calc(50% - 14px); width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; background: var(--surface-2); border: 1px solid var(--border); font-size: .9rem; }
+        .auth__anchor { position: absolute; inset: 38%; display: grid; place-items: center; font-size: 3.5rem; background: var(--surface); border-radius: 50%; border: 1px solid var(--border); box-shadow: var(--glow); animation: float 5s ease-in-out infinite; }
+        .acc-list { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .4rem; }
+        .strength { height: 6px; border-radius: 99px; background: var(--surface-3); overflow: hidden; margin-top: .35rem; }
+        .strength span { display: block; height: 100%; width: 0; transition: width .3s, background .3s; }
+        .logged { text-align: center; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <div class="auth">
+        <div>
+            <span class="eyebrow">⚓ Heimathafen</span>
+            <h1>Dein Konto – nur bei dir</h1>
+            <p class="lead">Mit einem Konto sammelst du XP, lernst Skills im Skilltree und schaltest neue Orte, Spiele und Designs frei.</p>
+            <ul class="mt-2">
+                <li><strong>Lokal:</strong> Das Konto existiert nur in diesem Browser. Es gibt keinen Server, keine E-Mail, keine Weitergabe.</li>
+                <li><strong>Sicher gespeichert:</strong> Dein Passwort wird nie im Klartext gespeichert, sondern mit PBKDF2 (150’000 Runden) gehasht.</li>
+                <li><strong>Mitnehmen:</strong> Unter <a href="profil.html">Profil</a> kannst du deinen Spielstand exportieren und anderswo importieren.</li>
+                <li><strong>Gast-Fortschritt:</strong> Was du als Gast schon entdeckt hast, wird beim Erstellen übernommen.</li>
+            </ul>
+            <div class="auth__art mt-3" aria-hidden="true">
+                <div class="orbit"><span>✦</span></div>
+                <div class="orbit"><span>💾</span></div>
+                <div class="orbit"><span>▶</span></div>
+                <div class="auth__anchor">⚓</div>
+            </div>
+        </div>
+
+        <section class="card" id="box">
+            <div class="tabs" role="tablist">
+                <button role="tab" aria-selected="true" data-tab="login" id="tab-login">Anmelden</button>
+                <button role="tab" aria-selected="false" data-tab="register" id="tab-register">Konto erstellen</button>
+            </div>
+
+            <form id="f-login" autocomplete="on">
+                <div class="field"><label for="l-name">Name</label><input id="l-name" name="username" autocomplete="username" required></div>
+                <div class="acc-list" id="acc-list"></div>
+                <div class="field mt-2"><label for="l-pw">Passwort</label><input id="l-pw" type="password" name="password" autocomplete="current-password" required></div>
+                <label class="check mb-2"><input type="checkbox" id="l-remember" checked> Angemeldet bleiben (auf diesem Gerät)</label>
+                <button class="btn btn--primary btn--block btn--lg" type="submit">Anmelden</button>
+                <p class="form-msg" id="l-msg" role="alert"></p>
+            </form>
+
+            <form id="f-register" hidden autocomplete="on">
+                <div class="field"><label for="r-name">Name</label><input id="r-name" name="username" autocomplete="username" required minlength="3" maxlength="20">
+                    <small>3–20 Zeichen: Buchstaben, Zahlen, _ - . – Du brauchst keinen echten Namen.</small></div>
+                <div class="field"><label for="r-pw">Passwort</label><input id="r-pw" type="password" autocomplete="new-password" required minlength="6">
+                    <div class="strength"><span id="r-strength"></span></div><small id="r-strength-t">Mindestens 6 Zeichen.</small></div>
+                <div class="field"><label for="r-pw2">Passwort wiederholen</label><input id="r-pw2" type="password" autocomplete="new-password" required></div>
+                <label class="check mb-2"><input type="checkbox" id="r-remember" checked> Angemeldet bleiben (auf diesem Gerät)</label>
+                <div class="callout callout--warning small">Es gibt kein „Passwort vergessen". Ohne Server kann niemand dein Passwort zurücksetzen – merk es dir gut.</div>
+                <button class="btn btn--primary btn--block btn--lg" type="submit">Konto erstellen</button>
+                <p class="form-msg" id="r-msg" role="alert"></p>
+            </form>
+
+            <div id="logged" class="logged" hidden></div>
+        </section>
+    </div>
+</main>
+<script>
+XIRU.ready(function () {
+    const $ = XIRU.$;
+    // Weiterleitung nur auf Seiten dieser Website
+    const nextParam = new URLSearchParams(location.search).get('weiter');
+    const next = nextParam && /^[a-z0-9\-\/]+\.html$/.test(nextParam) && XIRU.pageFor(nextParam) ? nextParam : 'konto/profil.html';
+
+    function showTab(t) {
+        $('#tab-login').setAttribute('aria-selected', t === 'login');
+        $('#tab-register').setAttribute('aria-selected', t === 'register');
+        $('#f-login').hidden = t !== 'login';
+        $('#f-register').hidden = t !== 'register';
+        (t === 'login' ? $('#l-name') : $('#r-name')).focus({ preventScroll: true });
+    }
+    XIRU.$$('[data-tab]').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
+
+    if (XIRU.user) {
+        $('.tabs').hidden = true; $('#f-login').hidden = true;
+        $('#logged').hidden = false;
+        $('#logged').innerHTML = '<div style="font-size:3rem">⚓</div><h2>Angemeldet als ' + XIRU.esc(XIRU.user) + '</h2>' +
+            '<p class="muted">Level ' + XIRU.levelInfo().level + ' · ' + XIRU.fmt(XIRU.profile().xp) + ' XP</p>' +
+            '<div class="row" style="justify-content:center"><a class="btn btn--primary" href="profil.html">Zum Profil</a><a class="btn" href="skilltree.html">Skilltree</a>' +
+            '<button class="btn btn--ghost" id="logout" type="button">Abmelden</button></div>';
+        $('#logout').addEventListener('click', () => { XIRU.auth.logout(); location.reload(); });
+        return;
+    }
+
+    const accounts = Object.values(XIRU.auth.accounts());
+    if (!accounts.length) showTab('register');
+    $('#acc-list').innerHTML = accounts.length ? '<span class="small faint">In diesem Browser:</span>' + accounts.map(a => '<button class="chip" type="button" data-name="' + XIRU.esc(a.name) + '">' + XIRU.esc(a.name) + '</button>').join('') : '';
+    $('#acc-list').addEventListener('click', e => { const c = e.target.closest('[data-name]'); if (c) { $('#l-name').value = c.dataset.name; $('#l-pw').focus(); } });
+
+    async function busy(form, on) { form.querySelector('button[type=submit]').disabled = on; form.querySelector('button[type=submit]').textContent = on ? 'Einen Moment …' : (form.id === 'f-login' ? 'Anmelden' : 'Konto erstellen'); }
+
+    $('#f-login').addEventListener('submit', async e => {
+        e.preventDefault();
+        const msg = $('#l-msg'); msg.className = 'form-msg'; msg.textContent = '';
+        busy(e.target, true);
+        try {
+            await XIRU.auth.login($('#l-name').value, $('#l-pw').value, $('#l-remember').checked);
+            msg.className = 'form-msg is-ok'; msg.textContent = 'Willkommen zurück!';
+            setTimeout(() => { location.href = XIRU.url(next); }, 400);
+        } catch (err) {
+            msg.className = 'form-msg is-error'; msg.textContent = err.message; busy(e.target, false);
+            $('#box').animate([{ transform: 'translateX(-6px)' }, { transform: 'translateX(6px)' }, { transform: 'none' }], { duration: 250, iterations: 2 });
+        }
+    });
+
+    $('#r-pw').addEventListener('input', e => {
+        const pw = e.target.value;
+        let s = 0;
+        if (pw.length >= 6) s++; if (pw.length >= 10) s++; if (pw.length >= 14) s++;
+        if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) s++; if (/\d/.test(pw)) s++; if (/[^A-Za-z0-9]/.test(pw)) s++;
+        const lvl = Math.min(4, Math.floor(s * 4 / 6));
+        const cols = ['var(--danger)', 'var(--danger)', 'var(--warning)', 'var(--success)', 'var(--success)'];
+        const txt = ['Sehr schwach', 'Schwach', 'Okay', 'Gut', 'Stark'];
+        $('#r-strength').style.width = (pw ? (lvl + 1) * 20 : 0) + '%';
+        $('#r-strength').style.background = cols[lvl];
+        $('#r-strength-t').textContent = pw ? txt[lvl] + (pw.length < 6 ? ' – mindestens 6 Zeichen' : '') : 'Mindestens 6 Zeichen.';
+    });
+
+    $('#f-register').addEventListener('submit', async e => {
+        e.preventDefault();
+        const msg = $('#r-msg'); msg.className = 'form-msg'; msg.textContent = '';
+        if ($('#r-pw').value !== $('#r-pw2').value) { msg.className = 'form-msg is-error'; msg.textContent = 'Die Passwörter stimmen nicht überein.'; return; }
+        busy(e.target, true);
+        try {
+            const name = await XIRU.auth.register($('#r-name').value, $('#r-pw').value, $('#r-remember').checked);
+            msg.className = 'form-msg is-ok'; msg.textContent = 'Konto „' + name + '" erstellt!';
+            XIRU.confetti();
+            setTimeout(() => { location.href = XIRU.url('konto/skilltree.html'); }, 1400);
+        } catch (err) { msg.className = 'form-msg is-error'; msg.textContent = err.message; busy(e.target, false); }
+    });
+});
+</script>
+</body>
+</html>

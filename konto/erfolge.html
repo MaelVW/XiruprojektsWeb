@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rekorde · Xiruprojekts</title>
+    <meta name="description" content="Deine Bestwerte aus allen Spielen der Spielhalle.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <style>
+        .podium { display: grid; grid-template-columns: 1fr 1.15fr 1fr; gap: 1rem; align-items: end; margin-bottom: 2rem; }
+        @media (max-width: 640px) { .podium { grid-template-columns: 1fr; } }
+        .podium .card { text-align: center; }
+        .podium .place { font-size: 2.4rem; }
+        .podium .p1 { padding-top: 2.2rem; border-color: var(--warning); box-shadow: 0 10px 30px -14px var(--warning); }
+        .played-0 { opacity: .55; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">⚓ Heimathafen</span>
+        <h1>Rekorde</h1>
+        <p class="lead">Deine Bestwerte aus der Spielhalle. Gespeichert nur in diesem Browser – eine Bestenliste mit Freunden gibt es, sobald wir einen Server haben.</p>
+    </header>
+    <h2>Deine Lieblingsspiele</h2>
+    <div class="podium" id="podium"></div>
+    <div class="table-wrap">
+        <table class="table" data-sortable>
+            <thead><tr><th data-sort="text">Spiel</th><th data-sort="text">Art</th><th data-sort="num" class="num">Bestwert</th><th data-sort="num" class="num">Runden</th><th data-sort="num">Zuletzt</th></tr></thead>
+            <tbody id="rows"></tbody>
+        </table>
+    </div>
+</main>
+<script>
+XIRU.ready(function () {
+    const P = XIRU.profile();
+    const games = XIRU.pages.filter(p => p.game && (!p.hidden || P.visited[p.p])).map(p => {
+        const id = p.p.replace(/^arcade\/|\.html$/g, '');
+        // Manche Spiele speichern mehrere Varianten (z. B. klicktest-5) – Runden werden addiert, Bestwert der ersten Variante
+        const keys = Object.keys(P.scores).filter(k => k === id || k.startsWith(id + '-'));
+        const s = keys.map(k => P.scores[k]).reduce((a, b) => ({ best: a.best == null ? b.best : a.best, plays: (a.plays || 0) + (b.plays || 0), at: Math.max(a.at || 0, b.at || 0) }), { best: null, plays: 0, at: 0 });
+        return { p, id, s };
+    });
+    const top = games.filter(g => g.s.plays).sort((a, b) => b.s.plays - a.s.plays).slice(0, 3);
+    const order = [1, 0, 2];
+    XIRU.$('#podium').innerHTML = top.length ? order.filter(i => top[i]).map(i => {
+        const g = top[i];
+        return '<div class="card ' + (i === 0 ? 'p1' : '') + '" data-reveal style="--d:' + (i * .1) + 's"><div class="place">' + ['🥇', '🥈', '🥉'][i] + '</div><h3><a href="' + XIRU.url(g.p.p) + '">' + XIRU.esc(g.p.t) + '</a></h3>' +
+            '<p class="muted small mb-0">' + g.s.plays + ' Runden · Rekord ' + (g.s.best == null ? '–' : XIRU.fmt(g.s.best)) + '</p></div>';
+    }).join('') : '<div class="card center" style="grid-column:1/-1"><p class="muted mb-0">Noch keine Spiele gespielt. <a href="../arcade/index.html">Ab in die Spielhalle!</a></p></div>';
+
+    XIRU.$('#rows').innerHTML = games.map(g => {
+        const locked = !XIRU.isUnlocked(g.p);
+        return '<tr class="played-' + (g.s.plays ? 1 : 0) + '"><td><a href="' + XIRU.url(g.p.p) + '">' + (locked ? '🔒 ' : '') + XIRU.esc(g.p.t) + '</a></td><td>' + XIRU.esc(g.p.game) + '</td>' +
+            '<td class="num" data-v="' + (g.s.best == null ? -1 : g.s.best) + '">' + (g.s.best == null ? '–' : XIRU.fmt(g.s.best)) + '</td>' +
+            '<td class="num" data-v="' + g.s.plays + '">' + g.s.plays + '</td>' +
+            '<td data-v="' + (g.s.at || 0) + '">' + (g.s.at ? new Date(g.s.at).toLocaleDateString('de-CH') : '–') + '</td></tr>';
+    }).join('');
+});
+</script>
+</body>
+</html>

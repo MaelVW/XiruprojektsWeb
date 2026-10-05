@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disketten-Sammlung · Xiruprojekts</title>
+    <meta name="description" content="Alle Easter Eggs, die du gefunden hast – und Hinweise auf die, die noch fehlen.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <style>
+        .shelf { display: grid; gap: .9rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); }
+        .egg { display: grid; grid-template-columns: auto 1fr; gap: .85rem; align-items: start; padding: 1rem; border-radius: var(--radius-sm); background: var(--surface); border: 1px solid var(--border); position: relative; }
+        .egg.is-found { border-color: color-mix(in srgb, var(--dc) 50%, var(--border)); }
+        .egg.is-found .disk { animation: spinIn .6s var(--ease) both; animation-delay: var(--d, 0s); }
+        .egg.is-new::after { content: "NEU"; position: absolute; top: .5rem; right: .5rem; font-size: .6rem; font-weight: 800; padding: .1rem .4rem; border-radius: 99px; background: var(--warning); color: #241a00; }
+        .egg__name { font-weight: 800; font-size: .95rem; }
+        .egg__text { font-size: .83rem; color: var(--text-muted); margin-top: .15rem; }
+        .egg__meta { font-size: .72rem; color: var(--text-faint); margin-top: .35rem; display: flex; gap: .5rem; flex-wrap: wrap; }
+        .egg .disk { width: 38px; height: 38px; }
+        .egg:not(.is-found) .egg__name { color: var(--text-faint); }
+        .rar { display: flex; gap: 2px; }
+        .rar i { width: 6px; height: 6px; border-radius: 50%; background: var(--surface-3); }
+        .rar i.on { background: var(--warning); }
+        .filters { display: flex; flex-wrap: wrap; gap: .4rem; }
+        .big-progress { display: grid; grid-template-columns: auto 1fr; gap: 1.25rem; align-items: center; }
+        .big-progress b { font-size: 2.6rem; line-height: 1; font-variant-numeric: tabular-nums; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">⚓ Heimathafen</span>
+        <h1>Disketten-Sammlung</h1>
+        <p class="lead">Jede Diskette ist ein Easter Egg. Manche tippt man, manche findet man auf Seiten, manche gibt es nur zu bestimmten Zeiten. Seltene Disketten verraten ihre Hinweise erst mit dem Skill „Spürnase".</p>
+    </header>
+
+    <section class="card big-progress mb-3">
+        <div><b id="count">0</b><div class="small muted">gefunden</div></div>
+        <div><div class="bar bar--shine"><div class="bar__fill" id="bar"></div></div>
+            <p class="small muted mt-1 mb-0" id="sub"></p></div>
+    </section>
+
+    <div class="card card--flat mb-3">
+        <div class="filters" id="cats"></div>
+        <div class="filters mt-2" id="state">
+            <button class="chip is-active" data-st="">Alle</button><button class="chip" data-st="found">Gefunden</button><button class="chip" data-st="missing">Fehlend</button>
+        </div>
+    </div>
+    <div class="shelf" id="shelf"></div>
+</main>
+<script>
+XIRU.ready(function () {
+    const P = XIRU.profile();
+    const CATS = [
+        ['', 'Alle'], ['w', '⌨ Getippt'], ['b', '⏱ Verhalten & Zeit'], ['p', '🔍 Auf Seiten versteckt'], ['o', '🗝 Geheime Orte'],
+        ['g', '▶ Spielhalle'], ['k', '✦ KI-Labor'], ['x', '≋ Mixer'], ['t', '⚒ Werkzeuge']
+    ];
+    const catOf = id => { const p = id.split('-')[0]; return p === 'hw' ? 'p' : p === 'h' ? 'o' : p; };
+    let cat = '', st = '';
+    const total = XIRU.eggs.length, found = XIRU.eggCount();
+    XIRU.$('#count').textContent = found + '/' + total;
+    requestAnimationFrame(() => XIRU.$('#bar').style.setProperty('--v', (found / total * 100) + '%'));
+    const r4 = XIRU.eggs.filter(e => e.r === 4), r4f = r4.filter(e => P.eggs[e.id]).length;
+    XIRU.$('#sub').innerHTML = r4f + ' von ' + r4.length + ' Meilensteinen (je +1 Skillpunkt). ' +
+        (found >= 50 ? '<a href="../geheim/diskettenschrein.html">Der Diskettenschrein wartet auf dich →</a>' : 'Ab 50 Disketten soll irgendwo ein Schrein leuchten …');
+
+    XIRU.$('#cats').innerHTML = CATS.map(c => {
+        const n = XIRU.eggs.filter(e => !c[0] || catOf(e.id) === c[0]);
+        return '<button class="chip' + (c[0] === '' ? ' is-active' : '') + '" data-c="' + c[0] + '">' + c[1] + ' <span class="faint">' + n.filter(e => P.eggs[e.id]).length + '/' + n.length + '</span></button>';
+    }).join('');
+    XIRU.$('#cats').addEventListener('click', e => { const b = e.target.closest('[data-c]'); if (!b) return; cat = b.dataset.c; XIRU.$$('#cats .chip').forEach(x => x.classList.toggle('is-active', x === b)); render(); });
+    XIRU.$('#state').addEventListener('click', e => { const b = e.target.closest('[data-st]'); if (!b) return; st = b.dataset.st; XIRU.$$('#state .chip').forEach(x => x.classList.toggle('is-active', x === b)); render(); });
+
+    const lastSeen = XIRU.load('sammlung-gesehen') || 0;
+    function render() {
+        const sniff = XIRU.hasSkill('e2');
+        const list = XIRU.eggs.filter(e => (!cat || catOf(e.id) === cat) && (!st || (st === 'found') === !!P.eggs[e.id]))
+            .sort((a, b) => (P.eggs[b.id] || 0) - (P.eggs[a.id] || 0) || a.r - b.r);
+        XIRU.$('#shelf').innerHTML = list.map((e, i) => {
+            const got = P.eggs[e.id];
+            const hint = got ? e.m : (e.r <= 2 || sniff ? e.h : 'Ein seltenes Geheimnis. Mit „Spürnase" erfährst du mehr.');
+            const where = e.pg && XIRU.pageFor(e.pg);
+            const showWhere = where && (got || sniff) && (!where.hidden || P.visited[e.pg]);
+            return '<div class="egg' + (got ? ' is-found' : '') + (got && got > lastSeen && lastSeen ? ' is-new' : '') + '" style="--dc:' + ['', '#60a5fa', '#a78bfa', '#f472b6', '#facc15'][e.r] + ';--d:' + Math.min(i, 20) * .03 + 's">' +
+                '<div class="disk ' + (got ? 'disk--r' + e.r : 'disk--locked') + '"></div><div>' +
+                '<div class="egg__name">' + (got ? XIRU.esc(e.n) : '???') + '</div><div class="egg__text">' + XIRU.esc(hint || '') + '</div>' +
+                '<div class="egg__meta"><span class="rar" title="Seltenheit ' + e.r + '/4">' + [1, 2, 3, 4].map(n => '<i class="' + (n <= e.r ? 'on' : '') + '"></i>').join('') + '</span>' +
+                '<span>' + e.x + ' XP</span>' + (got ? '<span>' + new Date(got).toLocaleDateString('de-CH') + '</span>' : '') +
+                (showWhere ? '<a href="' + XIRU.url(e.pg) + '">' + XIRU.esc(where.t) + '</a>' : '') + '</div></div></div>';
+        }).join('') || '<div class="empty"><div class="empty__icon">💾</div><p>Hier ist (noch) nichts.</p></div>';
+    }
+    render();
+    XIRU.save('sammlung-gesehen', Date.now());
+});
+</script>
+</body>
+</html>

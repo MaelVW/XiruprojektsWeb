@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Turmwacht · Xiruprojekts</title>
+    <meta name="description" content="Turmwacht – baue Türme an die Datenleitung und halte 25 Wellen Computerviren vom Floppy Hub fern.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="css/tower-defense.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/arcade.js"></script>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">▶ Spielhalle · Strategie</span>
+        <h1>Turmwacht</h1>
+        <p class="lead">Käfer, Würmer und Fork-Bomben marschieren über die Datenleitung auf den Floppy Hub zu. Bau Türme an den Rand, rüste sie auf und halte 25 Wellen durch.</p>
+    </header>
+
+    <div class="game">
+        <div>
+            <div class="game__hud" id="hud"></div>
+            <div class="game__stage td-stage" id="stage">
+                <canvas id="cv"></canvas>
+                <div class="game__overlay td-overlay" id="ov"></div>
+            </div>
+            <div class="td-bar">
+                <div class="td-towers" id="td-towers" role="toolbar" aria-label="Türme"></div>
+                <div class="td-ctrl">
+                    <button class="btn btn--primary" id="btn-wave" type="button">▶ Welle 1</button>
+                    <button class="btn" id="btn-speed" type="button" title="Tempo umschalten (G)">×1</button>
+                    <button class="btn" id="btn-pause" type="button" title="Pause (P)" aria-label="Pause">❚❚</button>
+                </div>
+            </div>
+            <div class="td-next" id="td-next"></div>
+        </div>
+        <aside class="game__side">
+            <div class="card" id="td-info"></div>
+            <div class="card">
+                <h3>Steuerung</h3>
+                <ul class="keys-help">
+                    <li><kbd>1</kbd>–<kbd>5</kbd> – Turm wählen, Klick aufs Feld baut</li>
+                    <li>Klick auf einen Turm – auswählen</li>
+                    <li><kbd>U</kbd> aufrüsten · <kbd>V</kbd> verkaufen · <kbd>Z</kbd> Ziel</li>
+                    <li><kbd>Leertaste</kbd> – nächste Welle</li>
+                    <li><kbd>G</kbd> – Tempo ×1/×2 · <kbd>P</kbd> – Pause</li>
+                    <li><kbd>←</kbd><kbd>↑</kbd><kbd>→</kbd><kbd>↓</kbd> + <kbd>Enter</kbd> – ohne Maus bauen</li>
+                    <li><kbd>Esc</kbd> oder Rechtsklick – Auswahl aufheben</li>
+                    <li>Auf dem Handy: einmal tippen zeigt die Vorschau, nochmal tippen baut.</li>
+                </ul>
+                <label class="check mt-2"><input type="checkbox" id="auto-wave"> Nächste Welle automatisch starten</label>
+            </div>
+            <div class="card">
+                <h3>Rekord</h3>
+                <p class="stat__value" id="best">–</p>
+                <p class="small muted" id="best-maps"></p>
+            </div>
+            <details class="card td-lex">
+                <summary><strong>Gegnerkunde</strong></summary>
+                <ul class="td-lex__list" id="td-lex"></ul>
+            </details>
+        </aside>
+    </div>
+</main>
+<script src="js/tower-defense.js"></script>
+</body>
+</html>

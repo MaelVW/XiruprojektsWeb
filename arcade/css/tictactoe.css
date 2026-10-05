@@ -1,0 +1,78 @@
+/* Tic-Tac-Toe+ */
+.ttt-stage { touch-action: manipulation; padding: clamp(.75rem, 3vw, 1.75rem); }
+.ttt-root { width: 100%; display: grid; place-items: center; }
+.ttt-board { position: relative; width: 100%; aspect-ratio: 1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, 1fr)); }
+.ttt-board--classic { max-width: 420px; gap: clamp(6px, 1.6vw, 12px); }
+.ttt-board--ultimate { max-width: 580px; gap: clamp(5px, 1.4vw, 10px); }
+
+.ttt-cell {
+    position: relative; display: grid; place-items: center; min-width: 0;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    color: var(--text); cursor: default; padding: 0; font: inherit;
+    transition: background .2s, border-color .2s, transform .12s, box-shadow .2s;
+    -webkit-tap-highlight-color: transparent;
+}
+.ttt-cell.is-playable { cursor: pointer; }
+.ttt-cell.is-playable:hover { border-color: var(--rc); background: color-mix(in srgb, var(--rc) 8%, var(--surface)); }
+.ttt-cell.is-playable:active { transform: scale(.96); }
+.ttt-cell:focus-visible { outline: 2px solid var(--rc); outline-offset: 1px; z-index: 1; }
+.ttt-cell.is-cursor { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--rc) 70%, transparent); }
+.ttt-cell.is-last { background: color-mix(in srgb, var(--text) 6%, var(--surface)); }
+.ttt-cell.is-win { background: color-mix(in srgb, var(--success) 18%, var(--surface)); border-color: color-mix(in srgb, var(--success) 60%, var(--border)); }
+.ttt-cell.is-bump { animation: shake .3s linear 1; }
+.ttt-cell .ttt-ghost { position: absolute; inset: 0; opacity: 0; transition: opacity .15s; pointer-events: none; }
+.ttt-cell.is-playable:hover .ttt-ghost { opacity: .22; }
+
+.ttt-mark { width: 74%; height: 74%; overflow: visible; fill: none; stroke-linecap: round; }
+.ttt-mark path, .ttt-mark circle { stroke-dasharray: 100; stroke-dashoffset: 100; animation: tttDraw .32s var(--ease) forwards; }
+.ttt-mark path + path { animation-delay: .14s; }
+.ttt-mark--x { stroke: var(--rc); stroke-width: 11; }
+.ttt-mark--o { stroke: var(--accent-2); stroke-width: 10; }
+.ttt-ghost .ttt-mark path, .ttt-ghost .ttt-mark circle { animation: none; stroke-dashoffset: 0; }
+@keyframes tttDraw { to { stroke-dashoffset: 0; } }
+
+/* Gewinnlinie */
+.ttt-winline { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; z-index: 3; }
+.ttt-winline line { stroke: var(--text); stroke-width: 9; stroke-linecap: round; stroke-dasharray: 100; stroke-dashoffset: 100; animation: tttDraw .5s var(--ease) .15s forwards; filter: drop-shadow(0 0 6px color-mix(in srgb, var(--text) 50%, transparent)); }
+.ttt-winline--mini line { stroke-width: 7; opacity: .9; }
+.ttt-winline--big line { stroke-width: 12; stroke: var(--warning); filter: drop-shadow(0 0 10px var(--warning)); }
+
+/* Ultimate */
+.ttt-mini {
+    position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, 1fr)); gap: clamp(2px, .6vw, 4px);
+    padding: clamp(3px, .9vw, 6px); border-radius: 12px; min-width: 0;
+    background: var(--surface-2); border: 2px solid transparent;
+    transition: opacity .25s, border-color .25s, box-shadow .25s, background .25s;
+}
+.ttt-mini .ttt-cell { border-radius: 6px; min-height: 0; }
+.ttt-mini .ttt-mark { width: 70%; height: 70%; }
+.ttt-mini .ttt-mark--x { stroke-width: 13; }
+.ttt-mini .ttt-mark--o { stroke-width: 12; }
+.ttt-board--ultimate.has-target .ttt-mini { opacity: .55; }
+.ttt-board--ultimate .ttt-mini.is-active { opacity: 1; border-color: var(--rc); box-shadow: var(--glow); }
+.ttt-board--ultimate .ttt-mini.is-picked { border-style: dashed; }
+.ttt-mini.is-won-X { background: color-mix(in srgb, var(--rc) 14%, var(--surface-2)); }
+.ttt-mini.is-won-O { background: color-mix(in srgb, var(--accent-2) 14%, var(--surface-2)); }
+.ttt-mini.is-won-X .ttt-cell, .ttt-mini.is-won-O .ttt-cell, .ttt-mini.is-draw .ttt-cell { opacity: .35; transition: opacity .4s .5s; }
+.ttt-mini.is-draw { background: var(--surface-3); }
+.ttt-mini__owner { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; z-index: 2; }
+.ttt-mini__owner .ttt-mark { width: 82%; height: 82%; }
+.ttt-mini__owner .ttt-mark path, .ttt-mini__owner .ttt-mark circle { animation-delay: .55s; animation-duration: .45s; }
+.ttt-mini__owner .ttt-mark path + path { animation-delay: .75s; }
+.ttt-mini__owner .ttt-mark--x { stroke-width: 9; }
+.ttt-mini__owner .ttt-mark--o { stroke-width: 8; }
+.ttt-mini__owner.is-draw::after { content: "="; font-size: clamp(2rem, 9vw, 4rem); font-weight: 800; color: var(--text-faint); animation: popIn .35s var(--ease) .4s both; }
+
+.ttt-board.is-busy .ttt-cell { cursor: progress; }
+.ttt-board.is-over .ttt-cell { cursor: default; }
+
+.ttt-bar { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
+.ttt-turn { flex: 1; min-width: 12rem; margin: 0; font-weight: 600; color: var(--text-muted); }
+.ttt-turn b { color: var(--text); }
+.ttt-turn .is-x { color: var(--rc); }
+.ttt-turn .is-o { color: var(--accent-2); }
+.ttt-turn.is-result { color: var(--text); font-size: 1.05rem; }
+.ttt-turn.is-win b { color: var(--success); }
+.ttt-turn.is-loss b { color: var(--danger); }
+.ttt-dots::after { content: "…"; display: inline-block; animation: blink 1s step-end infinite; }
+#btn-new.is-pulse { --pc: var(--rc); animation: pulse 1.6s infinite; border-color: var(--rc); }

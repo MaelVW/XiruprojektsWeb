@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vier gewinnt · Xiruprojekts</title>
+    <meta name="description" content="Vier gewinnt: Lass die Steine fallen und bilde eine Reihe aus vier – gegen eine KI in drei Stärken oder zu zweit.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="css/vier-gewinnt.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/arcade.js"></script>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">▶ Spielhalle · Brett</span>
+        <h1>Vier gewinnt</h1>
+        <p class="lead">Sieben Spalten, sechs Reihen, ein Ziel: vier eigene Steine in einer Reihe – waagrecht, senkrecht oder schräg. Die KI rechnet je nach Stufe bis zu sieben Züge voraus.</p>
+    </header>
+
+    <div class="game">
+        <div>
+            <div class="game__hud" id="hud"></div>
+            <div class="game__stage vg-stage" id="stage">
+                <div class="vg-wrap">
+                    <div class="vg-preview" aria-hidden="true"><div class="vg-disc vg-disc--ghost" id="ghost"></div></div>
+                    <div class="vg-board" id="board">
+                        <div class="vg-discs" id="discs"></div>
+                        <div class="vg-front" aria-hidden="true"></div>
+                        <div class="vg-cols" id="cols"></div>
+                    </div>
+                    <div class="vg-foot" aria-hidden="true"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span></div>
+                </div>
+            </div>
+            <div class="vg-bar mt-1">
+                <p class="vg-turn" id="turn" aria-live="polite"></p>
+                <button class="btn btn--sm" type="button" id="btn-new">↻ Neue Partie</button>
+            </div>
+        </div>
+        <aside class="game__side">
+            <div class="card">
+                <h3>Steuerung</h3>
+                <ul class="keys-help">
+                    <li>Spalte anklicken oder antippen</li>
+                    <li><kbd>1</kbd> – <kbd>7</kbd> – Stein in Spalte werfen</li>
+                    <li><kbd>←</kbd> <kbd>→</kbd> zielen, <kbd>↓</kbd> / <kbd>Enter</kbd> werfen</li>
+                    <li><kbd>N</kbd> – neue Partie</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Modus</h3>
+                <div class="row" id="opps">
+                    <button class="chip" type="button" data-opp="leicht">KI leicht</button>
+                    <button class="chip is-active" type="button" data-opp="mittel">KI mittel</button>
+                    <button class="chip" type="button" data-opp="schwer">KI schwer</button>
+                    <button class="chip" type="button" data-opp="2p">2 Spieler</button>
+                </div>
+                <p class="small muted mt-2" id="mode-desc"></p>
+            </div>
+            <div class="card">
+                <h3>Rekord</h3>
+                <p class="stat__value" id="best">–</p>
+                <p class="small muted">Serienpunkte gegen die KI: Ein Sieg bringt 1 / 2 / 3 Punkte (leicht / mittel / schwer). Unentschieden halten die Serie, eine Niederlage setzt sie auf 0.</p>
+            </div>
+        </aside>
+    </div>
+</main>
+<script src="js/vier-gewinnt.js"></script>
+</body>
+</html>

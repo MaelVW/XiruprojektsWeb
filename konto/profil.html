@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profil · Xiruprojekts</title>
+    <meta name="description" content="Dein Level, deine XP, deine Entdeckungen – und Export/Import deines Spielstands.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <style>
+        .prof { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 1.5rem; align-items: center; }
+        @media (max-width: 640px) { .prof { grid-template-columns: 1fr; text-align: center; } .prof .row { justify-content: center; } }
+        .avatar { width: 112px; height: 112px; border-radius: 26px; overflow: hidden; border: 2px solid var(--rc); box-shadow: var(--glow); margin: 0 auto; background: var(--surface-2); }
+        .avatar canvas { width: 100%; height: 100%; image-rendering: pixelated; }
+        .reg-row { display: grid; grid-template-columns: 9rem 1fr 4rem; gap: .75rem; align-items: center; margin-bottom: .55rem; font-size: .9rem; }
+        .reg-row .bar__fill { background: var(--c); }
+        .heat { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, 1fr); gap: 3px; overflow-x: auto; padding-bottom: .25rem; }
+        .heat span { width: 13px; height: 13px; border-radius: 3px; background: var(--surface-3); }
+        .heat span.on { background: var(--rc); box-shadow: 0 0 6px -1px var(--rc); }
+        .heat span.today { outline: 1px solid var(--text); }
+        .feed { list-style: none; padding: 0; margin: 0; }
+        .feed li { display: flex; gap: .75rem; padding: .5rem 0; border-bottom: 1px dashed var(--border); font-size: .9rem; align-items: baseline; }
+        .feed li:last-child { border-bottom: 0; }
+        .feed time { color: var(--text-faint); font-size: .78rem; margin-left: auto; white-space: nowrap; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <section class="card prof mb-3">
+        <div class="avatar"><canvas id="ava" width="12" height="12"></canvas></div>
+        <div>
+            <span class="eyebrow">⚓ Heimathafen · Profil</span>
+            <h1 class="mb-1" id="name">Gast</h1>
+            <div class="row"><span class="badge badge--accent" id="lvl"></span><span class="badge" id="since"></span><span class="badge" id="title"></span></div>
+            <div class="mt-2"><div class="row small"><span id="xp-text"></span><span class="spacer"></span><span id="xp-next"></span></div>
+                <div class="bar bar--shine mt-1"><div class="bar__fill" id="xp-bar"></div></div></div>
+        </div>
+    </section>
+
+    <div id="guest-note"></div>
+
+    <div class="grid grid--sm mb-3">
+        <div class="card card--flat stat"><span class="stat__value" id="st-pages">0</span><span class="stat__label">Orte entdeckt</span></div>
+        <div class="card card--flat stat"><span class="stat__value" id="st-eggs">0</span><span class="stat__label">Disketten</span></div>
+        <div class="card card--flat stat"><span class="stat__value" id="st-games">0</span><span class="stat__label">Spiele gespielt</span></div>
+        <div class="card card--flat stat"><span class="stat__value" id="st-days">0</span><span class="stat__label">Besuchstage</span></div>
+        <div class="card card--flat stat"><span class="stat__value" id="st-skills">0</span><span class="stat__label">Skills</span></div>
+    </div>
+
+    <div class="grid-2">
+        <section class="card"><h2>Entdeckt pro Region</h2><div id="regions"></div></section>
+        <section class="card"><h2>Aktivität</h2><p class="small muted">Die letzten 20 Wochen – jedes Kästchen ein Tag.</p><div class="heat" id="heat"></div>
+            <h3 class="mt-3">Zuletzt entdeckt</h3><ul class="feed" id="feed"></ul></section>
+    </div>
+
+    <section class="card mt-3">
+        <h2>Spielstand sichern</h2>
+        <p class="muted">Dein Fortschritt liegt nur in diesem Browser. Exportiere ihn als Datei, um ihn zu sichern oder auf einem anderen Gerät zu importieren.
+            API-Schlüssel aus <a href="dienste.html">Dienste & Schlüssel</a> sind aus Sicherheitsgründen <strong>nicht</strong> enthalten.</p>
+        <div class="row">
+            <button class="btn btn--primary" id="export" type="button">⬇ Exportieren</button>
+            <label class="btn" for="import">⬆ Importieren</label><input type="file" id="import" accept=".json,application/json" hidden>
+        </div>
+        <p class="form-msg" id="io-msg"></p>
+    </section>
+
+    <section class="card mt-3" id="account-box" hidden>
+        <h2>Konto</h2>
+        <div class="grid-2">
+            <form id="pw-form">
+                <h3>Passwort ändern</h3>
+                <div class="field"><label for="pw-old">Aktuelles Passwort</label><input type="password" id="pw-old" autocomplete="current-password" required></div>
+                <div class="field"><label for="pw-new">Neues Passwort</label><input type="password" id="pw-new" autocomplete="new-password" minlength="6" required></div>
+                <button class="btn" type="submit">Ändern</button>
+                <p class="form-msg" id="pw-msg"></p>
+            </form>
+            <form id="del-form">
+                <h3>Konto löschen</h3>
+                <p class="small muted">Löscht Konto, Fortschritt, Spielstände und Schlüssel aus diesem Browser. Das kann man nicht rückgängig machen – exportiere vorher.</p>
+                <div class="field"><label for="del-pw">Passwort zur Bestätigung</label><input type="password" id="del-pw" autocomplete="current-password" required></div>
+                <button class="btn btn--danger" type="submit">Endgültig löschen</button>
+                <p class="form-msg" id="del-msg"></p>
+            </form>
+        </div>
+    </section>
+</main>
+<script>
+XIRU.ready(function () {
+    const $ = XIRU.$, P = XIRU.profile();
+    const li = XIRU.levelInfo();
+    const name = XIRU.user || 'Gast';
+
+    // Pixel-Avatar aus dem Namen (symmetrisch, wie ein kleines Wappen)
+    (function () {
+        const cv = $('#ava'), ctx = cv.getContext('2d');
+        let h = 2166136261;
+        for (const ch of name) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); }
+        const rnd = () => { h ^= h << 13; h ^= h >>> 17; h ^= h << 5; return ((h >>> 0) % 1000) / 1000; };
+        const hue = Math.floor(rnd() * 360);
+        ctx.fillStyle = 'hsl(' + hue + ',35%,14%)'; ctx.fillRect(0, 0, 12, 12);
+        for (let y = 1; y < 11; y++) for (let x = 1; x < 6; x++) {
+            if (rnd() > .52) {
+                ctx.fillStyle = 'hsl(' + (hue + (rnd() > .8 ? 40 : 0)) + ',70%,' + (50 + rnd() * 20) + '%)';
+                ctx.fillRect(x, y, 1, 1); ctx.fillRect(11 - x, y, 1, 1);
+            }
+        }
+    })();
+
+    const titles = [[1, 'Neuling'], [3, 'Pfadfinder:in'], [5, 'Abenteurer:in'], [8, 'Kartograph:in'], [12, 'Disketten-Jäger:in'], [16, 'Veteran:in'], [20, 'Legende'], [30, 'Mythos']];
+    $('#name').textContent = name;
+    $('#lvl').textContent = 'Level ' + li.level;
+    $('#title').textContent = titles.filter(t => li.level >= t[0]).pop()[1];
+    $('#since').textContent = 'Dabei seit ' + new Date(P.created).toLocaleDateString('de-CH');
+    $('#xp-text').textContent = XIRU.fmt(P.xp) + ' XP gesamt';
+    $('#xp-next').textContent = li.into + ' / ' + li.need + ' bis Level ' + (li.level + 1);
+    requestAnimationFrame(() => $('#xp-bar').style.setProperty('--v', li.pct + '%'));
+
+    if (!XIRU.user) $('#guest-note').innerHTML = '<div class="callout mb-3">Du bist als Gast unterwegs. <a href="login.html?weiter=konto%2Fprofil.html">Erstelle ein lokales Konto</a> – dein Gast-Fortschritt wird übernommen und du kannst Skills lernen.</div>';
+    else $('#account-box').hidden = false;
+
+    const pages = XIRU.pages;
+    const visited = Object.keys(P.visited).filter(p => XIRU.pageFor(p));
+    const visibleTotal = pages.filter(p => !p.hidden).length;
+    $('#st-pages').textContent = visited.length + '/' + visibleTotal;
+    $('#st-eggs').textContent = XIRU.eggCount() + '/' + XIRU.eggs.length;
+    $('#st-games').textContent = Object.keys(P.scores).length;
+    $('#st-days').textContent = Object.keys(P.days).length;
+    $('#st-skills').textContent = Object.keys(P.skills).length + '/' + XIRU.skills.length;
+
+    $('#regions').innerHTML = XIRU.regions.map(r => {
+        const rp = pages.filter(p => p.r === r.id), seen = rp.filter(p => P.visited[p.p]).length;
+        const known = r.id === 'geheim' ? seen : rp.length;
+        return '<div class="reg-row" style="--c:' + r.color + '"><span>' + r.icon + ' ' + XIRU.esc(r.name) + '</span><div class="bar"><div class="bar__fill" style="--v:' + (known ? seen / rp.length * 100 : 0) + '%"></div></div><span class="small muted">' + seen + '/' + (r.id === 'geheim' ? '?' : rp.length) + '</span></div>';
+    }).join('');
+
+    // Aktivität (20 Wochen)
+    const days = [], today = new Date(); today.setHours(0, 0, 0, 0);
+    const start = new Date(today); start.setDate(start.getDate() - (20 * 7 - 1));
+    start.setDate(start.getDate() - ((start.getDay() + 6) % 7));        // auf Montag zurück
+    for (let d = new Date(start); d <= today; d.setDate(d.getDate() + 1)) {
+        const k = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        days.push('<span class="' + (P.days[k] ? 'on' : '') + (+d === +today ? ' today' : '') + '" title="' + d.toLocaleDateString('de-CH') + '"></span>');
+    }
+    $('#heat').innerHTML = days.join('');
+
+    // Feed: zuletzt entdeckte Orte und Disketten
+    const events = visited.map(p => ({ t: P.visited[p], html: '🧭 <a href="' + XIRU.url(p) + '">' + XIRU.esc(XIRU.pageFor(p).t) + '</a>' }))
+        .concat(Object.keys(P.eggs).filter(id => XIRU.eggInfo(id)).map(id => ({ t: P.eggs[id], html: '💾 Diskette „' + XIRU.esc(XIRU.eggInfo(id).n) + '"' })))
+        .sort((a, b) => b.t - a.t).slice(0, 10);
+    $('#feed').innerHTML = events.map(e => '<li>' + e.html + '<time>' + new Date(e.t).toLocaleString('de-CH', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + '</time></li>').join('') || '<li class="muted">Noch nichts – leg los!</li>';
+
+    // Export / Import
+    function saveKeys() {
+        const prefix = 'xiru:save:' + (XIRU.user ? XIRU.user.toLowerCase() : '~gast') + ':', out = {};
+        try { Object.keys(localStorage).filter(k => k.startsWith(prefix)).forEach(k => { out[k.slice(prefix.length)] = JSON.parse(localStorage.getItem(k)); }); } catch (e) { }
+        return out;
+    }
+    $('#export').addEventListener('click', () => {
+        const data = { format: 'xiru-export', v: 1, name: name, exported: new Date().toISOString(), profile: P, saves: saveKeys() };
+        const blob = new Blob([JSON.stringify(data, null, 1)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob); a.download = 'xiru-spielstand-' + name.toLowerCase() + '-' + XIRU.today() + '.json';
+        document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+        XIRU.egg('b-export');
+        $('#io-msg').className = 'form-msg is-ok'; $('#io-msg').textContent = 'Export erstellt.';
+    });
+    $('#import').addEventListener('change', e => {
+        const f = e.target.files[0]; if (!f) return;
+        const r = new FileReader();
+        r.onload = () => {
+            let d;
+            try { d = JSON.parse(r.result); } catch (err) { d = null; }
+            const msg = $('#io-msg');
+            if (!d || d.format !== 'xiru-export' || !d.profile || typeof d.profile !== 'object') { msg.className = 'form-msg is-error'; msg.textContent = 'Das ist keine gültige Xiru-Spielstand-Datei.'; return; }
+            const m = XIRU.modal('<h2>Spielstand importieren?</h2><p class="muted">Der Spielstand von <strong>' + XIRU.esc(d.name || '?') + '</strong> (' + XIRU.esc(String(d.exported || '').slice(0, 10)) + ') ersetzt deinen aktuellen Fortschritt als <strong>' + XIRU.esc(name) + '</strong>.</p>' +
+                '<div class="row mt-2"><button class="btn btn--primary" id="do-import">Importieren</button><button class="btn" data-close>Abbrechen</button></div>');
+            m.el.querySelector('#do-import').addEventListener('click', () => {
+                const prof = d.profile;
+                ['skills', 'eggs', 'visited', 'days', 'scores', 'rewards', 'settings', 'data'].forEach(k => { P[k] = prof[k] && typeof prof[k] === 'object' ? prof[k] : {}; });
+                P.xp = +prof.xp || 0; P.bonus = +prof.bonus || 0; P.created = +prof.created || P.created;
+                if (!XIRU.user) P.skills = {};
+                XIRU.persist();
+                Object.keys(d.saves || {}).forEach(k => { if (/^[\w\-.]+$/.test(k)) XIRU.save(k, d.saves[k]); });
+                m.close(); location.reload();
+            });
+        };
+        r.readAsText(f);
+        e.target.value = '';
+    });
+
+    // Passwort & Löschen
+    $('#pw-form').addEventListener('submit', async e => {
+        e.preventDefault(); const msg = $('#pw-msg');
+        try { await XIRU.auth.changePassword($('#pw-old').value, $('#pw-new').value); msg.className = 'form-msg is-ok'; msg.textContent = 'Passwort geändert.'; e.target.reset(); }
+        catch (err) { msg.className = 'form-msg is-error'; msg.textContent = err.message; }
+    });
+    $('#del-form').addEventListener('submit', async e => {
+        e.preventDefault(); const msg = $('#del-msg');
+        try { await XIRU.auth.remove($('#del-pw').value); location.href = XIRU.url('index.html'); }
+        catch (err) { msg.className = 'form-msg is-error'; msg.textContent = err.message; }
+    });
+});
+</script>
+</body>
+</html>

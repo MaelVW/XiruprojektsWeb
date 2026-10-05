@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hilfe & FAQ · Xiruprojekts</title>
+    <meta name="description" content="Wie XP, Level, Skills, Disketten und das KI-Labor funktionieren.">
+    <link rel="stylesheet" href="assets/css/main.css">
+    <script src="assets/js/site.js"></script>
+    <script src="assets/js/core.js"></script>
+    <style>
+        .faq details { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: .6rem; scroll-margin-top: calc(var(--header-h) + 1rem); }
+        .faq summary { padding: 1rem 1.2rem; cursor: pointer; font-weight: 700; list-style: none; display: flex; justify-content: space-between; gap: 1rem; }
+        .faq summary::-webkit-details-marker { display: none; }
+        .faq summary::after { content: "+"; color: var(--rc); font-size: 1.3rem; line-height: 1; transition: transform .25s var(--ease); }
+        .faq details[open] summary::after { transform: rotate(45deg); }
+        .faq details[open] { border-color: color-mix(in srgb, var(--rc) 45%, var(--border)); }
+        .faq .a { padding: 0 1.2rem 1.1rem; color: var(--text-muted); }
+        .faq h2 { margin-top: 2.2rem; font-size: 1.3rem; }
+        .toc { display: flex; flex-wrap: wrap; gap: .4rem; }
+        .xp-table td:last-child { text-align: right; font-weight: 700; }
+    </style>
+</head>
+<body>
+<main class="content content--narrow">
+    <header class="page-head">
+        <span class="eyebrow">◆ Zentrum</span>
+        <h1>Hilfe & FAQ <span class="egg-spot" data-egg="p-hilfe" data-egg-clicks="3" title="?" style="font-size:.5em;vertical-align:middle;opacity:.5">❔</span></h1>
+        <p class="lead">Alles, was du wissen musst, um dich in der Xiru-Welt zurechtzufinden – und ein paar Dinge, die du lieber selbst herausfindest.</p>
+        <nav class="toc mt-2"><a class="chip" href="#grundlagen">Grundlagen</a><a class="chip" href="#xp">XP & Level</a><a class="chip" href="#skills">Skills</a><a class="chip" href="#disketten">Disketten</a><a class="chip" href="#ki">KI-Labor</a><a class="chip" href="#daten">Daten</a></nav>
+    </header>
+
+    <div class="faq">
+        <h2 id="grundlagen">Grundlagen</h2>
+        <details open><summary>Was ist das hier eigentlich?</summary><div class="a"><p>Die Website von Xiruprojekts – einem kleinen Hobby-Gamestudio von zwei Freunden. Sie ist gleichzeitig nützlich (Hardware-Datenblätter, Werkzeuge, Downloads) und ein Spiel: eine offene Welt, die man über Wochen erkunden kann.</p></div></details>
+        <details><summary>Wie bewege ich mich am besten?</summary><div class="a"><p>Die <a href="weltkarte.html">Weltkarte</a> zeigt alle Regionen und welche Orte du schon besucht hast. Oben in der Navigation findest du die wichtigsten Seiten jeder Region, und die <a href="suche.html">Suche</a> findet alles, was du schon kennen darfst. Auf der Startseite gibt es einen Knopf „Zufälliger Ort".</p></div></details>
+        <details><summary>Muss ich mich anmelden?</summary><div class="a"><p>Nein. Als Gast sammelst du XP und Disketten genauso. Nur den <a href="konto/skilltree.html">Skilltree</a> kannst du erst mit einem Konto benutzen. Erstellst du später eins, wird dein Gast-Fortschritt übernommen.</p></div></details>
+
+        <h2 id="xp">XP & Level</h2>
+        <details open><summary>Wofür bekomme ich XP?</summary><div class="a">
+            <table class="table xp-table"><tbody>
+                <tr><td>Neuen Ort entdecken</td><td>10 XP</td></tr>
+                <tr><td>Versteckten Ort entdecken</td><td>40 XP</td></tr>
+                <tr><td>Diskette finden</td><td>10–500 XP</td></tr>
+                <tr><td>Ein Spiel zum ersten Mal spielen</td><td>15 XP</td></tr>
+                <tr><td>Eigenen Rekord brechen</td><td>5 XP</td></tr>
+                <tr><td>Tagesbonus (einmal pro Tag)</td><td>20 XP</td></tr>
+                <tr><td>Besondere Leistungen in Spielen</td><td>variiert</td></tr>
+            </tbody></table></div></details>
+        <details><summary>Wie viele XP brauche ich pro Level?</summary><div class="a"><p>Für Level 2 brauchst du 100 XP, danach jedes Level 40 XP mehr als das vorherige (140, 180, 220 …). Die ersten Level gehen schnell, später wird es eine Reise.</p></div></details>
+
+        <h2 id="skills">Skills</h2>
+        <details open><summary>Wie funktioniert der Skilltree?</summary><div class="a"><p>Du startest mit einem Skillpunkt und bekommst pro Level einen weiteren. Meilenstein-Disketten geben einen Bonuspunkt. Der Baum hat vier Äste – <strong>Entdecker</strong>, <strong>Techniker</strong>, <strong>Spieler</strong> und <strong>Magier</strong> – mit je sechs Skills. Ein Skill braucht seine Vorgänger.</p></div></details>
+        <details><summary>Was schalten Skills frei?</summary><div class="a"><p>Neue Spiele, Mixer, KI-Werkzeuge, Designs und Komfortfunktionen (zum Beispiel zeigt „Kompass" auf der Weltkarte, wie viel noch fehlt). Und manche Skills öffnen Türen zu Orten, die auf keiner Karte stehen. Welche genau? Das findest du heraus.</p></div></details>
+        <details><summary>Ich habe mich verskillt!</summary><div class="a"><p>Kein Problem: Unten im Skilltree gibt es einen Vergessenstrank. Er setzt alle Skills zurück und gibt dir die Punkte wieder.</p></div></details>
+
+        <h2 id="disketten">Disketten (Easter Eggs)</h2>
+        <details open><summary>Was sind Disketten?</summary><div class="a"><p>Disketten sind versteckte Geheimnisse. Es gibt sie in vielen Formen: Wörter, die man irgendwo auf einer Seite tippt (nicht in Eingabefeldern), besondere Uhrzeiten oder Tage, Dinge, die man anklickt, Leistungen in Spielen, versteckte Orte und Verhaltensweisen. Deine Funde siehst du in der <a href="konto/sammlung.html">Disketten-Sammlung</a> – zusammen mit Hinweisen auf die fehlenden.</p></div></details>
+        <details><summary>Gib mir einen Tipp!</summary><div class="a"><p>Fang klein an: Tippe auf der Startseite einfach mal „hallo". Und lies Texte genau – auch die Laufschrift und das Kleingedruckte. Ein alter Code aus Videospielen funktioniert hier übrigens auch.</p></div></details>
+        <details><summary>Ich habe alle gefunden, oder?</summary><div class="a"><p>Unwahrscheinlich. 😉</p></div></details>
+
+        <h2 id="ki">KI-Labor</h2>
+        <details><summary>Brauche ich ein Konto bei einem KI-Anbieter?</summary><div class="a"><p>Nein, alle KI-Seiten funktionieren auch offline mit einfacheren, eingebauten Generatoren. Für echte KI-Antworten trägst du unter <a href="konto/dienste.html">Dienste & Schlüssel</a> einen eigenen API-Schlüssel ein, zum Beispiel von Hugging Face. Mehrere Schlüssel werden abwechselnd benutzt, wenn einer sein Limit erreicht.</p></div></details>
+        <details><summary>Was passiert mit meinen Eingaben?</summary><div class="a"><p>Nur wenn du einen KI-Dienst aktiv nutzt, wird der Text an diesen Anbieter geschickt – sonst verlässt nichts deinen Browser. Gib keine persönlichen Daten in KI-Felder ein.</p></div></details>
+
+        <h2 id="daten">Daten & Technik</h2>
+        <details><summary>Wo werden meine Daten gespeichert?</summary><div class="a"><p>Ausschliesslich im localStorage deines Browsers. Es gibt keinen Server. Mehr dazu in der <a href="datenschutz.html">Datenschutzerklärung</a>.</p></div></details>
+        <details><summary>Ich habe einen neuen Computer – ist alles weg?</summary><div class="a"><p>Exportiere vorher im <a href="konto/profil.html">Profil</a> deinen Spielstand und importiere ihn auf dem neuen Gerät.</p></div></details>
+        <details><summary>Die Website sieht komisch aus oder ruckelt.</summary><div class="a"><p>In den <a href="konto/einstellungen.html">Einstellungen</a> kannst du Animationen abschalten. Am besten öffnest du die Website über einen lokalen Server (z. B. VS Code „Live Server") statt direkt als Datei.</p></div></details>
+    </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Balance-Check · Xiruprojekts</title>
+    <meta name="description" content="Passen Prozessor und Grafikkarte zusammen? Der Balance-Check zeigt, wer in deinem PC bremst.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/hardware-data.js"></script>
+    <style>
+        .scale { position: relative; height: 210px; max-width: 520px; margin: 0 auto; }
+        .scale svg { width: 100%; height: 100%; overflow: visible; }
+        .scale__beam { transform-origin: 260px 70px; transition: transform 1.1s cubic-bezier(.3, 1.6, .5, 1); }
+        .verdict { font-size: 1.35rem; font-weight: 800; }
+        .meter { display: grid; grid-template-columns: 7rem 1fr 3rem; gap: .75rem; align-items: center; margin-bottom: .6rem; font-size: .9rem; }
+        .meter .bar { height: 12px; }
+        .res-chips .chip { min-width: 4.5rem; justify-content: center; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">▣ Hardware-Archiv · Rechner</span>
+        <h1>Balance-Check</h1>
+        <p class="lead">Ein starker Prozessor mit einer schwachen Grafikkarte – oder umgekehrt? Die Waage zeigt, welches Teil in Spielen eher bremst.</p>
+    </header>
+
+    <div class="grid-2">
+        <section class="card">
+            <div class="field"><label for="cpu">Prozessor</label><select id="cpu"></select></div>
+            <div class="field"><label for="gpu">Grafikkarte</label><select id="gpu"></select></div>
+            <div class="field">
+                <span class="label">Auflösung</span>
+                <div class="row res-chips mt-1" id="res">
+                    <button class="chip" data-res="1080">1080p</button>
+                    <button class="chip is-active" data-res="1440">1440p</button>
+                    <button class="chip" data-res="2160">4K</button>
+                </div>
+            </div>
+            <div class="field">
+                <span class="label">Spieltyp</span>
+                <div class="row mt-1" id="type">
+                    <button class="chip" data-type="esport">E-Sport (viele FPS)</button>
+                    <button class="chip is-active" data-type="aaa">Grafikkracher</button>
+                    <button class="chip" data-type="sim">Strategie/Simulation</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="card card--accent center">
+            <div class="scale" aria-hidden="true">
+                <svg viewBox="0 0 520 210">
+                    <path d="M260 70 L230 200 H290 Z" fill="var(--surface-3)" stroke="var(--border-strong)"/>
+                    <g class="scale__beam" id="beam">
+                        <rect x="60" y="64" width="400" height="12" rx="6" fill="var(--border-strong)"/>
+                        <line x1="90" y1="76" x2="90" y2="120" stroke="var(--text-faint)" stroke-width="2"/>
+                        <line x1="430" y1="76" x2="430" y2="120" stroke="var(--text-faint)" stroke-width="2"/>
+                        <path d="M40 120 H140 Q130 150 90 150 Q50 150 40 120 Z" fill="var(--surface-2)" stroke="var(--rc)"/>
+                        <path d="M380 120 H480 Q470 150 430 150 Q390 150 380 120 Z" fill="var(--surface-2)" stroke="var(--accent-2)"/>
+                        <text x="90" y="142" text-anchor="middle" font-size="15" font-weight="700" fill="var(--text)">CPU</text>
+                        <text x="430" y="142" text-anchor="middle" font-size="15" font-weight="700" fill="var(--text)">GPU</text>
+                    </g>
+                    <circle cx="260" cy="70" r="9" fill="var(--rc)"/>
+                </svg>
+            </div>
+            <p class="verdict" id="verdict">–</p>
+            <p class="muted" id="explain"></p>
+        </section>
+    </div>
+
+    <section class="card mt-3">
+        <h2>Die Rechnung</h2>
+        <div class="meter"><span>Prozessor</span><div class="bar"><div class="bar__fill" id="m-cpu"></div></div><b id="v-cpu">0</b></div>
+        <div class="meter"><span>Grafikkarte</span><div class="bar"><div class="bar__fill" id="m-gpu" style="background:linear-gradient(90deg,var(--accent-2),var(--rc))"></div></div><b id="v-gpu">0</b></div>
+        <p class="small muted">Beide Werte zeigen, wie viele Bilder pro Sekunde das jeweilige Teil in dieser Situation ungefähr „liefern" könnte (relativ, 100 = sehr viel).
+            Das langsamere Teil bestimmt die Bildrate. Ein Unterschied bis etwa 15 % ist völlig normal und kein Grund zum Aufrüsten.</p>
+        <h3 class="mt-3">Passende Partner</h3>
+        <div class="grid" id="tips"></div>
+    </section>
+    <p class="small faint mt-2">Grobe Faustregel auf Basis der Leistungsindizes dieses Archivs – echte Ergebnisse hängen stark vom Spiel, den Einstellungen und dem Rest des Systems ab.</p>
+</main>
+<script>
+XIRU.ready(function () {
+    const hw = XIRU.hw || { cpu: [], gpu: [] };
+    const $ = XIRU.$;
+    const sortName = (a, b) => a.name.localeCompare(b.name);
+    $('#cpu').innerHTML = hw.cpu.slice().sort(sortName).map(c => '<option value="' + c.id + '">' + XIRU.esc(c.name) + '</option>').join('');
+    $('#gpu').innerHTML = hw.gpu.slice().sort(sortName).map(g => '<option value="' + g.id + '">' + XIRU.esc(g.name) + '</option>').join('');
+    $('#cpu').value = 'ryzen-5-5600x'; $('#gpu').value = 'rtx-4090';
+    let res = 1440, type = 'aaa';
+
+    // Je höher die Auflösung, desto mehr Arbeit für die GPU. E-Sport ist CPU-lastig, Grafikkracher GPU-lastig.
+    const RES = { 1080: 1.75, 1440: 1.0, 2160: .5 };
+    const TYPE = { esport: { cpu: .85, gpu: 1.6 }, aaa: { cpu: 1.0, gpu: 1.0 }, sim: { cpu: .7, gpu: 1.25 } };
+    function scores(cpu, gpu) {
+        return { c: cpu.game * 1.05 * TYPE[type].cpu, g: gpu.perf * RES[res] * TYPE[type].gpu };
+    }
+
+    function calc() {
+        const cpu = hw.cpu.find(c => c.id === $('#cpu').value), gpu = hw.gpu.find(g => g.id === $('#gpu').value);
+        if (!cpu || !gpu) return;
+        const s = scores(cpu, gpu);
+        const max = Math.max(s.c, s.g, 1);
+        $('#m-cpu').style.setProperty('--v', (s.c / max * 100) + '%'); $('#v-cpu').textContent = Math.round(s.c);
+        $('#m-gpu').style.setProperty('--v', (s.g / max * 100) + '%'); $('#v-gpu').textContent = Math.round(s.g);
+        const diff = (s.g - s.c) / Math.max(s.c, s.g);      // >0: GPU stärker -> CPU bremst
+        const tilt = Math.max(-14, Math.min(14, diff * 30));   // das stärkere Teil ist „schwerer"
+        $('#beam').style.transform = 'rotate(' + tilt + 'deg)';
+        const pct = Math.round(Math.abs(diff) * 100);
+        let verdict, explain;
+        if (pct <= 15) { verdict = '⚖ Ausgewogen'; explain = 'Prozessor und Grafikkarte passen in dieser Situation gut zusammen (' + pct + ' % Unterschied).'; XIRU.egg('hw-balance'); }
+        else if (diff > 0) { verdict = '⬛ Der Prozessor bremst'; explain = 'Die Grafikkarte könnte rund ' + pct + ' % mehr liefern, als der Prozessor vorbereitet. Höhere Auflösung oder mehr Grafikdetails kosten dich hier kaum FPS.'; }
+        else { verdict = '▤ Die Grafikkarte bremst'; explain = 'Der Prozessor hätte rund ' + pct + ' % Reserve. Das ist bei Grafikkrachern normal – Upscaling (DLSS/FSR) oder etwas tiefere Details helfen.'; }
+        $('#verdict').textContent = verdict; $('#explain').textContent = explain;
+
+        // Passende Partner: Teile, die mit dem jeweils anderen ausgewogen wären
+        const goodGpus = hw.gpu.filter(g => Math.abs((scores(cpu, g).g - scores(cpu, g).c) / Math.max(scores(cpu, g).g, scores(cpu, g).c)) <= .15 && g.id !== gpu.id)
+            .sort((a, b) => a.price - b.price).slice(0, 3);
+        const goodCpus = hw.cpu.filter(c => Math.abs((scores(c, gpu).g - scores(c, gpu).c) / Math.max(scores(c, gpu).g, scores(c, gpu).c)) <= .15 && c.id !== cpu.id)
+            .sort((a, b) => a.price - b.price).slice(0, 3);
+        const tile = (x, what) => '<a class="tile" href="' + XIRU.url(x.url) + '"><span class="tile__meta"><span class="badge">' + what + '</span></span><span class="tile__title">' + XIRU.esc(x.name) + '</span><span class="tile__desc">UVP ' + x.price + ' USD</span></a>';
+        $('#tips').innerHTML = goodGpus.map(g => tile(g, 'GPU zu deiner CPU')).concat(goodCpus.map(c => tile(c, 'CPU zu deiner GPU'))).join('') ||
+            '<p class="muted">Für diese Kombination findet das Archiv keine besser ausbalancierten Partner – sie ist schon ziemlich extrem.</p>';
+        if (cpu.id === 'core-i7-2600k' && gpu.id === 'rtx-5090') XIRU.egg('hw-zeitkapsel');
+    }
+    $('#res').addEventListener('click', e => { const b = e.target.closest('[data-res]'); if (!b) return; res = +b.dataset.res; XIRU.$$('#res .chip').forEach(c => c.classList.toggle('is-active', c === b)); calc(); });
+    $('#type').addEventListener('click', e => { const b = e.target.closest('[data-type]'); if (!b) return; type = b.dataset.type; XIRU.$$('#type .chip').forEach(c => c.classList.toggle('is-active', c === b)); calc(); });
+    $('#cpu').addEventListener('change', calc); $('#gpu').addEventListener('change', calc);
+    calc();
+});
+</script>
+</body>
+</html>

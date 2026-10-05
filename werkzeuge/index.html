@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Werkzeugkasten · Xiruprojekts</title>
+    <meta name="description" content="Der Werkzeugkasten von Xiruprojekts: Einheitenrechner, Passwort-Generator, Timer, JSON-Werkstatt, Bildschirm-, Tastatur-, Hz- und Klicktest – alles lokal im Browser.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="css/werkzeuge.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <style>
+        .wk-search { position: relative; max-width: 640px; }
+        .wk-search input { padding-left: 2.6rem !important; padding-right: 3rem !important; font-size: 1.05rem !important; }
+        .wk-search__icon { position: absolute; left: .9rem; top: 50%; transform: translateY(-50%); color: var(--text-faint); pointer-events: none; font-size: 1.15rem; }
+        .wk-search kbd { position: absolute; right: .8rem; top: 50%; transform: translateY(-50%); pointer-events: none; }
+        .wk-filter { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin: 1rem 0 1.5rem; }
+        .wk-count { margin-left: auto; font-size: .85rem; color: var(--text-faint); }
+        .wk-grid .tile { min-height: 190px; --tc: var(--rc); }
+        .wk-grid .tile[hidden] { display: none; }
+        .wk-grid .tile__icon { font-size: 1.3rem; font-weight: 800; font-family: var(--mono); }
+        .wk-grid .tile.is-first { border-color: color-mix(in srgb, var(--rc) 70%, var(--border)); box-shadow: var(--glow); }
+        .wk-grid .tile mark { background: color-mix(in srgb, var(--rc) 35%, transparent); color: inherit; border-radius: 3px; padding: 0 .1em; }
+        .wk-tile-anim { animation: fadeUp .45s var(--ease) both; animation-delay: var(--d, 0s); }
+        .wk-empty[hidden] { display: none; }
+        .wk-tips { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); margin-top: 2.5rem; }
+        .wk-tips .card h3 { display: flex; gap: .5rem; align-items: center; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">⚒ Werkzeugkasten</span>
+        <h1>Werkzeugkasten</h1>
+        <p class="lead">Kleine Helfer für alles, was am PC so anfällt: rechnen, testen, entscheiden, notieren. Alles läuft direkt in deinem Browser – nichts wird irgendwohin geschickt.</p>
+    </header>
+
+    <div class="wk-search field mb-0" role="search">
+        <label class="sr-only" for="q">Werkzeuge durchsuchen</label>
+        <span class="wk-search__icon" aria-hidden="true">⌕</span>
+        <input id="q" type="search" autocomplete="off" spellcheck="false" placeholder="Werkzeug suchen … z. B. „GiB“, „Pomodoro“, „Maus“" aria-describedby="q-hint">
+        <kbd aria-hidden="true">/</kbd>
+    </div>
+    <p class="hint mt-1" id="q-hint"><kbd>/</kbd> zum Suchen · <kbd>Enter</kbd> öffnet den ersten Treffer · <kbd>Esc</kbd> leert die Suche</p>
+
+    <div class="wk-filter" id="filter" role="group" aria-label="Nach Bereich filtern">
+        <button class="chip is-active" type="button" data-cat="" aria-pressed="true">Alle</button>
+        <button class="chip" type="button" data-cat="test" aria-pressed="false">Hardware testen</button>
+        <button class="chip" type="button" data-cat="rechnen" aria-pressed="false">Rechnen &amp; Code</button>
+        <button class="chip" type="button" data-cat="alltag" aria-pressed="false">Alltag</button>
+        <span class="wk-count" id="count" aria-live="polite"></span>
+    </div>
+
+    <div class="grid wk-grid" id="tools"></div>
+
+    <div class="empty wk-empty" id="empty" hidden>
+        <div class="empty__icon" aria-hidden="true">🔧</div>
+        <p id="empty-text">Kein Werkzeug gefunden.</p>
+        <button class="btn btn--sm mt-1" type="button" id="reset">Suche zurücksetzen</button>
+    </div>
+
+    <section class="wk-tips" aria-label="Gut zu wissen">
+        <div class="card card--flat" data-reveal>
+            <h3><span aria-hidden="true">🔒</span> Bleibt bei dir</h3>
+            <p class="small muted">Passwörter, Notizen und Namenslisten verlassen deinen Browser nie. Gespeichert wird nur, was du speichern willst – im <code>localStorage</code>, pro Konto.</p>
+        </div>
+        <div class="card card--flat" data-reveal style="--d:.08s">
+            <h3><span aria-hidden="true">⌨</span> Tastatur first</h3>
+            <p class="small muted">Fast jedes Werkzeug hat Tastenkürzel. Sie stehen jeweils klein unter den Knöpfen – zum Beispiel <kbd>Leertaste</kbd> für Start/Pause im Timer.</p>
+        </div>
+        <div class="card card--flat" data-reveal style="--d:.16s">
+            <h3><span aria-hidden="true">💾</span> Augen offen</h3>
+            <p class="small muted">Auch im Werkzeugkasten liegen Disketten herum. Wer Werkzeuge ungewöhnlich benutzt, findet sie.</p>
+        </div>
+    </section>
+</main>
+<script src="js/wz.js"></script>
+<script>
+XIRU.ready(function () {
+    const $ = XIRU.$;
+    const TOOLS = [
+        { p: 'werkzeuge/einheiten.html', icon: '⇄', cat: 'rechnen', desc: 'GB oder GiB? Mbit/s in MB/s, Downloadzeit, Stromkosten in Rappen, °C/°F/K, Hz in ms und PPI deines Monitors.', tags: 'einheiten umrechnen gb gib mb mib tb tib byte bit festplatte 931 datenrate mbit download dauer watt kwh strom kosten rappen temperatur celsius fahrenheit kelvin hz ms frametime frequenz zoll cm ppi monitor diagonale auflösung' },
+        { p: 'werkzeuge/passwort.html', icon: '🔑', cat: 'alltag', desc: 'Starke Passwörter und deutsche Passphrasen mit crypto.getRandomValues – plus Stärke-Prüfer, ganz ohne Netzwerk.', tags: 'passwort kennwort passphrase generator sicherheit entropie stärke prüfen zufall wortliste' },
+        { p: 'werkzeuge/zufall.html', icon: '🎲', cat: 'alltag', desc: 'Würfel (2W6+3), Münzwurf, Glücksrad „Wer zahlt?“, Teams auslosen, Zufallszahl und Liste mischen.', tags: 'zufall würfel dice w6 d20 münze kopf zahl glücksrad wer zahlt teams auslosen zufallszahl mischen namen' },
+        { p: 'werkzeuge/timer.html', icon: '⏱', cat: 'alltag', desc: 'Stoppuhr mit Runden, Countdown mit Schnellwahl und Pomodoro mit Fortschrittsring. Übersteht sogar ein Neuladen.', tags: 'timer stoppuhr countdown pomodoro wecker alarm runden konzentration pause eieruhr' },
+        { p: 'werkzeuge/json.html', icon: '{ }', cat: 'rechnen', desc: 'JSON formatieren, minimieren, prüfen (mit Zeile und Spalte), als Baum ansehen und in CSV umwandeln.', tags: 'json formatieren prettify minify validieren prüfen fehler baum csv excel sortieren code entwickler api' },
+        { p: 'werkzeuge/bildschirmtest.html', icon: '▣', cat: 'test', desc: 'Pixelfehler, Banding, Gamma, Schärfe und Backlight-Bleeding im Vollbild prüfen. Plus alle Infos zu Auflösung und Skalierung.', tags: 'bildschirm monitor test pixelfehler toter pixel banding gamma schärfe backlight bleeding ips glow auflösung dpi skalierung farben' },
+        { p: 'werkzeuge/tastaturtest.html', icon: '⌨', cat: 'test', desc: 'Jede Taste prüfen – im Schweizer oder deutschen Layout. Mit Haltezeit, Prellen und Rollover-/Ghosting-Test.', tags: 'tastatur keyboard test tasten qwertz schweiz ch de ghosting rollover nkro prellen chatter key code' },
+        { p: 'werkzeuge/hz-test.html', icon: '〰', cat: 'test', desc: 'Misst die echte Bildwiederholrate deines Monitors und zeigt Bewegungsunschärfe mit fliegenden Disketten.', tags: 'hz test bildwiederholrate refresh rate fps 144 240 60 frametime vsync bewegung ufo motion blur monitor' },
+        { p: 'werkzeuge/klicktest.html', icon: '🖱', cat: 'test', desc: 'Klicks pro Sekunde, Doppelklick-Defekt finden, alle Maustasten und das Mausrad testen.', tags: 'klicktest cps klicks pro sekunde maus test doppelklick rechtsklick mausrad scroll butterfly jitter' },
+        { p: 'werkzeuge/notizen.html', icon: '✎', cat: 'alltag', desc: 'Mehrere Notizen mit Markdown-Vorschau, Suche, Anheften und Export. Bleibt nur in deinem Browser.', tags: 'notizen notizblock notes markdown editor todo liste checkliste export md txt' }
+    ];
+    const CAT = { test: 'Hardware testen', rechnen: 'Rechnen & Code', alltag: 'Alltag' };
+
+    const grid = $('#tools'), q = $('#q'), count = $('#count'), empty = $('#empty');
+    let cat = '';
+
+    function eggsOn(path) {
+        const list = (XIRU.eggs || []).filter(e => e.pg === path);
+        const found = list.filter(e => XIRU.hasEgg(e.id)).length;
+        return found ? '<span class="badge badge--warning" title="Gefundene Disketten auf dieser Seite">💾 ' + found + '</span>' : '';
+    }
+
+    TOOLS.forEach((t, i) => {
+        const pg = XIRU.pageFor(t.p) || { t: t.p, d: '' };
+        t.title = pg.t;
+        const a = document.createElement('a');
+        a.className = 'tile wk-tile-anim' + (XIRU.isVisited(t.p) ? '' : ' is-new');
+        a.href = XIRU.url(t.p);
+        a.style.setProperty('--d', (i * 0.04) + 's');
+        a.innerHTML = '<div class="tile__icon" aria-hidden="true">' + XIRU.esc(t.icon) + '</div>' +
+            '<div class="tile__title" data-f="t">' + XIRU.esc(t.title) + '</div>' +
+            '<div class="tile__desc" data-f="d">' + XIRU.esc(t.desc) + '</div>' +
+            '<div class="tile__meta"><span class="badge">' + CAT[t.cat] + '</span>' + eggsOn(t.p) + '</div>';
+        t.el = a;
+        t.hay = (t.title + ' ' + t.desc + ' ' + t.tags + ' ' + CAT[t.cat]).toLowerCase();
+        grid.appendChild(a);
+    });
+
+    function norm(s) { return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
+    TOOLS.forEach(t => { t.hayN = norm(t.hay); });
+
+    function mark(text, words) {
+        let html = XIRU.esc(text);
+        words.forEach(w => {
+            if (w.length < 2) return;
+            const re = new RegExp('(' + XIRU.esc(w).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'ig');
+            html = html.replace(/(<[^>]*>)|([^<]+)/g, (m, tag, txt) => tag || txt.replace(re, '<mark>$1</mark>'));
+        });
+        return html;
+    }
+
+    let hammerTimer;
+    function apply() {
+        const raw = q.value.trim();
+        const words = norm(raw).split(/\s+/).filter(Boolean);
+        let shown = 0, first = null;
+        TOOLS.forEach(t => {
+            const ok = (!cat || t.cat === cat) && words.every(w => t.hayN.includes(w));
+            t.el.hidden = !ok;
+            t.el.classList.remove('is-first');
+            t.el.querySelector('[data-f="t"]').innerHTML = mark(t.title, raw.split(/\s+/));
+            t.el.querySelector('[data-f="d"]').innerHTML = mark(t.desc, raw.split(/\s+/));
+            if (ok) { shown++; if (!first) first = t; }
+        });
+        if (first && raw) first.el.classList.add('is-first');
+        count.textContent = shown === TOOLS.length ? TOOLS.length + ' Werkzeuge' : shown + ' von ' + TOOLS.length;
+        empty.hidden = shown > 0;
+        if (!shown) $('#empty-text').textContent = raw ? 'Für „' + raw + '“ haben wir (noch) kein Werkzeug.' : 'In diesem Bereich gibt es nichts.';
+        // Diskette: Wer einen Hammer sucht …
+        clearTimeout(hammerTimer);
+        if (/^(hammer|vorschlaghammer)$/.test(norm(raw))) {
+            hammerTimer = setTimeout(() => {
+                XIRU.fx('shake');
+                XIRU.egg('t-werkzeuge-hammer');
+            }, 450);
+        }
+        return first;
+    }
+
+    q.addEventListener('input', apply);
+    q.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+            const first = apply();
+            if (first) location.href = first.el.href;
+        } else if (e.key === 'Escape') {
+            if (q.value) { e.stopPropagation(); q.value = ''; apply(); }
+            else q.blur();
+        } else if (e.key === 'ArrowDown') {
+            const first = TOOLS.find(t => !t.el.hidden);
+            if (first) { e.preventDefault(); first.el.focus(); }
+        }
+    });
+    document.addEventListener('keydown', e => {
+        if (e.key === '/' && !WZ.typing(e) && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); q.focus(); q.select(); }
+    });
+    // Pfeiltasten im Kachelraster
+    grid.addEventListener('keydown', e => {
+        if (!/^Arrow(Left|Right|Up|Down)$/.test(e.key)) return;
+        const vis = TOOLS.filter(t => !t.el.hidden).map(t => t.el);
+        const i = vis.indexOf(document.activeElement);
+        if (i < 0) return;
+        const cols = Math.max(1, Math.round(grid.clientWidth / vis[0].offsetWidth));
+        let j = i + ({ ArrowLeft: -1, ArrowRight: 1, ArrowUp: -cols, ArrowDown: cols })[e.key];
+        if (j < 0 && e.key === 'ArrowUp') { e.preventDefault(); q.focus(); return; }
+        j = Math.max(0, Math.min(vis.length - 1, j));
+        e.preventDefault(); vis[j].focus();
+    });
+
+    XIRU.$$('#filter .chip').forEach(c => c.addEventListener('click', () => {
+        cat = c.getAttribute('data-cat');
+        XIRU.$$('#filter .chip').forEach(x => { const on = x === c; x.classList.toggle('is-active', on); x.setAttribute('aria-pressed', on); });
+        apply();
+    }));
+    $('#reset').addEventListener('click', () => {
+        q.value = ''; cat = '';
+        XIRU.$$('#filter .chip').forEach((x, i) => { x.classList.toggle('is-active', i === 0); x.setAttribute('aria-pressed', i === 0); });
+        apply(); q.focus();
+    });
+
+    // ?q=… aus der Adresse übernehmen
+    try { const pre = new URLSearchParams(location.search).get('q'); if (pre) q.value = pre; } catch (e) { }
+    apply();
+
+    // Diskette: Alle zehn Werkzeuge ausprobiert
+    if (TOOLS.every(t => XIRU.isVisited(t.p))) XIRU.egg('t-werkzeuge-alle');
+});
+</script>
+</body>
+</html>

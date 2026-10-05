@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stapelturm · Xiruprojekts</title>
+    <meta name="description" content="Stapelturm – Blöcke im richtigen Moment absetzen und den Turm bis ins All bauen.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/arcade.js"></script>
+    <style>
+        #cv { width: min(100%, calc((100vh - 170px) * 0.667)); cursor: pointer; }
+        .touch-pad .wide { width: 150px; font-size: 1rem; font-weight: 700; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">▶ Spielhalle · Action</span>
+        <h1>Stapelturm</h1>
+        <p class="lead">Ein Block schwingt hin und her – setz ihn im richtigen Moment ab. Was übersteht, fällt runter, und der nächste Block wird schmaler. Triffst du genau, gibt's Bonuspunkte. Wie hoch kommst du?</p>
+    </header>
+
+    <div class="game">
+        <div>
+            <div class="game__hud" id="hud"></div>
+            <div class="game__stage" id="stage">
+                <canvas id="cv"></canvas>
+                <div class="game__overlay" id="ov"></div>
+            </div>
+            <div class="touch-pad">
+                <button class="wide" data-key=" " aria-label="Absetzen">Absetzen</button>
+                <button data-key="p" aria-label="Pause">⏸</button>
+            </div>
+        </div>
+        <aside class="game__side">
+            <div class="card">
+                <h3>Steuerung</h3>
+                <ul class="keys-help">
+                    <li><kbd>Leertaste</kbd>, <kbd>↓</kbd> oder <kbd>Enter</kbd> – Block absetzen</li>
+                    <li>Klick oder Tippen aufs Spielfeld – Block absetzen</li>
+                    <li><kbd>P</kbd> / <kbd>Esc</kbd> – Pause</li>
+                    <li>Drei perfekte Treffer in Folge lassen den Block wieder etwas wachsen.</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Modus</h3>
+                <div class="row" id="modes">
+                    <button class="chip is-active" data-mode="klassisch">Klassisch</button>
+                    <button class="chip" data-mode="turbo">Turbo</button>
+                </div>
+                <p class="small muted mt-2" id="mode-desc">Das Tempo steigt mit jedem Stockwerk.</p>
+            </div>
+            <div class="card">
+                <h3>Rekord</h3>
+                <p class="stat__value" id="best">–</p>
+            </div>
+        </aside>
+    </div>
+</main>
+<script src="js/stapel.js"></script>
+</body>
+</html>

@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dienste &amp; Schlüssel · Xiruprojekts</title>
+    <meta name="description" content="API-Schlüssel für Hugging Face, eigene KI-Dienste und Pollinations verwalten – lokal in deinem Browser.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/ai.js"></script>
+    <style>
+        .dienste-head { position: relative; padding-right: 0; }
+        @media (min-width: 760px) { .dienste-head { padding-right: 150px; } }
+        .keyring { position: absolute; right: 0; top: 0; width: 132px; height: 132px; user-select: none; }
+        @media (max-width: 759px) { .keyring { position: static; display: block; width: 92px; height: 92px; margin: .5rem 0 0; } }
+        .keyring svg { width: 100%; height: 100%; overflow: visible; }
+        .keyring .ring { fill: none; stroke: var(--text-faint); stroke-width: 3; }
+        .keyring .key { fill: var(--surface-3); stroke: var(--border-strong); stroke-width: 1.5; transform-box: fill-box; transform-origin: 50% 0; animation: keySwing 4s ease-in-out infinite; }
+        .keyring .key--2 { fill: color-mix(in srgb, var(--rc) 35%, var(--surface-3)); animation-delay: -1.3s; }
+        .keyring .key--3 { fill: color-mix(in srgb, var(--warning) 35%, var(--surface-3)); animation-delay: -2.2s; }
+        .keyring .key--odd { cursor: default; animation: keyWobble 5s ease-in-out infinite; }
+        .keyring .key--odd:hover { fill: color-mix(in srgb, var(--accent-2) 45%, var(--surface-3)); }
+        @keyframes keySwing { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
+        @keyframes keyWobble { 0%, 86%, 100% { transform: rotate(14deg); } 90% { transform: rotate(-4deg); } 94% { transform: rotate(22deg); } }
+
+        .mode-chips { display: flex; flex-wrap: wrap; gap: .45rem; }
+        .key-list { display: flex; flex-direction: column; gap: .7rem; }
+        .key-item {
+            display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .55rem .9rem; align-items: start;
+            padding: .85rem 1rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-2);
+            animation: fadeUp .35s var(--ease) both;
+        }
+        .key-item.is-paused { border-color: color-mix(in srgb, var(--warning) 45%, var(--border)); }
+        .key-item.is-error { border-color: color-mix(in srgb, var(--danger) 45%, var(--border)); }
+        .key-order { display: flex; flex-direction: column; gap: 2px; }
+        .key-order button { width: 28px; height: 22px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); cursor: pointer; font-size: .7rem; line-height: 1; }
+        .key-order button:hover:not(:disabled) { color: var(--text); border-color: var(--border-strong); }
+        .key-order button:disabled { opacity: .35; cursor: default; }
+        .key-main { min-width: 0; }
+        .key-title { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; font-weight: 700; }
+        .key-title .num { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--surface-3); font-size: .72rem; color: var(--text-muted); }
+        .key-secret { font-family: var(--mono); font-size: .82rem; color: var(--text-muted); overflow-wrap: anywhere; }
+        .key-stats { display: flex; flex-wrap: wrap; gap: .35rem .9rem; font-size: .78rem; color: var(--text-faint); margin-top: .25rem; }
+        .key-err { font-size: .8rem; color: var(--danger); margin-top: .25rem; }
+        .key-test { grid-column: 2; font-size: .85rem; padding: .5rem .75rem; border-radius: var(--radius-sm); background: var(--bg-2); border: 1px solid var(--border); animation: fadeIn .25s both; overflow-wrap: anywhere; }
+        .key-test.is-ok { border-color: color-mix(in srgb, var(--success) 45%, var(--border)); }
+        .key-test.is-bad { border-color: color-mix(in srgb, var(--danger) 45%, var(--border)); }
+        .key-actions { grid-column: 2; display: flex; flex-wrap: wrap; gap: .35rem; }
+        @media (max-width: 480px) { .key-actions, .key-test { grid-column: 1 / -1; } }
+        .secret-field { display: flex; gap: .4rem; }
+        .secret-field input { flex: 1; min-width: 0; font-family: var(--mono) !important; }
+        .preset-row { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: 1rem; }
+        .steps { counter-reset: st; list-style: none; padding: 0; }
+        .steps li { counter-increment: st; position: relative; padding: .1rem 0 .7rem 2.4rem; }
+        .steps li::before {
+            content: counter(st); position: absolute; left: 0; top: 0; width: 1.7rem; height: 1.7rem; border-radius: 50%;
+            display: grid; place-items: center; font-weight: 800; font-size: .85rem; background: color-mix(in srgb, var(--rc) 20%, transparent); color: var(--rc);
+        }
+        .switch-card { display: flex; gap: 1rem; align-items: flex-start; }
+        .switch { position: relative; width: 52px; height: 30px; flex-shrink: 0; }
+        .switch input { position: absolute; opacity: 0; inset: 0; cursor: pointer; z-index: 1; }
+        .switch span { position: absolute; inset: 0; border-radius: 99px; background: var(--surface-3); border: 1px solid var(--border-strong); transition: background .2s; }
+        .switch span::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: var(--text-muted); transition: transform .25s var(--ease), background .2s; }
+        .switch input:checked + span { background: color-mix(in srgb, var(--rc) 55%, var(--surface-3)); }
+        .switch input:checked + span::after { transform: translateX(22px); background: var(--text); }
+        .switch input:focus-visible + span { outline: 2px solid var(--rc); outline-offset: 2px; }
+        .panel[hidden] { display: none; }
+        .model-hint { font-family: var(--mono); font-size: .8rem; }
+        .ki-label { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--text-faint); margin-bottom: .45rem; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head dienste-head">
+        <span class="eyebrow">⚓ Heimathafen · KI-Dienste</span>
+        <h1>Dienste &amp; Schlüssel</h1>
+        <p class="lead">Hier verbindest du das KI-Labor mit echten Sprach- und Bildmodellen. Ohne Schlüssel läuft alles im Offline-Modus – mit Schlüssel wird es richtig schlau.</p>
+        <span class="keyring" aria-hidden="true" title="Dein Schlüsselbund">
+            <svg viewBox="0 0 120 120">
+                <circle class="ring" cx="60" cy="22" r="14"/>
+                <g class="key key--1"><path d="M44 30h8v52l6 6-6 6 6 6-8 8h-6z"/><circle cx="48" cy="30" r="9"/></g>
+                <g class="key key--2"><path d="M58 34h8v44h10v8H66v8h8v8H58z"/><circle cx="62" cy="34" r="9"/></g>
+                <g class="key key--3"><path d="M72 30h7v40l7 5-7 5v8h7v7H72z"/><circle cx="75.5" cy="30" r="8"/></g>
+                <g class="key key--odd" data-egg="p-dienste"><path d="M86 26h6v30c6 2 8 8 4 12s-12 2-12-4c0-4 2-6 2-8z"/><circle cx="89" cy="26" r="7"/></g>
+            </svg>
+        </span>
+    </header>
+
+    <div class="callout callout--warning" id="guest-note" hidden>
+        <strong>Du bist als Gast unterwegs.</strong> Das klappt – deine Schlüssel landen dann im Gastbereich dieses Browsers.
+        Empfohlen ist ein <a href="login.html">lokales Konto</a>: Dann gehören die Schlüssel zu deinem Konto und verschwinden beim Löschen des Kontos mit.
+        Beim Erstellen eines Kontos werden Gast-Schlüssel nicht automatisch mitgenommen – du kannst sie danach hier übernehmen.
+    </div>
+    <div class="callout" id="adopt-note" hidden>
+        <div class="row">
+            <span class="spacer"><strong>Im Gastbereich liegen noch <span id="adopt-count">0</span> Schlüssel.</strong> Willst du sie in dein Konto übernehmen? Danach werden sie im Gastbereich gelöscht.</span>
+            <button class="btn btn--sm btn--primary" type="button" id="adopt-btn">Übernehmen</button>
+        </div>
+    </div>
+
+    <div class="callout callout--danger">
+        <strong>🔐 Bitte kurz lesen – Sicherheit</strong>
+        <ul class="mt-1 mb-0">
+            <li>Schlüssel werden <strong>unverschlüsselt</strong> im <code>localStorage</code> dieses Browsers gespeichert. Wer Zugriff auf dein Gerät oder dein Browserprofil hat, kann sie lesen.</li>
+            <li>Nutze das nur auf <strong>eigenen Geräten</strong> – nie auf Schul-, Bibliotheks- oder fremden Computern.</li>
+            <li>Schlüssel sind <strong>nicht im Export</strong> deines Spielstands enthalten. Auf einem neuen Gerät musst du sie neu eintragen.</li>
+            <li>Jede KI-Anfrage schickt deinen Text (bzw. deine Bildbeschreibung) an den gewählten Anbieter. Schreib nichts hinein, was du nicht teilen möchtest.</li>
+            <li>Erstelle am besten Tokens nur mit den nötigsten Rechten – und lösche sie beim Anbieter, wenn du sie nicht mehr brauchst.</li>
+        </ul>
+    </div>
+
+    <section class="card card--accent mb-3">
+        <div class="row mb-2">
+            <h2 class="mb-0 spacer">Verbindung</h2>
+            <div id="ai-status"></div>
+        </div>
+        <p class="ki-label">Bevorzugter Anbieter</p>
+        <div class="mode-chips" id="mode-chips" role="radiogroup" aria-label="Bevorzugter Anbieter">
+            <button class="chip" type="button" data-mode="auto" role="radio">Automatisch</button>
+            <button class="chip" type="button" data-mode="hf" role="radio">🤗 Hugging Face</button>
+            <button class="chip" type="button" data-mode="custom" role="radio">⚙ Eigener Dienst</button>
+            <button class="chip" type="button" data-mode="pollinations" role="radio">🐝 Pollinations</button>
+            <button class="chip" type="button" data-mode="offline" role="radio">◌ Nur offline</button>
+        </div>
+        <p class="small muted mt-1" id="mode-desc"></p>
+        <div class="grid-2 mt-2">
+            <div class="field mb-0">
+                <label for="rotation">Mehrere Schlüssel nutzen</label>
+                <select id="rotation">
+                    <option value="order">Der Reihe nach – erst den ersten, bei Problemen den nächsten</option>
+                    <option value="roundrobin">Reihum – Anfragen gleichmässig verteilen</option>
+                </select>
+                <small>Bei Fehler 401, 402, 403, 429 oder 503 wird automatisch der nächste Schlüssel probiert. Nach „zu viele Anfragen" (429) macht ein Schlüssel kurz Pause.</small>
+            </div>
+            <div class="field mb-0">
+                <span class="label">Antworten</span>
+                <label class="check mt-1"><input type="checkbox" id="stream"> Live mitschreiben (Streaming), wenn der Dienst es kann</label>
+            </div>
+        </div>
+    </section>
+
+    <div class="tabs" role="tablist" aria-label="Anbieter">
+        <button type="button" role="tab" aria-selected="true" data-tab="hf">🤗 Hugging Face</button>
+        <button type="button" role="tab" aria-selected="false" data-tab="custom">⚙ Eigener Dienst</button>
+        <button type="button" role="tab" aria-selected="false" data-tab="poll">🐝 Pollinations</button>
+        <button type="button" role="tab" aria-selected="false" data-tab="stats">📊 Statistik</button>
+        <button type="button" role="tab" aria-selected="false" data-tab="help">📖 Anleitung</button>
+    </div>
+
+    <!-- Hugging Face -->
+    <section class="panel" data-panel="hf">
+        <div class="grid-2">
+            <div class="card">
+                <h3>Deine Hugging-Face-Tokens</h3>
+                <div class="key-list" id="hf-list"></div>
+            </div>
+            <div class="card">
+                <h3>Token hinzufügen</h3>
+                <form id="hf-form" autocomplete="off">
+                    <div class="field">
+                        <label for="hf-label">Bezeichnung</label>
+                        <input id="hf-label" maxlength="40" placeholder="z. B. Mein Hauptkonto">
+                    </div>
+                    <div class="field">
+                        <label for="hf-token">Token</label>
+                        <div class="secret-field">
+                            <input id="hf-token" type="password" spellcheck="false" autocapitalize="off" autocomplete="new-password" placeholder="hf_…">
+                            <button class="btn btn--sm" type="button" data-reveal-for="hf-token" aria-label="Token anzeigen">👁</button>
+                        </div>
+                        <small>Fein abgestimmter Token mit „Make calls to Inference Providers" oder ein „Read"-Token.</small>
+                    </div>
+                    <button class="btn btn--primary" type="submit">Hinzufügen</button>
+                    <p class="form-msg" id="hf-msg" role="status"></p>
+                </form>
+            </div>
+        </div>
+        <div class="card mt-3">
+            <h3>Modelle</h3>
+            <div class="grid-2">
+                <div class="field">
+                    <label for="hf-model">Sprachmodell (Chat)</label>
+                    <select id="hf-model"></select>
+                    <input id="hf-model-custom" class="mt-1" placeholder="organisation/modellname" hidden spellcheck="false">
+                    <small>Tipp: Ein Anhang wie <span class="model-hint">:fastest</span> oder <span class="model-hint">:cheapest</span> lässt den Router den Anbieter wählen.</small>
+                </div>
+                <div class="field">
+                    <label for="hf-image-model">Bildmodell</label>
+                    <select id="hf-image-model"></select>
+                    <input id="hf-image-custom" class="mt-1" placeholder="organisation/modellname" hidden spellcheck="false">
+                    <small>Bilder laufen über <span class="model-hint">hf-inference</span>. Nicht jedes Modell ist dort verfügbar.</small>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Eigener Dienst -->
+    <section class="panel" data-panel="custom" hidden>
+        <div class="grid-2">
+            <div class="card">
+                <h3>Eingerichtete Dienste</h3>
+                <p class="small muted">Alles, was die OpenAI-Schnittstelle <code>/v1/chat/completions</code> spricht: OpenRouter, LM Studio, Ollama, LocalAI …</p>
+                <div class="key-list" id="custom-list"></div>
+            </div>
+            <div class="card">
+                <h3>Dienst hinzufügen</h3>
+                <div class="preset-row" aria-label="Vorlagen">
+                    <button class="chip" type="button" data-preset="openrouter">OpenRouter</button>
+                    <button class="chip" type="button" data-preset="lmstudio">LM Studio (lokal)</button>
+                    <button class="chip" type="button" data-preset="ollama">Ollama (lokal)</button>
+                </div>
+                <form id="custom-form" autocomplete="off">
+                    <div class="field">
+                        <label for="c-label">Bezeichnung</label>
+                        <input id="c-label" maxlength="40" placeholder="z. B. OpenRouter Gratis">
+                    </div>
+                    <div class="field">
+                        <label for="c-base">Basis-URL</label>
+                        <input id="c-base" spellcheck="false" placeholder="https://openrouter.ai/api/v1">
+                    </div>
+                    <div class="field">
+                        <label for="c-key">Schlüssel <span class="faint">(optional)</span></label>
+                        <div class="secret-field">
+                            <input id="c-key" type="password" spellcheck="false" autocapitalize="off" autocomplete="new-password" placeholder="sk-…">
+                            <button class="btn btn--sm" type="button" data-reveal-for="c-key" aria-label="Schlüssel anzeigen">👁</button>
+                        </div>
+                    </div>
+                    <div class="grid-2">
+                        <div class="field">
+                            <label for="c-model">Chatmodell</label>
+                            <input id="c-model" spellcheck="false" placeholder="z. B. llama3.1">
+                        </div>
+                        <div class="field">
+                            <label for="c-image">Bildmodell <span class="faint">(optional)</span></label>
+                            <input id="c-image" spellcheck="false" placeholder="leer = keine Bilder">
+                        </div>
+                    </div>
+                    <button class="btn btn--primary" type="submit">Hinzufügen</button>
+                    <p class="form-msg" id="c-msg" role="status"></p>
+                </form>
+                <p class="small faint" id="preset-note"></p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pollinations -->
+    <section class="panel" data-panel="poll" hidden>
+        <div class="card">
+            <div class="switch-card">
+                <label class="switch"><input type="checkbox" id="poll-toggle" aria-describedby="poll-desc"><span></span></label>
+                <div>
+                    <h3 class="mb-1"><label for="poll-toggle">Pollinations erlauben</label></h3>
+                    <p id="poll-desc" class="muted">Pollinations ist ein kostenloser Gemeinschaftsdienst ohne Konto und ohne Schlüssel. Wenn du ihn einschaltest, gehen Texte an <code>text.pollinations.ai</code> und Bildbeschreibungen an <code>image.pollinations.ai</code> (bei Bildern als Teil der Adresse). Qualität und Verfügbarkeit schwanken – dafür klappt es sofort.</p>
+                    <p class="small faint mb-0">Wir fragen Bilder mit <code>private=true</code> an, damit sie nicht im öffentlichen Feed landen. Garantieren kann das nur der Anbieter.</p>
+                    <div class="row mt-2">
+                        <button class="btn btn--sm" type="button" id="poll-test">Verbindung testen</button>
+                        <span class="small" id="poll-result" role="status"></span>
+                    </div>
+                    <div class="key-stats" id="poll-stats"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Statistik -->
+    <section class="panel" data-panel="stats" hidden>
+        <div class="table-wrap">
+            <table class="table" data-sortable>
+                <thead>
+                    <tr><th data-sort="text">Anbieter</th><th data-sort="text">Bezeichnung</th><th class="num" data-sort="num">Heute</th><th class="num" data-sort="num">Gesamt</th><th class="num" data-sort="num">OK</th><th class="num" data-sort="num">Fehler</th><th data-sort="text">Zustand</th><th>Letzter Fehler</th></tr>
+                </thead>
+                <tbody id="stats-body"></tbody>
+            </table>
+        </div>
+        <div class="row mt-2">
+            <p class="small muted spacer mb-0">Gezählt werden Anfragen aus diesem Browser. Die echten Limits siehst du nur beim Anbieter.</p>
+            <button class="btn btn--sm btn--ghost" type="button" id="stats-reset">Zähler zurücksetzen</button>
+        </div>
+    </section>
+
+    <!-- Anleitung -->
+    <section class="panel" data-panel="help" hidden>
+        <div class="grid-2">
+            <div class="card">
+                <h3>🤗 Hugging Face einrichten</h3>
+                <ol class="steps">
+                    <li>Erstelle ein kostenloses Konto auf <a href="https://huggingface.co/join" target="_blank" rel="noopener noreferrer">huggingface.co/join</a> und bestätige deine E-Mail-Adresse.</li>
+                    <li>Öffne <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener noreferrer">huggingface.co/settings/tokens</a> und klicke auf „Create new token".</li>
+                    <li>Wähle <strong>Fine-grained</strong> und setze das Häkchen bei <strong>„Make calls to Inference Providers"</strong> – mehr braucht es nicht. (Ein klassischer „Read"-Token geht meist auch, hat aber mehr Rechte als nötig.)</li>
+                    <li>Kopiere den Token (beginnt mit <code>hf_</code>) und füge ihn oben unter „Token hinzufügen" ein. Danach „Testen" drücken.</li>
+                    <li>Für Llama-Modelle musst du eventuell einmal auf der Modellseite die Lizenz akzeptieren.</li>
+                </ol>
+                <p class="small muted mb-0">Hugging Face schenkt jedem Konto jeden Monat ein kleines Guthaben für Inference Providers. Ist es aufgebraucht, meldet der Dienst Fehler 402.</p>
+            </div>
+            <div class="card">
+                <h3>⚙ Eigener Dienst</h3>
+                <ol class="steps">
+                    <li><strong>OpenRouter:</strong> Konto erstellen und unter <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer">openrouter.ai/keys</a> einen Schlüssel anlegen. Basis-URL <code>https://openrouter.ai/api/v1</code>, Modellnamen findest du in der Modellliste (Gratis-Modelle enden auf <code>:free</code>).</li>
+                    <li><strong>LM Studio:</strong> Modell laden, unter „Developer" den lokalen Server starten und <em>CORS aktivieren</em>. Basis-URL <code>http://localhost:1234/v1</code>, kein Schlüssel nötig.</li>
+                    <li><strong>Ollama:</strong> Läuft auf <code>http://localhost:11434/v1</code>. Damit der Browser zugreifen darf, Ollama mit der Umgebungsvariable <code>OLLAMA_ORIGINS</code> (z. B. <code>http://localhost:5510</code>) starten.</li>
+                </ol>
+                <p class="small muted mb-0">Lokale Modelle sind die privateste Variante: Deine Texte verlassen deinen Computer nicht.</p>
+            </div>
+        </div>
+        <div class="callout mt-3">
+            <strong>Mehrere Schlüssel?</strong> Du kannst pro Anbieter mehrere eigene Konten bzw. Schlüssel eintragen. Dann verteilen sich die Anfragen, und wenn einer an sein Limit stösst, springt der nächste ein.
+            Bitte halte dich dabei an die Nutzungsbedingungen der Anbieter – also nur <em>deine eigenen</em> Konten, keine fremden oder gekauften Schlüssel, und keine Tricks, um Limits zu umgehen, die ein Anbieter ausdrücklich verbietet.
+        </div>
+    </section>
+
+    <div class="row mt-4">
+        <span class="spacer small faint">Gespeichert unter: <span id="store-owner"></span></span>
+        <button class="btn btn--danger btn--sm" type="button" id="clear-all">Alle Schlüssel löschen</button>
+    </div>
+</main>
+<script>
+XIRU.ready(function () {
+    const AI = XIRU.ai, $ = XIRU.$, esc = XIRU.esc;
+    const testResults = {};
+
+    // ── Gast / Übernahme ──
+    $('#store-owner').textContent = XIRU.user ? 'Konto „' + XIRU.user + '"' : 'Gastbereich dieses Browsers';
+    if (!XIRU.user) $('#guest-note').hidden = false;
+    function guestKeys() {
+        const g = XIRU.store.get('xiru:keys:~gast', null);
+        if (!g) return null;
+        const n = (Array.isArray(g.hf) ? g.hf.length : 0) + (Array.isArray(g.custom) ? g.custom.length : 0);
+        return n ? { g, n } : null;
+    }
+    function renderAdopt() {
+        const gk = XIRU.user ? guestKeys() : null;
+        $('#adopt-note').hidden = !gk;
+        if (gk) $('#adopt-count').textContent = gk.n;
+    }
+    $('#adopt-btn').addEventListener('click', () => {
+        const gk = guestKeys(); if (!gk) return;
+        const c = AI.config();
+        let moved = 0;
+        ['hf', 'custom'].forEach(p => (gk.g[p] || []).forEach(e => {
+            const secret = p === 'hf' ? e.token : (e.base + '|' + (e.key || ''));
+            if (c[p].some(x => (p === 'hf' ? x.token : (x.base + '|' + (x.key || ''))) === secret)) return;
+            c[p].push(Object.assign({}, e)); moved++;
+        }));
+        XIRU.keys.set(c);
+        XIRU.store.remove('xiru:keys:~gast');
+        XIRU.toast('Schlüssel übernommen', moved + ' Eintrag' + (moved === 1 ? '' : 'e') + ' in dein Konto verschoben.', { icon: '🔑' });
+        renderAll();
+    });
+
+    // ── Status & Modus ──
+    AI.ui.status('#ai-status');
+    const MODE_DESC = {
+        auto: 'Nimmt den ersten eingerichteten Dienst: Hugging Face → eigener Dienst → Pollinations (falls erlaubt) → offline.',
+        hf: 'Hugging Face zuerst. Fällt es aus, springen die anderen eingerichteten Dienste ein, zuletzt der Offline-Modus.',
+        custom: 'Dein eigener Dienst zuerst – z. B. ein lokales Modell. Danach die anderen, zuletzt offline.',
+        pollinations: 'Pollinations zuerst (muss im Reiter „Pollinations" erlaubt sein). Danach die anderen, zuletzt offline.',
+        offline: 'Keine einzige Netzwerkanfrage. Alles läuft mit Regeln, Vorlagen und Zufall direkt in deinem Browser.'
+    };
+    function renderMode() {
+        const s = AI.settings();
+        XIRU.$$('#mode-chips .chip').forEach(b => {
+            const on = b.dataset.mode === s.mode;
+            b.classList.toggle('is-active', on); b.setAttribute('aria-checked', on);
+        });
+        $('#mode-desc').textContent = MODE_DESC[s.mode] || '';
+        $('#rotation').value = s.rotation;
+        $('#stream').checked = s.stream !== false;
+        $('#poll-toggle').checked = !!s.pollinations;
+    }
+    XIRU.$$('#mode-chips .chip').forEach(b => b.addEventListener('click', () => {
+        AI.setSettings({ mode: b.dataset.mode });
+        if (b.dataset.mode === 'pollinations' && !AI.settings().pollinations) XIRU.toast('Noch ausgeschaltet', 'Erlaube Pollinations zuerst im Reiter „Pollinations".', { icon: '🐝' });
+        renderMode();
+    }));
+    $('#rotation').addEventListener('change', e => AI.setSettings({ rotation: e.target.value }));
+    $('#stream').addEventListener('change', e => AI.setSettings({ stream: e.target.checked }));
+
+    // ── Reiter ──
+    const tabs = XIRU.$$('.tabs [data-tab]');
+    function showTab(id) {
+        tabs.forEach(t => t.setAttribute('aria-selected', t.dataset.tab === id));
+        XIRU.$$('.panel').forEach(p => { p.hidden = p.dataset.panel !== id; });
+        try { sessionStorage.setItem('xiru:dienste-tab', id); } catch (e) { }
+    }
+    tabs.forEach(t => t.addEventListener('click', () => showTab(t.dataset.tab)));
+    try { const last = sessionStorage.getItem('xiru:dienste-tab'); if (last && tabs.some(t => t.dataset.tab === last)) showTab(last); } catch (e) { }
+
+    // ── Geheimfelder ein-/ausblenden ──
+    XIRU.$$('[data-reveal-for]').forEach(b => b.addEventListener('click', () => {
+        const inp = document.getElementById(b.dataset.revealFor);
+        inp.type = inp.type === 'password' ? 'text' : 'password';
+        b.textContent = inp.type === 'password' ? '👁' : '🙈';
+    }));
+
+    // ── Listen ──
+    function ago(ts) {
+        if (!ts) return '';
+        const s = Math.round((Date.now() - ts) / 1000);
+        if (s < 60) return 'gerade eben';
+        if (s < 3600) return 'vor ' + Math.round(s / 60) + ' min';
+        if (s < 86400) return 'vor ' + Math.round(s / 3600) + ' h';
+        return new Date(ts).toLocaleDateString('de-CH');
+    }
+    function stateOf(e) {
+        const now = Date.now();
+        if (e.pausedUntil > now) {
+            const s = Math.ceil((e.pausedUntil - now) / 1000);
+            return { cls: 'is-paused', badge: '<span class="badge badge--warning">Pause ' + (s > 90 ? Math.round(s / 60) + ' min' : s + ' s') + '</span>', text: 'Pause' };
+        }
+        if (e.lastErrorAt && (!e.lastOkAt || e.lastErrorAt > e.lastOkAt)) return { cls: 'is-error', badge: '<span class="badge badge--danger">Fehler</span>', text: 'Fehler' };
+        if (e.lastOkAt) return { cls: '', badge: '<span class="badge badge--success">bereit</span>', text: 'bereit' };
+        return { cls: '', badge: '<span class="badge">ungetestet</span>', text: 'ungetestet' };
+    }
+    const todayOf = e => e.day === XIRU.today() ? (e.today || 0) : 0;
+    function itemHTML(p, e, i, n) {
+        const st = stateOf(e), tr = testResults[e.id];
+        const secret = p === 'hf' ? AI.mask(e.token)
+            : esc(e.base) + (e.key ? ' · ' + AI.mask(e.key) : ' · ohne Schlüssel') + '<br>Modell: ' + esc(e.model || 'local-model') + (e.imageModel ? ' · Bild: ' + esc(e.imageModel) : '');
+        return '<div class="key-item ' + st.cls + '" data-id="' + esc(e.id) + '">' +
+            '<div class="key-order"><button type="button" data-act="up" aria-label="Nach oben"' + (i === 0 ? ' disabled' : '') + '>▲</button>' +
+            '<button type="button" data-act="down" aria-label="Nach unten"' + (i === n - 1 ? ' disabled' : '') + '>▼</button></div>' +
+            '<div class="key-main"><div class="key-title"><span class="num">' + (i + 1) + '</span>' + esc(e.label || (p === 'hf' ? 'Token ' + (i + 1) : 'Dienst ' + (i + 1))) + ' ' + st.badge + '</div>' +
+            '<div class="key-secret">' + secret + '</div>' +
+            '<div class="key-stats"><span>Heute: <strong>' + XIRU.fmt(todayOf(e)) + '</strong></span><span>Gesamt: ' + XIRU.fmt(e.total || 0) + '</span><span>OK: ' + XIRU.fmt(e.ok || 0) + '</span>' +
+            (e.lastUsed ? '<span>zuletzt ' + ago(e.lastUsed) + '</span>' : '') + '</div>' +
+            (e.lastError && st.text !== 'bereit' ? '<div class="key-err">⚠ ' + esc(e.lastError) + ' <span class="faint">(' + ago(e.lastErrorAt) + ')</span></div>' : '') + '</div>' +
+            '<div class="key-actions">' +
+            '<button class="btn btn--sm" type="button" data-act="test">' + (tr && tr.busy ? 'Teste …' : 'Testen') + '</button>' +
+            '<button class="btn btn--sm btn--ghost" type="button" data-act="rename" aria-label="Umbenennen">✎</button>' +
+            (e.pausedUntil > Date.now() ? '<button class="btn btn--sm btn--ghost" type="button" data-act="unpause">Pause aufheben</button>' : '') +
+            '<button class="btn btn--sm btn--danger" type="button" data-act="del">Löschen</button></div>' +
+            (tr && !tr.busy ? '<div class="key-test ' + (tr.ok ? 'is-ok' : 'is-bad') + '" role="status">' + (tr.ok
+                ? '✓ Funktioniert (' + XIRU.fmt(tr.ms) + ' ms, ' + esc(tr.model || '') + '). Antwort: „' + esc(tr.text || '…') + '"'
+                : '✗ ' + esc(tr.error) + (tr.detail ? '<br><span class="faint">Anbieter: ' + esc(tr.detail) + '</span>' : '')) + '</div>' : '') +
+            '</div>';
+    }
+    function renderList(p) {
+        const c = AI.config(), list = c[p], el = $('#' + p + '-list');
+        el.innerHTML = list.length ? list.map((e, i) => itemHTML(p, e, i, list.length)).join('')
+            : '<div class="empty"><div class="empty__icon">' + (p === 'hf' ? '🔑' : '🛰') + '</div>' + (p === 'hf' ? 'Noch kein Token. Füge rechts deinen ersten hinzu.' : 'Noch kein eigener Dienst eingerichtet.') + '</div>';
+    }
+    function bindList(p) {
+        $('#' + p + '-list').addEventListener('click', async ev => {
+            const btn = ev.target.closest('button[data-act]'); if (!btn) return;
+            const id = btn.closest('.key-item').dataset.id, act = btn.dataset.act;
+            if (act === 'up' || act === 'down') { AI.moveKey(p, id, act === 'up' ? -1 : 1); return renderAll(); }
+            if (act === 'unpause') { AI.unpause(p, id); return renderAll(); }
+            if (act === 'del') {
+                const e = AI.config()[p].find(x => x.id === id);
+                const m = XIRU.modal('<h2>Eintrag löschen?</h2><p>„' + esc(e && e.label || 'Ohne Namen') + '" wird aus diesem Browser entfernt. Beim Anbieter bleibt der Schlüssel gültig – dort kannst du ihn bei Bedarf widerrufen.</p><div class="row mt-2"><button class="btn btn--danger" type="button" id="del-ok">Löschen</button><button class="btn" type="button" data-close>Abbrechen</button></div>');
+                m.el.querySelector('#del-ok').addEventListener('click', () => { AI.removeKey(p, id); delete testResults[id]; m.close(); renderAll(); });
+                return;
+            }
+            if (act === 'rename') {
+                const e = AI.config()[p].find(x => x.id === id);
+                const m = XIRU.modal('<h2>Umbenennen</h2><div class="field"><label for="rn">Bezeichnung</label><input id="rn" maxlength="40" value="' + esc(e && e.label || '') + '"></div><div class="row"><button class="btn btn--primary" type="button" id="rn-ok">Speichern</button><button class="btn" type="button" data-close>Abbrechen</button></div>');
+                const inp = m.el.querySelector('#rn'); inp.focus(); inp.select();
+                const ok = () => { AI.updateKey(p, id, { label: inp.value.trim() }); m.close(); renderAll(); };
+                m.el.querySelector('#rn-ok').addEventListener('click', ok);
+                inp.addEventListener('keydown', k => { if (k.key === 'Enter') ok(); });
+                return;
+            }
+            if (act === 'test') {
+                testResults[id] = { busy: true }; renderList(p);
+                const r = await AI.test(p, id);
+                testResults[id] = r; renderAll();
+                if (r.ok) XIRU.toast('Verbindung steht', 'Antwort in ' + XIRU.fmt(r.ms) + ' ms.', { icon: '✓' });
+            }
+        });
+    }
+    bindList('hf'); bindList('custom');
+
+    // ── Hugging Face hinzufügen ──
+    $('#hf-form').addEventListener('submit', ev => {
+        ev.preventDefault();
+        const msg = $('#hf-msg'), tokInp = $('#hf-token');
+        const token = tokInp.value.trim(), label = $('#hf-label').value.trim();
+        msg.className = 'form-msg is-error';
+        if (!token) { msg.textContent = 'Bitte füge einen Token ein.'; return; }
+        if (/\s/.test(token)) { msg.textContent = 'Der Token enthält Leerzeichen – bitte nur den Token selbst einfügen.'; return; }
+        if (token.length < 20) { msg.textContent = 'Das sieht zu kurz aus für einen Hugging-Face-Token.'; return; }
+        if (AI.config().hf.some(e => e.token === token)) { msg.textContent = 'Diesen Token hast du schon eingetragen.'; return; }
+        AI.addKey('hf', { label, token });
+        tokInp.value = ''; tokInp.type = 'password'; $('#hf-label').value = '';
+        msg.className = 'form-msg is-ok';
+        msg.textContent = token.startsWith('hf_') ? 'Gespeichert. Drück „Testen", um ihn auszuprobieren.' : 'Gespeichert – aber Hugging-Face-Tokens beginnen normalerweise mit „hf_". Teste ihn am besten gleich.';
+        renderAll();
+    });
+
+    // ── Modelle ──
+    function fillModels(sel, custom, list, current) {
+        const known = list.some(m => m.id === current);
+        sel.innerHTML = list.map(m => '<option value="' + esc(m.id) + '">' + esc(m.n) + ' – ' + esc(m.d) + '</option>').join('') + '<option value="__custom">Eigenes Modell …</option>';
+        sel.value = known ? current : '__custom';
+        custom.hidden = known; if (!known) custom.value = current || '';
+    }
+    function renderModels() {
+        const s = AI.settings();
+        fillModels($('#hf-model'), $('#hf-model-custom'), AI.models.hfChat, s.hfModel);
+        fillModels($('#hf-image-model'), $('#hf-image-custom'), AI.models.hfImage, s.hfImageModel);
+    }
+    function bindModel(sel, custom, key) {
+        sel.addEventListener('change', () => {
+            if (sel.value === '__custom') { custom.hidden = false; custom.focus(); return; }
+            custom.hidden = true; AI.setSettings({ [key]: sel.value });
+            XIRU.toast('Modell gewählt', sel.value, { icon: '🤗', time: 2500 });
+        });
+        custom.addEventListener('change', () => {
+            const v = custom.value.trim();
+            if (!/^[\w.-]+\/[\w.:-]+$/.test(v)) { XIRU.toast('Ungültiger Modellname', 'Format: organisation/modellname', { icon: '⚠', type: 'error' }); return; }
+            AI.setSettings({ [key]: v });
+            XIRU.toast('Modell gewählt', v, { icon: '🤗', time: 2500 });
+        });
+    }
+    bindModel($('#hf-model'), $('#hf-model-custom'), 'hfModel');
+    bindModel($('#hf-image-model'), $('#hf-image-custom'), 'hfImageModel');
+
+    // ── Eigener Dienst ──
+    const PRESETS = {
+        openrouter: { label: 'OpenRouter', base: 'https://openrouter.ai/api/v1', model: '', image: '', note: 'Trag den Modellnamen aus der OpenRouter-Modellliste ein (Gratis-Modelle enden auf „:free"). Schlüssel von openrouter.ai/keys.' },
+        lmstudio: { label: 'LM Studio', base: 'http://localhost:1234/v1', model: 'local-model', image: '', note: 'Starte in LM Studio den lokalen Server und aktiviere CORS. Der Modellname kann meist so bleiben.' },
+        ollama: { label: 'Ollama', base: 'http://localhost:11434/v1', model: 'llama3.1', image: '', note: 'Ollama braucht die Umgebungsvariable OLLAMA_ORIGINS, damit der Browser zugreifen darf. Modellname wie bei „ollama pull".' }
+    };
+    XIRU.$$('[data-preset]').forEach(b => b.addEventListener('click', () => {
+        const pr = PRESETS[b.dataset.preset];
+        $('#c-label').value = pr.label; $('#c-base').value = pr.base; $('#c-model').value = pr.model; $('#c-image').value = pr.image;
+        $('#preset-note').textContent = pr.note;
+        (pr.model ? $('#c-key') : $('#c-model')).focus();
+    }));
+    $('#custom-form').addEventListener('submit', ev => {
+        ev.preventDefault();
+        const msg = $('#c-msg');
+        const base = $('#c-base').value.trim().replace(/\/+$/, ''), key = $('#c-key').value.trim();
+        const model = $('#c-model').value.trim(), imageModel = $('#c-image').value.trim(), label = $('#c-label').value.trim();
+        msg.className = 'form-msg is-error';
+        if (!/^https?:\/\/[^\s/]+/i.test(base)) { msg.textContent = 'Die Basis-URL muss mit http:// oder https:// beginnen.'; return; }
+        if (/[?#]/.test(base) || /[?&](key|token|api[_-]?key)=/i.test(base)) { msg.textContent = 'Bitte keine Schlüssel oder Parameter in die Adresse schreiben – dafür gibt es das Schlüsselfeld.'; return; }
+        if (/^http:\/\//i.test(base) && !/^http:\/\/(localhost|127\.0\.0\.1|\[::1\])(:|\/|$)/i.test(base)) { msg.textContent = 'Unverschlüsseltes http:// nur für lokale Dienste (localhost). Nutze https://.'; return; }
+        if (/\s/.test(key)) { msg.textContent = 'Der Schlüssel enthält Leerzeichen.'; return; }
+        if (!model) { msg.textContent = 'Bitte gib ein Chatmodell an.'; return; }
+        AI.addKey('custom', { label, base, key, model, imageModel });
+        ['#c-key', '#c-label', '#c-base', '#c-model', '#c-image'].forEach(s => { $(s).value = ''; });
+        $('#c-key').type = 'password'; $('#preset-note').textContent = '';
+        msg.className = 'form-msg is-ok'; msg.textContent = 'Gespeichert. Drück „Testen", um die Verbindung zu prüfen.';
+        renderAll();
+    });
+
+    // ── Pollinations ──
+    $('#poll-toggle').addEventListener('change', e => {
+        AI.setSettings({ pollinations: e.target.checked });
+        XIRU.toast(e.target.checked ? 'Pollinations erlaubt' : 'Pollinations ausgeschaltet', e.target.checked ? 'Wird genutzt, wenn kein anderer Dienst bereit ist (oder wenn bevorzugt).' : 'Keine Anfragen mehr an Pollinations.', { icon: '🐝' });
+        renderAll();
+    });
+    $('#poll-test').addEventListener('click', async () => {
+        const out = $('#poll-result');
+        if (!AI.settings().pollinations) { out.className = 'small text-warning'; out.textContent = 'Erst einschalten, dann testen.'; return; }
+        out.className = 'small'; out.innerHTML = AI.ui.dots();
+        const r = await AI.test('pollinations');
+        out.className = 'small ' + (r.ok ? 'text-success' : 'text-danger');
+        out.textContent = r.ok ? '✓ Funktioniert (' + XIRU.fmt(r.ms) + ' ms): „' + r.text + '"' : '✗ ' + r.error;
+        renderAll();
+    });
+    function renderPoll() {
+        const ps = AI.config().pollStats || {};
+        $('#poll-stats').innerHTML = ps.total ? '<span>Heute: <strong>' + XIRU.fmt(todayOf(ps)) + '</strong></span><span>Gesamt: ' + XIRU.fmt(ps.total) + '</span>' + (ps.lastError ? '<span class="text-danger">Letzter Fehler: ' + esc(ps.lastError) + '</span>' : '') : '';
+    }
+
+    // ── Statistik ──
+    function renderStats() {
+        const c = AI.config(), rows = [];
+        c.hf.forEach((e, i) => rows.push(['Hugging Face', e.label || 'Token ' + (i + 1), e]));
+        c.custom.forEach((e, i) => rows.push(['Eigener Dienst', e.label || 'Dienst ' + (i + 1), e]));
+        if (c.pollStats && c.pollStats.total) rows.push(['Pollinations', 'ohne Schlüssel', c.pollStats]);
+        $('#stats-body').innerHTML = rows.length ? rows.map(([p, l, e]) => {
+            const st = stateOf(e);
+            return '<tr><td>' + p + '</td><td>' + esc(l) + '</td><td class="num">' + XIRU.fmt(todayOf(e)) + '</td><td class="num">' + XIRU.fmt(e.total || 0) + '</td><td class="num">' + XIRU.fmt(e.ok || 0) + '</td><td class="num">' + XIRU.fmt(e.fails || 0) + '</td><td>' + st.badge + '</td><td class="small">' + (e.lastError ? esc(e.lastError) + ' <span class="faint">' + ago(e.lastErrorAt) + '</span>' : '–') + '</td></tr>';
+        }).join('') : '<tr><td colspan="8" class="muted center">Noch keine Anfragen gezählt.</td></tr>';
+    }
+    $('#stats-reset').addEventListener('click', () => { AI.resetStats(); XIRU.toast('Zähler zurückgesetzt', '', { icon: '📊', time: 2000 }); renderAll(); });
+
+    // ── Alles löschen ──
+    $('#clear-all').addEventListener('click', () => {
+        const m = XIRU.modal('<h2>Alle Schlüssel löschen?</h2><p>Alle Hugging-Face-Tokens und eigenen Dienste werden aus ' + (XIRU.user ? 'deinem Konto' : 'dem Gastbereich') + ' in diesem Browser entfernt. Deine Einstellungen (Modelle, Modus) bleiben.</p><div class="row mt-2"><button class="btn btn--danger" type="button" id="clr-ok">Ja, alle löschen</button><button class="btn" type="button" data-close>Abbrechen</button></div>');
+        m.el.querySelector('#clr-ok').addEventListener('click', () => { AI.clearKeys(); m.close(); XIRU.toast('Schlüsselbund geleert', 'Das KI-Labor läuft jetzt offline.', { icon: '🗝' }); renderAll(); });
+    });
+
+    function renderAll() { renderList('hf'); renderList('custom'); renderPoll(); renderStats(); renderMode(); renderAdopt(); }
+    renderAll(); renderModels();
+    XIRU.on('keys', () => { renderList('hf'); renderList('custom'); renderPoll(); renderStats(); });
+    // Pausen-Countdown aktuell halten
+    setInterval(() => { const c = AI.config(); if (c.hf.concat(c.custom).some(e => e.pausedUntil > Date.now() - 2000)) { renderList('hf'); renderList('custom'); } }, 5000);
+});
+</script>
+</body>
+</html>

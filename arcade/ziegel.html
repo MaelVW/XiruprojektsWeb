@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ziegelbrecher · Xiruprojekts</title>
+    <meta name="description" content="Ziegelbrecher – Ball, Schläger und acht Mauern voller Ziegel, mit Power-ups und harten Brocken.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/arcade.js"></script>
+    <style>
+        #cv { width: min(100%, calc((100vh - 170px) * 0.857)); cursor: none; }
+        .power-list { list-style: none; display: grid; gap: .4rem; font-size: .85rem; color: var(--text-muted); }
+        .power-list b { display: inline-block; min-width: 1.8rem; text-align: center; border-radius: 999px; padding: 0 .4rem; margin-right: .35rem; color: var(--accent-ink); }
+        .power-list b[data-c="success"] { background: var(--success); }
+        .power-list b[data-c="accent2"] { background: var(--accent-2); }
+        .power-list b[data-c="accent"] { background: var(--accent); }
+        .power-list b[data-c="danger"] { background: var(--danger); }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">▶ Spielhalle · Action</span>
+        <h1>Ziegelbrecher</h1>
+        <p class="lead">Halte den Ball im Spiel und reiss Mauer um Mauer ein. Harte Ziegel brauchen mehrere Treffer, Metall gibt gar nicht nach – und manchmal fällt etwas Nützliches heraus.</p>
+    </header>
+
+    <div class="game">
+        <div>
+            <div class="game__hud" id="hud"></div>
+            <div class="game__stage" id="stage">
+                <canvas id="cv"></canvas>
+                <div class="game__overlay" id="ov"></div>
+            </div>
+            <div class="touch-pad">
+                <button data-key="ArrowLeft" aria-label="Links">◀</button>
+                <button data-key=" " aria-label="Abschiessen">●</button>
+                <button data-key="ArrowRight" aria-label="Rechts">▶</button>
+                <button data-key="p" aria-label="Pause">⏸</button>
+            </div>
+        </div>
+        <aside class="game__side">
+            <div class="card">
+                <h3>Steuerung</h3>
+                <ul class="keys-help">
+                    <li>Maus oder Finger über dem Spielfeld – Schläger bewegen</li>
+                    <li><kbd>←</kbd> <kbd>→</kbd> oder <kbd>A</kbd> <kbd>D</kbd> – Schläger bewegen</li>
+                    <li>Klick, Tippen, <kbd>Leertaste</kbd> oder <kbd>↑</kbd> – Ball abschiessen</li>
+                    <li><kbd>P</kbd> / <kbd>Esc</kbd> – Pause</li>
+                    <li>Wo der Ball den Schläger trifft, bestimmt den Abprallwinkel.</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Power-ups</h3>
+                <ul class="power-list" id="powers">
+                    <li><b data-c="success">B</b>Breiter Schläger</li>
+                    <li><b data-c="accent2">M</b>Multiball – jeder Ball wird zu drei</li>
+                    <li><b data-c="accent">L</b>Langsamer Ball</li>
+                    <li><b data-c="danger">+</b>Extraleben (selten)</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Modus</h3>
+                <div class="row" id="modes">
+                    <button class="chip is-active" data-mode="normal">Normal</button>
+                    <button class="chip" data-mode="hardcore">Hardcore</button>
+                </div>
+                <p class="small muted mt-2" id="mode-desc">Drei Leben, acht Mauern.</p>
+            </div>
+            <div class="card">
+                <h3>Rekord</h3>
+                <p class="stat__value" id="best">–</p>
+            </div>
+        </aside>
+    </div>
+</main>
+<script src="js/ziegel.js"></script>
+</body>
+</html>

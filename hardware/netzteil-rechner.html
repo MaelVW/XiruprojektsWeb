@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Netzteil-Rechner · Xiruprojekts</title>
+    <meta name="description" content="Berechne, wie viel Watt dein PC braucht, welches Netzteil passt und was der Strom im Jahr kostet.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/hardware-data.js"></script>
+    <style>
+        .psu-layout { display: grid; gap: 1.25rem; grid-template-columns: minmax(0, 1fr) minmax(0, 380px); align-items: start; }
+        @media (max-width: 900px) { .psu-layout { grid-template-columns: 1fr; } }
+        .gauge { position: relative; width: 100%; max-width: 320px; margin: 0 auto; }
+        .gauge svg { width: 100%; overflow: visible; }
+        .gauge__arc { transition: stroke-dashoffset 1s var(--ease); }
+        .gauge__needle { transform-origin: 100px 100px; transition: transform 1s var(--ease); }
+        .gauge__value { position: absolute; left: 0; right: 0; bottom: 4px; text-align: center; }
+        .gauge__value b { font-size: 2.4rem; display: block; line-height: 1; font-variant-numeric: tabular-nums; }
+        .split { display: flex; height: 18px; border-radius: 99px; overflow: hidden; background: var(--surface-3); }
+        .split span { height: 100%; transition: width .8s var(--ease); }
+        .legend { display: flex; flex-wrap: wrap; gap: .4rem 1rem; font-size: .82rem; color: var(--text-muted); margin-top: .5rem; }
+        .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: .35rem; vertical-align: middle; }
+        .num-input { display: flex; align-items: center; gap: .5rem; }
+        .num-input input { width: 5rem !important; text-align: center; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">▣ Hardware-Archiv · Rechner</span>
+        <h1>Netzteil-Rechner</h1>
+        <p class="lead">Wähle deine Teile – der Rechner schätzt die Last, empfiehlt eine Netzteilgrösse und rechnet die Stromkosten in Franken aus.</p>
+    </header>
+
+    <div class="psu-layout">
+        <form class="card" id="f" onsubmit="return false">
+            <h2>Dein System</h2>
+            <div class="grid-2">
+                <div class="field"><label for="cpu">Prozessor</label><select id="cpu"></select></div>
+                <div class="field"><label for="gpu">Grafikkarte</label><select id="gpu"></select></div>
+            </div>
+            <div class="grid-2">
+                <div class="field"><label for="ram">Arbeitsspeicher-Module</label>
+                    <div class="num-input"><input type="number" id="ram" min="0" max="8" value="2"><small>je ca. 5 W (DDR5) bzw. 3 W (DDR4)</small></div></div>
+                <div class="field"><label for="ssd">SSDs</label>
+                    <div class="num-input"><input type="number" id="ssd" min="0" max="10" value="1"><small>je ca. 7 W</small></div></div>
+                <div class="field"><label for="hdd">Festplatten</label>
+                    <div class="num-input"><input type="number" id="hdd" min="0" max="10" value="0"><small>je ca. 9 W</small></div></div>
+                <div class="field"><label for="fans">Lüfter</label>
+                    <div class="num-input"><input type="number" id="fans" min="0" max="15" value="3"><small>je ca. 3 W</small></div></div>
+            </div>
+            <div class="field"><label for="extra">Sonstiges (Watt) – Wasserkühlung, RGB, USB-Geräte …</label><input type="number" id="extra" min="0" max="500" value="25"></div>
+            <label class="check mb-2"><input type="checkbox" id="oc"> Ich übertakte (CPU und/oder GPU, +15 %)</label>
+
+            <h2 class="mt-3">Stromkosten</h2>
+            <div class="grid-2">
+                <div class="field"><label for="eff">Netzteil-Effizienz</label><select id="eff"></select></div>
+                <div class="field"><label for="price">Strompreis (Rp./kWh)</label><input type="number" id="price" min="1" max="200" value="30" step="0.5"></div>
+                <div class="field"><label for="hours">Stunden Gaming pro Tag</label><input type="range" id="hours" min="0" max="16" step="0.5" value="3"><small id="hours-out"></small></div>
+                <div class="field"><label for="idle">Stunden Leerlauf/Office pro Tag</label><input type="range" id="idle" min="0" max="16" step="0.5" value="2"><small id="idle-out"></small></div>
+            </div>
+        </form>
+
+        <aside class="stack">
+            <section class="card card--accent center">
+                <h3>Geschätzte Spitzenlast</h3>
+                <div class="gauge">
+                    <svg viewBox="0 0 200 115" aria-hidden="true">
+                        <path d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="var(--surface-3)" stroke-width="16" stroke-linecap="round"/>
+                        <path class="gauge__arc" id="arc" d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="var(--rc)" stroke-width="16" stroke-linecap="round" stroke-dasharray="252" stroke-dashoffset="252"/>
+                        <g class="gauge__needle" id="needle"><line x1="100" y1="100" x2="100" y2="34" stroke="var(--text)" stroke-width="3" stroke-linecap="round"/><circle cx="100" cy="100" r="7" fill="var(--text)"/></g>
+                    </svg>
+                    <div class="gauge__value"><b id="load">0</b><span class="small muted">Watt</span></div>
+                </div>
+                <p class="mt-2 mb-0">Empfehlung: <strong class="accent" id="rec" style="font-size:1.4rem">–</strong></p>
+                <p class="small muted" id="rec-why"></p>
+            </section>
+            <section class="card">
+                <h3>Wohin der Strom fliesst</h3>
+                <div class="split" id="split"></div>
+                <div class="legend" id="legend"></div>
+            </section>
+            <section class="card">
+                <h3>Stromkosten pro Jahr</h3>
+                <p class="stat__value"><span id="cost">–</span> <span class="small muted">CHF</span></p>
+                <p class="small muted mb-0" id="cost-detail"></p>
+            </section>
+        </aside>
+    </div>
+
+    <div class="callout mt-3">
+        <strong>So rechnen wir:</strong> CPU mit ihrer maximalen Leistungsaufnahme (bei Intel „max. Turbo-Leistung", bei AMD TDP × 1,35 als Paketleistung),
+        Grafikkarte mit ihrer Board-Leistung, dazu Mainboard (~50 W) und Kleinteile. Empfohlen wird die nächste Netzteilgrösse mit rund 30 % Reserve –
+        dort arbeiten Netzteile effizient und leise. Moderne ATX-3.x-Netzteile verkraften kurze Lastspitzen der Grafikkarte zusätzlich.
+        <a href="netzteile.html">Mehr über Netzteil-Standards →</a>
+    </div>
+</main>
+<script>
+XIRU.ready(function () {
+    const hw = XIRU.hw || { cpu: [], gpu: [], psu: [] };
+    const $ = XIRU.$;
+    const byName = (a, b) => a.name.localeCompare(b.name);
+    $('#cpu').innerHTML = hw.cpu.slice().sort(byName).map(c => '<option value="' + c.id + '">' + XIRU.esc(c.name) + '</option>').join('');
+    $('#gpu').innerHTML = '<option value="">Keine (integrierte Grafik)</option>' + hw.gpu.slice().sort(byName).map(g => '<option value="' + g.id + '">' + XIRU.esc(g.name) + '</option>').join('');
+    $('#cpu').value = 'ryzen-7-7800x3d'; $('#gpu').value = 'rtx-4070-super';
+    const effs = (hw.psu || []).filter(p => p.eff230);
+    $('#eff').innerHTML = effs.map(p => '<option value="' + p.id + '">' + XIRU.esc(p.name) + ' (' + p.eff230[1] + ' % bei 50 %)</option>').join('');
+    $('#eff').value = '80-plus-gold';
+
+    const SIZES = [450, 550, 650, 750, 850, 1000, 1200, 1300, 1600];
+    const COLORS = ['var(--rc)', 'var(--accent-2)', '#60a5fa', '#4ade80', '#facc15'];
+    const saved = XIRU.load('netzteil-rechner');
+    if (saved) Object.keys(saved).forEach(k => { const el = document.getElementById(k); if (el) { if (el.type === 'checkbox') el.checked = saved[k]; else el.value = saved[k]; } });
+
+    function calc() {
+        const cpu = hw.cpu.find(c => c.id === $('#cpu').value);
+        const gpu = hw.gpu.find(g => g.id === $('#gpu').value);
+        const ddr5 = cpu && /DDR5/.test(cpu.ram) && !/DDR4/.test(cpu.ram);
+        const cpuW = cpu ? (cpu.tdpMax || Math.round(cpu.tdp * (cpu.brand === 'AMD' ? 1.35 : 1))) : 0;
+        const gpuW = gpu ? gpu.tdp : 0;
+        const board = 50;
+        const small = (+$('#ram').value) * (ddr5 ? 5 : 3) + (+$('#ssd').value) * 7 + (+$('#hdd').value) * 9 + (+$('#fans').value) * 3 + (+$('#extra').value || 0);
+        const oc = $('#oc').checked ? 1.15 : 1;
+        const parts = [['Prozessor', Math.round(cpuW * oc)], ['Grafikkarte', Math.round(gpuW * oc)], ['Mainboard', board], ['Laufwerke, RAM, Lüfter, Rest', small]];
+        const load = parts.reduce((s, p) => s + p[1], 0);
+        const need = load * 1.3;
+        const rec = SIZES.find(s => s >= need) || SIZES[SIZES.length - 1];
+        const gpuRec = gpu ? gpu.psu : 0;
+        const final = Math.max(rec, SIZES.find(s => s >= gpuRec) || rec);
+
+        // Anzeige
+        const pct = Math.min(1, load / 1200);
+        $('#arc').style.strokeDashoffset = 252 * (1 - pct);
+        $('#needle').style.transform = 'rotate(' + (-90 + pct * 180) + 'deg)';
+        animateNumber($('#load'), load);
+        $('#rec').textContent = final + ' W';
+        $('#rec-why').textContent = 'Last ' + load + ' W + 30 % Reserve = ' + Math.round(need) + ' W' + (gpu && gpuRec > rec ? ' · Der Grafikkarten-Hersteller empfiehlt mindestens ' + gpuRec + ' W.' : '.');
+        $('#split').innerHTML = parts.map((p, i) => '<span style="width:' + (p[1] / load * 100) + '%;background:' + COLORS[i] + '" title="' + p[0] + ': ' + p[1] + ' W"></span>').join('');
+        $('#legend').innerHTML = parts.map((p, i) => '<span><i style="background:' + COLORS[i] + '"></i>' + p[0] + ' ' + p[1] + ' W</span>').join('');
+
+        // Kosten: Gaming ~ 75 % der Spitzenlast, Leerlauf/Office ~ 70 W
+        const eff = effs.find(p => p.id === $('#eff').value) || effs[0];
+        const effLoad = (eff ? eff.eff230[1] : 90) / 100, effIdle = (eff ? eff.eff230[0] : 88) / 100;
+        const hG = +$('#hours').value, hI = +$('#idle').value;
+        $('#hours-out').textContent = XIRU.fmt(hG, 1) + ' h'; $('#idle-out').textContent = XIRU.fmt(hI, 1) + ' h';
+        const wallGame = load * .75 / effLoad, wallIdle = 70 / effIdle;
+        const kwh = (wallGame * hG + wallIdle * hI) * 365 / 1000;
+        const chf = kwh * (+$('#price').value) / 100;
+        $('#cost').textContent = XIRU.fmt(chf, 0);
+        $('#cost-detail').textContent = XIRU.fmt(kwh, 0) + ' kWh pro Jahr · beim Gamen ca. ' + Math.round(wallGame) + ' W aus der Steckdose, im Leerlauf ca. ' + Math.round(wallIdle) + ' W.';
+
+        const state = {}; ['cpu', 'gpu', 'ram', 'ssd', 'hdd', 'fans', 'extra', 'eff', 'price', 'hours', 'idle'].forEach(k => state[k] = $('#' + k).value); state.oc = $('#oc').checked;
+        XIRU.save('netzteil-rechner', state);
+        if (load >= 1000) XIRU.egg('hw-kraftwerk');
+    }
+    function animateNumber(el, to) {
+        const from = +el.dataset.v || 0, t0 = performance.now();
+        el.dataset.v = to;
+        (function step(now) { const k = Math.min(1, (now - t0) / 700); el.textContent = Math.round(from + (to - from) * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(step); })(t0);
+    }
+    $('#f').addEventListener('input', calc);
+    $('#f').addEventListener('change', calc);
+    calc();
+});
+</script>
+</body>
+</html>

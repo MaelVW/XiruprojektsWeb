@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weltkarte · Xiruprojekts</title>
+    <meta name="description" content="Alle Regionen der Xiru-Welt – und was du davon schon entdeckt hast.">
+    <link rel="stylesheet" href="assets/css/main.css">
+    <script src="assets/js/site.js"></script>
+    <script src="assets/js/core.js"></script>
+    <style>
+        .map-wrap { position: relative; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); background: radial-gradient(ellipse at 50% 40%, color-mix(in srgb, #0ea5e9 14%, var(--bg-2)), var(--bg-2)); }
+        .map-wrap svg { width: 100%; height: auto; display: block; touch-action: manipulation; }
+        .wave { fill: none; stroke: color-mix(in srgb, #38bdf8 25%, transparent); stroke-width: 1.2; animation: waveMove 9s linear infinite; }
+        @keyframes waveMove { to { transform: translateX(-60px); } }
+        .route { fill: none; stroke: var(--text-faint); stroke-width: 1.5; stroke-dasharray: 2 7; opacity: .55; animation: routeMove 6s linear infinite; }
+        @keyframes routeMove { to { stroke-dashoffset: -90; } }
+        .island { transition: transform .4s var(--ease); transform-box: fill-box; transform-origin: center; }
+        .island:hover { transform: scale(1.03); }
+        .island__land { stroke-width: 2; }
+        .island__label { font: 800 15px var(--font); fill: var(--text); paint-order: stroke; stroke: var(--bg-2); stroke-width: 4px; pointer-events: none; }
+        .island__sub { font: 600 11px var(--font); fill: var(--text-muted); paint-order: stroke; stroke: var(--bg-2); stroke-width: 3px; pointer-events: none; }
+        .dot { cursor: pointer; transition: r .2s; }
+        .dot:hover { r: 7; }
+        .dot.unseen { opacity: .45; }
+        .dot.hiddenp { cursor: help; }
+        .fog { filter: url(#fog); }
+        .monster { cursor: pointer; animation: monster 14s ease-in-out infinite; }
+        @keyframes monster { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(40px, -8px); } }
+        .portal { cursor: pointer; animation: spin 6s linear infinite; transform-box: fill-box; transform-origin: center; }
+        .tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--border-strong); border-radius: 8px; padding: .45rem .7rem; font-size: .85rem; box-shadow: var(--shadow); transform: translate(-50%, calc(-100% - 12px)); white-space: nowrap; z-index: 3; }
+        .tip small { display: block; color: var(--text-muted); }
+        .lists { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); }
+        .lists ul { list-style: none; padding: 0; margin: .5rem 0 0; font-size: .88rem; max-height: 220px; overflow-y: auto; }
+        .lists li { padding: .2rem 0; }
+        .lists li.unseen { color: var(--text-faint); }
+        .legend { display: flex; flex-wrap: wrap; gap: 1rem; font-size: .85rem; color: var(--text-muted); margin-top: .75rem; }
+        .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: .35rem; vertical-align: -1px; }
+    </style>
+</head>
+<body>
+<main class="content content--wide">
+    <header class="page-head">
+        <span class="eyebrow">◆ Zentrum</span>
+        <h1>Weltkarte</h1>
+        <p class="lead">Jeder Punkt ist ein Ort. Leuchtende Punkte hast du schon besucht. Manche Inseln verbergen mehr, als man sieht.</p>
+    </header>
+
+    <div class="map-wrap" id="wrap">
+        <svg id="map" viewBox="0 0 1000 700" role="img" aria-label="Weltkarte der Xiru-Welt">
+            <defs>
+                <filter id="fog"><feTurbulence type="fractalNoise" baseFrequency=".02" numOctaves="3" seed="7"/><feDisplacementMap in="SourceGraphic" scale="18"/><feGaussianBlur stdDeviation="3"/></filter>
+                <radialGradient id="glow"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+            </defs>
+            <g id="waves"></g>
+            <g id="routes"></g>
+            <g id="islands"></g>
+            <g id="extras"></g>
+        </svg>
+        <div class="tip" id="tip" hidden></div>
+    </div>
+    <div class="legend">
+        <span><i style="background:var(--rc)"></i>besucht</span>
+        <span><i style="background:var(--text-faint)"></i>noch nicht besucht</span>
+        <span>🔒 per Skill gesperrt</span>
+        <span id="legend-skill"></span>
+    </div>
+
+    <h2 class="mt-4">Alle Orte</h2>
+    <div class="lists" id="lists"></div>
+</main>
+<script>
+XIRU.ready(function () {
+    const P = XIRU.profile(), NS = 'http://www.w3.org/2000/svg';
+    const LAYOUT = { hardware: [200, 250], studio: [430, 115], arcade: [790, 205], zentrum: [500, 340], konto: [645, 470], ki: [850, 505], mixer: [560, 605], werkzeuge: [275, 540], geheim: [100, 625] };
+    const kompass = XIRU.hasSkill('e1'), karto = XIRU.hasSkill('e3');
+    XIRU.$('#legend-skill').textContent = karto ? '🧭 Kartograph: versteckte Orte als „?"' : kompass ? '🧭 Kompass aktiv' : '';
+    const el = (tag, attrs, parent) => { const n = document.createElementNS(NS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); if (parent) parent.appendChild(n); return n; };
+    const rng = s => () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; };
+
+    // Wellen
+    const waves = XIRU.$('#waves');
+    for (let y = 30; y < 700; y += 48) {
+        let d = 'M-60 ' + y;
+        for (let x = -60; x < 1100; x += 60) d += ' q15 -6 30 0 t30 0';
+        el('path', { d, class: 'wave', style: 'animation-duration:' + (7 + (y % 5)) + 's;opacity:' + (.4 + (y % 3) * .2) }, waves);
+    }
+    // Routen vom Zentrum aus
+    const routes = XIRU.$('#routes'), [zx, zy] = LAYOUT.zentrum;
+    Object.keys(LAYOUT).filter(k => k !== 'zentrum' && k !== 'geheim').forEach(k => {
+        const [x, y] = LAYOUT[k], mx = (x + zx) / 2 + (y - zy) * .15, my = (y + zy) / 2 - (x - zx) * .15;
+        el('path', { d: 'M' + zx + ' ' + zy + ' Q' + mx + ' ' + my + ' ' + x + ' ' + y, class: 'route' }, routes);
+    });
+
+    const tip = XIRU.$('#tip'), wrap = XIRU.$('#wrap');
+    function showTip(evt, html) {
+        const r = wrap.getBoundingClientRect();
+        tip.innerHTML = html; tip.hidden = false;
+        tip.style.left = (evt.clientX - r.left) + 'px'; tip.style.top = (evt.clientY - r.top) + 'px';
+    }
+    const hideTip = () => { tip.hidden = true; };
+
+    const islands = XIRU.$('#islands');
+    XIRU.regions.forEach((reg, ri) => {
+        const pages = XIRU.pages.filter(p => p.r === reg.id);
+        const isSecret = reg.id === 'geheim';
+        const visibleDots = pages.filter(p => !p.hidden || P.visited[p.p] || karto);
+        const n = Math.max(isSecret ? 8 : 4, visibleDots.length);
+        const spacing = 8.2, inner = spacing * Math.sqrt(n), R = Math.max(46, inner + 26);
+        const [cx, cy] = LAYOUT[reg.id];
+        const g = el('g', { class: 'island' }, islands);
+        // Inselform aus Zufallsradien (pro Region immer gleich)
+        const rand = rng(ri * 977 + 13), pts = [], N = 22;
+        for (let i = 0; i < N; i++) { const a = i / N * Math.PI * 2, rr = R * (0.86 + rand() * .28); pts.push([cx + Math.cos(a) * rr, cy + Math.sin(a) * rr * .82]); }
+        let d = 'M' + ((pts[0][0] + pts[N - 1][0]) / 2) + ' ' + ((pts[0][1] + pts[N - 1][1]) / 2);
+        pts.forEach((p, i) => { const q = pts[(i + 1) % N]; d += ' Q' + p[0] + ' ' + p[1] + ' ' + (p[0] + q[0]) / 2 + ' ' + (p[1] + q[1]) / 2; });
+        el('path', { d, fill: 'color-mix(in srgb, #38bdf8 18%, transparent)', transform: 'translate(0,6) scale(1)', opacity: .6 }, g);
+        const land = el('path', { d, class: 'island__land' + (isSecret && !pages.some(p => P.visited[p.p]) ? ' fog' : ''), fill: 'color-mix(in srgb, ' + reg.color + ' 16%, var(--surface))', stroke: reg.color }, g);
+        if (isSecret && !pages.some(p => P.visited[p.p])) land.setAttribute('opacity', '.55');
+        // Punkte im Sonnenblumen-Muster
+        const seenCount = pages.filter(p => P.visited[p.p]).length;
+        visibleDots.forEach((p, i) => {
+            const a = i * 2.39996, rr = spacing * Math.sqrt(i + .5);
+            const x = cx + Math.cos(a) * rr, y = cy + Math.sin(a) * rr * .82 + 6;
+            const seen = !!P.visited[p.p], locked = !XIRU.isUnlocked(p), hiddenUnknown = p.hidden && !seen;
+            const c = el('circle', { cx: x, cy: y, r: 4.6, class: 'dot' + (seen ? '' : ' unseen') + (hiddenUnknown ? ' hiddenp' : ''), fill: seen ? reg.color : hiddenUnknown ? 'var(--warning)' : 'var(--text-faint)', tabindex: 0 }, g);
+            const label = hiddenUnknown ? '<b>???</b><small>' + XIRU.esc(p.d) + '</small>'
+                : '<b>' + (locked ? '🔒 ' : '') + XIRU.esc(seen ? p.t : (p.hw ? p.t : p.t)) + '</b><small>' + (seen ? 'besucht' : 'noch nicht besucht') + (locked ? ' · Skill nötig' : '') + '</small>';
+            c.addEventListener('pointerenter', e => showTip(e, label));
+            c.addEventListener('pointermove', e => showTip(e, label));
+            c.addEventListener('pointerleave', hideTip);
+            const go = () => { if (!hiddenUnknown) location.href = XIRU.url(p.p); };
+            c.addEventListener('click', go);
+            c.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
+        });
+        if (isSecret && !visibleDots.length) {
+            for (let i = 0; i < 6; i++) el('circle', { cx: cx + (rand() - .5) * 50, cy: cy + (rand() - .5) * 35, r: 3, fill: 'var(--text-faint)', opacity: .3 }, g);
+        }
+        // Beschriftung
+        const ly = cy - R * .82 - 12;
+        const t = el('text', { x: cx, y: ly, 'text-anchor': 'middle', class: 'island__label' }, g); t.textContent = reg.icon + ' ' + reg.name;
+        const visibleTotal = pages.filter(p => !p.hidden).length;
+        const sub = el('text', { x: cx, y: ly + 15, 'text-anchor': 'middle', class: 'island__sub' }, g);
+        sub.textContent = isSecret ? (seenCount ? seenCount + ' Orte gefunden' : 'unerforscht') :
+            seenCount + '/' + visibleTotal + (kompass ? ' · ' + (visibleTotal - pages.filter(p => !p.hidden && P.visited[p.p]).length) + ' unentdeckt' : '');
+        const idx = pages.find(p => /index\.html$/.test(p.p));
+        land.style.cursor = idx ? 'pointer' : 'default';
+        land.addEventListener('click', () => { if (idx) location.href = XIRU.url(idx.p); });
+    });
+
+    // Extras: Seeungeheuer und Portal
+    const ex = XIRU.$('#extras');
+    const m = el('g', { class: 'monster', 'data-egg': 'p-seemonster' }, ex);
+    el('path', { d: 'M340 660 q12 -22 24 0 q12 -22 24 0 q12 -22 24 0', fill: 'none', stroke: '#22c55e', 'stroke-width': 6, 'stroke-linecap': 'round' }, m);
+    el('circle', { cx: 414, cy: 652, r: 7, fill: '#22c55e' }, m);
+    el('circle', { cx: 417, cy: 650, r: 1.8, fill: '#000' }, m);
+    m.addEventListener('pointerenter', e => showTip(e, '<b>Hic sunt dracones</b><small>Hier sind Drachen.</small>'));
+    m.addEventListener('pointerleave', hideTip);
+    if (XIRU.hasSkill('e6')) {
+        const pg = el('g', { class: 'portal' }, ex);
+        el('circle', { cx: 960, cy: 60, r: 22, fill: 'none', stroke: '#a78bfa', 'stroke-width': 3, 'stroke-dasharray': '10 6' }, pg);
+        el('circle', { cx: 960, cy: 60, r: 12, fill: '#000', stroke: '#f472b6', 'stroke-width': 2 }, pg);
+        pg.addEventListener('click', () => { location.href = XIRU.url('geheim/void.html'); });
+        pg.addEventListener('pointerenter', e => showTip(e, '<b>Ein Riss in der Karte</b><small>Weltenwanderer dürfen hindurch.</small>'));
+        pg.addEventListener('pointerleave', hideTip);
+    }
+
+    // Listenansicht (auch für Screenreader und kleine Bildschirme)
+    XIRU.$('#lists').innerHTML = XIRU.regions.map(reg => {
+        const pages = XIRU.pages.filter(p => p.r === reg.id && (!p.hidden || P.visited[p.p] || karto));
+        if (!pages.length) return '';
+        return '<section class="card" style="border-top:3px solid ' + reg.color + '"><h3 class="mb-0">' + reg.icon + ' ' + XIRU.esc(reg.name) + '</h3><ul>' +
+            pages.map(p => {
+                const seen = P.visited[p.p], hid = p.hidden && !seen;
+                return '<li class="' + (seen ? '' : 'unseen') + '">' + (seen ? '● ' : '○ ') + (hid ? '??? <span class="small">– ' + XIRU.esc(p.d) + '</span>' : '<a href="' + XIRU.url(p.p) + '">' + (XIRU.isUnlocked(p) ? '' : '🔒 ') + XIRU.esc(p.t) + '</a>') + '</li>';
+            }).join('') + '</ul></section>';
+    }).join('');
+});
+</script>
+</body>
+</html>

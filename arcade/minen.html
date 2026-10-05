@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minensucher · Xiruprojekts</title>
+    <meta name="description" content="Minensucher – der Logik-Klassiker mit drei Stufen, eigenem Feld, Flaggen und Chording.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="css/minen.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/arcade.js"></script>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">▶ Spielhalle · Puzzle</span>
+        <h1>Minensucher</h1>
+        <p class="lead">Jede Zahl verrät, wie viele Minen rundherum liegen. Deck alle sicheren Felder auf, markier die Minen mit Flaggen – und denk zuerst, bevor du klickst.</p>
+    </header>
+
+    <div class="game">
+        <div>
+            <div class="mn-bar">
+                <div class="mn-led" title="Minen übrig"><span>Minen</span><b id="h-mines">010</b></div>
+                <button class="mn-face" id="face" type="button" aria-label="Neues Spiel">🙂</button>
+                <div class="mn-led" title="Zeit"><span>Zeit</span><b id="h-time">000</b></div>
+            </div>
+            <div class="game__stage mn-stage" id="stage">
+                <div class="mn-scroll" id="scroll">
+                    <div class="mn-board" id="board" role="grid" aria-label="Minenfeld"></div>
+                </div>
+                <i class="mn-pixel" id="pixel" hidden></i>
+                <div class="game__overlay" id="ov" hidden></div>
+            </div>
+            <div class="row mt-1 mn-tools">
+                <button class="btn btn--sm mn-flagbtn" id="btn-flag" type="button" aria-pressed="false"><span id="flag-icon">⛏</span> <span id="flag-label">Aufdecken</span> <kbd>F</kbd></button>
+                <span class="small faint" id="status">Klick irgendwo hin – das erste Feld ist immer sicher.</span>
+            </div>
+        </div>
+        <aside class="game__side">
+            <div class="card">
+                <h3>Steuerung</h3>
+                <ul class="keys-help">
+                    <li><b>Linksklick</b> – Feld aufdecken</li>
+                    <li><b>Rechtsklick</b> – Flagge setzen/entfernen</li>
+                    <li><b>Klick auf eine Zahl</b> – stimmen die Flaggen, werden alle Nachbarn aufgedeckt (Chording)</li>
+                    <li><kbd>←</kbd><kbd>↑</kbd><kbd>→</kbd><kbd>↓</kbd> – Feld wählen, <kbd>Leertaste</kbd> aufdecken, <kbd>F</kbd> Flagge, <kbd>N</kbd> neu</li>
+                    <li>Handy: tippen = aufdecken, <b>lange tippen</b> = Flagge, oder den Flaggenmodus einschalten</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Stufe</h3>
+                <div class="row" id="levels">
+                    <button class="chip is-active" data-level="anfaenger">Anfänger</button>
+                    <button class="chip" data-level="fortgeschritten">Fortgeschritten</button>
+                    <button class="chip" data-level="profi">Profi</button>
+                    <button class="chip" data-level="eigen">Eigenes</button>
+                </div>
+                <p class="small muted mt-1" id="level-desc">9 × 9 Felder, 10 Minen</p>
+                <form class="mn-custom mt-1" id="custom" hidden>
+                    <div class="field"><label for="c-w">Breite</label><input id="c-w" type="number" min="5" max="40" value="20"></div>
+                    <div class="field"><label for="c-h">Höhe</label><input id="c-h" type="number" min="5" max="30" value="12"></div>
+                    <div class="field"><label for="c-m">Minen</label><input id="c-m" type="number" min="1" max="999" value="40"></div>
+                    <button class="btn btn--sm btn--primary" type="submit">Los</button>
+                </form>
+            </div>
+            <div class="card">
+                <h3>Rekord</h3>
+                <p class="stat__value" id="best">–</p>
+                <p class="small muted mb-1">Schnellste Zeit über alle Standardstufen</p>
+                <ul class="mn-records small" id="records"></ul>
+            </div>
+        </aside>
+    </div>
+</main>
+<script src="js/minen.js"></script>
+</body>
+</html>

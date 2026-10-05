@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xiruprojekts – Startseite</title>
+    <meta name="description" content="Xiruprojekts: Hardware-Archiv, Spielhalle, KI-Labor, Mixer und Werkzeuge – eine Website zum Entdecken.">
+    <link rel="stylesheet" href="assets/css/main.css">
+    <script src="assets/js/site.js"></script>
+    <script src="assets/js/core.js"></script>
+    <style>
+        .hero { position: relative; min-height: min(78vh, 680px); display: grid; align-items: center; margin: -2.5rem -1.25rem 0; padding: 4rem 1.25rem; overflow: hidden; border-bottom: 1px solid var(--border); }
+        .hero canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+        .hero__inner { position: relative; max-width: 1200px; margin: 0 auto; width: 100%; }
+        .hero h1 { font-size: clamp(2.3rem, 6.5vw, 4.6rem); line-height: 1.03; letter-spacing: -.035em; max-width: 14ch; }
+        .hero h1 .grad { background: linear-gradient(90deg, var(--rc), var(--accent-2), #f472b6, var(--rc)); background-size: 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: gradMove 8s linear infinite; }
+        @keyframes gradMove { to { background-position: 300% 0; } }
+        .hero .lead { font-size: clamp(1.05rem, 2vw, 1.3rem); margin-top: 1rem; }
+        .hero__cta { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 2rem; }
+        .hero__disk { position: absolute; right: 4%; top: 50%; width: min(34vw, 380px); transform: translateY(-50%) rotate(-12deg); filter: drop-shadow(0 30px 60px rgba(0,0,0,.45)); animation: heroFloat 7s ease-in-out infinite; }
+        @keyframes heroFloat { 0%, 100% { transform: translateY(-50%) rotate(-12deg); } 50% { transform: translateY(-54%) rotate(-8deg); } }
+        @media (max-width: 860px) { .hero__disk { opacity: .18; right: -10%; width: 70vw; } }
+        .pixel { position: absolute; width: 5px; height: 5px; background: var(--accent-2); left: 61%; top: 22%; opacity: .55; cursor: default; border-radius: 1px; }
+        .ticker { margin: 0 -1.25rem 2.5rem; }
+        .region-tile { --tc: var(--rcol); }
+        .region-tile .bar { height: 5px; margin-top: .3rem; }
+        .region-tile .bar__fill { background: var(--rcol); }
+        .progress-card { display: grid; grid-template-columns: auto 1fr; gap: 1.5rem; align-items: center; }
+        .lvl-ring { width: 120px; height: 120px; position: relative; }
+        .lvl-ring svg { transform: rotate(-90deg); width: 100%; height: 100%; }
+        .lvl-ring circle { fill: none; stroke-width: 10; }
+        .lvl-ring .ring-fill { stroke: var(--rc); stroke-linecap: round; transition: stroke-dashoffset 1.4s var(--ease); }
+        .lvl-ring b { position: absolute; inset: 0; display: grid; place-items: center; font-size: 2rem; font-weight: 900; }
+        .lvl-ring small { position: absolute; bottom: 26px; left: 0; right: 0; text-align: center; font-size: .7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; }
+        .feature { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 2rem; align-items: center; padding: 2rem; }
+        @media (max-width: 860px) { .feature, .progress-card { grid-template-columns: 1fr; } }
+        .feature__art { aspect-ratio: 16 / 10; border-radius: var(--radius); background: var(--bg-2); border: 1px solid var(--border); overflow: hidden; position: relative; }
+        .feature__art canvas { width: 100%; height: 100%; image-rendering: pixelated; }
+        .section-title { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin: 3rem 0 1.25rem; flex-wrap: wrap; }
+        .section-title h2 { margin: 0; }
+    </style>
+</head>
+<body data-no-crumbs>
+<main class="content">
+    <section class="hero">
+        <canvas id="net" aria-hidden="true"></canvas>
+        <span class="pixel" data-egg="p-hero-pixel" title=""></span>
+        <svg class="hero__disk" viewBox="0 0 200 200" aria-hidden="true">
+            <defs><linearGradient id="dg" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="var(--rc)"/><stop offset="1" stop-color="var(--accent-2)"/></linearGradient></defs>
+            <path d="M14 10 h150 l26 26 v154 h-176 z" fill="url(#dg)"/>
+            <rect x="52" y="10" width="92" height="62" rx="4" fill="var(--surface-3)"/>
+            <rect x="112" y="18" width="20" height="46" rx="2" fill="url(#dg)"/>
+            <rect x="34" y="102" width="132" height="88" rx="6" fill="var(--surface)"/>
+            <path d="M48 124 h104 M48 142 h80 M48 160 h96" stroke="var(--border-strong)" stroke-width="4" stroke-linecap="round"/>
+            <text x="100" y="182" text-anchor="middle" font-family="monospace" font-size="11" fill="var(--text-faint)">XIRU · HD 1.44</text>
+        </svg>
+        <div class="hero__inner">
+            <span class="eyebrow">◆ Willkommen bei Xiruprojekts</span>
+            <h1><span id="tw">Eine Website</span><br><span class="grad">zum Verlaufen.</span></h1>
+            <p class="lead">Ein kleines Indie-Hobby-Gamestudio von zwei Freunden – und eine offene Welt aus Datenblättern, Spielen,
+                KI-Experimenten, Mixern und Werkzeugen. Je mehr du entdeckst, desto mehr öffnet sich.</p>
+            <div class="hero__cta">
+                <a class="btn btn--primary btn--lg" href="weltkarte.html">🗺 Zur Weltkarte</a>
+                <a class="btn btn--lg" id="cta-account" href="konto/login.html">⚓ Konto erstellen</a>
+                <button class="btn btn--lg btn--ghost" id="random" type="button">🎲 Zufälliger Ort</button>
+            </div>
+        </div>
+    </section>
+
+    <div class="ticker" aria-label="Laufschrift">
+        <div class="ticker__track" id="ticker"></div>
+    </div>
+
+    <section class="card progress-card" data-reveal>
+        <div class="lvl-ring">
+            <svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" stroke="var(--surface-3)"/><circle class="ring-fill" id="ring" cx="60" cy="60" r="50" stroke-dasharray="314.16" stroke-dashoffset="314.16"/></svg>
+            <b id="lvl">1</b><small>Level</small>
+        </div>
+        <div>
+            <h2 class="mb-1" id="greet">Hallo, Reisende:r!</h2>
+            <p class="muted" id="progress-text"></p>
+            <div class="grid grid--sm mt-2">
+                <div class="stat"><span class="stat__value" id="s-pages">0</span><span class="stat__label">Orte entdeckt</span></div>
+                <div class="stat"><span class="stat__value" id="s-eggs">0</span><span class="stat__label">Disketten</span></div>
+                <div class="stat"><span class="stat__value" id="s-xp">0</span><span class="stat__label">XP</span></div>
+            </div>
+            <p class="mt-2 mb-0" id="suggest"></p>
+        </div>
+    </section>
+
+    <div class="section-title"><h2>Regionen</h2><a href="weltkarte.html">Alle auf der Weltkarte →</a></div>
+    <div class="grid" id="regions"></div>
+
+    <div class="section-title"><h2>Highlights</h2></div>
+    <section class="card feature" data-reveal>
+        <div>
+            <span class="eyebrow" style="color:#f472b6">▶ Spielhalle</span>
+            <h2>PIXMAG Mini</h2>
+            <p class="muted">Ein kleiner Roguelike-Dungeon nach unserem PIXMAG-RPG: Du bist ein verbannter Magier mit einem mysteriösen Buch,
+                das Zauber kombiniert. Feuer + Eis? Probier's aus. Und das ist nur eines von über dreissig Spielen.</p>
+            <div class="row mt-2"><a class="btn btn--primary" href="arcade/dungeon.html">Dungeon betreten</a><a class="btn" href="arcade/index.html">Alle Spiele</a></div>
+        </div>
+        <div class="feature__art"><canvas id="dungeon-art" width="160" height="100"></canvas></div>
+    </section>
+    <div class="grid-2 mt-3">
+        <a class="tile" href="hardware/index.html" data-reveal style="--tc:#fb923c">
+            <span class="tile__icon">▣</span><span class="tile__title">Hardware-Archiv</span>
+            <span class="tile__desc">Datenblätter für Prozessoren, Grafikkarten, Chipsätze und mehr – mit Vergleich, Netzteil-Rechner und Balance-Check.</span>
+        </a>
+        <a class="tile" href="ki/index.html" data-reveal style="--tc:#a78bfa;--d:.1s">
+            <span class="tile__icon">✦</span><span class="tile__title">KI-Labor</span>
+            <span class="tile__desc">Textabenteuer, Kartenschmiede und Bildwerk – mit Hugging Face oder ganz offline.</span>
+        </a>
+    </div>
+
+    <div class="section-title"><h2>Aus dem Studio</h2><a href="studio/index.html">Alle Downloads →</a></div>
+    <div class="grid">
+        <a class="tile" href="studio/floppy-hub.html" data-reveal style="--tc:#4ade80"><span class="tile__icon">💾</span><span class="tile__title">Floppy Hub</span><span class="tile__desc">Aus Disketten wird eine physische Spielebibliothek.</span></a>
+        <a class="tile" href="studio/pixmag.html" data-reveal style="--tc:#4ade80;--d:.08s"><span class="tile__icon">🧙</span><span class="tile__title">PIXMAG</span><span class="tile__desc">Düsteres Dungeon-RPG mit Zauber-Kombinationen.</span></a>
+        <a class="tile" href="studio/beta.html" data-reveal style="--tc:#4ade80;--d:.16s"><span class="tile__icon">🧪</span><span class="tile__title">Beta-Programm</span><span class="tile__desc">Lust, unsere Projekte vor allen anderen zu testen?</span></a>
+    </div>
+</main>
+<script>
+XIRU.ready(function () {
+    const P = XIRU.profile();
+    const pages = XIRU.pages.filter(p => !p.hidden);
+
+    /* ── Netzwerk-Partikel im Hero ── */
+    (function () {
+        const cv = XIRU.$('#net'), ctx = cv.getContext('2d');
+        let W, H, pts = [], mouse = { x: -999, y: -999 };
+        const color = () => getComputedStyle(document.documentElement).getPropertyValue('--rc').trim() || '#5eead4';
+        function resize() {
+            const r = cv.getBoundingClientRect(), dpr = Math.min(devicePixelRatio || 1, 2);
+            W = r.width; H = r.height; cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            const n = Math.round(Math.min(110, W * H / 11000));
+            pts = Array.from({ length: n }, () => ({ x: Math.random() * W, y: Math.random() * H, vx: (Math.random() - .5) * .35, vy: (Math.random() - .5) * .35 }));
+        }
+        resize(); addEventListener('resize', resize);
+        cv.parentElement.addEventListener('pointermove', e => { const r = cv.getBoundingClientRect(); mouse = { x: e.clientX - r.left, y: e.clientY - r.top }; });
+        cv.parentElement.addEventListener('pointerleave', () => { mouse = { x: -999, y: -999 }; });
+        const calm = () => XIRU.setting('anim') === false || matchMedia('(prefers-reduced-motion: reduce)').matches;
+        let col = color(), frame = 0;
+        (function loop() {
+            if (++frame % 60 === 0) col = color();
+            ctx.clearRect(0, 0, W, H);
+            pts.forEach(p => {
+                if (!calm()) { p.x += p.vx; p.y += p.vy; }
+                if (p.x < 0 || p.x > W) p.vx *= -1; if (p.y < 0 || p.y > H) p.vy *= -1;
+                const dm = Math.hypot(p.x - mouse.x, p.y - mouse.y);
+                if (dm < 120 && !calm()) { p.x += (p.x - mouse.x) / dm * .8; p.y += (p.y - mouse.y) / dm * .8; }
+            });
+            ctx.strokeStyle = col; ctx.fillStyle = col;
+            for (let i = 0; i < pts.length; i++) {
+                for (let j = i + 1; j < pts.length; j++) {
+                    const d = Math.hypot(pts[i].x - pts[j].x, pts[i].y - pts[j].y);
+                    if (d < 115) { ctx.globalAlpha = (1 - d / 115) * .35; ctx.beginPath(); ctx.moveTo(pts[i].x, pts[i].y); ctx.lineTo(pts[j].x, pts[j].y); ctx.stroke(); }
+                }
+                ctx.globalAlpha = .7; ctx.beginPath(); ctx.arc(pts[i].x, pts[i].y, 1.8, 0, 6.3); ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+            if (document.body.contains(cv)) requestAnimationFrame(loop);
+        })();
+    })();
+
+    /* ── Schreibmaschine ── */
+    (function () {
+        const el = XIRU.$('#tw');
+        const words = ['Eine Website', 'Ein Archiv', 'Eine Spielhalle', 'Ein KI-Labor', 'Ein Diskettenregal', 'Eine offene Welt'];
+        if (XIRU.setting('anim') === false) return;
+        el.classList.add('typewriter');
+        let w = 0, i = words[0].length, del = true;
+        setTimeout(function tick() {
+            const word = words[w];
+            i += del ? -1 : 1;
+            el.textContent = word.slice(0, i) || '​';
+            let wait = del ? 45 : 85;
+            if (!del && i === word.length) { del = true; wait = 2200; }
+            else if (del && i === 0) { del = false; w = (w + 1) % words.length; wait = 300; }
+            setTimeout(tick, wait);
+        }, 2600);
+    })();
+
+    /* ── Laufschrift ── */
+    const facts = [
+        '<b>Wusstest du?</b> Eine Diskette fasst 1,44 MB – formatiert bleiben 1’457’664 Bytes.',
+        '<b>Tipp:</b> Disketten verstecken sich überall. Wirklich überall.',
+        '<b>Neu im Archiv:</b> ' + XIRU.pages.filter(p => p.hw).length + ' Hardware-Datenblätter.',
+        '<b>Spielhalle:</b> ' + XIRU.pages.filter(p => p.game).length + ' Spiele warten auf deinen Highscore.',
+        '<b>Gerücht:</b> Unter der Website soll es einen Keller geben.',
+        '<b>Tipp:</b> Mit einem Konto lernst du Skills und öffnest neue Orte.',
+        '<span data-egg="p-ticker" class="egg-spot"><b>Eilmeldung:</b> Jemand liest diese Laufschrift. Klick hier, um es zuzugeben.</span>',
+        '<b>Wusstest du?</b> Alle Daten bleiben in deinem Browser. Kein Server, keine Tracker.',
+        '<b>Rätsel:</b> Wer zu viel auf das Logo klickt, wird beobachtet.'
+    ];
+    XIRU.$('#ticker').innerHTML = facts.concat(facts).map(f => '<span class="ticker__item">' + f + '</span>').join('');
+
+    /* ── Fortschritt ── */
+    const li = XIRU.levelInfo();
+    const visited = Object.keys(P.visited).filter(p => XIRU.pageFor(p));
+    XIRU.$('#lvl').textContent = li.level;
+    requestAnimationFrame(() => { XIRU.$('#ring').style.strokeDashoffset = 314.16 * (1 - li.pct / 100); });
+    XIRU.$('#greet').textContent = XIRU.user ? 'Willkommen zurück, ' + XIRU.user + '!' : 'Hallo, Reisende:r!';
+    XIRU.$('#s-pages').textContent = visited.length + '/' + pages.length;
+    XIRU.$('#s-eggs').textContent = XIRU.eggCount() + '/' + XIRU.eggs.length;
+    XIRU.$('#s-xp').textContent = XIRU.fmt(P.xp);
+    XIRU.$('#progress-text').textContent = XIRU.user
+        ? 'Noch ' + (li.need - li.into) + ' XP bis Level ' + (li.level + 1) + '. ' + (XIRU.skillPoints().free ? 'Du hast ' + XIRU.skillPoints().free + ' freie Skillpunkte!' : '')
+        : 'Du spielst als Gast. Dein Fortschritt wird gespeichert – mit einem (lokalen) Konto kannst du ihn im Skilltree einsetzen.';
+    if (XIRU.user) { const a = XIRU.$('#cta-account'); a.textContent = '✦ Zum Skilltree'; a.href = 'konto/skilltree.html'; }
+    const unseen = pages.filter(p => !P.visited[p.p] && XIRU.isUnlocked(p));
+    if (unseen.length) {
+        const s = XIRU.pick(unseen.filter(p => !p.hw).length ? unseen.filter(p => !p.hw) : unseen);
+        XIRU.$('#suggest').innerHTML = '🧭 Noch nicht besucht: <a href="' + XIRU.url(s.p) + '">' + XIRU.esc(s.t) + '</a> <span class="faint small">(' + XIRU.esc(XIRU.region(s.r).name) + ')</span>';
+    }
+    XIRU.$('#random').addEventListener('click', () => {
+        const pool = unseen.length ? unseen : pages.filter(p => XIRU.isUnlocked(p));
+        location.href = XIRU.url(XIRU.pick(pool).p);
+    });
+
+    /* ── Regionen ── */
+    XIRU.$('#regions').innerHTML = XIRU.regions.filter(r => r.id !== 'geheim' && r.id !== 'zentrum').map((r, i) => {
+        const rp = pages.filter(p => p.r === r.id), seen = rp.filter(p => P.visited[p.p]).length;
+        const idx = XIRU.pages.find(p => p.r === r.id && /index\.html$/.test(p.p)) || rp[0];
+        return '<a class="tile region-tile" href="' + XIRU.url(idx.p) + '" data-reveal style="--rcol:' + r.color + ';--d:' + (i * .05) + 's">' +
+            '<span class="tile__icon">' + r.icon + '</span><span class="tile__title">' + XIRU.esc(r.name) + '</span>' +
+            '<span class="tile__desc">' + XIRU.esc(r.desc) + '</span>' +
+            '<span class="tile__meta">' + seen + ' / ' + rp.length + ' Orte entdeckt</span>' +
+            '<div class="bar"><div class="bar__fill" style="--v:' + Math.round(seen / Math.max(1, rp.length) * 100) + '%"></div></div></a>';
+    }).join('');
+
+    /* ── Mini-Dungeon-Animation ── */
+    (function () {
+        const cv = XIRU.$('#dungeon-art'), ctx = cv.getContext('2d');
+        const map = ['################', '#......#.......#', '#.####.#.#####.#', '#.#..........#.#', '#.#.######.#.#.#', '#...#....#.#...#', '###.#.##.#.###.#', '#...#..#...#...#', '#.#####.#####.##', '################'];
+        let t = 0, hero = { x: 1, y: 1 }, prev = { x: 1, y: 1 };
+        const floor = (x, y) => map[y] && map[y][x] === '.';
+        (function draw() {
+            t++;
+            if (t % 14 === 0) {   // zufällig durch die Gänge wandern, ohne direkt umzukehren
+                const n = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(d => ({ x: hero.x + d[0], y: hero.y + d[1] })).filter(c => floor(c.x, c.y));
+                const fwd = n.filter(c => c.x !== prev.x || c.y !== prev.y);
+                const next = XIRU.pick(fwd.length ? fwd : n);
+                prev = hero; hero = next;
+            }
+            ctx.fillStyle = '#0c0a09'; ctx.fillRect(0, 0, 160, 100);
+            map.forEach((row, y) => row.split('').forEach((c, x) => {
+                const d = Math.hypot(x - hero.x, y - hero.y), light = Math.max(0, 1 - d / 6);
+                ctx.fillStyle = c === '#' ? 'rgba(74,59,46,' + (.25 + light * .75) + ')' : 'rgba(38,32,27,' + (.3 + light * .7) + ')';
+                ctx.fillRect(x * 10, y * 10, 10, 10);
+                if (c === '#') { ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(x * 10, y * 10 + 8, 10, 2); }
+            }));
+            const f = 1 + Math.sin(t / 6) * .15;
+            ctx.fillStyle = 'rgba(212,162,76,.18)'; ctx.beginPath(); ctx.arc(hero.x * 10 + 5, hero.y * 10 + 5, 14 * f, 0, 7); ctx.fill();
+            ctx.fillStyle = '#a78bfa'; ctx.fillRect(hero.x * 10 + 2, hero.y * 10 + 1, 6, 8);
+            ctx.fillStyle = '#eadcc6'; ctx.fillRect(hero.x * 10 + 3, hero.y * 10 + 2, 4, 3);
+            ctx.fillStyle = '#facc15'; ctx.fillRect(hero.x * 10 + 8, hero.y * 10 + 1, 1, 6);
+            ctx.fillStyle = '#4ade80'; ctx.fillRect(13 * 10 + 2, 7 * 10 + 3, 6, 5);
+            ctx.fillStyle = '#d4a24c'; ctx.fillRect(8 * 10 + 3, 5 * 10 + 4, 4, 3);
+            if (document.body.contains(cv)) requestAnimationFrame(draw);
+        })();
+    })();
+});
+</script>
+</body>
+</html>

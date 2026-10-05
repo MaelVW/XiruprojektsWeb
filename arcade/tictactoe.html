@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic-Tac-Toe+ · Xiruprojekts</title>
+    <meta name="description" content="Tic-Tac-Toe+ – der Klassiker gegen eine KI in drei Stufen oder zu zweit, plus Ultimate Tic-Tac-Toe mit neun Mini-Feldern.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="css/tictactoe.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/arcade.js"></script>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">▶ Spielhalle · Brett</span>
+        <h1>Tic-Tac-Toe+</h1>
+        <p class="lead">Drei in einer Reihe – klingt einfach, bis die schwere KI mitspielt. Und wem das zu leicht ist: In „Ultimate“ steckt in jedem Feld ein weiteres Tic-Tac-Toe, und dein Zug bestimmt, wo der Gegner weiterspielen muss.</p>
+    </header>
+
+    <div class="game">
+        <div>
+            <div class="game__hud" id="hud"></div>
+            <div class="game__stage ttt-stage" id="stage">
+                <div class="ttt-root" id="root"></div>
+            </div>
+            <div class="ttt-bar mt-1">
+                <p class="ttt-turn" id="turn" aria-live="polite"></p>
+                <button class="btn btn--sm" type="button" id="btn-new">↻ Neue Partie</button>
+            </div>
+        </div>
+        <aside class="game__side">
+            <div class="card">
+                <h3>Steuerung</h3>
+                <ul class="keys-help">
+                    <li>Feld anklicken oder antippen</li>
+                    <li><kbd>1</kbd> – <kbd>9</kbd> – Feld wählen (oben links = 1)</li>
+                    <li><kbd>←</kbd> <kbd>↑</kbd> <kbd>→</kbd> <kbd>↓</kbd> + <kbd>Enter</kbd> – mit Cursor setzen</li>
+                    <li id="keys-ultimate" hidden>Ultimate bei freier Wahl: erst Ziffer fürs grosse Feld, dann fürs kleine. <kbd>Esc</kbd> bricht ab.</li>
+                    <li><kbd>N</kbd> – neue Partie</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Modus</h3>
+                <p class="small muted mb-1">Variante</p>
+                <div class="row" id="variants">
+                    <button class="chip is-active" type="button" data-variant="klassisch">Klassisch</button>
+                    <button class="chip" type="button" data-variant="ultimate">Ultimate</button>
+                </div>
+                <p class="small muted mt-2 mb-1">Gegner</p>
+                <div class="row" id="opps">
+                    <button class="chip" type="button" data-opp="leicht">KI leicht</button>
+                    <button class="chip is-active" type="button" data-opp="mittel">KI mittel</button>
+                    <button class="chip" type="button" data-opp="schwer">KI schwer</button>
+                    <button class="chip" type="button" data-opp="2p">2 Spieler</button>
+                </div>
+                <p class="small muted mt-2" id="mode-desc"></p>
+            </div>
+            <div class="card">
+                <h3>Rekord</h3>
+                <p class="stat__value" id="best">–</p>
+                <p class="small muted">Serienpunkte gegen die KI: Ein Sieg bringt 1 / 2 / 3 Punkte (leicht / mittel / schwer), in Ultimate doppelt so viel. Unentschieden halten die Serie, eine Niederlage setzt sie auf 0.</p>
+            </div>
+            <div class="card card--flat" id="rules-ultimate" hidden>
+                <h3>Ultimate-Regeln</h3>
+                <ul class="small muted">
+                    <li>Wer ein kleines Feld gewinnt, besitzt das grosse Feld an dieser Stelle.</li>
+                    <li>Wo du im kleinen Feld setzt, schickt den Gegner ins passende grosse Feld (Mitte → Mitte).</li>
+                    <li>Ist das Zielfeld schon entschieden, hat der Gegner freie Wahl.</li>
+                    <li>Drei grosse Felder in einer Reihe gewinnen.</li>
+                </ul>
+            </div>
+        </aside>
+    </div>
+</main>
+<script src="js/tictactoe.js"></script>
+</body>
+</html>

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zeitleiste · Xiruprojekts</title>
+    <meta name="description" content="Über 50 Jahre PC-Hardware zum Durchscrollen – vom Intel 4004 bis zur RTX 5090.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <style>
+        .tl { position: relative; max-width: 900px; margin: 2rem auto 0; padding: 1rem 0; }
+        .tl::before { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 3px; background: var(--border); transform: translateX(-50%); }
+        .tl__progress { position: absolute; left: 50%; top: 0; width: 3px; background: linear-gradient(var(--rc), var(--accent-2)); transform: translateX(-50%); height: 0; border-radius: 3px; box-shadow: 0 0 12px var(--rc); }
+        .tl__item { position: relative; width: 50%; padding: 0 2.25rem 2.25rem; }
+        .tl__item:nth-child(odd) { margin-left: 50%; }
+        .tl__item:nth-child(even) { text-align: right; }
+        .tl__dot { position: absolute; top: .4rem; width: 18px; height: 18px; border-radius: 50%; background: var(--bg); border: 3px solid var(--rc); }
+        .tl__item:nth-child(odd) .tl__dot { left: -9px; }
+        .tl__item:nth-child(even) .tl__dot { right: -9px; }
+        .tl__item.is-visible .tl__dot { background: var(--rc); box-shadow: 0 0 0 6px color-mix(in srgb, var(--rc) 25%, transparent); transition: all .5s .2s; }
+        .tl__year { font-size: 1.6rem; font-weight: 900; color: var(--rc); line-height: 1; font-variant-numeric: tabular-nums; }
+        .tl__card { margin-top: .5rem; text-align: left; }
+        .tl__card h3 { margin-bottom: .3rem; }
+        .tl__card p { color: var(--text-muted); font-size: .93rem; }
+        .tl__tag { font-size: .7rem; }
+        .tl-filter { justify-content: center; }
+        @media (max-width: 700px) {
+            .tl::before, .tl__progress { left: 12px; }
+            .tl__item, .tl__item:nth-child(odd) { width: 100%; margin-left: 0; padding: 0 0 2rem 2.5rem; text-align: left; }
+            .tl__item:nth-child(even) .tl__dot, .tl__item:nth-child(odd) .tl__dot { left: 3px; right: auto; }
+        }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head center">
+        <span class="eyebrow">▣ Hardware-Archiv</span>
+        <h1>Zeitleiste</h1>
+        <p class="lead" style="margin:0 auto">Über 50 Jahre PC-Hardware. Scroll los – die Linie wächst mit.</p>
+    </header>
+    <div class="row tl-filter" id="filter">
+        <button class="chip is-active" data-k="">Alles</button>
+        <button class="chip" data-k="cpu">Prozessoren</button>
+        <button class="chip" data-k="gpu">Grafik</button>
+        <button class="chip" data-k="spe">Speicher</button>
+        <button class="chip" data-k="pc">PCs & Plattformen</button>
+    </div>
+    <div class="tl" id="tl"><div class="tl__progress" id="prog"></div></div>
+</main>
+<script>
+XIRU.ready(function () {
+    const E = [
+        [1971, 'cpu', 'Intel 4004', 'Der erste kommerzielle Mikroprozessor: 2300 Transistoren, bis zu 740 kHz – gebaut für einen Taschenrechner.', null, 'p-zeitleiste'],
+        [1978, 'cpu', 'Intel 8086', 'Mit ihm beginnt die x86-Familie, deren Befehlssatz bis heute in fast jedem PC steckt.'],
+        [1981, 'pc', 'IBM PC 5150', 'Der IBM Personal Computer macht den „PC" zum Standard. Mit dabei: Diskettenlaufwerke.'],
+        [1985, 'spe', 'CD-ROM', 'Die CD wird zum Datenträger: 650 MB auf einer Scheibe – damals unvorstellbar viel.', 'laufwerke/cd-rom.html'],
+        [1987, 'spe', '3,5-Zoll-HD-Diskette', '1,44 MB im handlichen Kunststoffgehäuse mit Metallschieber. Der Rest ist Geschichte – und unser Logo.', 'laufwerke/diskette-3-5.html'],
+        [1989, 'cpu', 'Intel 486', 'Erstmals mit integrierter Gleitkomma-Einheit und über einer Million Transistoren.'],
+        [1993, 'cpu', 'Intel Pentium', 'Der Name wird zur Marke – und zum Synonym für „schneller Computer".'],
+        [1996, 'gpu', '3dfx Voodoo Graphics', 'Die 3D-Beschleuniger-Karte macht flüssige 3D-Spiele auf dem PC populär.'],
+        [1999, 'gpu', 'NVIDIA GeForce 256', 'Von NVIDIA als „erste GPU der Welt" vermarktet – mit Transform & Lighting in Hardware.'],
+        [2000, 'cpu', '1 GHz geknackt', 'AMD Athlon erreicht im März 2000 als erster x86-Prozessor die Gigahertz-Marke.'],
+        [2003, 'cpu', 'AMD Athlon 64', '64 Bit für alle: Die x86-64-Erweiterung von AMD wird zum Standard, den auch Intel übernimmt.'],
+        [2006, 'cpu', 'Intel Core 2 Duo', 'Effizienz statt Gigahertz-Rennen: Zwei Kerne werden Mainstream.'],
+        [2007, 'spe', 'DDR3', 'Neuer Arbeitsspeicher-Standard, der fast ein Jahrzehnt lang in PCs steckt.', 'speicher/ddr3.html'],
+        [2008, 'spe', 'SSDs für alle', 'Bezahlbare Flash-SSDs wie die Intel X25-M machen Festplatten im Systemlaufwerk überflüssig.', 'laufwerke/sata-ssd.html'],
+        [2011, 'cpu', 'Sandy Bridge', 'Der Core i7-2600K wird zur Übertakter-Legende.', 'cpu/core-i7-2600k.html'],
+        [2011, 'spe', 'NVMe 1.0', 'Ein Protokoll, das von Grund auf für Flash-Speicher gebaut ist – die Basis heutiger M.2-SSDs.', 'laufwerke/nvme-gen3.html'],
+        [2014, 'spe', 'DDR4', 'Weniger Spannung, mehr Tempo: DDR4 startet mit Intels Haswell-E-Plattform.', 'speicher/ddr4.html'],
+        [2017, 'cpu', 'AMD Ryzen', 'Acht Kerne für den Mainstream – AMD ist zurück und der Kern-Wettlauf beginnt.', 'cpu/ryzen-7-1800x.html'],
+        [2017, 'gpu', 'GTX 1080 Ti', 'Eine Grafikkarte, die gefühlt nie alt wird.', 'gpu/gtx-1080-ti.html'],
+        [2018, 'gpu', 'Raytracing in Echtzeit', 'Mit der RTX-20-Serie kommen RT-Kerne und DLSS auf Gaming-Grafikkarten.', 'gpu/rtx-2080-ti.html'],
+        [2019, 'pc', 'PCIe 4.0', 'Der X570-Chipsatz bringt PCIe 4.0 auf den Desktop – doppelt so schnell wie PCIe 3.0.', 'chipsatz/amd-x570.html'],
+        [2020, 'cpu', 'Zen 3', 'Ryzen 5000 übernimmt auch in Spielen die Führung.', 'cpu/ryzen-5-5600x.html'],
+        [2020, 'gpu', 'RDNA 2 & Ampere', 'Konsolen und PCs teilen sich die Technik; Grafikkarten sind wegen Chipmangel kaum zu bekommen.', 'gpu/rx-6800-xt.html'],
+        [2021, 'cpu', 'Alder Lake', 'Intel kombiniert Performance- und Effizienzkerne; DDR5 kommt auf den Desktop.', 'speicher/ddr5.html'],
+        [2022, 'cpu', '3D V-Cache', 'Der Ryzen 7 5800X3D stapelt Cache auf den Chip – ein Gaming-Wunder.', 'cpu/ryzen-7-5800x3d.html'],
+        [2022, 'pc', 'Sockel AM5', 'AMD wechselt auf DDR5 und PCIe 5.0 – und verspricht langen Sockel-Support.', 'chipsatz/amd-x670e.html'],
+        [2022, 'gpu', 'RTX 4090', 'Ein Leistungssprung – und ein Stromstecker, über den alle reden.', 'gpu/rtx-4090.html'],
+        [2023, 'pc', 'ATX 3.1 & 12V-2x6', 'Netzteile lernen mit Lastspitzen umzugehen, der neue Stecker wird sicherer.', 'netzteile/atx-3-1.html'],
+        [2024, 'cpu', 'Zen 5 & Arrow Lake', 'AMD bringt Zen 5 und den 9800X3D, Intel stellt auf Core Ultra und Sockel LGA1851 um.', 'cpu/ryzen-7-9800x3d.html'],
+        [2025, 'gpu', 'Blackwell & RDNA 4', 'RTX 50 mit GDDR7 und Multi-Frame-Generation, RX 9000 mit KI-Upscaling FSR 4.', 'gpu/rtx-5090.html'],
+        [2026, 'pc', 'Xiruprojekts-Archiv', 'Diese Zeitleiste entsteht. Was wohl als Nächstes kommt?']
+    ];
+    const tl = XIRU.$('#tl');
+    tl.insertAdjacentHTML('beforeend', E.map(e =>
+        '<div class="tl__item" data-reveal data-k="' + e[1] + '"><span class="tl__dot"></span><div class="tl__year">' + e[0] + '</div>' +
+        '<div class="card tl__card"' + (e[5] ? ' data-egg="' + e[5] + '"' : '') + '><span class="badge tl__tag">' + { cpu: 'Prozessor', gpu: 'Grafik', spe: 'Speicher', pc: 'Plattform' }[e[1]] + '</span>' +
+        '<h3 class="mt-1">' + XIRU.esc(e[2]) + '</h3><p class="mb-0">' + XIRU.esc(e[3]) + (e[4] ? ' <a href="' + e[4] + '">Datenblatt →</a>' : '') + '</p></div></div>').join(''));
+
+    XIRU.$('#filter').addEventListener('click', ev => {
+        const b = ev.target.closest('[data-k]'); if (!b) return;
+        XIRU.$$('#filter .chip').forEach(c => c.classList.toggle('is-active', c === b));
+        XIRU.$$('.tl__item').forEach(it => { it.hidden = b.dataset.k && it.dataset.k !== b.dataset.k; });
+        progress();
+    });
+
+    // Die Linie wächst mit dem Scrollen
+    const prog = XIRU.$('#prog');
+    function progress() {
+        const r = tl.getBoundingClientRect();
+        const seen = Math.min(r.height, Math.max(0, innerHeight * .6 - r.top));
+        prog.style.height = seen + 'px';
+    }
+    addEventListener('scroll', progress, { passive: true });
+    addEventListener('resize', progress);
+    progress();
+});
+</script>
+</body>
+</html>

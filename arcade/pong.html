@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pong · Xiruprojekts</title>
+    <meta name="description" content="Pong – gegen die CPU in drei Stärken oder zu zweit an einer Tastatur. Wer zuerst sieben Punkte hat, gewinnt.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/arcade.js"></script>
+    <style>
+        #cv { width: min(100%, calc((100vh - 170px) * 1.6)); }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">▶ Spielhalle · Action</span>
+        <h1>Pong</h1>
+        <p class="lead">Zwei Schläger, ein Ball, null Schnickschnack. Spiel gegen die CPU oder hol dir jemanden an die Tastatur – wer zuerst sieben Punkte hat, gewinnt. Je länger der Ballwechsel, desto schneller wird's.</p>
+    </header>
+
+    <div class="game">
+        <div>
+            <div class="game__hud" id="hud"></div>
+            <div class="game__stage" id="stage">
+                <canvas id="cv"></canvas>
+                <div class="game__overlay" id="ov"></div>
+            </div>
+            <div class="touch-pad">
+                <button data-key="ArrowUp" aria-label="Hoch">▲</button>
+                <button data-key="ArrowDown" aria-label="Runter">▼</button>
+                <button data-key="p" aria-label="Pause">⏸</button>
+            </div>
+        </div>
+        <aside class="game__side">
+            <div class="card">
+                <h3>Steuerung</h3>
+                <ul class="keys-help" id="keys-help">
+                    <li><kbd>W</kbd> <kbd>S</kbd> oder <kbd>↑</kbd> <kbd>↓</kbd> – deinen Schläger (links) bewegen</li>
+                    <li>Maus oder Finger übers Spielfeld – Schläger folgt</li>
+                    <li><kbd>Leertaste</kbd> / <kbd>P</kbd> – Pause</li>
+                    <li>Triffst du den Ball mit der Schlägerkante, fliegt er steiler ab.</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Modus</h3>
+                <div class="row" id="modes">
+                    <button class="chip" data-mode="1">CPU leicht</button>
+                    <button class="chip is-active" data-mode="2">CPU mittel</button>
+                    <button class="chip" data-mode="3">CPU schwer</button>
+                    <button class="chip" data-mode="2p">2 Spieler</button>
+                </div>
+                <p class="small muted mt-2" id="mode-desc">Die CPU ist wach, aber nicht unfehlbar.</p>
+            </div>
+            <div class="card">
+                <h3>Rekord</h3>
+                <p class="stat__value" id="best">–</p>
+                <p class="small muted mt-2">Wertung gegen die CPU: deine Tore × Stufe × 10, dazu 100 × Stufe für den Sieg. Zu zweit gibt's Ruhm, aber keinen Rekord.</p>
+            </div>
+        </aside>
+    </div>
+</main>
+<script src="js/pong.js"></script>
+</body>
+</html>

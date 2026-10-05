@@ -1,0 +1,88 @@
+/* ==========================================================================
+   KI-Labor – gemeinsame Bausteine für alle Seiten in ki/
+   (Status-Leiste, Ladepunkte und Tipp-Cursor kommen aus assets/js/ai.js)
+   Farben nur über Variablen aus main.css.
+   ========================================================================== */
+
+/* Kopfzeile unter dem Seitenkopf: Status links, Aktionen rechts */
+.ki-top { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; justify-content: space-between; margin: -1rem 0 1.5rem; }
+.ki-top .row { gap: .5rem; }
+
+/* Zweispaltig: Bühne + Seitenleiste */
+.ki-layout { display: grid; gap: 1.25rem; grid-template-columns: minmax(0, 1fr) 320px; align-items: start; }
+.ki-layout--wide-side { grid-template-columns: minmax(0, 1fr) 380px; }
+@media (max-width: 940px) { .ki-layout, .ki-layout--wide-side { grid-template-columns: 1fr; } }
+.ki-side > .card + .card { margin-top: 1rem; }
+
+/* Chatverlauf */
+.chat {
+    display: flex; flex-direction: column; gap: .9rem;
+    padding: 1.1rem; min-height: 340px; max-height: min(64vh, 680px); overflow-y: auto;
+    background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius);
+    overscroll-behavior: contain;
+}
+.chat--tall { min-height: 420px; }
+.msg { display: flex; gap: .65rem; align-items: flex-end; max-width: min(92%, 720px); animation: kiMsgIn .38s var(--ease) both; }
+.msg__avatar {
+    width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+    display: grid; place-items: center; font-size: 1.15rem;
+    background: var(--surface-3); border: 1px solid var(--border);
+}
+.msg__body { min-width: 0; }
+.msg__name { font-size: .75rem; font-weight: 700; color: var(--text-faint); margin: 0 0 .2rem .2rem; letter-spacing: .02em; }
+.msg__bubble {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px 16px 16px 4px; padding: .7rem .95rem;
+    line-height: 1.6; overflow-wrap: anywhere;
+}
+.msg--user { align-self: flex-end; flex-direction: row-reverse; }
+.msg--user .msg__name { text-align: right; margin: 0 .2rem .2rem 0; }
+.msg--user .msg__bubble {
+    background: color-mix(in srgb, var(--rc) 15%, var(--surface));
+    border-color: color-mix(in srgb, var(--rc) 40%, var(--border));
+    border-radius: 16px 16px 4px 16px;
+}
+.msg--sys { align-self: center; max-width: 100%; text-align: center; font-size: .82rem; color: var(--text-faint); }
+.msg--sys .msg__bubble { background: transparent; border: 1px dashed var(--border); border-radius: 99px; padding: .3rem .9rem; }
+.msg__meta { font-size: .72rem; color: var(--text-faint); margin-top: .3rem; padding-left: .2rem; }
+
+/* Eingabezeile */
+.composer { display: flex; gap: .5rem; margin-top: .75rem; align-items: stretch; }
+.composer .input, .composer .textarea { flex: 1; min-width: 0; }
+.composer .textarea { min-height: 48px; max-height: 160px; resize: none; }
+.composer .btn { flex-shrink: 0; }
+@media (max-width: 520px) { .composer { flex-wrap: wrap; } .composer .btn { flex: 1; } }
+
+/* Vorschläge als Chips */
+.sugg { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: .65rem; min-height: 1.8rem; }
+.sugg .chip { animation: kiMsgIn .3s var(--ease) both; white-space: normal; text-align: left; }
+
+/* Ausgabekasten (Textwerk, Berater …) */
+.ki-output {
+    position: relative; min-height: 140px; padding: 1.1rem 1.25rem;
+    background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius);
+    line-height: 1.65; overflow-wrap: anywhere;
+}
+.ki-output:empty::before { content: attr(data-empty); color: var(--text-faint); font-style: italic; }
+.ki-output.is-busy { border-color: color-mix(in srgb, var(--rc) 50%, var(--border)); box-shadow: var(--glow); }
+
+/* Kleine Kennzeichnung, woher eine Antwort kam */
+.ki-source { display: inline-flex; gap: .35rem; align-items: center; font-size: .72rem; color: var(--text-faint); margin-top: .5rem; }
+
+/* Schimmernder Platzhalter beim Laden (Bilder, Karten) */
+.ki-shimmer { position: relative; overflow: hidden; background: var(--surface-2); }
+.ki-shimmer::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(100deg, transparent 20%, color-mix(in srgb, var(--rc) 22%, transparent) 50%, transparent 80%);
+    animation: shimmer 1.6s infinite;
+}
+
+/* Abschnitts-Untertitel in Seitenleisten */
+.ki-label { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--text-faint); margin-bottom: .45rem; }
+
+/* Kachelraster der Übersicht */
+.ki-tiles .tile__icon { font-size: 1.5rem; }
+
+@keyframes kiMsgIn { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes kiGlow { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+@keyframes kiFloat { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-8px) rotate(2deg); } }

@@ -1,0 +1,456 @@
+/* ==========================================================================
+   Xiruprojekts – Seitenregister
+   --------------------------------------------------------------------------
+   Eine Datei, die alles beschreibt, was es auf der Website gibt:
+   Regionen, Seiten, Skills und Disketten (Easter Eggs).
+   Navigation, Weltkarte, Suche, Fortschritt und Sperren lesen von hier.
+
+   Neue Seite?  -> Eintrag in XIRU.pages ergänzen (siehe docs/NEUE-SEITE.md)
+   ========================================================================== */
+window.XIRU = window.XIRU || {};
+
+/* ── Regionen ─────────────────────────────────────────────────────────────── */
+XIRU.regions = [
+    { id: 'zentrum',   name: 'Zentrum',          icon: '◆', color: '#5eead4', desc: 'Der Platz, an dem alle Wege beginnen.' },
+    { id: 'hardware',  name: 'Hardware-Archiv',  icon: '▣', color: '#fb923c', desc: 'Datenblätter, Vergleiche und Rechner für PC-Teile.' },
+    { id: 'arcade',    name: 'Spielhalle',       icon: '▶', color: '#f472b6', desc: 'Dutzende Minispiele – vom Klassiker bis zum Dungeon.' },
+    { id: 'ki',        name: 'KI-Labor',         icon: '✦', color: '#a78bfa', desc: 'Textabenteuer, Kartenschmiede und Bildwerk mit Hugging Face.' },
+    { id: 'mixer',     name: 'Mixer-Studio',     icon: '≋', color: '#60a5fa', desc: 'Klänge, Beats, Farben und Namen mischen.' },
+    { id: 'werkzeuge', name: 'Werkzeugkasten',   icon: '⚒', color: '#facc15', desc: 'Kleine Helfer für den Alltag am PC.' },
+    { id: 'studio',    name: 'Studio',           icon: '⬇', color: '#4ade80', desc: 'Software und Spiele von Xiruprojekts.' },
+    { id: 'konto',     name: 'Heimathafen',      icon: '⚓', color: '#38bdf8', desc: 'Dein Konto, dein Skilltree, deine Sammlung.' },
+    { id: 'geheim',    name: '???',              icon: '?', color: '#f87171', desc: 'Niemand weiss genau, was hier liegt.' }
+];
+
+/* ── Seiten ───────────────────────────────────────────────────────────────
+   p: Pfad ab Website-Wurzel      t: Titel        r: Region
+   d: Kurzbeschreibung            skill: benötigter Skill (sonst Sperrbildschirm)
+   hidden: taucht erst nach Entdeckung in Navigation/Suche/Karte auf
+   nav: erscheint im Hauptmenü der Region
+   ------------------------------------------------------------------------- */
+XIRU.pages = [
+    // Zentrum
+    { p: 'index.html',               t: 'Startseite',          r: 'zentrum', d: 'Willkommen bei Xiruprojekts.', nav: true },
+    { p: 'weltkarte.html',           t: 'Weltkarte',           r: 'zentrum', d: 'Alle Regionen und was du schon entdeckt hast.', nav: true },
+    { p: 'suche.html',               t: 'Suche',               r: 'zentrum', d: 'Durchsuche die ganze Website.', nav: true },
+    { p: 'hilfe.html',               t: 'Hilfe & FAQ',         r: 'zentrum', d: 'Wie XP, Skills und Disketten funktionieren.', nav: true },
+    { p: 'ueber-uns.html',           t: 'Über uns',            r: 'zentrum', d: 'Zwei Freunde, ein Hobby-Gamestudio.', nav: true },
+    { p: 'datenschutz.html',         t: 'Datenschutz',         r: 'zentrum', d: 'Was gespeichert wird (Spoiler: nur bei dir).' },
+    { p: 'nutzungsbedingungen.html', t: 'Nutzungsbedingungen', r: 'zentrum', d: 'Die Regeln dieser Website.' },
+    { p: '404.html',                 t: 'Verirrt',             r: 'zentrum', d: 'Diese Seite gibt es nicht. Oder doch?', hidden: true },
+
+    // Konto
+    { p: 'konto/login.html',         t: 'Anmelden',            r: 'konto', d: 'Lokales Konto erstellen oder anmelden.', nav: true },
+    { p: 'konto/profil.html',        t: 'Profil',              r: 'konto', d: 'Level, XP und Fortschritt.', nav: true },
+    { p: 'konto/skilltree.html',     t: 'Skilltree',           r: 'konto', d: 'Skillpunkte verteilen und Neues freischalten.', nav: true },
+    { p: 'konto/sammlung.html',      t: 'Disketten-Sammlung',  r: 'konto', d: 'Alle gefundenen Easter Eggs.', nav: true },
+    { p: 'konto/erfolge.html',       t: 'Rekorde',             r: 'konto', d: 'Deine Bestwerte in der Spielhalle.', nav: true },
+    { p: 'konto/einstellungen.html', t: 'Einstellungen',       r: 'konto', d: 'Design, Animationen, Ton und Daten.', nav: true },
+    { p: 'konto/dienste.html',       t: 'Dienste & Schlüssel', r: 'konto', d: 'API-Schlüssel für Hugging Face und Co. verwalten.', nav: true },
+
+    // Hardware
+    { p: 'hardware/index.html',            t: 'Hardware-Archiv',     r: 'hardware', d: 'Übersicht über alle Datenblätter.', nav: true },
+    { p: 'hardware/cpu.html',              t: 'Prozessoren',         r: 'hardware', d: 'CPUs von AMD und Intel im Überblick.', nav: true },
+    { p: 'hardware/gpu.html',              t: 'Grafikkarten',        r: 'hardware', d: 'GPUs von NVIDIA, AMD und Intel.', nav: true },
+    { p: 'hardware/chipsatz.html',         t: 'Chipsätze',           r: 'hardware', d: 'Welcher Mainboard-Chipsatz kann was?', nav: true },
+    { p: 'hardware/speicher.html',         t: 'Speicherstandards',   r: 'hardware', d: 'DDR3 bis GDDR7 und HBM.', nav: true },
+    { p: 'hardware/laufwerke.html',        t: 'Datenträger',         r: 'hardware', d: 'Von der Diskette bis PCIe 5.0.', nav: true },
+    { p: 'hardware/netzteile.html',        t: 'Netzteile',           r: 'hardware', d: '80 PLUS und ATX 3.1 erklärt.', nav: true },
+    { p: 'hardware/vergleich.html',        t: 'Vergleich',           r: 'hardware', d: 'Bis zu drei Teile nebeneinander.', nav: true },
+    { p: 'hardware/glossar.html',          t: 'Glossar',             r: 'hardware', d: 'Fachbegriffe verständlich erklärt.', nav: true },
+    { p: 'hardware/netzteil-rechner.html', t: 'Netzteil-Rechner',    r: 'hardware', d: 'Wie viel Watt brauchst du?', nav: true },
+    { p: 'hardware/balance.html',          t: 'Balance-Check',       r: 'hardware', d: 'Passen CPU und GPU zusammen?', nav: true },
+    { p: 'hardware/builds.html',           t: 'Beispiel-Builds',     r: 'hardware', d: 'Zusammenstellungen für jedes Budget.', nav: true },
+    { p: 'hardware/zeitleiste.html',       t: 'Zeitleiste',          r: 'hardware', d: 'Hardware-Geschichte zum Durchscrollen.', nav: true },
+    { p: 'hardware/sockel.html',           t: 'Sockel-Kompatibilität', r: 'hardware', d: 'Welche CPU passt auf welches Board?', nav: true },
+    /* GEN:HW START – automatisch erzeugt von tools/build_hardware.py, nicht von Hand ändern */
+    { p: 'hardware/cpu/ryzen-7-1800x.html', t: "Ryzen 7 1800X", r: 'hardware', d: "Prozessor · 8 Kerne · 2017", hw: 'cpu' },
+    { p: 'hardware/cpu/ryzen-5-5600x.html', t: "Ryzen 5 5600X", r: 'hardware', d: "Prozessor · 6 Kerne · 2020", hw: 'cpu' },
+    { p: 'hardware/cpu/ryzen-7-5800x3d.html', t: "Ryzen 7 5800X3D", r: 'hardware', d: "Prozessor · 8 Kerne · 2022", hw: 'cpu' },
+    { p: 'hardware/cpu/ryzen-5-7600x.html', t: "Ryzen 5 7600X", r: 'hardware', d: "Prozessor · 6 Kerne · 2022", hw: 'cpu' },
+    { p: 'hardware/cpu/ryzen-9-7950x.html', t: "Ryzen 9 7950X", r: 'hardware', d: "Prozessor · 16 Kerne · 2022", hw: 'cpu' },
+    { p: 'hardware/cpu/ryzen-7-7800x3d.html', t: "Ryzen 7 7800X3D", r: 'hardware', d: "Prozessor · 8 Kerne · 2023", hw: 'cpu' },
+    { p: 'hardware/cpu/ryzen-5-9600x.html', t: "Ryzen 5 9600X", r: 'hardware', d: "Prozessor · 6 Kerne · 2024", hw: 'cpu' },
+    { p: 'hardware/cpu/ryzen-7-9700x.html', t: "Ryzen 7 9700X", r: 'hardware', d: "Prozessor · 8 Kerne · 2024", hw: 'cpu' },
+    { p: 'hardware/cpu/ryzen-9-9950x.html', t: "Ryzen 9 9950X", r: 'hardware', d: "Prozessor · 16 Kerne · 2024", hw: 'cpu' },
+    { p: 'hardware/cpu/ryzen-7-9800x3d.html', t: "Ryzen 7 9800X3D", r: 'hardware', d: "Prozessor · 8 Kerne · 2024", hw: 'cpu' },
+    { p: 'hardware/cpu/ryzen-9-9950x3d.html', t: "Ryzen 9 9950X3D", r: 'hardware', d: "Prozessor · 16 Kerne · 2025", hw: 'cpu' },
+    { p: 'hardware/cpu/core-i7-2600k.html', t: "Core i7-2600K", r: 'hardware', d: "Prozessor · 4 Kerne · 2011", hw: 'cpu' },
+    { p: 'hardware/cpu/core-i5-12400f.html', t: "Core i5-12400F", r: 'hardware', d: "Prozessor · 6 Kerne · 2022", hw: 'cpu' },
+    { p: 'hardware/cpu/core-i5-13600k.html', t: "Core i5-13600K", r: 'hardware', d: "Prozessor · 14 Kerne · 2022", hw: 'cpu' },
+    { p: 'hardware/cpu/core-i7-13700k.html', t: "Core i7-13700K", r: 'hardware', d: "Prozessor · 16 Kerne · 2022", hw: 'cpu' },
+    { p: 'hardware/cpu/core-i9-13900k.html', t: "Core i9-13900K", r: 'hardware', d: "Prozessor · 24 Kerne · 2022", hw: 'cpu' },
+    { p: 'hardware/cpu/core-i5-14600k.html', t: "Core i5-14600K", r: 'hardware', d: "Prozessor · 14 Kerne · 2023", hw: 'cpu' },
+    { p: 'hardware/cpu/core-i7-14700k.html', t: "Core i7-14700K", r: 'hardware', d: "Prozessor · 20 Kerne · 2023", hw: 'cpu' },
+    { p: 'hardware/cpu/core-i9-14900k.html', t: "Core i9-14900K", r: 'hardware', d: "Prozessor · 24 Kerne · 2023", hw: 'cpu' },
+    { p: 'hardware/cpu/core-ultra-5-245k.html', t: "Core Ultra 5 245K", r: 'hardware', d: "Prozessor · 14 Kerne · 2024", hw: 'cpu' },
+    { p: 'hardware/cpu/core-ultra-7-265k.html', t: "Core Ultra 7 265K", r: 'hardware', d: "Prozessor · 20 Kerne · 2024", hw: 'cpu' },
+    { p: 'hardware/cpu/core-ultra-9-285k.html', t: "Core Ultra 9 285K", r: 'hardware', d: "Prozessor · 24 Kerne · 2024", hw: 'cpu' },
+    { p: 'hardware/gpu/rx-580.html', t: "Radeon RX 580 (8 GB)", r: 'hardware', d: "Grafikkarte · 8 GB · 2017", hw: 'gpu' },
+    { p: 'hardware/gpu/rx-6800-xt.html', t: "Radeon RX 6800 XT", r: 'hardware', d: "Grafikkarte · 16 GB · 2020", hw: 'gpu' },
+    { p: 'hardware/gpu/rx-6700-xt.html', t: "Radeon RX 6700 XT", r: 'hardware', d: "Grafikkarte · 12 GB · 2021", hw: 'gpu' },
+    { p: 'hardware/gpu/rx-7900-xtx.html', t: "Radeon RX 7900 XTX", r: 'hardware', d: "Grafikkarte · 24 GB · 2022", hw: 'gpu' },
+    { p: 'hardware/gpu/rx-7600.html', t: "Radeon RX 7600", r: 'hardware', d: "Grafikkarte · 8 GB · 2023", hw: 'gpu' },
+    { p: 'hardware/gpu/rx-7800-xt.html', t: "Radeon RX 7800 XT", r: 'hardware', d: "Grafikkarte · 16 GB · 2023", hw: 'gpu' },
+    { p: 'hardware/gpu/rx-9070.html', t: "Radeon RX 9070", r: 'hardware', d: "Grafikkarte · 16 GB · 2025", hw: 'gpu' },
+    { p: 'hardware/gpu/rx-9070-xt.html', t: "Radeon RX 9070 XT", r: 'hardware', d: "Grafikkarte · 16 GB · 2025", hw: 'gpu' },
+    { p: 'hardware/gpu/arc-b580.html', t: "Arc B580", r: 'hardware', d: "Grafikkarte · 12 GB · 2024", hw: 'gpu' },
+    { p: 'hardware/gpu/gtx-1080-ti.html', t: "GeForce GTX 1080 Ti", r: 'hardware', d: "Grafikkarte · 11 GB · 2017", hw: 'gpu' },
+    { p: 'hardware/gpu/rtx-2080-ti.html', t: "GeForce RTX 2080 Ti", r: 'hardware', d: "Grafikkarte · 11 GB · 2018", hw: 'gpu' },
+    { p: 'hardware/gpu/rtx-3080.html', t: "GeForce RTX 3080 (10 GB)", r: 'hardware', d: "Grafikkarte · 10 GB · 2020", hw: 'gpu' },
+    { p: 'hardware/gpu/rtx-3090.html', t: "GeForce RTX 3090", r: 'hardware', d: "Grafikkarte · 24 GB · 2020", hw: 'gpu' },
+    { p: 'hardware/gpu/rtx-3060.html', t: "GeForce RTX 3060 (12 GB)", r: 'hardware', d: "Grafikkarte · 12 GB · 2021", hw: 'gpu' },
+    { p: 'hardware/gpu/rtx-4090.html', t: "GeForce RTX 4090", r: 'hardware', d: "Grafikkarte · 24 GB · 2022", hw: 'gpu' },
+    { p: 'hardware/gpu/rtx-4070.html', t: "GeForce RTX 4070", r: 'hardware', d: "Grafikkarte · 12 GB · 2023", hw: 'gpu' },
+    { p: 'hardware/gpu/rtx-4060.html', t: "GeForce RTX 4060", r: 'hardware', d: "Grafikkarte · 8 GB · 2023", hw: 'gpu' },
+    { p: 'hardware/gpu/rtx-4070-super.html', t: "GeForce RTX 4070 Super", r: 'hardware', d: "Grafikkarte · 12 GB · 2024", hw: 'gpu' },
+    { p: 'hardware/gpu/rtx-4080-super.html', t: "GeForce RTX 4080 Super", r: 'hardware', d: "Grafikkarte · 16 GB · 2024", hw: 'gpu' },
+    { p: 'hardware/gpu/rtx-5080.html', t: "GeForce RTX 5080", r: 'hardware', d: "Grafikkarte · 16 GB · 2025", hw: 'gpu' },
+    { p: 'hardware/gpu/rtx-5090.html', t: "GeForce RTX 5090", r: 'hardware', d: "Grafikkarte · 32 GB · 2025", hw: 'gpu' },
+    { p: 'hardware/gpu/rtx-5070-ti.html', t: "GeForce RTX 5070 Ti", r: 'hardware', d: "Grafikkarte · 16 GB · 2025", hw: 'gpu' },
+    { p: 'hardware/gpu/rtx-5070.html', t: "GeForce RTX 5070", r: 'hardware', d: "Grafikkarte · 12 GB · 2025", hw: 'gpu' },
+    { p: 'hardware/gpu/rtx-5060-ti-16gb.html', t: "GeForce RTX 5060 Ti (16 GB)", r: 'hardware', d: "Grafikkarte · 16 GB · 2025", hw: 'gpu' },
+    { p: 'hardware/chipsatz/amd-x570.html', t: "AMD X570", r: 'hardware', d: "Chipsatz · AM4 · 2019", hw: 'chipset' },
+    { p: 'hardware/chipsatz/amd-b550.html', t: "AMD B550", r: 'hardware', d: "Chipsatz · AM4 · 2020", hw: 'chipset' },
+    { p: 'hardware/chipsatz/amd-b650.html', t: "AMD B650", r: 'hardware', d: "Chipsatz · AM5 · 2022", hw: 'chipset' },
+    { p: 'hardware/chipsatz/amd-b650e.html', t: "AMD B650E", r: 'hardware', d: "Chipsatz · AM5 · 2022", hw: 'chipset' },
+    { p: 'hardware/chipsatz/amd-x670e.html', t: "AMD X670E", r: 'hardware', d: "Chipsatz · AM5 · 2022", hw: 'chipset' },
+    { p: 'hardware/chipsatz/amd-a620.html', t: "AMD A620", r: 'hardware', d: "Chipsatz · AM5 · 2023", hw: 'chipset' },
+    { p: 'hardware/chipsatz/amd-x870.html', t: "AMD X870", r: 'hardware', d: "Chipsatz · AM5 · 2024", hw: 'chipset' },
+    { p: 'hardware/chipsatz/amd-x870e.html', t: "AMD X870E", r: 'hardware', d: "Chipsatz · AM5 · 2024", hw: 'chipset' },
+    { p: 'hardware/chipsatz/amd-b850.html', t: "AMD B850", r: 'hardware', d: "Chipsatz · AM5 · 2025", hw: 'chipset' },
+    { p: 'hardware/chipsatz/intel-z790.html', t: "Intel Z790", r: 'hardware', d: "Chipsatz · LGA1700 · 2022", hw: 'chipset' },
+    { p: 'hardware/chipsatz/intel-b760.html', t: "Intel B760", r: 'hardware', d: "Chipsatz · LGA1700 · 2023", hw: 'chipset' },
+    { p: 'hardware/chipsatz/intel-z890.html', t: "Intel Z890", r: 'hardware', d: "Chipsatz · LGA1851 · 2024", hw: 'chipset' },
+    { p: 'hardware/chipsatz/intel-b860.html', t: "Intel B860", r: 'hardware', d: "Chipsatz · LGA1851 · 2025", hw: 'chipset' },
+    { p: 'hardware/speicher/ddr3.html', t: "DDR3", r: 'hardware', d: "Arbeitsspeicher · 2007", hw: 'memory' },
+    { p: 'hardware/speicher/ddr4.html', t: "DDR4", r: 'hardware', d: "Arbeitsspeicher · 2014", hw: 'memory' },
+    { p: 'hardware/speicher/ddr5.html', t: "DDR5", r: 'hardware', d: "Arbeitsspeicher · 2020", hw: 'memory' },
+    { p: 'hardware/speicher/gddr6.html', t: "GDDR6", r: 'hardware', d: "Grafikspeicher · 2018", hw: 'memory' },
+    { p: 'hardware/speicher/gddr7.html', t: "GDDR7", r: 'hardware', d: "Grafikspeicher · 2024", hw: 'memory' },
+    { p: 'hardware/speicher/lpddr5x.html', t: "LPDDR5X", r: 'hardware', d: "Mobiler Speicher · 2021", hw: 'memory' },
+    { p: 'hardware/speicher/hbm3.html', t: "HBM3", r: 'hardware', d: "Stapelspeicher · 2022", hw: 'memory' },
+    { p: 'hardware/laufwerke/diskette-3-5.html', t: "3,5-Zoll-Diskette (HD)", r: 'hardware', d: "Datenträger · Magnetisch", hw: 'storage' },
+    { p: 'hardware/laufwerke/cd-rom.html', t: "CD-ROM", r: 'hardware', d: "Datenträger · Optisch", hw: 'storage' },
+    { p: 'hardware/laufwerke/hdd-7200.html', t: "Festplatte (3,5 Zoll, 7200 U/min)", r: 'hardware', d: "Datenträger · Magnetisch", hw: 'storage' },
+    { p: 'hardware/laufwerke/sata-ssd.html', t: "SATA-SSD", r: 'hardware', d: "Datenträger · Flash", hw: 'storage' },
+    { p: 'hardware/laufwerke/nvme-gen3.html', t: "NVMe-SSD (PCIe 3.0 x4)", r: 'hardware', d: "Datenträger · Flash", hw: 'storage' },
+    { p: 'hardware/laufwerke/nvme-gen4.html', t: "NVMe-SSD (PCIe 4.0 x4)", r: 'hardware', d: "Datenträger · Flash", hw: 'storage' },
+    { p: 'hardware/laufwerke/nvme-gen5.html', t: "NVMe-SSD (PCIe 5.0 x4)", r: 'hardware', d: "Datenträger · Flash", hw: 'storage' },
+    { p: 'hardware/netzteile/80-plus-bronze.html', t: "80 PLUS Bronze", r: 'hardware', d: "Netzteil · Effizienz", hw: 'psu' },
+    { p: 'hardware/netzteile/80-plus-silver.html', t: "80 PLUS Silver", r: 'hardware', d: "Netzteil · Effizienz", hw: 'psu' },
+    { p: 'hardware/netzteile/80-plus-gold.html', t: "80 PLUS Gold", r: 'hardware', d: "Netzteil · Effizienz", hw: 'psu' },
+    { p: 'hardware/netzteile/80-plus-platinum.html', t: "80 PLUS Platinum", r: 'hardware', d: "Netzteil · Effizienz", hw: 'psu' },
+    { p: 'hardware/netzteile/80-plus-titanium.html', t: "80 PLUS Titanium", r: 'hardware', d: "Netzteil · Effizienz", hw: 'psu' },
+    { p: 'hardware/netzteile/atx-3-1.html', t: "ATX 3.1 & 12V-2x6", r: 'hardware', d: "Netzteil · Standard", hw: 'psu' },
+    /* GEN:HW END */
+
+    // Spielhalle
+    { p: 'arcade/index.html',         t: 'Spielhalle',        r: 'arcade', d: 'Alle Spiele auf einen Blick.', nav: true },
+    { p: 'arcade/dungeon.html',       t: 'PIXMAG Mini',       r: 'arcade', d: 'Roguelike-Dungeon mit Zauber-Kombinationen.', game: 'Abenteuer' },
+    { p: 'arcade/snake.html',         t: 'Snake',             r: 'arcade', d: 'Der Klassiker – friss, wachse, überlebe.', game: 'Action' },
+    { p: 'arcade/bloecke.html',       t: 'Blöcke',            r: 'arcade', d: 'Fallende Blöcke zu vollen Reihen stapeln.', game: 'Action' },
+    { p: 'arcade/ziegel.html',        t: 'Ziegelbrecher',     r: 'arcade', d: 'Ball, Schläger, viele Ziegel.', game: 'Action' },
+    { p: 'arcade/floppy-flug.html',   t: 'Floppy Flug',       r: 'arcade', d: 'Eine Diskette lernt fliegen.', game: 'Action' },
+    { p: 'arcade/pong.html',          t: 'Pong',              r: 'arcade', d: 'Gegen die CPU oder zu zweit.', game: 'Action' },
+    { p: 'arcade/stapel.html',        t: 'Stapelturm',        r: 'arcade', d: 'Timing ist alles.', game: 'Action' },
+    { p: 'arcade/2048.html',          t: '2048',              r: 'arcade', d: 'Kacheln verschieben und verschmelzen.', game: 'Puzzle' },
+    { p: 'arcade/minen.html',         t: 'Minensucher',       r: 'arcade', d: 'Logik unter Druck.', game: 'Puzzle' },
+    { p: 'arcade/sudoku.html',        t: 'Sudoku',            r: 'arcade', d: 'Zahlenrätsel in drei Stufen.', game: 'Puzzle' },
+    { p: 'arcade/nonogramm.html',     t: 'Nonogramm',         r: 'arcade', d: 'Pixelbilder aus Zahlenhinweisen.', game: 'Puzzle' },
+    { p: 'arcade/lichter.html',       t: 'Lichter aus',       r: 'arcade', d: 'Schalte alle Lampen aus.', game: 'Puzzle' },
+    { p: 'arcade/schiebepuzzle.html', t: 'Schiebepuzzle',     r: 'arcade', d: 'Die 15 Kacheln in Ordnung bringen.', game: 'Puzzle' },
+    { p: 'arcade/kisten.html',        t: 'Kistenschieber',    r: 'arcade', d: 'Sokoban-Level im Lagerhaus.', game: 'Puzzle' },
+    { p: 'arcade/labyrinth.html',     t: 'Labyrinth',         r: 'arcade', d: 'Jedes Mal ein neuer Irrgarten.', game: 'Puzzle' },
+    { p: 'arcade/rohre.html',         t: 'Rohrleitung',       r: 'arcade', d: 'Verbinde die Leitungen.', game: 'Puzzle' },
+    { p: 'arcade/tictactoe.html',     t: 'Tic-Tac-Toe+',      r: 'arcade', d: 'Klassisch und als Ultimate-Variante.', game: 'Brett' },
+    { p: 'arcade/vier-gewinnt.html',  t: 'Vier gewinnt',      r: 'arcade', d: 'Gegen eine KI mit drei Stärken.', game: 'Brett' },
+    { p: 'arcade/codeknacker.html',   t: 'Codeknacker',       r: 'arcade', d: 'Finde den geheimen Farbcode.', game: 'Brett' },
+    { p: 'arcade/memory.html',        t: 'Memory',            r: 'arcade', d: 'Paare finden mit Hardware-Motiven.', game: 'Brett' },
+    { p: 'arcade/woertle.html',       t: 'Wörtle',            r: 'arcade', d: 'Errate das Wort mit fünf Buchstaben.', game: 'Wort' },
+    { p: 'arcade/galgen.html',        t: 'Galgenmännchen',    r: 'arcade', d: 'Buchstabe für Buchstabe.', game: 'Wort' },
+    { p: 'arcade/tippen.html',        t: 'Tipp-Trainer',      r: 'arcade', d: 'Wie schnell tippst du?', game: 'Geschick' },
+    { p: 'arcade/reaktion.html',      t: 'Reaktionstest',     r: 'arcade', d: 'Klick, sobald es grün wird.', game: 'Geschick' },
+    { p: 'arcade/farbfolge.html',     t: 'Farbfolge',         r: 'arcade', d: 'Merke dir die Sequenz.', game: 'Geschick' },
+    { p: 'arcade/klicker.html',       t: 'Diskettenfabrik',   r: 'arcade', d: 'Ein Idle-Spiel über Disketten.', game: 'Idle' },
+    { p: 'arcade/invaders.html',      t: 'Invasoren',         r: 'arcade', d: 'Verteidige die Erde.', game: 'Action', skill: 's1' },
+    { p: 'arcade/frosch.html',        t: 'Froschsprung',      r: 'arcade', d: 'Über Strasse und Fluss.', game: 'Action', skill: 's1' },
+    { p: 'arcade/asteroiden.html',    t: 'Asteroiden',        r: 'arcade', d: 'Schiessen und ausweichen im All.', game: 'Action', skill: 's1' },
+    { p: 'arcade/tower-defense.html', t: 'Turmwacht',         r: 'arcade', d: 'Türme bauen, Wellen aufhalten.', game: 'Strategie', skill: 's3' },
+    { p: 'arcade/reversi.html',       t: 'Reversi',           r: 'arcade', d: 'Steine umdrehen gegen die KI.', game: 'Brett', skill: 's3' },
+    { p: 'arcade/hardware-quiz.html', t: 'Höher oder Tiefer', r: 'arcade', d: 'Welche Hardware ist schneller?', game: 'Wissen', skill: 't2' },
+    { p: 'arcade/pc-bauer.html',      t: 'PC-Bauer',          r: 'arcade', d: 'Baue den besten PC fürs Budget.', game: 'Wissen', skill: 't3' },
+    { p: 'arcade/gluecksrad.html',    t: 'Glücksrad',         r: 'arcade', d: 'Einmal am Tag drehen.', game: 'Bonus', skill: 's2' },
+    { p: 'arcade/mitternacht.html',   t: 'Mitternachts-Arcade', r: 'arcade', d: 'Ein Spiel, das nur Eingeweihte kennen.', game: 'Bonus', skill: 's5', hidden: true },
+
+    // KI-Labor
+    { p: 'ki/index.html',            t: 'KI-Labor',          r: 'ki', d: 'Übersicht und Verbindungsstatus.', nav: true },
+    { p: 'ki/abenteuer.html',        t: 'Textabenteuer',     r: 'ki', d: 'Eine KI erzählt deine Geschichte.', nav: true },
+    { p: 'ki/kartenschmiede.html',   t: 'Kartenschmiede',    r: 'ki', d: 'Welten und Dungeons generieren.', nav: true },
+    { p: 'ki/bildwerk.html',         t: 'Bildwerk',          r: 'ki', d: 'Bilder aus Text erzeugen.', nav: true },
+    { p: 'ki/taverne.html',          t: 'Taverne',           r: 'ki', d: 'Plaudere mit Figuren aus dem Dungeon.', nav: true },
+    { p: 'ki/hardware-berater.html', t: 'Hardware-Berater',  r: 'ki', d: 'Kaufberatung mit dem Archiv als Wissen.', nav: true },
+    { p: 'ki/textwerk.html',         t: 'Textwerk',          r: 'ki', d: 'Zusammenfassen, übersetzen, umformulieren.', nav: true },
+    { p: 'ki/orakel.html',           t: 'Orakel',            r: 'ki', d: 'Stelle eine Frage. Erhalte ein Rätsel.', skill: 'm3' },
+
+    // Mixer
+    { p: 'mixer/index.html',  t: 'Mixer-Studio',   r: 'mixer', d: 'Alle Mixer auf einen Blick.', nav: true },
+    { p: 'mixer/klang.html',  t: 'Klangmixer',     r: 'mixer', d: 'Regen, Wind, Feuer – dein Hintergrundklang.', nav: true },
+    { p: 'mixer/farbe.html',  t: 'Farbmixer',      r: 'mixer', d: 'Farben mischen und Paletten bauen.', nav: true },
+    { p: 'mixer/namen.html',  t: 'Namensmixer',    r: 'mixer', d: 'Namen für Spiele, Helden und Studios.', nav: true },
+    { p: 'mixer/wesen.html',  t: 'Kreaturenmixer', r: 'mixer', d: 'Bau dir ein Monster.', nav: true },
+    { p: 'mixer/synth.html',  t: 'Synthesizer',    r: 'mixer', d: 'Ein Keyboard im Browser.', skill: 'm1' },
+    { p: 'mixer/beat.html',   t: 'Beatmaschine',   r: 'mixer', d: 'Step-Sequencer mit 16 Schritten.', skill: 'm2' },
+
+    // Werkzeuge
+    { p: 'werkzeuge/index.html',          t: 'Werkzeugkasten',     r: 'werkzeuge', d: 'Alle Werkzeuge.', nav: true },
+    { p: 'werkzeuge/einheiten.html',      t: 'Einheitenrechner',   r: 'werkzeuge', d: 'GB oder GiB? Watt, Hertz und mehr.', nav: true },
+    { p: 'werkzeuge/passwort.html',       t: 'Passwort-Generator', r: 'werkzeuge', d: 'Sichere Passwörter, lokal erzeugt.', nav: true },
+    { p: 'werkzeuge/zufall.html',         t: 'Zufallsentscheider', r: 'werkzeuge', d: 'Würfel, Münze und „Wer zahlt?".', nav: true },
+    { p: 'werkzeuge/timer.html',          t: 'Timer & Pomodoro',   r: 'werkzeuge', d: 'Konzentriert arbeiten.', nav: true },
+    { p: 'werkzeuge/json.html',           t: 'JSON-Werkstatt',     r: 'werkzeuge', d: 'Formatieren, prüfen, verkleinern.', nav: true },
+    { p: 'werkzeuge/bildschirmtest.html', t: 'Bildschirmtest',     r: 'werkzeuge', d: 'Pixelfehler und Farbverläufe prüfen.', nav: true },
+    { p: 'werkzeuge/tastaturtest.html',   t: 'Tastaturtest',       r: 'werkzeuge', d: 'Funktioniert jede Taste?', nav: true },
+    { p: 'werkzeuge/hz-test.html',        t: 'Hz-Test',            r: 'werkzeuge', d: 'Wie viele Bilder pro Sekunde schafft dein Bildschirm?', nav: true },
+    { p: 'werkzeuge/klicktest.html',      t: 'Klicktest',          r: 'werkzeuge', d: 'Klicks pro Sekunde messen.', nav: true },
+    { p: 'werkzeuge/notizen.html',        t: 'Notizblock',         r: 'werkzeuge', d: 'Notizen, die nur in deinem Browser bleiben.', nav: true },
+
+    // Studio
+    { p: 'studio/index.html',      t: 'Downloads',       r: 'studio', d: 'Alle Projekte von Xiruprojekts.', nav: true },
+    { p: 'studio/floppy-hub.html', t: 'Floppy Hub',      r: 'studio', d: 'Aus Disketten wird eine Spielebibliothek.', nav: true },
+    { p: 'studio/pixmag.html',     t: 'PIXMAG',          r: 'studio', d: 'Düsteres Dungeon-RPG mit Zauber-Kombinationen.', nav: true },
+    { p: 'studio/xiruweb.html',    t: 'Diese Website',   r: 'studio', d: 'Wie diese Website gebaut ist.', nav: true },
+    { p: 'studio/beta.html',       t: 'Beta-Programm',   r: 'studio', d: 'Neue Projekte vor allen anderen testen.', nav: true },
+
+    // Geheim
+    { p: 'geheim/terminal.html',         t: 'Floppy-Terminal',   r: 'geheim', d: 'A:\\> _', hidden: true, skill: 't5' },
+    { p: 'geheim/keller.html',           t: 'Der Keller',        r: 'geheim', d: 'Hier unten ist es feucht.', hidden: true },
+    { p: 'geheim/archiv-1999.html',      t: 'Archiv 1999',       r: 'geheim', d: 'Diese Seite ist im Aufbau.', hidden: true, skill: 'e5' },
+    { p: 'geheim/leuchtturm.html',       t: 'Der Leuchtturm',    r: 'geheim', d: 'Ein Licht im Sternenmeer.', hidden: true },
+    { p: 'geheim/serverraum.html',       t: 'Serverraum',        r: 'geheim', d: 'Bitte nichts anfassen.', hidden: true, skill: 't6' },
+    { p: 'geheim/void.html',             t: 'Die Leere',         r: 'geheim', d: '…', hidden: true, skill: 'e6' },
+    { p: 'geheim/runen.html',            t: 'Runenkammer',       r: 'geheim', d: 'Uralte Zeichen warten auf einen Leser.', hidden: true, skill: 'm5' },
+    { p: 'geheim/turm.html',             t: 'Der Magierturm',    r: 'geheim', d: 'Ganz oben wohnt jemand.', hidden: true, skill: 'm6' },
+    { p: 'geheim/ruhmeshalle.html',      t: 'Ruhmeshalle',       r: 'geheim', d: 'Für die Legenden der Spielhalle.', hidden: true, skill: 's6' },
+    { p: 'geheim/diskettenschrein.html', t: 'Diskettenschrein',  r: 'geheim', d: 'Ein Altar für Sammler.', hidden: true },
+    { p: 'geheim/katzen.html',           t: 'Katzenzimmer',      r: 'geheim', d: 'Miau.', hidden: true },
+    { p: 'geheim/rueckwaerts.html',      t: 'sträwkcüR',         r: 'geheim', d: '.tlerhekmu tsi seilA', hidden: true },
+    { p: 'geheim/ende.html',             t: 'Das Ende?',         r: 'geheim', d: 'Nur wer alles gemeistert hat.', hidden: true }
+];
+
+/* ── Skilltree ────────────────────────────────────────────────────────────
+   4 Äste à 6 Skills. x/y = Position im Baum (Raster 0–6 / 0–4).
+   ------------------------------------------------------------------------- */
+XIRU.branches = [
+    { id: 'e', name: 'Entdecker', color: '#5eead4', desc: 'Sieh mehr von der Welt.' },
+    { id: 't', name: 'Techniker', color: '#fb923c', desc: 'Schraube an allem, was Strom hat.' },
+    { id: 's', name: 'Spieler',   color: '#f472b6', desc: 'Schalte neue Spiele frei.' },
+    { id: 'm', name: 'Magier',    color: '#a78bfa', desc: 'Klang, Runen und KI-Zauber.' }
+];
+
+XIRU.skills = [
+    { id: 'e1', b: 'e', n: 'Kompass',          c: 1, req: [],           d: 'Die Weltkarte zeigt, wie viele Orte pro Region noch unentdeckt sind.' },
+    { id: 'e2', b: 'e', n: 'Spürnase',         c: 1, req: ['e1'],       d: 'Unten auf jeder Seite siehst du, ob hier noch Disketten versteckt sind.' },
+    { id: 'e3', b: 'e', n: 'Kartograph',       c: 2, req: ['e1'],       d: 'Versteckte Orte erscheinen als „???" auf der Weltkarte – mit Hinweis.' },
+    { id: 'e4', b: 'e', n: 'Schlüsselmeister', c: 2, req: ['e3'],       d: 'Im Fussbereich jeder Seite erscheint eine kleine Tür.' },
+    { id: 'e5', b: 'e', n: 'Zeitreisender',    c: 2, req: ['e2'],       d: 'Öffnet das Archiv 1999 und das Design „Klassik".' },
+    { id: 'e6', b: 'e', n: 'Weltenwanderer',   c: 3, req: ['e4', 'e5'], d: 'Öffnet ein Portal in die Leere.' },
+
+    { id: 't1', b: 't', n: 'Schraubenzieher',  c: 1, req: [],           d: 'Expertenmodus: Datenblätter zeigen Leistungsindex und Fun Facts.' },
+    { id: 't2', b: 't', n: 'Benchmarker',      c: 1, req: ['t1'],       d: 'Schaltet „Höher oder Tiefer" in der Spielhalle frei.' },
+    { id: 't3', b: 't', n: 'Schrauber',        c: 2, req: ['t1'],       d: 'Schaltet den „PC-Bauer" in der Spielhalle frei.' },
+    { id: 't4', b: 't', n: 'Übertakter',       c: 2, req: ['t2'],       d: 'Schaltet das Design „RGB" frei. Mehr Leuchten = mehr Leistung.' },
+    { id: 't5', b: 't', n: 'Terminal-Zugang',  c: 2, req: ['t3'],       d: 'Öffnet das Floppy-Terminal.' },
+    { id: 't6', b: 't', n: 'Systemarchitekt',  c: 3, req: ['t4', 't5'], d: 'Öffnet den Serverraum.' },
+
+    { id: 's1', b: 's', n: 'Münzeinwurf',      c: 1, req: [],           d: 'Retro-Paket: Invasoren, Froschsprung und Asteroiden.' },
+    { id: 's2', b: 's', n: 'Glückspilz',       c: 1, req: ['s1'],       d: 'Das tägliche Glücksrad wird freigeschaltet.' },
+    { id: 's3', b: 's', n: 'Taktiker',         c: 2, req: ['s1'],       d: 'Strategie-Paket: Turmwacht und Reversi.' },
+    { id: 's4', b: 's', n: 'Dungeon-Veteran',  c: 2, req: ['s3'],       d: 'PIXMAG Mini: neue Klasse „Erzmagier" und ein Startbonus.' },
+    { id: 's5', b: 's', n: 'Highscore-Jäger',  c: 2, req: ['s2'],       d: 'Öffnet die Mitternachts-Arcade.' },
+    { id: 's6', b: 's', n: 'Arcade-Legende',   c: 3, req: ['s4', 's5'], d: 'Öffnet die Ruhmeshalle und das Design „Röhrenmonitor".' },
+
+    { id: 'm1', b: 'm', n: 'Funke',            c: 1, req: [],           d: 'Schaltet den Synthesizer im Mixer-Studio frei.' },
+    { id: 'm2', b: 'm', n: 'Klangweber',       c: 1, req: ['m1'],       d: 'Schaltet die Beatmaschine frei.' },
+    { id: 'm3', b: 'm', n: 'Orakelstimme',     c: 2, req: ['m1'],       d: 'Öffnet das Orakel im KI-Labor.' },
+    { id: 'm4', b: 'm', n: 'Weltenschmied',    c: 2, req: ['m3'],       d: 'Kartenschmiede-Dungeons lassen sich in PIXMAG Mini spielen.' },
+    { id: 'm5', b: 'm', n: 'Runenleser',       c: 2, req: ['m2'],       d: 'Öffnet die Runenkammer.' },
+    { id: 'm6', b: 'm', n: 'Erzmagier',        c: 3, req: ['m4', 'm5'], d: 'Öffnet den Magierturm und das Design „PIXMAG".' }
+];
+
+/* ── Designs (Themes) ─────────────────────────────────────────────────── */
+XIRU.themes = [
+    { id: 'nacht',   n: 'Nacht',            d: 'Standard, dunkel.' },
+    { id: 'hell',    n: 'Hell',             d: 'Für sonnige Tage.' },
+    { id: 'floppy',  n: 'Floppy-Terminal',  d: 'Grüner Phosphor wie im Floppy Hub.', egg: 'b-floppy' },
+    { id: 'klassik', n: 'Klassik',          d: 'Die Farben der allerersten Xiru-Website.', skill: 'e5' },
+    { id: 'rgb',     n: 'RGB',              d: 'Es leuchtet. Alles.', skill: 't4' },
+    { id: 'crt',     n: 'Röhrenmonitor',    d: 'Scanlines und Flimmern.', skill: 's6' },
+    { id: 'pixmag',  n: 'PIXMAG',           d: 'Düster wie ein Dungeon.', skill: 'm6' }
+];
+
+/* ── Disketten (Easter Eggs) ──────────────────────────────────────────────
+   id   eindeutig        n  Name           h  Hinweis (sichtbar, solange nicht gefunden)
+   x    XP               r  Seltenheit 1–4 (4 = Meilenstein, gibt +1 Skillpunkt)
+   w    getipptes Wort (irgendwo auf der Seite, nicht in Eingabefeldern)
+   m    Nachricht beim Finden          pg Seite, auf der es versteckt ist (für „Spürnase")
+   fx   Effekt, den core.js abspielt
+   manual  o-Diskette wird NICHT automatisch beim Besuch vergeben (die Seite ruft XIRU.egg selbst auf)
+   ------------------------------------------------------------------------- */
+XIRU.eggs = [
+    // ── Getippte Wörter ──
+    { id: 'w-xiru',      w: 'xiru',        n: 'Selbstbewusst',      h: 'Tippe den Namen des Studios.', x: 20, r: 1, m: 'Ja, das sind wir. Hallo!' },
+    { id: 'w-floppy',    w: 'floppy',      n: 'Diskettenflüsterer', h: 'Tippe den Namen unseres Launchers.', x: 25, r: 1, m: '1,44 MB pure Nostalgie.', fx: 'floppy' },
+    { id: 'w-pixmag',    w: 'pixmag',      n: 'Verbannter Magier',  h: 'Tippe den Namen unseres Dungeon-RPGs.', x: 25, r: 1, m: 'Die Gilde hat dich nicht vergessen.' },
+    { id: 'w-hallo',     w: 'hallo',       n: 'Höflich',            h: 'Sag einfach mal Hallo.', x: 10, r: 1, m: 'Hallo zurück! 👋' },
+    { id: 'w-gruezi',    w: 'grüezi',      n: 'Eidgenosse',         h: 'Grüss die Website auf Schweizerdeutsch.', x: 20, r: 1, m: 'Grüezi mitenand!' },
+    { id: 'w-sudo',      w: 'sudo',        n: 'Möchtegern-Admin',   h: 'Verlange mehr Rechte.', x: 20, r: 1, m: 'Netter Versuch. Dieser Vorfall wird gemeldet. (Nicht wirklich.)' },
+    { id: 'w-matrix',    w: 'matrix',      n: 'Die rote Pille',     h: 'Wach auf, Neo.', x: 30, r: 2, m: 'Folge dem weissen Kaninchen.', fx: 'matrix' },
+    { id: 'w-kaffee',    w: 'kaffee',      n: 'Koffeinhaltig',      h: 'Was trinken Entwickler?', x: 15, r: 1, m: '☕ Kaffee wird gebrüht … 100 %.' },
+    { id: 'w-pizza',     w: 'pizza',       n: 'Entwickler-Nahrung', h: 'Was essen Entwickler um 2 Uhr nachts?', x: 15, r: 1, m: '🍕 Lieferung in 30 Minuten oder sie ist gratis.' },
+    { id: 'w-42',        w: '42',          n: 'Die Antwort',        h: 'Die Antwort auf alles.', x: 42, r: 2, m: 'Aber was war nochmal die Frage?' },
+    { id: 'w-1337',      w: '1337',        n: 'Elite',              h: 'Sprich wie ein Hacker aus den 90ern.', x: 37, r: 2, m: 'Du bist jetzt offiziell 1337.' },
+    { id: 'w-ping',      w: 'ping',        n: 'Netzwerker',         h: 'Prüfe die Verbindung.', x: 10, r: 1, m: 'Pong! (1 ms)' },
+    { id: 'w-marco',     w: 'marco',       n: 'Poolspiel',          h: 'Rufe im Schwimmbad.', x: 10, r: 1, m: 'Polo!' },
+    { id: 'w-barrel',    w: 'fassrolle',   n: 'Fassrolle',          h: 'Mach eine Fassrolle!', x: 30, r: 2, m: 'Wiiiiiee!', fx: 'roll' },
+    { id: 'w-kopf',      w: 'kopfstand',   n: 'Akrobat',            h: 'Stell die Welt auf den Kopf.', x: 30, r: 2, m: 'Die Welt steht kopf.', fx: 'flip' },
+    { id: 'w-regen',     w: 'regenbogen',  n: 'Farbenfroh',         h: 'Nach dem Regen kommt …', x: 25, r: 1, m: '🌈', fx: 'rainbow' },
+    { id: 'w-disco',     w: 'disco',       n: 'Party!',             h: 'Zeit zu tanzen.', x: 25, r: 1, m: '🪩 Saturday Night Fever!', fx: 'disco' },
+    { id: 'w-schnee',    w: 'schnee',      n: 'Winterkind',         h: 'Lass es schneien.', x: 25, r: 1, m: '❄ Es schneit!', fx: 'snow' },
+    { id: 'w-beben',     w: 'erdbeben',    n: 'Erschütternd',       h: 'Bring die Seite zum Wackeln.', x: 25, r: 1, m: 'Bitte Ruhe bewahren.', fx: 'shake' },
+    { id: 'w-glitch',    w: 'glitch',      n: 'Fehler im System',   h: 'Etwas stimmt mit der Darstellung nicht.', x: 30, r: 2, m: 'Ẃ̷̢a̴̛s̶ ̵w̷a̶r̴ ̶d̷a̵s̴?', fx: 'glitch' },
+    { id: 'w-bsod',      w: 'bluescreen',  n: 'Absturz',            h: 'Der gefürchtetste Bildschirm.', x: 30, r: 2, m: 'Keine Sorge, alles noch da.', fx: 'bsod' },
+    { id: 'w-katze',     w: 'katze',       n: 'Katzenfreund',       h: 'Das Internet liebt sie.', x: 20, r: 1, m: '/ᐠ｡ꞈ｡ᐟ\\  Miau!', fx: 'cat' },
+    { id: 'w-hund',      w: 'hund',        n: 'Hundefreund',        h: 'Der beste Freund des Menschen.', x: 20, r: 1, m: '🐕 Wuff!' },
+    { id: 'w-hunter2',   w: 'hunter2',     n: '*******',            h: 'Ein berühmtes Passwort aus dem Internet.', x: 30, r: 2, m: 'Ich sehe nur Sterne: *******' },
+    { id: 'w-admin',     w: 'admin',       n: 'Zugang verweigert',  h: 'Versuch es mit dem Standard-Benutzernamen.', x: 15, r: 1, m: 'Admin-Bereich? Den gibt es hier nicht mehr. Oder?' },
+    { id: 'w-vim',       w: ':q!',         n: 'Gefangen in Vim',    h: 'Wie verlässt man diesen Editor?', x: 30, r: 2, m: 'Du kommst hier nicht raus. Niemand kommt hier raus.' },
+    { id: 'w-xyzzy',     w: 'xyzzy',       n: 'Zauberwort',         h: 'Ein Zauberwort aus einem uralten Textabenteuer.', x: 40, r: 2, m: 'Nichts passiert.' },
+    { id: 'w-abra',      w: 'abrakadabra', n: 'Zauberlehrling',     h: 'Das bekannteste Zauberwort.', x: 20, r: 1, m: '✨ Puff! … nichts verschwunden.', fx: 'sparkle' },
+    { id: 'w-sesam',     w: 'sesam',       n: 'Sesam, öffne dich',  h: 'Wie öffnet man eine Räuberhöhle?', x: 35, r: 2, m: 'Irgendwo hat sich eine Tür geöffnet … schau ganz nach unten.', fx: 'door' },
+    { id: 'w-mael',      w: 'mael',        n: 'Der Chef',           h: 'Tippe den Namen eines Gründers.', x: 20, r: 1, m: 'Chef erkannt. Bitte weiterarbeiten.' },
+    { id: 'w-luka',      w: 'luka',        n: 'Der Co-Chef',        h: 'Tippe den Namen des anderen Gründers.', x: 20, r: 1, m: 'Co-Chef erkannt. Die ZIP-Dateien warten.' },
+    { id: 'w-ram',       w: 'mehrram',     n: 'RAM-Download',       h: 'Kann man Arbeitsspeicher herunterladen?', x: 25, r: 1, m: 'Lade 16 GB RAM herunter … ███████░░ 87 % … Fehler: RAM ist Hardware.' },
+    { id: 'w-fps',       w: 'fps',         n: 'Bildratenfanatiker', h: 'Drei Buchstaben, die Gamer lieben.', x: 15, r: 1, m: 'Das menschliche Auge sieht angeblich nur 24 FPS. Angeblich.' },
+    { id: 'w-rgb',       w: 'rgb',         n: 'Leuchtfeuer',        h: 'Mehr Licht = mehr Leistung.', x: 15, r: 1, m: '+15 FPS durch RGB.', fx: 'rainbow' },
+    { id: 'w-kekse',     w: 'kekse',       n: 'Keksmonster',        h: 'Jede Website will sie.', x: 20, r: 1, m: 'Wir haben keine Cookies. Nur Krümel im localStorage. 🍪' },
+    { id: 'w-418',       w: '418',         n: 'Teekanne',           h: 'Ein HTTP-Statuscode für Teekannen.', x: 30, r: 2, m: '418: Ich bin eine Teekanne. Kaffee gibt es woanders.' },
+    { id: 'w-404',       w: '404',         n: 'Nicht gefunden',     h: 'Der bekannteste Fehlercode.', x: 15, r: 1, m: 'Easter Egg nicht gefunden. Moment … doch!' },
+    { id: 'w-007',       w: '007',         n: 'Geheimagent',        h: 'Geschüttelt, nicht gerührt.', x: 20, r: 1, m: 'Diese Nachricht zerstört sich in 5 Sekunden selbst.' },
+    { id: 'w-pi',        w: '3141',        n: 'Kreiszahl',          h: 'Die ersten Ziffern einer berühmten Zahl.', x: 31, r: 2, m: 'π ≈ 3,14159 26535 89793 …' },
+    { id: 'w-fibo',      w: '112358',      n: 'Fibonacci',          h: 'Jede Zahl ist die Summe der zwei davor.', x: 35, r: 2, m: '1, 1, 2, 3, 5, 8, 13, 21 …' },
+    { id: 'w-osterei',   w: 'osterei',     n: 'Meta',               h: 'Suche nach dem, wonach du suchst.', x: 40, r: 2, m: 'Du hast ein Osterei gefunden, indem du „Osterei" getippt hast. Sehr meta.' },
+    { id: 'w-fondue',    w: 'fondue',      n: 'Käsekenner',         h: 'Geschmolzener Käse in einem Topf.', x: 15, r: 1, m: '🧀 Wer sein Brot verliert, muss eine Runde zahlen.' },
+    { id: 'w-schoggi',   w: 'schoggi',     n: 'Naschkatze',         h: 'Schweizerdeutsch für etwas Süsses.', x: 15, r: 1, m: '🍫 Mmmh.' },
+    { id: 'w-dir',       w: 'dir',         n: 'DOS-Veteran',        h: 'Zeig den Inhalt des Verzeichnisses (DOS).', x: 20, r: 1, m: 'A:\\> 1 Datei(en)  1.457.664 Bytes frei' },
+    { id: 'w-cls',       w: 'cls',         n: 'Aufräumer',          h: 'Bildschirm leeren (DOS).', x: 20, r: 1, m: 'Bildschirm geleert. Fast.', fx: 'blank' },
+    { id: 'w-gg',        w: 'gg',          n: 'Sportsmann',         h: 'Was sagt man nach einem guten Spiel?', x: 10, r: 1, m: 'GG WP!' },
+    { id: 'w-warum',     w: 'warum',       n: 'Philosoph',          h: 'Die wichtigste Frage von allen.', x: 15, r: 1, m: 'Warum nicht?' },
+    { id: 'w-zeit',      w: 'zeitreise',   n: 'Zeitreisender',      h: 'Reise in die Vergangenheit des Webs.', x: 30, r: 2, m: 'Willkommen im Jahr 1999!', fx: 'retro' },
+    { id: 'w-gravity',   w: 'schwerkraft', n: 'Newton',             h: 'Was hält uns am Boden?', x: 35, r: 2, m: 'Alles fällt herunter!', fx: 'gravity' },
+    { id: 'w-rueck',     w: 'rückwärts',   n: 'Rückwärtsgang',      h: 'Tippe das Gegenteil von vorwärts.', x: 30, r: 2, m: '!tdnufeg segniD sad tsah uD', fx: 'mirror' },
+
+    // ── Verhalten, Zeit und Ausdauer ──
+    { id: 'b-konami',    n: 'Der Code',            h: '↑ ↑ ↓ ↓ ← → ← → B A', x: 75, r: 3, m: 'Ein Licht geht am Horizont an …' },
+    { id: 'b-logo',      n: 'Logo-Klicker',        h: 'Klicke oft genug auf das Logo.', x: 20, r: 1, m: 'Hör auf, mich zu drücken!' },
+    { id: 'b-floppy',    n: 'Phosphorgrün',        h: 'Halte die Taste F gedrückt und klicke auf das Logo.', x: 40, r: 2, m: 'Design „Floppy-Terminal" freigeschaltet.' },
+    { id: 'b-nacht',     n: 'Nachteule',           h: 'Besuche die Website zwischen 0 und 4 Uhr.', x: 40, r: 2, m: 'Solltest du nicht schlafen?' },
+    { id: 'b-frueh',     n: 'Frühaufsteher',       h: 'Besuche die Website zwischen 5 und 7 Uhr.', x: 40, r: 2, m: 'Der frühe Vogel fängt die Diskette.' },
+    { id: 'b-1337',      n: 'Exakt 13:37',         h: 'Komm um eine sehr elitäre Uhrzeit vorbei.', x: 60, r: 3, m: 'Perfektes Timing.' },
+    { id: 'b-mitternacht', n: 'Geisterstunde',     h: 'Sei genau um Mitternacht hier.', x: 60, r: 3, m: '👻 Buh!' },
+    { id: 'b-freitag13', n: 'Unglückstag',         h: 'An einem bestimmten Freitag vorbeischauen.', x: 50, r: 3, m: '🐈‍⬛ Eine schwarze Katze läuft über die Seite.' },
+    { id: 'b-weihnacht', n: 'Frohe Weihnachten',   h: 'Komm an Weihnachten vorbei.', x: 50, r: 3, m: '🎄 Frohe Weihnachten!', fx: 'snow' },
+    { id: 'b-silvester', n: 'Guten Rutsch',        h: 'Zum Jahreswechsel vorbeischauen.', x: 50, r: 3, m: '🎆 Prost Neujahr!', fx: 'confetti' },
+    { id: 'b-halloween', n: 'Süsses oder Saures',  h: 'Ende Oktober wird es gruselig.', x: 50, r: 3, m: '🎃 Süsses oder Saures!' },
+    { id: 'b-april',     n: 'April, April',        h: 'Am 1. April ist nichts, wie es scheint.', x: 50, r: 3, m: 'April, April!', fx: 'mirror' },
+    { id: 'b-geburtstag', n: 'Geburtstagsgast',    h: 'Die Website hat am 5. Oktober Geburtstag.', x: 50, r: 3, m: '🎂 Happy Birthday, Xiruprojekts!', fx: 'confetti' },
+    { id: 'b-treue',     n: 'Stammgast',           h: 'Besuche die Website an 7 verschiedenen Tagen.', x: 70, r: 3, m: 'Schön, dass du immer wieder kommst.' },
+    { id: 'b-treue30',   n: 'Inventar',            h: 'Besuche die Website an 30 verschiedenen Tagen.', x: 150, r: 4, m: 'Du gehörst praktisch zur Einrichtung.' },
+    { id: 'b-marathon',  n: 'Marathon',            h: 'Bleib 30 Minuten am Stück.', x: 50, r: 2, m: 'Vergiss nicht zu trinken!' },
+    { id: 'b-idle',      n: 'Eingeschlafen?',      h: 'Tu einfach mal drei Minuten gar nichts.', x: 30, r: 2, m: 'Bist du noch da? 💤' },
+    { id: 'b-zurueck',   n: 'Willkommen zurück',   h: 'Wechsle den Tab und komm nach einer Weile wieder.', x: 20, r: 1, m: 'Da bist du ja wieder!' },
+    { id: 'b-scroll',    n: 'Scroll-Sturm',        h: 'Scrolle wie ein Wirbelwind.', x: 25, r: 1, m: 'Langsam, langsam!' },
+    { id: 'b-rechts',    n: 'Rechtsklicker',       h: 'Klicke zehnmal mit rechts.', x: 20, r: 1, m: 'Hier gibt es nichts zu kopieren. Oder doch?' },
+    { id: 'b-titel',     n: 'Überschriftenfan',    h: 'Doppelklicke mehrmals auf eine Hauptüberschrift.', x: 20, r: 1, m: 'Die Überschrift fühlt sich geschmeichelt.' },
+    { id: 'b-klein',     n: 'Taschenformat',       h: 'Mach das Fenster richtig schmal.', x: 20, r: 1, m: 'Passt auch in die Hosentasche.' },
+    { id: 'b-gross',     n: 'Breitbild',           h: 'Ein sehr, sehr breiter Bildschirm.', x: 30, r: 2, m: 'Wow, wie viele Monitore hast du?' },
+    { id: 'b-offline',   n: 'Funkloch',            h: 'Trenne die Internetverbindung.', x: 30, r: 2, m: 'Offline? Kein Problem – fast alles hier läuft lokal.' },
+    { id: 'b-drucken',   n: 'Papierfreund',        h: 'Versuche, eine Seite zu drucken.', x: 25, r: 1, m: 'Denk an die Bäume! 🌳' },
+    { id: 'b-kopieren',  n: 'Kopierer',            h: 'Kopiere Text von einer Seite.', x: 10, r: 1, m: 'Strg+C, Strg+V – die Grundlage jedes Programmierers.' },
+    { id: 'b-konsole',   n: 'Entwickler',          h: 'Öffne die Browser-Konsole und folge den Anweisungen.', x: 40, r: 2, m: 'Ein echter Entwickler!' },
+    { id: 'b-konsole2',  n: 'Konsolenflüsterer',   h: 'Die Konsole kennt ein Geheimnis.', x: 60, r: 3, m: 'Du sprichst die Sprache der Maschinen.' },
+    { id: 'b-hash',      n: 'URL-Bastler',         h: 'Häng #geheim an eine Adresse.', x: 25, r: 1, m: 'Gute Idee, aber das Geheimnis liegt woanders.' },
+    { id: 'b-footer',    n: 'Kleingedrucktes',     h: 'Klicke mehrmals auf das Jahr im Fussbereich.', x: 20, r: 1, m: 'Seit 2026. Für immer jung.' },
+    { id: 'b-theme',     n: 'Modeexperte',         h: 'Probiere jedes freigeschaltete Design aus.', x: 30, r: 2, m: 'Du hast Stil.' },
+    { id: 'b-regionen',  n: 'Weltenbummler',       h: 'Besuche jede (bekannte) Region mindestens einmal.', x: 50, r: 2, m: 'Du warst schon überall. Fast.' },
+    { id: 'b-seiten10',  n: 'Neugierig',           h: 'Entdecke 10 Seiten.', x: 30, r: 1, m: '10 Seiten entdeckt!' },
+    { id: 'b-seiten50',  n: 'Forscher',            h: 'Entdecke 50 Seiten.', x: 100, r: 4, m: '50 Seiten entdeckt! +1 Skillpunkt' },
+    { id: 'b-seiten100', n: 'Pionier',             h: 'Entdecke 100 Seiten.', x: 200, r: 4, m: '100 Seiten entdeckt! +1 Skillpunkt' },
+    { id: 'b-seiten-alle', n: 'Allwissend',        h: 'Entdecke wirklich jede Seite.', x: 500, r: 4, m: 'Es gibt nichts mehr zu entdecken. Wirklich nicht. Glaube ich.' },
+    { id: 'b-eier10',    n: 'Sammler',             h: 'Finde 10 Disketten.', x: 50, r: 2, m: '10 Disketten im Regal!' },
+    { id: 'b-eier50',    n: 'Archivar',            h: 'Finde 50 Disketten.', x: 150, r: 4, m: '50 Disketten! Der Schrein ruft dich. +1 Skillpunkt' },
+    { id: 'b-eier100',   n: 'Bibliothekar',        h: 'Finde 100 Disketten.', x: 300, r: 4, m: '100 Disketten! +1 Skillpunkt' },
+    { id: 'b-level5',    n: 'Aufsteiger',          h: 'Erreiche Level 5.', x: 50, r: 2, m: 'Level 5!' },
+    { id: 'b-level10',   n: 'Veteran',             h: 'Erreiche Level 10.', x: 100, r: 4, m: 'Level 10! +1 Skillpunkt' },
+    { id: 'b-level20',   n: 'Legende',             h: 'Erreiche Level 20.', x: 200, r: 4, m: 'Level 20! +1 Skillpunkt' },
+    { id: 'b-konto',     n: 'Angekommen',          h: 'Erstelle ein Konto.', x: 50, r: 1, m: 'Willkommen im Heimathafen!' },
+    { id: 'b-skill',     n: 'Erste Fähigkeit',     h: 'Lerne deinen ersten Skill.', x: 30, r: 1, m: 'Der Anfang einer langen Reise.' },
+    { id: 'b-ast',       n: 'Meister eines Astes', h: 'Lerne alle Skills eines Astes.', x: 150, r: 4, m: 'Ein ganzer Ast gemeistert! +1 Skillpunkt' },
+    { id: 'b-export',    n: 'Datensicherung',      h: 'Exportiere deinen Spielstand.', x: 20, r: 1, m: 'Backup gemacht. Vorbildlich!' },
+    { id: 'b-suche-leer', n: 'Nichts gefunden',    h: 'Suche nach etwas, das es nicht gibt.', x: 15, r: 1, m: 'Nichts gefunden – ausser dieser Diskette.' },
+    { id: 'b-suche-sinn', n: 'Tiefgründig',        h: 'Suche nach dem Sinn des Lebens.', x: 42, r: 2, m: '42.' },
+    { id: 'b-404',       n: 'Verlaufen',           h: 'Verirre dich auf eine Seite, die es nicht gibt.', x: 25, r: 1, m: 'Auch Umwege erweitern die Ortskenntnis.' },
+
+    // ── Auf Seiten versteckt (data-egg) ──
+    { id: 'p-hero-pixel',  pg: 'index.html',               n: 'Ein Pixel zu viel',   h: 'Auf der Startseite stimmt ein Pixel nicht.', x: 40, r: 2, m: 'Gut gesehen, Adlerauge!' },
+    { id: 'p-ticker',      pg: 'index.html',               n: 'Breaking News',       h: 'Lies die Laufschrift aufmerksam.', x: 25, r: 1, m: 'Eilmeldung: Jemand liest tatsächlich Laufschriften.' },
+    { id: 'p-foto',        pg: 'ueber-uns.html',           n: 'Kamerascheu',         h: 'Auf „Über uns" fehlt ein Foto.', x: 20, r: 1, m: 'Das Foto kommt … irgendwann.' },
+    { id: 'p-kleingedruckt', pg: 'nutzungsbedingungen.html', n: 'Wer liest das schon?', h: 'Die Nutzungsbedingungen haben einen § 0.', x: 50, r: 3, m: 'Du hast tatsächlich die Nutzungsbedingungen gelesen. Respekt.' },
+    { id: 'p-krumen',      pg: 'datenschutz.html',         n: 'Krümelmonster',       h: 'Auf der Datenschutzseite liegen Krümel.', x: 20, r: 1, m: 'Mmmh, localStorage-Krümel.' },
+    { id: 'p-seemonster',  pg: 'weltkarte.html',           n: 'Hier sind Drachen',   h: 'Auf der Weltkarte lauert etwas im Meer.', x: 40, r: 2, m: 'Hic sunt dracones!' },
+    { id: 'p-wurzel',      pg: 'konto/skilltree.html',     n: 'Wurzelbehandlung',    h: 'Klopf mehrmals an die Wurzel des Baums.', x: 30, r: 2, m: 'Der Baum kichert.' },
+    { id: 'p-hilfe',       pg: 'hilfe.html',               n: 'Hilfe zur Hilfe',     h: 'Auch die Hilfe braucht manchmal Hilfe.', x: 20, r: 1, m: 'Hilfe-ception.' },
+    { id: 'p-glossar',     pg: 'hardware/glossar.html',    n: 'Fachbegriff',         h: 'Ein Begriff im Glossar ist ein Osterei.', x: 30, r: 2, m: 'Easter Egg (n.): Das, was du gerade gefunden hast.' },
+    { id: 'p-diskette',    pg: 'hardware/laufwerke/diskette-3-5.html', n: '1,44 MB',  h: 'Das Datenblatt des wichtigsten Datenträgers der Geschichte.', x: 40, r: 2, m: 'Die Diskette ist das Speichern-Symbol. Respekt.' },
+    { id: 'p-1080ti',      pg: 'hardware/gpu/gtx-1080-ti.html', n: 'Legende',        h: 'Eine Grafikkarte, die nie sterben will.', x: 30, r: 2, m: 'Die 1080 Ti läuft und läuft und läuft …' },
+    { id: 'p-2600k',       pg: 'hardware/cpu/core-i7-2600k.html', n: 'Sandy forever', h: 'Ein Prozessor von 2011, der Kultstatus hat.', x: 30, r: 2, m: 'Sandy Bridge: übertaktet bis heute im Einsatz.' },
+    { id: 'p-rx580',       pg: 'hardware/gpu/rx-580.html', n: 'Budget-König',        h: 'Die beliebteste Budget-Karte ihrer Zeit.', x: 30, r: 2, m: 'Polaris – unkaputtbar.' },
+    { id: 'p-zeitleiste',  pg: 'hardware/zeitleiste.html', n: 'Ganz am Anfang',      h: 'Scroll in der Zeitleiste ganz zurück.', x: 30, r: 2, m: '1971: Der Intel 4004 hatte 2300 Transistoren.' },
+    { id: 'p-studio',      pg: 'studio/index.html',        n: 'Lieferung',           h: 'Im Studio liegt eine Datei, die keiner herunterlädt.', x: 30, r: 2, m: 'nichts.zip (0 Bytes) – genau so wenig wie erwartet.' },
+    { id: 'p-dienste',     pg: 'konto/dienste.html',       n: 'Schlüsselbund',       h: 'Ein Schlüssel passt in kein Schloss.', x: 25, r: 1, m: 'Dieser Schlüssel öffnet … dein Herz. 🗝' },
+
+    // ── Geheime Orte (beim ersten Besuch) ──
+    { id: 'o-terminal',   pg: 'geheim/terminal.html',         n: 'A:\\>',             h: 'Ein Techniker findet ein Terminal.', x: 60, r: 3, m: 'Willkommen im Floppy-Terminal.' },
+    { id: 'o-keller',     pg: 'geheim/keller.html',           n: 'Kellerkind',        h: 'Unter der Website gibt es einen Keller.', x: 60, r: 3, m: 'Es riecht nach altem Staub und Kabeln.' },
+    { id: 'o-archiv',     pg: 'geheim/archiv-1999.html',      n: 'Under Construction', h: 'Ein Zeitreisender findet ein altes Archiv.', x: 60, r: 3, m: 'Willkommen im Jahr 1999!' },
+    { id: 'o-leuchtturm', pg: 'geheim/leuchtturm.html',       n: 'Leuchtfeuer',       h: 'Der Code führt zu einem Licht.', x: 80, r: 3, m: 'Das Licht hat dich gefunden.' },
+    { id: 'o-server',     pg: 'geheim/serverraum.html',       n: 'Systemadministrator', h: 'Ein Architekt kennt den Serverraum.', x: 80, r: 3, m: 'Pssst. Die Server schlafen.' },
+    { id: 'o-void',       pg: 'geheim/void.html',             n: 'Ins Nichts',        h: 'Ein Weltenwanderer kann die Leere betreten.', x: 80, r: 3, m: '…' },
+    { id: 'o-runen',      pg: 'geheim/runen.html',            n: 'Runenkundig',       h: 'Ein Runenleser findet eine Kammer.', x: 70, r: 3, m: 'Die Runen leuchten auf.' },
+    { id: 'o-turm',       pg: 'geheim/turm.html',             n: 'Turmbesteigung',    h: 'Ganz oben wohnt ein Erzmagier.', x: 100, r: 3, m: 'Die Aussicht ist fantastisch.' },
+    { id: 'o-ruhm',       pg: 'geheim/ruhmeshalle.html',      n: 'Verewigt',          h: 'Legenden werden in einer Halle geehrt.', x: 100, r: 3, m: 'Dein Name glänzt in Gold.' },
+    { id: 'o-schrein',    pg: 'geheim/diskettenschrein.html', manual: true, n: 'Pilgerreise',       h: 'Wer genug Disketten hat, findet einen Schrein.', x: 100, r: 3, m: 'Der Schrein leuchtet für dich.' },
+    { id: 'o-katzen',     pg: 'geheim/katzen.html',           n: 'Katzenzimmer',      h: 'Verirrte finden manchmal Katzen.', x: 50, r: 2, m: 'Du bist umzingelt. Von Katzen.' },
+    { id: 'o-rueck',      pg: 'geheim/rueckwaerts.html',      n: 'gnagsgnälkcüR',     h: 'Eine Seite steht spiegelverkehrt.', x: 60, r: 3, m: '.tgiehcsed nehesegfua ednE muz tsah uD' },
+    { id: 'o-ende',       pg: 'geheim/ende.html', manual: true, n: 'Das Ende',          h: 'Wer alle Äste meistert, findet das Ende.', x: 500, r: 4, m: 'Das Ende ist erst der Anfang. +1 Skillpunkt' },
+    { id: 'o-mitternacht', pg: 'arcade/mitternacht.html',     n: 'Insider',           h: 'Ein Highscore-Jäger kennt ein besonderes Spiel.', x: 60, r: 3, m: 'Willkommen in der Mitternachts-Arcade.' }
+];
+
+/* ── Disketten aus Spielhalle, KI-Labor, Mixer-Studio und Werkzeugen ──────
+   Ausgelöst im jeweiligen Seitencode mit XIRU.egg('id').
+   ------------------------------------------------------------------------- */
+XIRU.eggs.push(
+    { id: 'g-snake-30',   pg: 'arcade/snake.html', n: 'Anakonda',      h: 'Werde in Snake 30 Felder lang.', x: 40, r: 2, m: 'Eine stattliche Schlange!' },
+    { id: 'g-snake-gold', pg: 'arcade/snake.html', n: 'Goldader',      h: 'Friss in Snake eine goldene Diskette.', x: 20, r: 1, m: 'Glänzt schön.' },
+    { id: 'g-snake-null', pg: 'arcade/snake.html', n: 'Kurzes Leben',  h: 'Verliere in Snake, ohne etwas gefressen zu haben.', x: 15, r: 1, m: 'Das ging schnell.' },
+    { id: 'g-hardware-quiz-gleich', pg: 'arcade/hardware-quiz.html', n: 'Unentschieden', h: 'Erwische in „Höher oder Tiefer" zwei gleiche Werte.', x: 25, r: 2, m: 'Gleich ist auch richtig!' },
+    { id: 'g-hardware-quiz-10', pg: 'arcade/hardware-quiz.html', n: 'Datenblatt-Kenner', h: 'Schaffe eine Serie von 10.', x: 40, r: 2, m: 'Du kennst dich aus!' },
+    { id: 'g-hardware-quiz-25', pg: 'arcade/hardware-quiz.html', n: 'Wandelndes Archiv', h: 'Schaffe eine Serie von 25.', x: 80, r: 3, m: 'Hast du das Archiv auswendig gelernt?' },
+    { id: 'hw-generationen', pg: 'hardware/vergleich.html', n: 'Generationenvertrag', h: 'Vergleiche die älteste mit der neuesten NVIDIA-Legende.', x: 30, r: 2, m: '1080 Ti gegen 5090 – acht Jahre in einer Tabelle.' },
+    { id: 'hw-kraftwerk', pg: 'hardware/netzteil-rechner.html', n: 'Kraftwerk', h: 'Bau im Netzteil-Rechner ein System mit über 1000 W.', x: 30, r: 2, m: 'Bitte den Energieversorger informieren.' },
+    { id: 'hw-balance', pg: 'hardware/balance.html', n: 'Gleichgewicht', h: 'Finde eine ausgewogene Kombination im Balance-Check.', x: 20, r: 1, m: 'Perfekte Harmonie.' },
+    { id: 'hw-zeitkapsel', pg: 'hardware/balance.html', n: 'Zeitkapsel', h: 'Kombiniere den ältesten Prozessor mit der neuesten Grafikkarte.', x: 35, r: 2, m: 'Die 5090 langweilt sich ein bisschen.' },
+    { id: 'hw-zeitreise-pc', pg: 'hardware/builds.html', n: 'Museumskurator', h: 'Schau dir den nostalgischsten Beispiel-Build an.', x: 25, r: 1, m: 'Mit Diskettenlaufwerk, selbstverständlich.' },
+    { id: 'hw-gewalt', pg: 'hardware/sockel.html', n: 'Mit Gewalt', h: 'Versuche, einen Oldtimer auf ein modernes Board zu setzen.', x: 20, r: 1, m: 'Mit genug Kraft passt alles. Nicht.' }
+    /* EGGS:ENDE */
+);

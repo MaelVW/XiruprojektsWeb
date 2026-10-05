@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skilltree · Xiruprojekts</title>
+    <meta name="description" content="Verteile Skillpunkte und schalte neue Orte, Spiele und Designs frei.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <style>
+        .st-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1.5rem; align-items: center; }
+        @media (max-width: 700px) { .st-head { grid-template-columns: 1fr; } }
+        .points { text-align: center; padding: 1rem 1.5rem; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--border); }
+        .points b { font-size: 2.6rem; line-height: 1; display: block; color: var(--rc); font-variant-numeric: tabular-nums; }
+        .root { display: flex; justify-content: center; margin: 1rem 0 .5rem; }
+        .root__node { width: 84px; height: 84px; border-radius: 50%; display: grid; place-items: center; font-size: 2rem; cursor: pointer; user-select: none;
+            background: radial-gradient(circle at 35% 30%, var(--surface-3), var(--surface)); border: 2px solid var(--rc); box-shadow: 0 0 30px -6px var(--rc); animation: float 5s ease-in-out infinite; }
+        .branches { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); }
+        .branch { --bc: var(--rc); position: relative; padding: 1.25rem 1rem 1rem; border-top: 3px solid var(--bc); }
+        .branch h2 { font-size: 1.15rem; margin: 0; color: var(--bc); }
+        .branch__prog { font-size: .8rem; color: var(--text-muted); }
+        .tree { position: relative; height: 360px; margin-top: .5rem; }
+        .tree svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+        .tree line { stroke: var(--border-strong); stroke-width: 3; stroke-linecap: round; }
+        .tree line.on { stroke: var(--bc); stroke-dasharray: 200; stroke-dashoffset: 200; animation: drawLine 1s var(--ease) forwards; filter: drop-shadow(0 0 4px var(--bc)); }
+        .node { position: absolute; transform: translate(-50%, -50%); width: 64px; height: 64px; border-radius: 18px; display: grid; place-items: center;
+            background: var(--surface-2); border: 2px solid var(--border-strong); color: var(--text-faint); font-weight: 800; font-size: .7rem; text-align: center;
+            cursor: pointer; transition: transform .2s var(--ease), border-color .2s, background .2s; padding: .25rem; line-height: 1.1; }
+        .node:hover, .node:focus-visible { transform: translate(-50%, -50%) scale(1.08); }
+        .node__cost { position: absolute; top: -9px; right: -9px; width: 22px; height: 22px; border-radius: 50%; background: var(--surface-3); border: 1px solid var(--border-strong); font-size: .72rem; display: grid; place-items: center; color: var(--text); }
+        .node.is-learned { background: color-mix(in srgb, var(--bc) 22%, var(--surface)); border-color: var(--bc); color: var(--text); box-shadow: 0 0 18px -4px var(--bc); }
+        .node.is-learned .node__cost { background: var(--bc); color: var(--accent-ink); border-color: transparent; }
+        .node.is-available { border-color: var(--bc); color: var(--text); --pc: var(--bc); animation: pulse 1.8s infinite; }
+        .node.is-blocked { opacity: .5; }
+        .node.is-cap { width: 76px; height: 76px; border-radius: 50%; }
+        .node.just { animation: popIn .5s var(--ease); }
+        .detail { position: sticky; bottom: 1rem; margin-top: 1.5rem; z-index: 5; }
+        .detail .card { box-shadow: var(--shadow); border-color: var(--border-strong); }
+        .unlocks a { font-weight: 700; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="st-head page-head">
+        <div>
+            <span class="eyebrow">⚓ Heimathafen</span>
+            <h1>Skilltree</h1>
+            <p class="lead" id="lead">Jedes Level bringt einen Skillpunkt. Manche Disketten (Meilensteine) geben einen zusätzlichen.</p>
+        </div>
+        <div class="points"><b id="pts">0</b><span class="small muted">freie Punkte</span><div class="small faint mt-1" id="pts-sub"></div></div>
+    </header>
+
+    <div class="root"><div class="root__node" data-egg="p-wurzel" data-egg-clicks="10" title="Erwachen – die Wurzel von allem">🌱</div></div>
+    <div class="branches" id="branches"></div>
+    <div class="detail" id="detail" hidden></div>
+    <div class="row mt-4">
+        <button class="btn btn--ghost btn--sm" id="reset" type="button">🧪 Vergessenstrank (alle Skills zurücksetzen)</button>
+        <a class="btn btn--ghost btn--sm" href="../hilfe.html#skills">Wie funktioniert das?</a>
+    </div>
+</main>
+<script>
+XIRU.ready(function () {
+    const $ = XIRU.$;
+    // Positionen im Ast (Prozent): 1 oben, 2/3 Mitte, 5/4 darunter, 6 Abschluss
+    const POS = { 1: [50, 10], 2: [24, 36], 3: [76, 36], 5: [24, 63], 4: [76, 63], 6: [50, 90] };
+    let selected = null;
+
+    function unlocksOf(id) {
+        const pages = XIRU.pages.filter(p => p.skill === id);
+        const themes = (XIRU.themes || []).filter(t => t.skill === id);
+        return { pages, themes };
+    }
+    function state(s) {
+        if (XIRU.hasSkill(s.id)) return 'learned';
+        if (XIRU.user && s.req.every(r => XIRU.hasSkill(r)) && XIRU.skillPoints().free >= s.c) return 'available';
+        if (s.req.every(r => XIRU.hasSkill(r))) return 'open';
+        return 'blocked';
+    }
+    function render(just) {
+        const pts = XIRU.user ? XIRU.skillPoints() : { free: 0, total: 0, spent: 0 };
+        $('#pts').textContent = pts.free;
+        $('#pts-sub').textContent = XIRU.user ? pts.spent + ' von ' + pts.total + ' verteilt' : 'nur mit Konto';
+        if (!XIRU.user) $('#lead').innerHTML = 'Du bist als Gast unterwegs. <a href="login.html?weiter=konto%2Fskilltree.html">Erstelle ein lokales Konto</a>, um Skills zu lernen – dein bisheriger Fortschritt wird übernommen.';
+        $('#branches').innerHTML = XIRU.branches.map(b => {
+            const skills = XIRU.skills.filter(s => s.b === b.id);
+            const learned = skills.filter(s => XIRU.hasSkill(s.id)).length;
+            const lines = skills.flatMap(s => s.req.map(r => {
+                const a = POS[r.slice(1)], c = POS[s.id.slice(1)];
+                const on = XIRU.hasSkill(s.id) && XIRU.hasSkill(r);
+                return '<line x1="' + a[0] + '%" y1="' + a[1] + '%" x2="' + c[0] + '%" y2="' + c[1] + '%"' + (on ? ' class="on"' : '') + '/>';
+            })).join('');
+            const nodes = skills.map(s => {
+                const p = POS[s.id.slice(1)], st = state(s);
+                return '<button class="node is-' + st + (s.id.endsWith('6') ? ' is-cap' : '') + (just === s.id ? ' just' : '') + '" type="button" data-s="' + s.id + '" style="left:' + p[0] + '%;top:' + p[1] + '%" aria-label="' + XIRU.esc(s.n) + '">' +
+                    '<span class="node__cost">' + (st === 'learned' ? '✓' : s.c) + '</span>' + XIRU.esc(s.n) + '</button>';
+            }).join('');
+            return '<section class="card branch" style="--bc:' + b.color + '"><div class="row"><h2>' + XIRU.esc(b.name) + '</h2><span class="spacer"></span><span class="branch__prog">' + learned + '/6</span></div>' +
+                '<p class="small muted mb-0">' + XIRU.esc(b.desc) + '</p><div class="tree"><svg>' + lines + '</svg>' + nodes + '</div></section>';
+        }).join('');
+        if (selected) showDetail(selected);
+    }
+
+    function showDetail(id) {
+        selected = id;
+        const s = XIRU.skillInfo(id), b = XIRU.branches.find(x => x.id === s.b), st = state(s), u = unlocksOf(id);
+        const reqNames = s.req.map(r => XIRU.skillInfo(r)).map(r => (XIRU.hasSkill(r.id) ? '✓ ' : '✕ ') + r.n).join(', ');
+        let action = '';
+        if (!XIRU.user) action = '<a class="btn btn--primary" href="login.html?weiter=konto%2Fskilltree.html">Anmelden, um zu lernen</a>';
+        else if (st === 'learned') action = '<span class="badge badge--success">Gelernt</span>';
+        else if (st === 'available') action = '<button class="btn btn--primary" id="learn" type="button">Lernen für ' + s.c + ' Punkt' + (s.c > 1 ? 'e' : '') + '</button>';
+        else if (st === 'open') action = '<span class="badge badge--warning">Zu wenig Punkte (' + XIRU.skillPoints().free + '/' + s.c + ')</span>';
+        else action = '<span class="badge">Erst Voraussetzungen lernen</span>';
+        const unlock = u.pages.map(p => (XIRU.hasSkill(id) ? '<a href="' + XIRU.url(p.p) + '">' + XIRU.esc(p.t) + ' betreten →</a>' : (p.hidden ? '??? (ein geheimer Ort)' : XIRU.esc(p.t))))
+            .concat(u.themes.map(t => 'Design „' + XIRU.esc(t.n) + '"' + (XIRU.hasSkill(id) ? ' – <a href="einstellungen.html">anwenden</a>' : ''))).join(' · ');
+        $('#detail').hidden = false;
+        $('#detail').innerHTML = '<div class="card" style="border-top:3px solid ' + b.color + '"><div class="row"><h3 class="mb-0">' + XIRU.esc(s.n) +
+            '</h3><span class="badge" style="color:' + b.color + '">' + XIRU.esc(b.name) + '</span><span class="spacer"></span><button class="btn btn--ghost btn--sm" id="close" type="button" aria-label="Schliessen">✕</button></div>' +
+            '<p class="mt-1">' + XIRU.esc(s.d) + '</p>' +
+            (s.req.length ? '<p class="small muted">Voraussetzung: ' + XIRU.esc(reqNames) + '</p>' : '') +
+            (unlock ? '<p class="small unlocks">Öffnet: ' + unlock + '</p>' : '') +
+            '<div class="row">' + action + '</div></div>';
+        $('#close').addEventListener('click', () => { selected = null; $('#detail').hidden = true; });
+        const lb = $('#learn');
+        if (lb) lb.addEventListener('click', () => { if (XIRU.learn(id)) { XIRU.confetti(80); render(id); } });
+    }
+
+    $('#branches').addEventListener('click', e => { const n = e.target.closest('[data-s]'); if (n) showDetail(n.dataset.s); });
+    $('#reset').addEventListener('click', () => {
+        if (!XIRU.user) return;
+        const m = XIRU.modal('<h2>Vergessenstrank trinken?</h2><p class="muted">Alle gelernten Skills werden vergessen und du bekommst die Punkte zurück. Freigeschaltete Orte bleiben entdeckt, sind aber wieder versiegelt.</p>' +
+            '<div class="row mt-2"><button class="btn btn--danger" id="do-reset">Trinken</button><button class="btn" data-close>Lieber nicht</button></div>');
+        m.el.querySelector('#do-reset').addEventListener('click', () => {
+            XIRU.profile().skills = {}; XIRU.persist(); m.close();
+            XIRU.toast('Gluck, gluck …', 'Du fühlst dich seltsam leer. Alle Punkte sind zurück.', { icon: '🧪' });
+            render();
+        });
+    });
+    XIRU.on('egg', () => render());
+    render();
+});
+</script>
+</body>
+</html>

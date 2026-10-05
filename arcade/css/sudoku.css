@@ -1,0 +1,67 @@
+/* Sudoku */
+.sd-stage { padding: clamp(8px, 2.5vw, 20px); }
+.sd-board {
+    container-type: inline-size;
+    width: min(100%, 540px); aspect-ratio: 1;
+    display: grid; grid-template-columns: repeat(9, 1fr); grid-template-rows: repeat(9, 1fr);
+    border: 2px solid var(--text-faint); border-radius: 10px; overflow: hidden;
+    background: var(--surface);
+}
+.sd-c {
+    position: relative; display: grid; place-items: center;
+    border-right: 1px solid var(--border); border-bottom: 1px solid var(--border);
+    background: var(--surface); cursor: pointer;
+    font-size: calc(100cqw / 9 * .56); line-height: 1; font-weight: 600;
+    font-variant-numeric: tabular-nums; color: var(--rc);
+    transition: background .12s;
+    -webkit-tap-highlight-color: transparent;
+}
+.sd-c:nth-child(9n) { border-right: 0; }
+.sd-c:nth-child(n+73) { border-bottom: 0; }
+.sd-c.bx { border-right: 2px solid var(--text-faint); }
+.sd-c.by { border-bottom: 2px solid var(--text-faint); }
+.sd-c.is-given { color: var(--text); font-weight: 800; }
+.sd-c.is-hint { color: var(--accent-2); }
+.sd-c.is-peer { background: color-mix(in srgb, var(--rc) 7%, var(--surface)); }
+.sd-c.is-same { background: color-mix(in srgb, var(--rc) 20%, var(--surface)); }
+.sd-c.is-sel { background: color-mix(in srgb, var(--rc) 34%, var(--surface)); box-shadow: inset 0 0 0 2px var(--rc); }
+.sd-c.is-bad { color: var(--danger); background: color-mix(in srgb, var(--danger) 16%, var(--surface)); }
+.sd-c.is-bad.is-sel { background: color-mix(in srgb, var(--danger) 26%, var(--surface)); }
+.sd-c.is-given.is-bad { color: var(--danger); }
+.sd-c .sd-v { display: block; }
+.sd-c.is-placed .sd-v { animation: sdPlace .22s ease-out; }
+.sd-notes {
+    position: absolute; inset: 6%;
+    display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr);
+    font-size: calc(100cqw / 9 * .24); font-weight: 600; color: var(--text-muted); line-height: 1;
+}
+.sd-notes span { display: grid; place-items: center; }
+.sd-notes span.is-match { color: var(--rc); font-weight: 800; }
+@keyframes sdPlace { from { transform: scale(1.5); opacity: 0; } to { transform: none; opacity: 1; } }
+.sd-c.is-wave { animation: sdWave .7s ease var(--d, 0s) both; }
+@keyframes sdWave { 40% { transform: scale(.82); background: var(--rc); color: var(--accent-ink); } }
+.sd-stage.is-paused .sd-board { filter: blur(12px); }
+
+.sd-pad { width: min(100%, 540px); margin: .75rem auto 0; }
+.sd-digits { display: grid; grid-template-columns: repeat(9, 1fr); gap: .35rem; }
+.sd-digits button {
+    position: relative; aspect-ratio: 1 / 1.15; border-radius: 10px;
+    border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--text);
+    font: 800 clamp(1.1rem, 4.5vw, 1.6rem)/1 var(--font); cursor: pointer;
+    display: grid; place-items: center; touch-action: manipulation;
+    transition: background .15s, transform .1s;
+}
+.sd-digits button:hover { background: var(--surface-3); }
+.sd-digits button:active { transform: scale(.94); }
+.sd-digits button small { position: absolute; bottom: 3px; right: 5px; font-size: .55rem; font-weight: 700; color: var(--text-faint); }
+.sd-digits button.is-done { opacity: .35; }
+.sd-digits button.is-active { background: color-mix(in srgb, var(--rc) 25%, var(--surface-2)); border-color: var(--rc); }
+.sd-pad.is-notes .sd-digits button { color: var(--text-muted); font-weight: 600; font-size: clamp(.9rem, 3.4vw, 1.15rem); }
+.sd-actions { display: flex; flex-wrap: wrap; gap: .4rem; justify-content: center; margin-top: .5rem; }
+.sd-actions kbd { font-size: .7em; }
+#btn-notes[aria-pressed="true"] { background: var(--rc); color: var(--accent-ink); border-color: transparent; }
+#btn-notes[aria-pressed="true"] kbd { color: var(--text); }
+.sd-records { list-style: none; padding: 0; margin: 0; }
+.sd-records li { display: flex; justify-content: space-between; gap: .5rem; padding: .2rem 0; border-top: 1px solid var(--border); color: var(--text-muted); }
+.sd-records b { color: var(--text); font-variant-numeric: tabular-nums; }
+@media (hover: none), (pointer: coarse) { .sd-actions kbd { display: none; } }

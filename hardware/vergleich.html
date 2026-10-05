@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vergleich · Xiruprojekts</title>
+    <meta name="description" content="Bis zu drei Prozessoren, Grafikkarten oder andere Teile nebeneinander vergleichen.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/hardware-data.js"></script>
+    <style>
+        .cmp-slots { display: grid; gap: 1rem; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        @media (max-width: 760px) { .cmp-slots { grid-template-columns: 1fr; } }
+        .cmp-table td { font-variant-numeric: tabular-nums; }
+        .cmp-table td.is-best { color: var(--success); font-weight: 800; }
+        .cmp-table td.is-best::after { content: " ★"; font-size: .8em; }
+        .cmp-bar { height: 6px; border-radius: 99px; background: var(--surface-3); margin-top: .35rem; overflow: hidden; }
+        .cmp-bar span { display: block; height: 100%; background: var(--rc); border-radius: inherit; width: 0; transition: width .8s var(--ease); }
+        .cmp-table th:first-child { width: 26%; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">▣ Hardware-Archiv</span>
+        <h1>Vergleich</h1>
+        <p class="lead">Wähle eine Kategorie und bis zu drei Teile. Der beste Wert pro Zeile wird markiert – „besser" heisst dabei mal mehr, mal weniger.</p>
+    </header>
+
+    <div class="card card--flat mb-3">
+        <div class="row">
+            <span class="label">Kategorie:</span>
+            <div class="row" id="cat-chips" role="group" aria-label="Kategorie"></div>
+            <span class="spacer"></span>
+            <button class="btn btn--sm btn--ghost" id="swap" type="button">⇄ Reihenfolge drehen</button>
+            <button class="btn btn--sm btn--ghost" id="clear" type="button">Leeren</button>
+        </div>
+    </div>
+
+    <div class="cmp-slots mb-3" id="slots"></div>
+    <div class="table-wrap" id="result"></div>
+    <p class="small faint mt-2">Leistungsindizes sind grobe Richtwerte. „Besser" ist bei Preis, Verbrauch und Zugriffszeit der kleinere Wert.</p>
+</main>
+<script>
+XIRU.ready(function () {
+    const hw = XIRU.hw || {};
+    const fmt = XIRU.fmt;
+    // Felder je Kategorie: [Bezeichnung, Wertfunktion, Anzeige, besser: 1 = höher, -1 = tiefer, 0 = kein Vergleich]
+    const FIELDS = {
+        cpu: [
+            ['Hersteller', c => c.brand, v => v, 0], ['Architektur', c => c.arch, v => v, 0], ['Jahr', c => c.year, v => v, 1],
+            ['Sockel', c => c.socket, v => v, 0], ['Kerne', c => c.cores, v => v, 1], ['Threads', c => c.threads, v => v, 1],
+            ['Basistakt', c => c.base, v => fmt(v, 1) + ' GHz', 1], ['Boost-Takt', c => c.boost, v => fmt(v, 1) + ' GHz', 1],
+            ['L3-Cache', c => c.l3, v => v + ' MB', 1], ['TDP', c => c.tdp, v => v + ' W', -1], ['Speicher', c => c.ram, v => v, 0],
+            ['PCIe', c => c.pcie, v => v, 0], ['UVP', c => c.price, v => v + ' USD', -1],
+            ['Spiele-Index', c => c.game, v => v, 1, true], ['Mehrkern-Index', c => c.multi, v => v, 1, true],
+            ['USD pro Spiele-Punkt', c => +(c.price / c.game).toFixed(2), v => fmt(v, 2), -1, true]
+        ],
+        gpu: [
+            ['Hersteller', g => g.brand, v => v, 0], ['Architektur', g => g.arch, v => v, 0], ['Jahr', g => g.year, v => v, 1],
+            ['Shader', g => g.shaders, v => fmt(v), 1], ['Boost-Takt', g => g.boost, v => fmt(v) + ' MHz', 1],
+            ['Grafikspeicher', g => g.vram, v => v + ' GB', 1], ['Speichertyp', g => g.memType, v => v, 0],
+            ['Interface', g => g.bus, v => v + ' Bit', 1], ['Bandbreite', g => g.bandwidth, v => fmt(v) + ' GB/s', 1],
+            ['Leistungsaufnahme', g => g.tdp, v => v + ' W', -1], ['Empf. Netzteil', g => g.psu, v => v + ' W', -1],
+            ['UVP', g => g.price, v => v + ' USD', -1], ['Raster-Index', g => g.perf, v => v, 1, true],
+            ['Index pro 100 W', g => +(g.perf / g.tdp * 100).toFixed(1), v => fmt(v, 1), 1, true],
+            ['USD pro Index-Punkt', g => +(g.price / g.perf).toFixed(2), v => fmt(v, 2), -1, true]
+        ],
+        chipset: [
+            ['Sockel', c => c.socket, v => v, 0], ['Jahr', c => c.year, v => v, 1], ['Klasse', c => c.tier, v => v, 0],
+            ['CPU übertakten', c => c.cpuOc ? 'Ja' : 'Nein', v => v, 0], ['Speicher übertakten', c => c.memOc ? 'Ja' : 'Nein', v => v, 0],
+            ['Arbeitsspeicher', c => c.ram, v => v, 0], ['PCIe Grafik', c => c.gpuPcie, v => v, 0], ['PCIe M.2 (CPU)', c => c.nvmePcie, v => v, 0],
+            ['Chipsatz-Lanes', c => c.chipsetPcie, v => v, 0], ['USB', c => c.usb, v => v, 0], ['CPUs', c => c.cpus, v => v, 0]
+        ],
+        memory: [
+            ['Art', m => m.kind, v => v, 0], ['Jahr', m => m.year, v => v, 1], ['Datenrate', m => m.rate, v => v, 0],
+            ['Spannung', m => m.voltage, v => v, 0], ['Anschluss', m => m.pins, v => v, 0], ['Kapazität', m => m.capacity, v => v, 0], ['Einsatz', m => m.usedIn, v => v, 0]
+        ],
+        storage: [
+            ['Art', s => s.kind, v => v, 0], ['Seit', s => s.year, v => v, 1], ['Kapazität', s => s.capacity, v => v, 0],
+            ['Lesen (MB/s, max.)', s => s.readMb, v => fmt(v), 1], ['Zugriffszeit', s => s.access, v => v, 0], ['Schnittstelle', s => s.interface, v => v, 0]
+        ],
+        psu: [
+            ['Art', p => p.kind, v => v, 0], ['230 V · 20 %', p => p.eff230 ? p.eff230[0] : null, v => v + ' %', 1], ['230 V · 50 %', p => p.eff230 ? p.eff230[1] : null, v => v + ' %', 1],
+            ['230 V · 100 %', p => p.eff230 ? p.eff230[2] : null, v => v + ' %', 1], ['115 V · 50 %', p => p.eff115 ? p.eff115[1] : null, v => v + ' %', 1]
+        ]
+    };
+    const NAMES = { cpu: 'Prozessoren', gpu: 'Grafikkarten', chipset: 'Chipsätze', memory: 'Speicher', storage: 'Datenträger', psu: 'Netzteile' };
+
+    let state = XIRU.store.get('xiru:vergleich', null) || { cat: 'gpu', ids: [] };
+    if (!FIELDS[state.cat]) state = { cat: 'gpu', ids: [] };
+    const save = () => XIRU.store.set('xiru:vergleich', state);
+
+    XIRU.$('#cat-chips').innerHTML = Object.keys(NAMES).map(k => '<button class="chip" data-cat="' + k + '">' + NAMES[k] + '</button>').join('');
+    XIRU.$('#cat-chips').addEventListener('click', e => {
+        const b = e.target.closest('[data-cat]'); if (!b || b.dataset.cat === state.cat) return;
+        state = { cat: b.dataset.cat, ids: [] }; save(); render();
+    });
+    XIRU.$('#clear').addEventListener('click', () => { state.ids = []; save(); render(); });
+    XIRU.$('#swap').addEventListener('click', () => { state.ids.reverse(); save(); render(); });
+
+    function render() {
+        const items = hw[state.cat] || [];
+        state.ids = state.ids.filter(id => items.some(i => i.id === id));
+        XIRU.$$('#cat-chips .chip').forEach(c => c.classList.toggle('is-active', c.dataset.cat === state.cat));
+        // Auswahlfelder
+        let html = '';
+        for (let s = 0; s < 3; s++) {
+            const sel = state.ids[s] || '';
+            html += '<div class="card card--flat"><label class="label" for="slot' + s + '">Platz ' + (s + 1) + '</label>' +
+                '<select class="select mt-1" id="slot' + s + '" data-slot="' + s + '"><option value="">– wählen –</option>' +
+                items.map(i => '<option value="' + i.id + '"' + (i.id === sel ? ' selected' : '') + '>' + XIRU.esc(i.name) + '</option>').join('') + '</select>' +
+                (sel ? '<a class="small mt-1" style="display:inline-block" href="' + XIRU.url(items.find(i => i.id === sel).url) + '">Datenblatt →</a>' : '') + '</div>';
+        }
+        XIRU.$('#slots').innerHTML = html;
+        XIRU.$$('#slots select').forEach(s => s.addEventListener('change', () => {
+            const ids = state.ids.slice(); ids[+s.dataset.slot] = s.value;
+            state.ids = ids.filter(Boolean); save(); render();
+        }));
+
+        const chosen = state.ids.map(id => items.find(i => i.id === id)).filter(Boolean);
+        if (!chosen.length) {
+            XIRU.$('#result').innerHTML = '<div class="empty"><div class="empty__icon">⚖</div><p>Wähle oben mindestens ein Teil aus – oder klicke auf einem Datenblatt auf „Zum Vergleich".</p></div>';
+            return;
+        }
+        const expert = XIRU.hasSkill('t1');
+        let rows = '';
+        FIELDS[state.cat].forEach(([label, get, show, better, needsExpert]) => {
+            const vals = chosen.map(get);
+            if (vals.every(v => v == null)) return;
+            if (needsExpert && !expert) return;
+            const nums = vals.filter(v => typeof v === 'number');
+            let best = null;
+            if (better && nums.length === vals.length && vals.length > 1 && new Set(vals).size > 1) best = better > 0 ? Math.max.apply(null, nums) : Math.min.apply(null, nums);
+            const max = nums.length ? Math.max.apply(null, nums) : 0;
+            rows += '<tr><th>' + XIRU.esc(label) + '</th>' + vals.map(v => {
+                const bar = typeof v === 'number' && better && max > 0 ? '<div class="cmp-bar"><span data-w="' + Math.round(v / max * 100) + '"></span></div>' : '';
+                return '<td class="' + (best !== null && v === best ? 'is-best' : '') + '">' + (v == null ? '–' : XIRU.esc(show(v))) + bar + '</td>';
+            }).join('') + '</tr>';
+        });
+        XIRU.$('#result').innerHTML = '<table class="table cmp-table"><thead><tr><th></th>' +
+            chosen.map(c => '<th><a href="' + XIRU.url(c.url) + '">' + XIRU.esc(c.name) + '</a></th>').join('') + '</tr></thead><tbody>' + rows + '</tbody></table>' +
+            (!expert && (state.cat === 'cpu' || state.cat === 'gpu') ? '<p class="small muted" style="padding:.8rem 1rem">🔒 Leistungsindex und Preis-Leistung siehst du mit dem Skill „Schraubenzieher".</p>' : '');
+        requestAnimationFrame(() => XIRU.$$('.cmp-bar span').forEach(s => { s.style.width = s.dataset.w + '%'; }));
+        if (chosen.length === 3) XIRU.once('vergleich-3', 15, 'Drei auf einen Streich!');
+        if (state.cat === 'gpu' && chosen.some(c => c.id === 'gtx-1080-ti') && chosen.some(c => c.id === 'rtx-5090')) XIRU.egg('hw-generationen');
+    }
+    render();
+});
+</script>
+</body>
+</html>

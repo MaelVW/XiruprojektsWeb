@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PC-Bauer · Xiruprojekts</title>
+    <meta name="description" content="Baue mit begrenztem Budget den besten PC für den Auftrag – aber achte auf Sockel, RAM und Netzteil!">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/arcade.js"></script>
+    <script src="../assets/js/hardware-data.js"></script>
+    <style>
+        .job { display: flex; gap: 1rem; align-items: center; }
+        .job__icon { font-size: 2.6rem; }
+        .budget { display: flex; justify-content: space-between; font-weight: 800; font-variant-numeric: tabular-nums; margin-bottom: .35rem; }
+        .budget.over { color: var(--danger); }
+        .slots { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); }
+        .slot { background: var(--surface); border: 1px dashed var(--border-strong); border-radius: var(--radius-sm); padding: .9rem 1rem; }
+        .slot.filled { border-style: solid; border-color: color-mix(in srgb, var(--rc) 50%, var(--border)); }
+        .slot.bad { border-color: var(--danger); animation: shake .4s; }
+        .slot__k { font-size: .75rem; text-transform: uppercase; letter-spacing: .08em; color: var(--text-muted); font-weight: 700; display: flex; justify-content: space-between; }
+        .slot select { margin-top: .4rem; }
+        .issues { list-style: none; padding: 0; margin: 0; }
+        .issues li { padding: .35rem 0; font-size: .9rem; }
+        .issues li.ok { color: var(--success); }
+        .issues li.bad { color: var(--danger); }
+        .result-big { font-size: 3rem; font-weight: 900; line-height: 1; color: var(--rc); }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">▶ Spielhalle · Wissen</span>
+        <h1>PC-Bauer</h1>
+        <p class="lead">Drei Kunden, drei Aufträge, je ein Budget in Spielgeld. Stell die Teile zusammen – aber passt der Sockel? Stimmt der RAM? Reicht das Netzteil?</p>
+    </header>
+
+    <div class="game">
+        <div>
+            <div class="game__hud" id="hud"></div>
+            <div class="game__stage" id="stage" style="padding:1.25rem;place-items:stretch;display:block">
+                <div class="card card--accent mb-2"><div class="job" id="job"></div></div>
+                <div class="budget" id="budget"><span>Budget</span><span id="budget-v"></span></div>
+                <div class="bar mb-3"><div class="bar__fill" id="budget-bar"></div></div>
+                <div class="slots" id="slots"></div>
+                <div class="row mt-3"><button class="btn btn--primary btn--lg" id="deliver" type="button">📦 PC ausliefern</button><span class="small muted" id="hint"></span></div>
+                <div class="game__overlay" id="ov"></div>
+            </div>
+        </div>
+        <aside class="game__side">
+            <div class="card"><h3>Prüfliste</h3><ul class="issues" id="issues"></ul></div>
+            <div class="card"><h3>Spielgeld-Preise</h3>
+                <p class="small muted">CPU und GPU kosten ihre UVP zum Marktstart. Mainboard: Einsteiger 100, Mittelklasse 170, Oberklasse 290. RAM: DDR4 60, DDR5 90 (2 × 16 GB). Netzteile: 550 W 60 … 1000 W 180.</p></div>
+            <div class="card"><h3>Rekord</h3><p class="stat__value" id="best">–</p></div>
+        </aside>
+    </div>
+</main>
+<script>
+XIRU.ready(function () {
+    const G = XIRU.Game, hw = XIRU.hw || { cpu: [], gpu: [], chipset: [] };
+    const ov = G.overlay('#ov');
+    const BOARD = { Einsteiger: 100, Mittelklasse: 170, Oberklasse: 290 };
+    const RAM = [{ id: 'ddr4', name: 'DDR4 · 2 × 16 GB', price: 60 }, { id: 'ddr5', name: 'DDR5 · 2 × 16 GB', price: 90 }];
+    const PSU = [[550, 60], [650, 75], [750, 95], [850, 120], [1000, 180]];
+    const RES = { 1080: 1.75, 1440: 1.0, 2160: .5 };
+    const JOBS = [
+        { icon: '🎮', who: 'Lena (14)', text: 'will Fortnite und Minecraft in 1080p zocken.', res: 1080, kind: 'game', budget: [700, 900] },
+        { icon: '🏎', who: 'Marco', text: 'spielt Rennsimulationen auf einem 1440p-Monitor.', res: 1440, kind: 'game', budget: [1100, 1400] },
+        { icon: '🎬', who: 'Studio Alpenblick', text: 'braucht eine Maschine für Videoschnitt und Rendering.', res: 1440, kind: 'work', budget: [1300, 1700] },
+        { icon: '👑', who: 'Ein Streamer', text: 'will alles in 4K. Geld spielt (fast) keine Rolle.', res: 2160, kind: 'game', budget: [2600, 3200] },
+        { icon: '🧓', who: 'Grossvater Ruedi', text: 'möchte Fotos bearbeiten und ab und zu Solitär spielen.', res: 1080, kind: 'office', budget: [450, 650] },
+        { icon: '⚔', who: 'Die Gilde', text: 'braucht einen Rechner für PIXMAG-Turniere in 1440p mit vielen FPS.', res: 1440, kind: 'game', budget: [1500, 1900] }
+    ];
+    let round = 0, total = 0, jobs = [], job, pick;
+
+    function cpuPrice(c) { return c ? c.price : 0; }
+    function boardFor(cs) { return cs ? BOARD[cs.tier] : 0; }
+    function cost() {
+        const cpu = hw.cpu.find(c => c.id === pick.cpu), gpu = hw.gpu.find(g => g.id === pick.gpu), cs = hw.chipset.find(c => c.id === pick.cs);
+        const ram = RAM.find(r => r.id === pick.ram), psu = PSU.find(p => p[0] === +pick.psu);
+        return cpuPrice(cpu) + (gpu ? gpu.price : 0) + boardFor(cs) + (ram ? ram.price : 0) + (psu ? psu[1] : 0);
+    }
+    function check() {
+        const cpu = hw.cpu.find(c => c.id === pick.cpu), gpu = hw.gpu.find(g => g.id === pick.gpu), cs = hw.chipset.find(c => c.id === pick.cs);
+        const ram = pick.ram, psu = +pick.psu;
+        const issues = [];
+        const add = (ok, text, slot) => issues.push({ ok, text, slot });
+        add(!!cpu, cpu ? 'Prozessor gewählt' : 'Kein Prozessor gewählt', 'cpu');
+        add(!!cs, cs ? 'Mainboard gewählt' : 'Kein Mainboard gewählt', 'cs');
+        if (cpu && cs) add(cpu.socket === cs.socket, cpu.socket === cs.socket ? 'Sockel passt (' + cpu.socket + ')' : 'Sockel passt nicht: CPU ' + cpu.socket + ', Board ' + cs.socket, 'cs');
+        add(!!ram, ram ? 'Arbeitsspeicher gewählt' : 'Kein Arbeitsspeicher gewählt', 'ram');
+        if (cs && ram) { const ok = cs.ram.toUpperCase().includes(ram.toUpperCase()); add(ok, ok ? 'RAM passt zum Board' : 'Das Board kann kein ' + ram.toUpperCase(), 'ram'); }
+        if (!gpu && cpu && /Keine/.test(cpu.igpu)) add(false, 'Kein Bild! Die CPU hat keine Grafikeinheit – du brauchst eine Grafikkarte.', 'gpu');
+        const load = (cpu ? (cpu.tdpMax || Math.round(cpu.tdp * 1.35)) : 0) + (gpu ? gpu.tdp : 0) + 80;
+        add(!!psu, psu ? 'Netzteil gewählt' : 'Kein Netzteil gewählt', 'psu');
+        if (psu) add(psu >= load * 1.15, psu >= load * 1.15 ? 'Netzteil reicht (' + load + ' W Last)' : 'Netzteil zu schwach für ca. ' + load + ' W Last', 'psu');
+        const c = cost();
+        add(c <= job.budgetV, c <= job.budgetV ? 'Im Budget' : 'Budget um ' + (c - job.budgetV) + ' überschritten', 'budget');
+        return { issues, valid: issues.every(i => i.ok), cpu, gpu, cs, load, cost: c };
+    }
+    function scoreBuild(r) {
+        if (!r.valid) return 0;
+        const cpu = r.cpu, gpu = r.gpu;
+        let perf;
+        if (job.kind === 'work') perf = cpu.multi * 1.2 + (gpu ? gpu.perf * .25 : 0);
+        else if (job.kind === 'office') perf = Math.min(60, cpu.game * .6 + (gpu ? 10 : 0)) + 40;   // mehr braucht Ruedi nicht
+        else { const c = cpu.game * 1.05, g = gpu ? gpu.perf * RES[job.res] : 8; perf = Math.min(c, g) * 1.2 + Math.max(c, g) * .1; }
+        const left = job.budgetV - r.cost;
+        return Math.round(perf * 10 + left / 4);
+    }
+
+    function render() {
+        const r = check();
+        const pct = Math.min(100, r.cost / job.budgetV * 100);
+        XIRU.$('#budget').classList.toggle('over', r.cost > job.budgetV);
+        XIRU.$('#budget-v').textContent = XIRU.fmt(r.cost) + ' / ' + XIRU.fmt(job.budgetV);
+        XIRU.$('#budget-bar').style.setProperty('--v', pct + '%');
+        XIRU.$('#budget-bar').style.background = r.cost > job.budgetV ? 'var(--danger)' : '';
+        XIRU.$('#issues').innerHTML = r.issues.map(i => '<li class="' + (i.ok ? 'ok' : 'bad') + '">' + (i.ok ? '✓ ' : '✕ ') + XIRU.esc(i.text) + '</li>').join('');
+        XIRU.$$('.slot').forEach(s => { s.classList.toggle('filled', !!pick[s.dataset.k]); s.classList.toggle('bad', r.issues.some(i => !i.ok && i.slot === s.dataset.k && pick[s.dataset.k])); });
+        XIRU.$('#hint').textContent = r.valid ? 'Alles passt – ausliefern?' : 'Noch nicht alles in Ordnung.';
+        G.hud('#hud', { Auftrag: (round + 1) + '/3', Punkte: XIRU.fmt(total) });
+        XIRU.$('#best').textContent = XIRU.best('pc-bauer') == null ? '–' : XIRU.fmt(XIRU.best('pc-bauer'));
+    }
+    function select(k, label, opts) {
+        return '<div class="slot" data-k="' + k + '"><div class="slot__k"><span>' + label + '</span><span class="faint" data-price="' + k + '"></span></div>' +
+            '<select class="select" data-k="' + k + '"><option value="">– wählen –</option>' + opts + '</select></div>';
+    }
+    function buildSlots() {
+        const byPrice = (a, b) => a.price - b.price;
+        XIRU.$('#slots').innerHTML =
+            select('cpu', 'Prozessor', hw.cpu.slice().sort(byPrice).map(c => '<option value="' + c.id + '">' + XIRU.esc(c.name) + ' · ' + c.price + '</option>').join('')) +
+            select('gpu', 'Grafikkarte', '<option value="">Keine (integrierte Grafik)</option>' + hw.gpu.slice().sort(byPrice).map(g => '<option value="' + g.id + '">' + XIRU.esc(g.name) + ' · ' + g.price + '</option>').join('')) +
+            select('cs', 'Mainboard', hw.chipset.map(c => '<option value="' + c.id + '">' + XIRU.esc(c.name) + ' (' + c.socket + ') · ' + BOARD[c.tier] + '</option>').join('')) +
+            select('ram', 'Arbeitsspeicher', RAM.map(r => '<option value="' + r.id + '">' + r.name + ' · ' + r.price + '</option>').join('')) +
+            select('psu', 'Netzteil', PSU.map(p => '<option value="' + p[0] + '">' + p[0] + ' W · ' + p[1] + '</option>').join(''));
+        XIRU.$$('#slots select').forEach(s => s.addEventListener('change', () => {
+            pick[s.dataset.k] = s.value; G.sfx.click();
+            if (s.dataset.k === 'cpu' && s.value === 'core-i7-2600k') XIRU.egg('g-pc-bauer-museum');
+            render();
+        }));
+    }
+    function nextJob() {
+        job = Object.assign({}, jobs[round]);
+        job.budgetV = Math.round(XIRU.rand(job.budget[0], job.budget[1]) / 10) * 10;
+        pick = { cpu: '', gpu: '', cs: '', ram: '', psu: '' };
+        XIRU.$('#job').innerHTML = '<div class="job__icon">' + job.icon + '</div><div><strong>' + XIRU.esc(job.who) + '</strong> ' + XIRU.esc(job.text) +
+            '<div class="small muted">Budget: ' + XIRU.fmt(job.budgetV) + ' Spielgeld · ' + (job.kind === 'work' ? 'Mehrkernleistung zählt' : job.kind === 'office' ? 'Hauptsache leise und günstig' : 'Bildrate in ' + (job.res === 2160 ? '4K' : job.res + 'p') + ' zählt') + '</div></div>';
+        buildSlots(); render();
+    }
+    XIRU.$('#deliver').addEventListener('click', () => {
+        const r = check(), pts = scoreBuild(r);
+        total += pts;
+        const left = job.budgetV - r.cost;
+        if (r.valid) {
+            G.sfx.win();
+            if (left <= job.budgetV * .05) XIRU.egg('g-pc-bauer-punktlandung');
+            if (r.cost <= job.budgetV * .5) XIRU.egg('g-pc-bauer-sparfuchs');
+        } else G.sfx.die();
+        round++;
+        const last = round >= 3;
+        ov.show({ icon: r.valid ? '📦' : '🔥', title: r.valid ? 'Ausgeliefert!' : 'Reklamation!', html: true,
+            text: (r.valid ? 'Der Kunde ist zufrieden: <strong>' + XIRU.fmt(pts) + ' Punkte</strong>' + (left > 0 ? ' (inkl. Bonus für ' + XIRU.fmt(left) + ' gespartes Spielgeld)' : '') + '.'
+                : 'Der PC startet nicht oder sprengt das Budget: 0 Punkte.<br><span class="small">' + XIRU.esc(r.issues.filter(i => !i.ok).map(i => i.text).join(' · ')) + '</span>') +
+                (last ? '<br><br>Gesamt: <strong>' + XIRU.fmt(total) + '</strong>' : ''),
+            button: last ? 'Neue Schicht' : 'Nächster Auftrag', onClick: () => { if (last) start(); else { ov.hide(); nextJob(); } } });
+        if (last) { const res = XIRU.score('pc-bauer', total); if (total >= 3000) XIRU.egg('g-pc-bauer-meister'); if (res.isNew) XIRU.confetti(); }
+    });
+    function start() {
+        round = 0; total = 0;
+        jobs = JOBS.slice().sort(() => Math.random() - .5).slice(0, 3);
+        ov.hide(); nextJob();
+    }
+    jobs = JOBS.slice(0, 3); job = Object.assign({}, jobs[0], { budgetV: 800 }); pick = {}; buildSlots(); render();
+    ov.show({ icon: '🛠', title: 'PC-Bauer', text: 'Drei Aufträge pro Schicht. Gültige PCs bringen Punkte nach Leistung – gespartes Geld gibt einen kleinen Bonus.', button: 'Schicht beginnen', onClick: start });
+});
+</script>
+</body>
+</html>

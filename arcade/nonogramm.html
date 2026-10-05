@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nonogramm · Xiruprojekts</title>
+    <meta name="description" content="Nonogramm – Pixelbilder aus Zahlenhinweisen: 17 handgemachte Hardware- und Gaming-Motive plus Zufallsrätsel.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="css/nonogramm.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/arcade.js"></script>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">▶ Spielhalle · Puzzle</span>
+        <h1>Nonogramm</h1>
+        <p class="lead">Die Zahlen am Rand verraten, wie lange Blöcke in jeder Zeile und Spalte gefüllt sind – in genau dieser Reihenfolge. Male die richtigen Felder aus, und ein Pixelbild taucht auf.</p>
+    </header>
+
+    <div class="game">
+        <div>
+            <div class="game__hud" id="hud">
+                <div><span>Bild</span><b id="h-name">?</b></div>
+                <div><span>Grösse</span><b id="h-size">–</b></div>
+                <div><span>Gefüllt</span><b id="h-fill">0</b></div>
+                <div><span>Zeit</span><b id="h-time">0:00</b></div>
+            </div>
+            <div class="game__stage ng-stage" id="stage">
+                <div class="ng-wrap" id="wrap">
+                    <div class="ng" id="board"></div>
+                </div>
+                <div class="game__overlay" id="ov" hidden></div>
+            </div>
+            <div class="row mt-1 ng-tools">
+                <div class="ng-mode" role="group" aria-label="Werkzeug">
+                    <button class="btn btn--sm is-on" type="button" data-tool="fill" aria-pressed="true">■ Füllen</button>
+                    <button class="btn btn--sm" type="button" data-tool="cross" aria-pressed="false">✕ Kreuz</button>
+                </div>
+                <button class="btn btn--sm" type="button" id="btn-undo">↶ Zurück <kbd>Z</kbd></button>
+                <button class="btn btn--sm btn--ghost" type="button" id="btn-reset">Leeren</button>
+            </div>
+        </div>
+        <aside class="game__side">
+            <div class="card">
+                <h3>Steuerung</h3>
+                <ul class="keys-help">
+                    <li><b>Linksklick</b> – füllen, <b>Rechtsklick</b> – Kreuz (für sicher leere Felder)</li>
+                    <li>Gedrückt halten und ziehen, um mehrere Felder auf einmal zu setzen</li>
+                    <li><kbd>←</kbd><kbd>↑</kbd><kbd>→</kbd><kbd>↓</kbd> – bewegen, <kbd>Leertaste</kbd> füllen, <kbd>X</kbd> Kreuz, <kbd>Z</kbd> zurück</li>
+                    <li>Handy: Werkzeug unten wählen, dann tippen oder wischen</li>
+                    <li>Erfüllte Hinweise werden grau.</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Rätsel</h3>
+                <div id="picker"></div>
+                <h4 class="ng-group mt-1">Zufallsbild</h4>
+                <div class="row" id="random">
+                    <button class="chip" data-rand="5">5 × 5</button>
+                    <button class="chip" data-rand="10">10 × 10</button>
+                    <button class="chip" data-rand="15">15 × 15</button>
+                </div>
+            </div>
+            <div class="card">
+                <h3>Rekord</h3>
+                <p class="stat__value" id="best">–</p>
+                <p class="small muted" id="best-sub">gelöste Bilder von 17</p>
+            </div>
+        </aside>
+    </div>
+</main>
+<script src="js/nonogramm.js"></script>
+</body>
+</html>

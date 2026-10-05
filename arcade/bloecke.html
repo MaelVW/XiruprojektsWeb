@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blöcke · Xiruprojekts</title>
+    <meta name="description" content="Blöcke – fallende Steine zu vollen Reihen stapeln. Mit Halten, Vorschau und Geisterstein.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/arcade.js"></script>
+    <style>
+        #cv { width: min(100%, calc((100vh - 170px) * 0.857)); }
+        .touch-pad { flex-wrap: wrap; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">▶ Spielhalle · Action</span>
+        <h1>Blöcke</h1>
+        <p class="lead">Sieben Formen fallen vom Himmel, du drehst und schiebst sie zu vollen Reihen. Je mehr Reihen auf einmal verschwinden, desto mehr Punkte – und mit jedem Level geht's schneller.</p>
+    </header>
+
+    <div class="game">
+        <div>
+            <div class="game__hud" id="hud"></div>
+            <div class="game__stage" id="stage">
+                <canvas id="cv"></canvas>
+                <div class="game__overlay" id="ov"></div>
+            </div>
+            <div class="touch-pad">
+                <button data-key="ArrowLeft" aria-label="Links">◀</button>
+                <button data-key="ArrowRight" aria-label="Rechts">▶</button>
+                <button data-key="ArrowUp" aria-label="Drehen">⟳</button>
+                <button data-key="ArrowDown" aria-label="Schneller fallen">▼</button>
+                <button data-key=" " aria-label="Fallen lassen">⤓</button>
+                <button data-key="c" aria-label="Halten">⇄</button>
+                <button data-key="p" aria-label="Pause">⏸</button>
+            </div>
+        </div>
+        <aside class="game__side">
+            <div class="card">
+                <h3>Steuerung</h3>
+                <ul class="keys-help">
+                    <li><kbd>←</kbd> <kbd>→</kbd> oder <kbd>A</kbd> <kbd>D</kbd> – schieben</li>
+                    <li><kbd>↑</kbd> / <kbd>X</kbd> – drehen, <kbd>Z</kbd> / <kbd>Y</kbd> – andersrum</li>
+                    <li><kbd>↓</kbd> – schneller fallen, <kbd>Leertaste</kbd> – sofort fallen</li>
+                    <li><kbd>C</kbd> oder <kbd>Shift</kbd> – Stein halten</li>
+                    <li><kbd>P</kbd> / <kbd>Esc</kbd> – Pause</li>
+                    <li>Maus: bewegen = schieben, Rad = drehen, Klick = fallen lassen, Klick aufs Halten-Feld = halten</li>
+                    <li>Touch: ziehen = schieben, tippen = drehen, nach unten wischen = fallen, nach oben = halten</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Startlevel</h3>
+                <div class="row" id="modes">
+                    <button class="chip is-active" data-mode="1">Gemütlich</button>
+                    <button class="chip" data-mode="5">Zügig</button>
+                    <button class="chip" data-mode="10">Rasant</button>
+                </div>
+                <p class="small muted mt-2" id="mode-desc">Start bei Level 1 – genug Zeit zum Nachdenken.</p>
+            </div>
+            <div class="card">
+                <h3>Punkte</h3>
+                <ul class="keys-help">
+                    <li>1 / 2 / 3 / 4 Reihen: 100 / 300 / 500 / 800 × Level</li>
+                    <li>T-Dreh und Vierer hintereinander: +50 %</li>
+                    <li>Combos und ein leeres Feld geben Extrapunkte</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Rekord</h3>
+                <p class="stat__value" id="best">–</p>
+            </div>
+        </aside>
+    </div>
+</main>
+<script src="js/bloecke.js"></script>
+</body>
+</html>

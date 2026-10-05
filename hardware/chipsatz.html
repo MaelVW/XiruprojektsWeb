@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chipsätze · Xiruprojekts</title>
+    <meta name="description" content="Der Chipsatz entscheidet, was ein Mainboard kann: Übertakten, PCIe-Version, USB und mehr.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">▣ Hardware-Archiv</span>
+        <h1>Chipsätze</h1>
+        <p class="lead">Der Chipsatz entscheidet, was ein Mainboard kann: Übertakten, PCIe-Version, USB und mehr.</p>
+    </header>
+
+    <div class="card card--flat mb-3">
+        <div class="row">
+            <input class="input" type="search" id="hw-q" placeholder="Chipsätze durchsuchen …" style="max-width:320px" aria-label="Suchen">
+            <div class="row" id="hw-filter" role="group" aria-label="Sockel"><button class="chip is-active" data-filter="">Alle</button><button class="chip" data-filter="AM4">AM4</button><button class="chip" data-filter="AM5">AM5</button><button class="chip" data-filter="LGA1700">LGA1700</button><button class="chip" data-filter="LGA1851">LGA1851</button></div>
+            <span class="spacer"></span>
+            <div class="row" role="group" aria-label="Ansicht">
+                <button class="chip is-active" data-view="table">Tabelle</button>
+                <button class="chip" data-view="tiles">Kacheln</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="hw-table" class="table-wrap">
+        <table class="table" data-sortable><thead><tr><th data-sort="text">Name</th><th data-sort="text">Sockel</th><th data-sort="num" class="num">Jahr</th><th data-sort="text">Klasse</th><th data-sort="text">CPU-OC</th><th data-sort="text">RAM</th><th data-sort="text">PCIe Grafik</th></tr></thead><tbody><tr data-f="AM4" data-q="amd x570  am4"><td><a href="chipsatz/amd-x570.html"><strong>AMD X570</strong></a></td><td>AM4</td><td class="num">2019</td><td>Oberklasse</td><td>Ja</td><td>DDR4</td><td>4.0</td></tr><tr data-f="AM4" data-q="amd b550  am4"><td><a href="chipsatz/amd-b550.html"><strong>AMD B550</strong></a></td><td>AM4</td><td class="num">2020</td><td>Mittelklasse</td><td>Ja</td><td>DDR4</td><td>4.0</td></tr><tr data-f="AM5" data-q="amd b650  am5"><td><a href="chipsatz/amd-b650.html"><strong>AMD B650</strong></a></td><td>AM5</td><td class="num">2022</td><td>Mittelklasse</td><td>Ja</td><td>DDR5</td><td>4.0 (5.0 optional)</td></tr><tr data-f="AM5" data-q="amd b650e  am5"><td><a href="chipsatz/amd-b650e.html"><strong>AMD B650E</strong></a></td><td>AM5</td><td class="num">2022</td><td>Mittelklasse</td><td>Ja</td><td>DDR5</td><td>5.0</td></tr><tr data-f="AM5" data-q="amd x670e  am5"><td><a href="chipsatz/amd-x670e.html"><strong>AMD X670E</strong></a></td><td>AM5</td><td class="num">2022</td><td>Oberklasse</td><td>Ja</td><td>DDR5</td><td>5.0</td></tr><tr data-f="AM5" data-q="amd a620  am5"><td><a href="chipsatz/amd-a620.html"><strong>AMD A620</strong></a></td><td>AM5</td><td class="num">2023</td><td>Einsteiger</td><td>Nein</td><td>DDR5</td><td>4.0</td></tr><tr data-f="AM5" data-q="amd x870  am5"><td><a href="chipsatz/amd-x870.html"><strong>AMD X870</strong></a></td><td>AM5</td><td class="num">2024</td><td>Oberklasse</td><td>Ja</td><td>DDR5</td><td>5.0</td></tr><tr data-f="AM5" data-q="amd x870e  am5"><td><a href="chipsatz/amd-x870e.html"><strong>AMD X870E</strong></a></td><td>AM5</td><td class="num">2024</td><td>Oberklasse</td><td>Ja</td><td>DDR5</td><td>5.0</td></tr><tr data-f="AM5" data-q="amd b850  am5"><td><a href="chipsatz/amd-b850.html"><strong>AMD B850</strong></a></td><td>AM5</td><td class="num">2025</td><td>Mittelklasse</td><td>Ja</td><td>DDR5</td><td>4.0 (5.0 optional)</td></tr><tr data-f="LGA1700" data-q="intel z790  lga1700"><td><a href="chipsatz/intel-z790.html"><strong>Intel Z790</strong></a></td><td>LGA1700</td><td class="num">2022</td><td>Oberklasse</td><td>Ja</td><td>DDR4 oder DDR5 (je nach Board)</td><td>5.0</td></tr><tr data-f="LGA1700" data-q="intel b760  lga1700"><td><a href="chipsatz/intel-b760.html"><strong>Intel B760</strong></a></td><td>LGA1700</td><td class="num">2023</td><td>Mittelklasse</td><td>Nein</td><td>DDR4 oder DDR5 (je nach Board)</td><td>5.0 (je nach Board 4.0)</td></tr><tr data-f="LGA1851" data-q="intel z890  lga1851"><td><a href="chipsatz/intel-z890.html"><strong>Intel Z890</strong></a></td><td>LGA1851</td><td class="num">2024</td><td>Oberklasse</td><td>Ja</td><td>DDR5</td><td>5.0</td></tr><tr data-f="LGA1851" data-q="intel b860  lga1851"><td><a href="chipsatz/intel-b860.html"><strong>Intel B860</strong></a></td><td>LGA1851</td><td class="num">2025</td><td>Mittelklasse</td><td>Nein</td><td>DDR5</td><td>5.0</td></tr></tbody></table>
+    </div>
+    <div id="hw-tiles" class="grid" hidden><a class="tile" data-f="AM4" href="chipsatz/amd-x570.html" data-reveal style="--d:0.00s"><span class="tile__meta"><span class="badge">AM4</span></span><span class="tile__title">AMD X570</span><span class="tile__desc">Chipsatz · AM4 · 2019</span></a><a class="tile" data-f="AM4" href="chipsatz/amd-b550.html" data-reveal style="--d:0.04s"><span class="tile__meta"><span class="badge">AM4</span></span><span class="tile__title">AMD B550</span><span class="tile__desc">Chipsatz · AM4 · 2020</span></a><a class="tile" data-f="AM5" href="chipsatz/amd-b650.html" data-reveal style="--d:0.08s"><span class="tile__meta"><span class="badge">AM5</span></span><span class="tile__title">AMD B650</span><span class="tile__desc">Chipsatz · AM5 · 2022</span></a><a class="tile" data-f="AM5" href="chipsatz/amd-b650e.html" data-reveal style="--d:0.12s"><span class="tile__meta"><span class="badge">AM5</span></span><span class="tile__title">AMD B650E</span><span class="tile__desc">Chipsatz · AM5 · 2022</span></a><a class="tile" data-f="AM5" href="chipsatz/amd-x670e.html" data-reveal style="--d:0.16s"><span class="tile__meta"><span class="badge">AM5</span></span><span class="tile__title">AMD X670E</span><span class="tile__desc">Chipsatz · AM5 · 2022</span></a><a class="tile" data-f="AM5" href="chipsatz/amd-a620.html" data-reveal style="--d:0.20s"><span class="tile__meta"><span class="badge">AM5</span></span><span class="tile__title">AMD A620</span><span class="tile__desc">Chipsatz · AM5 · 2023</span></a><a class="tile" data-f="AM5" href="chipsatz/amd-x870.html" data-reveal style="--d:0.24s"><span class="tile__meta"><span class="badge">AM5</span></span><span class="tile__title">AMD X870</span><span class="tile__desc">Chipsatz · AM5 · 2024</span></a><a class="tile" data-f="AM5" href="chipsatz/amd-x870e.html" data-reveal style="--d:0.28s"><span class="tile__meta"><span class="badge">AM5</span></span><span class="tile__title">AMD X870E</span><span class="tile__desc">Chipsatz · AM5 · 2024</span></a><a class="tile" data-f="AM5" href="chipsatz/amd-b850.html" data-reveal style="--d:0.00s"><span class="tile__meta"><span class="badge">AM5</span></span><span class="tile__title">AMD B850</span><span class="tile__desc">Chipsatz · AM5 · 2025</span></a><a class="tile" data-f="LGA1700" href="chipsatz/intel-z790.html" data-reveal style="--d:0.04s"><span class="tile__meta"><span class="badge">LGA1700</span></span><span class="tile__title">Intel Z790</span><span class="tile__desc">Chipsatz · LGA1700 · 2022</span></a><a class="tile" data-f="LGA1700" href="chipsatz/intel-b760.html" data-reveal style="--d:0.08s"><span class="tile__meta"><span class="badge">LGA1700</span></span><span class="tile__title">Intel B760</span><span class="tile__desc">Chipsatz · LGA1700 · 2023</span></a><a class="tile" data-f="LGA1851" href="chipsatz/intel-z890.html" data-reveal style="--d:0.12s"><span class="tile__meta"><span class="badge">LGA1851</span></span><span class="tile__title">Intel Z890</span><span class="tile__desc">Chipsatz · LGA1851 · 2024</span></a><a class="tile" data-f="LGA1851" href="chipsatz/intel-b860.html" data-reveal style="--d:0.16s"><span class="tile__meta"><span class="badge">LGA1851</span></span><span class="tile__title">Intel B860</span><span class="tile__desc">Chipsatz · LGA1851 · 2025</span></a></div>
+    <p class="small muted mt-2"><span id="hw-count">13</span> Einträge · Klick auf eine Spaltenüberschrift sortiert. <a href="vergleich.html">Zum Vergleich →</a></p>
+</main>
+<script>
+XIRU.ready(function () {
+    let filter = '', q = '';
+    const rows = XIRU.$$('#hw-table tbody tr'), tiles = XIRU.$$('#hw-tiles .tile');
+    function apply() {
+        let n = 0;
+        rows.forEach(r => { const ok = (!filter || r.dataset.f === filter) && (!q || r.dataset.q.includes(q)); r.hidden = !ok; if (ok) n++; });
+        tiles.forEach((t, i) => { t.hidden = rows[i].hidden; });
+        XIRU.$('#hw-count').textContent = n;
+    }
+    XIRU.$('#hw-filter').addEventListener('click', e => {
+        const b = e.target.closest('[data-filter]'); if (!b) return;
+        filter = b.dataset.filter;
+        XIRU.$$('#hw-filter .chip').forEach(c => c.classList.toggle('is-active', c === b));
+        apply();
+    });
+    XIRU.$('#hw-q').addEventListener('input', e => { q = e.target.value.trim().toLowerCase(); apply(); });
+    XIRU.$$('[data-view]').forEach(b => b.addEventListener('click', () => {
+        XIRU.$$('[data-view]').forEach(c => c.classList.toggle('is-active', c === b));
+        XIRU.$('#hw-table').hidden = b.dataset.view !== 'table';
+        XIRU.$('#hw-tiles').hidden = b.dataset.view !== 'tiles';
+        if (b.dataset.view === 'tiles') XIRU.initReveal();
+    }));
+});
+</script>
+</body>
+</html>

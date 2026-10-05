@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suche · Xiruprojekts</title>
+    <meta name="description" content="Durchsuche alle Orte, Spiele, Werkzeuge und Datenblätter der Website.">
+    <link rel="stylesheet" href="assets/css/main.css">
+    <script src="assets/js/site.js"></script>
+    <script src="assets/js/core.js"></script>
+    <script src="assets/js/hardware-data.js"></script>
+    <style>
+        .search-box { position: relative; max-width: 720px; }
+        .search-box input { font-size: 1.25rem !important; padding: 1rem 1.2rem 1rem 3rem !important; border-radius: 14px !important; }
+        .search-box::before { content: "⌕"; position: absolute; left: 1.1rem; top: 50%; transform: translateY(-50%); font-size: 1.4rem; color: var(--text-faint); }
+        .results { list-style: none; padding: 0; margin: 1.5rem 0 0; display: grid; gap: .6rem; max-width: 820px; }
+        .res a { display: grid; grid-template-columns: 2.4rem 1fr auto; gap: .9rem; align-items: center; padding: .85rem 1rem; border-radius: var(--radius-sm); background: var(--surface); border: 1px solid var(--border); color: var(--text); transition: border-color .2s, transform .2s; }
+        .res a:hover, .res a:focus-visible { border-color: var(--c); transform: translateX(4px); }
+        .res__icon { width: 2.4rem; height: 2.4rem; border-radius: 10px; display: grid; place-items: center; background: color-mix(in srgb, var(--c) 16%, transparent); color: var(--c); }
+        .res__t { font-weight: 700; }
+        .res__d { font-size: .85rem; color: var(--text-muted); }
+        .res mark { background: color-mix(in srgb, var(--c) 30%, transparent); color: inherit; border-radius: 3px; padding: 0 .1em; }
+        .suggest { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: 1rem; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">◆ Zentrum</span>
+        <h1>Suche</h1>
+        <p class="lead">Alles, was du schon entdecken kannst. Versteckte Orte findest du hier erst, wenn du einmal dort warst.</p>
+    </header>
+    <form class="search-box" role="search" onsubmit="return false">
+        <input class="input" type="search" id="q" placeholder="Spiel, Werkzeug, Grafikkarte …" aria-label="Suchbegriff" autocomplete="off">
+    </form>
+    <div class="suggest" id="suggest"></div>
+    <p class="small muted mt-2" id="info"></p>
+    <ul class="results" id="results"></ul>
+</main>
+<script>
+XIRU.ready(function () {
+    const P = XIRU.profile();
+    const norm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/ß/g, 'ss');
+    const hwById = {};
+    if (XIRU.hw) Object.keys(XIRU.hw).forEach(k => XIRU.hw[k].forEach(x => { hwById[x.url] = x; }));
+    const items = XIRU.pages.filter(p => !p.hidden || P.visited[p.p]).map(p => {
+        const reg = XIRU.region(p.r), hw = hwById[p.p];
+        const extra = hw ? [hw.brand, hw.arch, hw.socket, hw.chip, hw.memType, hw.kind].filter(Boolean).join(' ') : '';
+        return { p, reg, hay: norm(p.t + ' ' + p.d + ' ' + reg.name + ' ' + (p.game || '') + ' ' + extra), title: norm(p.t) };
+    });
+    const hl = (text, words) => {
+        let out = XIRU.esc(text);
+        words.forEach(w => { if (w.length < 2) return; out = out.replace(new RegExp('(' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'ig'), '<mark>$1</mark>'); });
+        return out;
+    };
+    function search(q) {
+        const nq = norm(q).trim();
+        const words = nq.split(/\s+/).filter(Boolean);
+        history.replaceState(null, '', nq ? '?q=' + encodeURIComponent(q) : location.pathname);
+        if (!words.length) { XIRU.$('#results').innerHTML = ''; XIRU.$('#info').textContent = items.length + ' Orte durchsuchbar.'; return; }
+        if (nq.includes('sinn des lebens')) XIRU.egg('b-suche-sinn');
+        const scored = items.map(it => {
+            let s = 0;
+            for (const w of words) {
+                if (it.title === w) s += 100;
+                else if (it.title.startsWith(w)) s += 40;
+                else if (it.title.includes(w)) s += 25;
+                else if (it.hay.includes(w)) s += 10;
+                else if (w.length > 3 && it.hay.includes(w.slice(0, -1))) s += 4;
+                else return { it, s: 0 };
+            }
+            if (P.visited[it.p.p]) s += 1;
+            return { it, s };
+        }).filter(x => x.s > 0).sort((a, b) => b.s - a.s).slice(0, 40);
+        XIRU.$('#info').textContent = scored.length ? scored.length + ' Treffer' + (scored.length === 40 ? ' (die besten 40)' : '') : '';
+        XIRU.$('#results').innerHTML = scored.map(({ it }) => {
+            const locked = !XIRU.isUnlocked(it.p);
+            return '<li class="res" style="--c:' + it.reg.color + '"><a href="' + XIRU.url(it.p.p) + '"><span class="res__icon">' + it.reg.icon + '</span>' +
+                '<span><span class="res__t">' + (locked ? '🔒 ' : '') + hl(it.p.t, words) + '</span><br><span class="res__d">' + hl(it.p.d, words) + '</span></span>' +
+                '<span class="badge">' + XIRU.esc(it.reg.name) + '</span></a></li>';
+        }).join('') || '<li class="empty"><div class="empty__icon">🔍</div><p>Nichts gefunden für „' + XIRU.esc(q) + '". Vielleicht liegt es noch im Nebel …</p></li>';
+        if (!scored.length) XIRU.egg('b-suche-leer');
+    }
+    let t;
+    XIRU.$('#q').addEventListener('input', e => { clearTimeout(t); t = setTimeout(() => search(e.target.value), 140); });
+    XIRU.$('#q').addEventListener('keydown', e => { if (e.key === 'Enter') { const a = XIRU.$('#results a'); if (a) location.href = a.href; } });
+    const ideas = ['Dungeon', 'RTX 5090', 'Netzteil', 'Passwort', 'Beat', 'Sudoku', 'DDR5', 'Diskette', 'KI', 'Timer'];
+    XIRU.$('#suggest').innerHTML = '<span class="small faint">Ideen:</span>' + ideas.map(i => '<button class="chip" type="button">' + i + '</button>').join('');
+    XIRU.$('#suggest').addEventListener('click', e => { const b = e.target.closest('.chip'); if (b) { XIRU.$('#q').value = b.textContent; search(b.textContent); } });
+    const q0 = new URLSearchParams(location.search).get('q') || '';
+    XIRU.$('#q').value = q0; search(q0);
+    XIRU.$('#q').focus({ preventScroll: true });
+});
+</script>
+</body>
+</html>

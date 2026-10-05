@@ -1,0 +1,78 @@
+/* Vier gewinnt */
+.vg-stage { touch-action: manipulation; padding: clamp(.5rem, 2.5vw, 1.5rem); }
+.vg-wrap {
+    --p1: var(--rc); --p2: var(--warning);
+    --frame: color-mix(in srgb, var(--accent-2) 24%, var(--surface-2));
+    width: min(100%, 560px); margin: 0 auto;
+}
+.vg-preview { position: relative; aspect-ratio: 7 / 1; }
+.vg-board {
+    position: relative; aspect-ratio: 7 / 6; border-radius: 16px; overflow: hidden;
+    background: var(--bg);
+    box-shadow: var(--shadow), 0 0 0 2px color-mix(in srgb, var(--accent-2) 30%, var(--border));
+}
+.vg-discs { position: absolute; inset: 0; z-index: 1; }
+.vg-front {
+    position: absolute; inset: 0; z-index: 2; pointer-events: none;
+    background:
+        radial-gradient(circle closest-side, transparent 0 74%, color-mix(in srgb, var(--bg) 55%, transparent) 75%, transparent 79%),
+        radial-gradient(circle closest-side, transparent 0 78%, var(--frame) 79%);
+    background-size: calc(100% / 7) calc(100% / 6);
+}
+.vg-cols { position: absolute; inset: 0; z-index: 3; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.vg-cols button {
+    background: transparent; border: 0; padding: 0; cursor: pointer;
+    -webkit-tap-highlight-color: transparent; transition: background .15s;
+}
+.vg-cols button:hover, .vg-cols button.is-cursor { background: linear-gradient(to bottom, color-mix(in srgb, var(--text) 9%, transparent), transparent 85%); }
+.vg-cols button:focus-visible { outline: 2px solid var(--rc); outline-offset: -3px; }
+.vg-cols button:disabled { cursor: default; background: transparent; }
+.vg-board.is-locked .vg-cols button { cursor: progress; }
+.vg-board.is-over .vg-cols button { cursor: default; background: transparent; }
+
+.vg-foot { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); text-align: center; margin-top: .35rem; font-size: .78rem; font-weight: 700; color: var(--text-faint); }
+
+/* Steine */
+.vg-disc {
+    --pc: var(--p1);
+    position: absolute; width: calc(100% / 7); height: calc(100% / 6);
+    left: calc(var(--c) * 100% / 7); top: calc(var(--r) * 100% / 6);
+    display: grid; place-items: center;
+}
+.vg-disc::before {
+    content: ""; width: 80%; height: 80%; border-radius: 50%;
+    background: radial-gradient(circle at 34% 30%, color-mix(in srgb, var(--pc) 70%, var(--text)) 0 12%, var(--pc) 45%, color-mix(in srgb, var(--pc) 72%, var(--bg)) 100%);
+    box-shadow: inset 0 0 0 4px color-mix(in srgb, var(--pc) 80%, var(--bg)), inset 0 0 0 9px color-mix(in srgb, var(--pc) 92%, var(--text));
+}
+.vg-disc.is-p2 { --pc: var(--p2); }
+.vg-disc.is-drop { animation: vgDrop var(--dur, .45s) both; }
+@keyframes vgDrop {
+    0% { transform: translateY(calc(var(--from) * -100%)); animation-timing-function: cubic-bezier(.5, 0, 1, .5); }
+    72% { transform: translateY(0); animation-timing-function: cubic-bezier(0, .5, .5, 1); }
+    86% { transform: translateY(-11%); animation-timing-function: cubic-bezier(.5, 0, 1, .5); }
+    100% { transform: translateY(0); }
+}
+.vg-board.is-over .vg-disc { transition: opacity .5s .3s, filter .5s .3s; }
+.vg-board.has-win .vg-disc:not(.is-win) { opacity: .4; filter: saturate(.5); }
+.vg-disc.is-win::before { animation: vgGlow 1.1s ease-in-out infinite alternate; }
+@keyframes vgGlow {
+    from { transform: scale(1); filter: drop-shadow(0 0 0 transparent); }
+    to { transform: scale(1.08); filter: drop-shadow(0 0 10px var(--pc)); }
+}
+.vg-disc.is-last::after {
+    content: ""; position: absolute; width: 14%; height: 14%; border-radius: 50%;
+    background: color-mix(in srgb, var(--bg) 60%, transparent);
+}
+.vg-disc--ghost { top: 0; height: 100%; width: calc(100% / 7); opacity: .5; transition: left .12s var(--ease), opacity .2s; }
+.vg-disc--ghost.is-hidden { opacity: 0; }
+
+.vg-bar { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
+.vg-turn { flex: 1; min-width: 12rem; margin: 0; font-weight: 600; color: var(--text-muted); }
+.vg-turn b { color: var(--text); }
+.vg-dot { display: inline-block; width: .85em; height: .85em; border-radius: 50%; vertical-align: -.08em; background: var(--rc); margin: 0 .15em; }
+.vg-dot.is-p2 { background: var(--warning); }
+.vg-turn.is-result { color: var(--text); font-size: 1.05rem; }
+.vg-turn.is-win b { color: var(--success); }
+.vg-turn.is-loss b { color: var(--danger); }
+.vg-dots::after { content: "…"; display: inline-block; animation: blink 1s step-end infinite; }
+#btn-new.is-pulse { --pc: var(--rc); animation: pulse 1.6s infinite; border-color: var(--rc); }

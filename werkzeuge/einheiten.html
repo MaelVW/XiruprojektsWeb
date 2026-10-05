@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Einheitenrechner · Xiruprojekts</title>
+    <meta name="description" content="Einheitenrechner für PC-Leute: GB vs. GiB, Mbit/s in MB/s, Downloadzeit, Stromkosten in Rappen, Temperatur, Hz in Millisekunden und PPI-Rechner für Monitore.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="css/werkzeuge.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <style>
+        .eh-cols { display: grid; gap: 1rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        @media (max-width: 700px) { .eh-cols { grid-template-columns: 1fr; } }
+        .eh-cols h4 { font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--text-faint); margin-bottom: .5rem; }
+        .eh-input-card { position: sticky; top: calc(var(--header-h) + .75rem); }
+        .eh-tb { display: grid; gap: 1rem; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; }
+        @media (max-width: 700px) { .eh-tb { grid-template-columns: 1fr; } .eh-input-card { position: static; } }
+        .eh-arrow { font-size: 1.6rem; color: var(--rc); text-align: center; }
+        .eh-loss { font-size: .9rem; color: var(--text-muted); }
+        .eh-dev { width: 100%; border-collapse: collapse; font-size: .92rem; }
+        .eh-dev th { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); text-align: left; padding: .35rem .4rem; font-weight: 700; }
+        .eh-dev td { padding: .3rem .4rem; vertical-align: middle; }
+        .eh-dev input { width: 100%; font: 400 .95rem var(--font); color: var(--text); background: var(--bg-2); border: 1px solid var(--border-strong); border-radius: 6px; padding: .45rem .55rem; }
+        .eh-dev input:focus { outline: none; border-color: var(--rc); box-shadow: 0 0 0 3px color-mix(in srgb, var(--rc) 22%, transparent); }
+        .eh-dev .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+        .eh-dev td.w-n { width: 6.5rem; }
+        .eh-dev tfoot td { border-top: 1px solid var(--border); font-weight: 800; padding-top: .6rem; }
+        .eh-dev-wrap { overflow-x: auto; }
+        .eh-dev-wrap table { min-width: 560px; }
+        .eh-temp { display: grid; gap: 1rem; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        @media (max-width: 700px) { .eh-temp { grid-template-columns: 1fr; } }
+        .eh-temp .field input { font: 700 1.4rem var(--mono) !important; }
+        .eh-thermo { height: 14px; border-radius: 99px; margin-top: 1rem; position: relative;
+            background: linear-gradient(90deg, #60a5fa, #5eead4 30%, #facc15 60%, #fb923c 80%, #f87171); }
+        .eh-thermo i { position: absolute; top: -5px; width: 4px; height: 24px; border-radius: 2px; background: var(--text); left: var(--p, 0%); transform: translateX(-50%); transition: left .3s var(--ease); box-shadow: 0 0 0 2px var(--bg); }
+        .eh-hz tbody tr { cursor: pointer; }
+        .eh-hz tbody tr.is-sel td { background: color-mix(in srgb, var(--rc) 14%, transparent); font-weight: 700; }
+        .eh-res-big { display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem 1rem; }
+        .eh-screen { aspect-ratio: var(--ar, 16/9); max-width: 100%; max-height: 220px; margin: 1rem auto 0; border: 3px solid var(--border-strong); border-radius: 8px;
+            background: linear-gradient(135deg, color-mix(in srgb, var(--rc) 22%, var(--surface-2)), var(--surface-2)); display: grid; place-items: center; position: relative; transition: aspect-ratio .3s; }
+        .eh-screen span { font: 700 .85rem var(--mono); color: var(--text-muted); }
+        .eh-screen::after { content: ""; position: absolute; bottom: -14px; left: 50%; width: 22%; height: 10px; transform: translateX(-50%); background: var(--border-strong); border-radius: 0 0 6px 6px; }
+        .eh-x { display: inline-flex; align-items: center; gap: .4rem; }
+        .eh-x input { text-align: center; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">⚒ Werkzeugkasten</span>
+        <h1>Einheitenrechner</h1>
+        <p class="lead">Warum hat deine 1-TB-Platte nur 931 GB? Wie lange dauert der 150-GB-Download? Was kostet dein Gaming-PC im Jahr? Hier rechnest du live um – Komma oder Punkt, beides geht.</p>
+    </header>
+
+    <div class="tabs wz-tabs" id="tabs">
+        <button data-tab="daten"><span aria-hidden="true">💽</span> Datenmengen</button>
+        <button data-tab="rate"><span aria-hidden="true">⇅</span> Datenrate</button>
+        <button data-tab="strom"><span aria-hidden="true">⚡</span> Strom &amp; Kosten</button>
+        <button data-tab="temp"><span aria-hidden="true">🌡</span> Temperatur</button>
+        <button data-tab="freq"><span aria-hidden="true">〰</span> Frequenz</button>
+        <button data-tab="monitor"><span aria-hidden="true">▭</span> Zoll &amp; PPI</button>
+    </div>
+
+    <!-- ── Datenmengen ─────────────────────────────────────────────── -->
+    <section id="tab-daten" class="wz-panel">
+        <div class="wz-split">
+            <div class="stack">
+                <div class="card">
+                    <div class="field mb-0">
+                        <label for="d-val">Wert</label>
+                        <div class="wz-inline">
+                            <input id="d-val" type="text" inputmode="decimal" value="1" autocomplete="off">
+                            <select id="d-unit" aria-label="Einheit"></select>
+                        </div>
+                    </div>
+                </div>
+                <div class="eh-cols">
+                    <div><h4>Dezimal (SI) – Hersteller, macOS</h4><div class="wz-rows" id="d-dec"></div></div>
+                    <div><h4>Binär (IEC) – Windows, RAM</h4><div class="wz-rows" id="d-bin"></div></div>
+                </div>
+                <p class="hint">Tipp: Zeile anklicken kopiert den Wert.</p>
+            </div>
+            <aside class="stack">
+                <div class="card card--accent">
+                    <h3>Warum „nur“ 931 GB?</h3>
+                    <div class="field">
+                        <label for="tb-val">Auf der Verpackung steht</label>
+                        <div class="wz-inline">
+                            <input id="tb-val" type="text" inputmode="decimal" value="1" autocomplete="off">
+                            <select id="tb-unit" aria-label="Einheit"><option>GB</option><option selected>TB</option></select>
+                        </div>
+                    </div>
+                    <p class="label mb-0">Windows zeigt dir</p>
+                    <p class="wz-big mb-0" id="tb-out">931.32 <small>GB</small></p>
+                    <p class="eh-loss mt-1" id="tb-loss"></p>
+                    <hr style="margin:1rem 0">
+                    <p class="small muted">Hersteller rechnen dezimal: <strong>1 TB = 1’000’000’000’000 Byte</strong>. Windows teilt aber durch 1024 × 1024 × 1024 und schreibt trotzdem „GB“ hin – eigentlich meint es <strong>GiB</strong> (Gibibyte). Es fehlt also nichts, es ist nur eine andere Einheit. Je grösser die Platte, desto grösser der Unterschied: bei GB 6,9 %, bei TB schon 9,1 %.</p>
+                </div>
+                <div class="card card--flat">
+                    <h3>Merkhilfe</h3>
+                    <ul class="small muted mb-0">
+                        <li><strong>b</strong> = Bit, <strong>B</strong> = Byte (8 Bit)</li>
+                        <li>k, M, G, T = 1000er-Schritte</li>
+                        <li>Ki, Mi, Gi, Ti = 1024er-Schritte</li>
+                        <li>RAM ist immer binär: „16 GB“ RAM sind 16 GiB.</li>
+                    </ul>
+                </div>
+            </aside>
+        </div>
+    </section>
+
+    <!-- ── Datenrate ───────────────────────────────────────────────── -->
+    <section id="tab-rate" class="wz-panel" hidden>
+        <div class="grid-2">
+            <div class="card">
+                <h3>Geschwindigkeit umrechnen</h3>
+                <div class="field">
+                    <label for="r-val">Wert</label>
+                    <div class="wz-inline">
+                        <input id="r-val" type="text" inputmode="decimal" value="100" autocomplete="off">
+                        <select id="r-unit" aria-label="Einheit"></select>
+                    </div>
+                </div>
+                <div class="wz-rows" id="r-out"></div>
+                <p class="hint mt-2">Internet-Anbieter werben in <strong>Mbit/s</strong>, Steam & Co. zeigen <strong>MB/s</strong>. Faustregel: Mbit/s ÷ 8 = MB/s. Aus „1 Gbit/s“ werden also höchstens 125 MB/s.</p>
+            </div>
+            <div class="card card--accent">
+                <h3>Wie lange dauert der Download?</h3>
+                <div class="field">
+                    <label for="dl-size">Dateigrösse</label>
+                    <div class="wz-inline">
+                        <input id="dl-size" type="text" inputmode="decimal" value="150" autocomplete="off">
+                        <select id="dl-size-unit" aria-label="Einheit der Dateigrösse"></select>
+                    </div>
+                    <div class="wz-chips mt-1" id="dl-size-chips"></div>
+                </div>
+                <div class="field">
+                    <label for="dl-speed">Leitung</label>
+                    <div class="wz-inline">
+                        <input id="dl-speed" type="text" inputmode="decimal" value="300" autocomplete="off">
+                        <select id="dl-speed-unit" aria-label="Einheit der Geschwindigkeit"></select>
+                    </div>
+                    <div class="wz-chips mt-1" id="dl-speed-chips"></div>
+                </div>
+                <div class="field">
+                    <label for="dl-eff">Realistische Auslastung: <output id="dl-eff-out">90 %</output></label>
+                    <input id="dl-eff" type="range" min="40" max="100" step="5" value="90">
+                    <small>WLAN, Server und Protokoll-Overhead fressen meist 5–20 %.</small>
+                </div>
+                <p class="label mb-0">Dauer</p>
+                <p class="wz-big mb-0" id="dl-out">–</p>
+                <p class="small muted mt-1" id="dl-extra"></p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── Strom & Kosten ──────────────────────────────────────────── -->
+    <section id="tab-strom" class="wz-panel" hidden>
+        <div class="card card--accent">
+            <div class="wz-head">
+                <h3>Was kostet dein Setup im Jahr?</h3>
+                <span class="spacer"></span>
+                <label class="eh-x small" for="s-price">Strompreis
+                    <input id="s-price" class="input" type="text" inputmode="decimal" value="30" style="width:5.5rem" autocomplete="off">
+                    Rp./kWh</label>
+            </div>
+            <div class="eh-dev-wrap">
+                <table class="eh-dev" id="s-table">
+                    <thead><tr><th>Gerät</th><th>Watt</th><th>Std./Tag</th><th>Tage/Woche</th><th class="num">kWh/Jahr</th><th class="num">CHF/Jahr</th><th><span class="sr-only">Entfernen</span></th></tr></thead>
+                    <tbody></tbody>
+                    <tfoot><tr><td colspan="4">Total</td><td class="num" id="s-kwh">–</td><td class="num" id="s-chf">–</td><td></td></tr></tfoot>
+                </table>
+            </div>
+            <div class="row mt-2">
+                <button class="btn btn--sm" type="button" id="s-add">+ Gerät</button>
+                <span class="small muted">Vorlagen:</span>
+                <div class="wz-chips" id="s-presets"></div>
+            </div>
+            <div class="wz-stats mt-3" id="s-stats"></div>
+            <p class="hint mt-2">In der Schweiz zahlst du typischerweise rund 30 Rp. pro kWh – genau steht’s auf deiner Stromrechnung (je nach Gemeinde ca. 20–40 Rp.). Deine Geräteliste wird lokal gespeichert.</p>
+        </div>
+        <div class="grid-2 mt-3">
+            <div class="card">
+                <h3>Leistung umrechnen</h3>
+                <div class="field">
+                    <div class="wz-inline">
+                        <input id="p-val" type="text" inputmode="decimal" value="450" aria-label="Leistung" autocomplete="off">
+                        <select id="p-unit" aria-label="Einheit"></select>
+                    </div>
+                </div>
+                <div class="wz-rows" id="p-out"></div>
+            </div>
+            <div class="card">
+                <h3>Energie umrechnen</h3>
+                <div class="field">
+                    <div class="wz-inline">
+                        <input id="e-val" type="text" inputmode="decimal" value="1" aria-label="Energie" autocomplete="off">
+                        <select id="e-unit" aria-label="Einheit"></select>
+                    </div>
+                </div>
+                <div class="wz-rows" id="e-out"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── Temperatur ──────────────────────────────────────────────── -->
+    <section id="tab-temp" class="wz-panel" hidden>
+        <div class="card">
+            <div class="eh-temp">
+                <div class="field mb-0"><label for="t-c">Celsius (°C)</label><input id="t-c" type="text" inputmode="decimal" value="21" autocomplete="off"></div>
+                <div class="field mb-0"><label for="t-f">Fahrenheit (°F)</label><input id="t-f" type="text" inputmode="decimal" autocomplete="off"></div>
+                <div class="field mb-0"><label for="t-k">Kelvin (K)</label><input id="t-k" type="text" inputmode="decimal" autocomplete="off"></div>
+            </div>
+            <div class="eh-thermo" aria-hidden="true"><i id="t-mark"></i></div>
+            <p class="form-msg" id="t-msg" aria-live="polite"></p>
+            <div class="wz-chips mt-1" id="t-chips"></div>
+        </div>
+        <div class="card card--flat mt-3">
+            <h3>Für Hardware-Leute</h3>
+            <ul class="small muted mb-0">
+                <li>CPU im Leerlauf: meist 30–50 °C, unter Last 60–90 °C. Moderne CPUs takten bewusst bis ans Limit (Tj max ca. 95–105 °C).</li>
+                <li>Grafikkarten: 60–80 °C unter Last sind normal. Der „Hotspot“ liegt oft 10–20 °C höher.</li>
+                <li>SSDs (NVMe) drosseln ab etwa 70–80 °C – ein Kühlkörper hilft.</li>
+                <li>°F → °C: (F − 32) × 5/9 · K = °C + 273,15</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ── Frequenz ────────────────────────────────────────────────── -->
+    <section id="tab-freq" class="wz-panel" hidden>
+        <div class="grid-2">
+            <div class="card card--accent">
+                <h3>Frequenz ↔ Periodendauer</h3>
+                <div class="field">
+                    <label for="f-val">Frequenz</label>
+                    <div class="wz-inline">
+                        <input id="f-val" type="text" inputmode="decimal" value="144" autocomplete="off">
+                        <select id="f-unit" aria-label="Einheit der Frequenz"></select>
+                    </div>
+                </div>
+                <div class="eh-arrow" aria-hidden="true">⇅</div>
+                <div class="field">
+                    <label for="T-val">Periodendauer (Zeit pro Bild/Takt)</label>
+                    <div class="wz-inline">
+                        <input id="T-val" type="text" inputmode="decimal" autocomplete="off">
+                        <select id="T-unit" aria-label="Einheit der Zeit"></select>
+                    </div>
+                </div>
+                <p class="small muted mb-0" id="f-explain"></p>
+            </div>
+            <div class="card">
+                <h3>Bildwiederholraten</h3>
+                <div class="table-wrap">
+                    <table class="table eh-hz" id="hz-table">
+                        <thead><tr><th>Hz / FPS</th><th class="num">ms pro Bild</th><th class="num">Bilder in 10 s</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <p class="hint mt-1">Zeile anklicken übernimmt den Wert. Echte Hz deines Monitors misst der <a href="hz-test.html">Hz-Test</a>.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── Zoll & PPI ──────────────────────────────────────────────── -->
+    <section id="tab-monitor" class="wz-panel" hidden>
+        <div class="grid-2">
+            <div class="card card--accent">
+                <h3>PPI-Rechner</h3>
+                <div class="field">
+                    <label for="m-w">Auflösung (Breite × Höhe in Pixel)</label>
+                    <div class="eh-x">
+                        <input id="m-w" class="input" type="text" inputmode="numeric" value="2560" aria-label="Breite in Pixel" autocomplete="off">
+                        <span aria-hidden="true">×</span>
+                        <input id="m-h" class="input" type="text" inputmode="numeric" value="1440" aria-label="Höhe in Pixel" autocomplete="off">
+                    </div>
+                    <div class="wz-chips mt-1" id="m-res-chips"></div>
+                </div>
+                <div class="field">
+                    <label for="m-d">Diagonale (Zoll)</label>
+                    <input id="m-d" type="text" inputmode="decimal" value="27" autocomplete="off">
+                    <div class="wz-chips mt-1" id="m-d-chips"></div>
+                </div>
+                <div class="eh-res-big">
+                    <p class="wz-big mb-0" id="m-ppi">–</p>
+                    <span class="badge badge--accent" id="m-verdict"></span>
+                </div>
+                <div class="eh-screen" id="m-screen"><span id="m-screen-label"></span></div>
+            </div>
+            <div class="stack">
+                <div class="card">
+                    <h3>Details</h3>
+                    <dl class="wz-kv" id="m-details"></dl>
+                </div>
+                <div class="card">
+                    <h3>Zoll ↔ Zentimeter</h3>
+                    <div class="eh-x" style="width:100%">
+                        <input id="l-in" class="input" type="text" inputmode="decimal" value="27" aria-label="Zoll" autocomplete="off"><span class="wz-unit">″ =</span>
+                        <input id="l-cm" class="input" type="text" inputmode="decimal" aria-label="Zentimeter" autocomplete="off"><span class="wz-unit">cm</span>
+                    </div>
+                    <p class="hint mt-1">1 Zoll = 2,54 cm. Die Diagonale wird immer über die sichtbare Fläche gemessen.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+<script src="js/wz.js"></script>
+<script src="js/einheiten.js"></script>
+</body>
+</html>

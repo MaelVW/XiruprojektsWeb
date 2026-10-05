@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Floppy Flug · Xiruprojekts</title>
+    <meta name="description" content="Floppy Flug – eine Diskette lernt fliegen, zwischen Laufwerksschächten und Flachbandkabeln hindurch.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/arcade.js"></script>
+    <style>
+        #cv { width: min(100%, calc((100vh - 170px) * 0.75)); cursor: pointer; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">▶ Spielhalle · Action</span>
+        <h1>Floppy Flug</h1>
+        <p class="lead">Eine 3,5-Zoll-Diskette hat beschlossen, dass 1,44 MB nicht alles im Leben sind. Hilf ihr, zwischen Laufwerksschächten und Flachbandkabeln hindurchzuflattern – und schnapp dir unterwegs ein paar Bits.</p>
+    </header>
+
+    <div class="game">
+        <div>
+            <div class="game__hud" id="hud"></div>
+            <div class="game__stage" id="stage">
+                <canvas id="cv"></canvas>
+                <div class="game__overlay" id="ov"></div>
+            </div>
+            <div class="touch-pad">
+                <button data-key="p" aria-label="Pause">⏸</button>
+            </div>
+        </div>
+        <aside class="game__side">
+            <div class="card">
+                <h3>Steuerung</h3>
+                <ul class="keys-help">
+                    <li><kbd>Leertaste</kbd>, <kbd>↑</kbd> oder <kbd>W</kbd> – flattern</li>
+                    <li>Klick oder Tippen aufs Spielfeld – flattern</li>
+                    <li><kbd>P</kbd> / <kbd>Esc</kbd> – Pause</li>
+                    <li>Jedes Hindernis gibt einen Punkt, jedes eingesammelte Bit auch.</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Modus</h3>
+                <div class="row" id="modes">
+                    <button class="chip is-active" data-mode="normal">Normal</button>
+                    <button class="chip" data-mode="turbo">Turbo</button>
+                </div>
+                <p class="small muted mt-2" id="mode-desc">Gemütliches Tempo, das langsam anzieht.</p>
+            </div>
+            <div class="card">
+                <h3>Rekord</h3>
+                <p class="stat__value" id="best">–</p>
+            </div>
+        </aside>
+    </div>
+</main>
+<script src="js/floppy-flug.js"></script>
+</body>
+</html>

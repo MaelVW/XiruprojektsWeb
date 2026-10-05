@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beispiel-Builds · Xiruprojekts</title>
+    <meta name="description" content="Beispiel-Zusammenstellungen vom Einsteiger-Gaming-PC bis zur Workstation – mit Begründung.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/hardware-data.js"></script>
+    <style>
+        .build { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 1.5rem; }
+        @media (max-width: 860px) { .build { grid-template-columns: 1fr; } }
+        .build + .build { margin-top: 1.5rem; }
+        .build__parts { list-style: none; padding: 0; margin: 0; }
+        .build__parts li { display: grid; grid-template-columns: 2rem 7.5rem 1fr; gap: .5rem; padding: .55rem 0; border-bottom: 1px dashed var(--border); align-items: baseline; }
+        .build__parts li:last-child { border-bottom: 0; }
+        .build__parts .k { color: var(--text-muted); font-size: .85rem; font-weight: 600; }
+        .build__icon { font-size: 2.6rem; }
+        .build__meta { display: flex; flex-wrap: wrap; gap: .4rem; margin: .5rem 0 1rem; }
+        .tabs { margin-bottom: 1.5rem; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">▣ Hardware-Archiv</span>
+        <h1>Beispiel-Builds</h1>
+        <p class="lead">Zusammenstellungen, die gut zueinander passen – mit Teilen aus dem Archiv und einer kurzen Begründung.
+            Preise ändern sich ständig, darum nennen wir nur die Klasse und die UVP zum Marktstart der Hauptteile.</p>
+    </header>
+    <div class="tabs" role="tablist" id="tabs"></div>
+    <div id="builds"></div>
+    <div class="callout mt-4">Prüfe vor dem Kauf immer: passt der Sockel (<a href="sockel.html">Sockel-Kompatibilität</a>),
+        reicht das Netzteil (<a href="netzteil-rechner.html">Netzteil-Rechner</a>) und passen CPU und GPU zusammen (<a href="balance.html">Balance-Check</a>)?</div>
+</main>
+<script>
+XIRU.ready(function () {
+    const hw = XIRU.hw || {};
+    const find = (cat, id) => (hw[cat] || []).find(x => x.id === id);
+    const BUILDS = [
+        { id: 'einstieg', icon: '🌱', name: 'Einsteiger-Gaming', klasse: 'Einsteiger', ziel: '1080p, hohe Details',
+          cpu: 'ryzen-5-7600x', gpu: 'arc-b580', chipset: 'amd-b650', ram: 'ddr5', ramText: '2 × 16 GB DDR5-6000', storage: 'nvme-gen4', storageText: '1 TB NVMe (PCIe 4.0)', psu: '80-plus-bronze', psuText: '550 W, 80 PLUS Bronze oder besser',
+          why: 'Der Einstieg in AM5 lässt Luft für spätere CPU-Upgrades. Die Arc B580 bringt 12 GB Grafikspeicher zum kleinen Preis – genug für aktuelle Spiele in 1080p.' },
+        { id: 'mittel', icon: '⚔', name: 'Allrounder', klasse: 'Mittelklasse', ziel: '1440p, hohe Details, 100+ FPS',
+          cpu: 'ryzen-7-7800x3d', gpu: 'rtx-4070-super', chipset: 'amd-b650', ram: 'ddr5', ramText: '2 × 16 GB DDR5-6000 CL30', storage: 'nvme-gen4', storageText: '2 TB NVMe (PCIe 4.0)', psu: '80-plus-gold', psuText: '750 W, 80 PLUS Gold',
+          why: 'Der 7800X3D ist sparsam und in Spielen sehr schnell, die 4070 Super bringt viel Leistung pro Watt. Ideal für 1440p-Monitore mit hoher Bildwiederholrate.' },
+        { id: 'team-rot', icon: '🔥', name: 'Team Rot', klasse: 'Mittelklasse', ziel: '1440p, viel VRAM',
+          cpu: 'ryzen-7-9700x', gpu: 'rx-9070-xt', chipset: 'amd-b850', ram: 'ddr5', ramText: '2 × 16 GB DDR5-6000', storage: 'nvme-gen4', storageText: '2 TB NVMe (PCIe 4.0)', psu: '80-plus-gold', psuText: '750–850 W, 80 PLUS Gold',
+          why: 'Komplett AMD: 16 GB Grafikspeicher und FSR 4 auf der RX 9070 XT, dazu ein sparsamer Zen-5-Prozessor auf einem modernen B850-Board.' },
+        { id: 'oberklasse', icon: '🚀', name: 'High-End-Gaming', klasse: 'Oberklasse', ziel: '4K oder 1440p mit sehr vielen FPS',
+          cpu: 'ryzen-7-9800x3d', gpu: 'rtx-5080', chipset: 'amd-x870', ram: 'ddr5', ramText: '2 × 16 GB oder 2 × 32 GB DDR5-6000 CL30', storage: 'nvme-gen4', storageText: '2–4 TB NVMe (PCIe 4.0 reicht für Spiele)', psu: '80-plus-gold', psuText: '850 W, 80 PLUS Gold, ATX 3.1',
+          why: 'Der schnellste Gaming-Prozessor im Archiv mit einer RTX 5080. Eine PCIe-5.0-SSD bringt in Spielen kaum Vorteile – das Geld steckt man besser in die Grafikkarte.' },
+        { id: 'schaffer', icon: '🎬', name: 'Streaming & Schnitt', klasse: 'Workstation', ziel: 'Videoschnitt, Rendern, nebenbei Gaming',
+          cpu: 'ryzen-9-9950x', gpu: 'rtx-4070-super', chipset: 'amd-x870e', ram: 'ddr5', ramText: '2 × 32 GB DDR5-6000', storage: 'nvme-gen5', storageText: '2 TB NVMe (PCIe 5.0) + 4 TB NVMe (PCIe 4.0) für Projekte', psu: '80-plus-platinum', psuText: '850 W, 80 PLUS Platinum',
+          why: '16 Kerne für Renderings und Encodes, viel RAM für grosse Projekte und eine NVIDIA-Karte mit gutem Hardware-Encoder für Streams.' },
+        { id: 'intel', icon: '🔷', name: 'Team Blau', klasse: 'Mittelklasse', ziel: '1440p, Gaming & Arbeiten',
+          cpu: 'core-ultra-7-265k', gpu: 'rtx-5070-ti', chipset: 'intel-z890', ram: 'ddr5', ramText: '2 × 16 GB DDR5-6400', storage: 'nvme-gen4', storageText: '2 TB NVMe (PCIe 4.0)', psu: '80-plus-gold', psuText: '850 W, 80 PLUS Gold, ATX 3.1',
+          why: 'Viele Kerne für Mehrkern-Lasten und eine starke RTX 5070 Ti mit 16 GB. Z890 erlaubt Übertakten und bietet Thunderbolt.' },
+        { id: 'nostalgie', icon: '💾', name: 'Retro-Zeitkapsel', klasse: 'Museum', ziel: 'Nostalgie pur',
+          cpu: 'core-i7-2600k', gpu: 'gtx-1080-ti', chipset: null, ram: 'ddr3', ramText: '4 × 4 GB DDR3-1600', storage: 'diskette-3-5', storageText: '3,5-Zoll-Diskettenlaufwerk (unverzichtbar) + SATA-SSD', psu: '80-plus-bronze', psuText: '650 W, 80 PLUS Bronze',
+          why: 'Zwei Legenden in einem Gehäuse. Dieser PC würde heute noch erstaunlich viele Spiele schaffen. Das Diskettenlaufwerk ist natürlich für den Floppy Hub.', egg: true }
+    ];
+    const link = (cat, id, text) => { const x = find(cat, id); return x ? '<a href="' + XIRU.url(x.url) + '">' + XIRU.esc(text || x.name) + '</a>' : XIRU.esc(text || '–'); };
+
+    XIRU.$('#tabs').innerHTML = BUILDS.map((b, i) => '<button role="tab" aria-selected="' + (i === 0) + '" data-b="' + b.id + '">' + b.icon + ' ' + XIRU.esc(b.name) + '</button>').join('');
+    function show(id) {
+        const b = BUILDS.find(x => x.id === id) || BUILDS[0];
+        XIRU.$$('#tabs button').forEach(t => t.setAttribute('aria-selected', t.dataset.b === b.id));
+        const cpu = find('cpu', b.cpu), gpu = find('gpu', b.gpu);
+        const sum = (cpu ? cpu.price : 0) + (gpu ? gpu.price : 0);
+        const load = (cpu ? (cpu.tdpMax || Math.round(cpu.tdp * 1.35)) : 0) + (gpu ? gpu.tdp : 0) + 90;
+        XIRU.$('#builds').innerHTML = '<article class="build card" style="animation:fadeUp .4s var(--ease)">' +
+            '<div><div class="build__icon">' + b.icon + '</div><h2 class="mt-1">' + XIRU.esc(b.name) + '</h2>' +
+            '<div class="build__meta"><span class="badge badge--accent">' + XIRU.esc(b.klasse) + '</span><span class="badge">' + XIRU.esc(b.ziel) + '</span></div>' +
+            '<p>' + XIRU.esc(b.why) + '</p>' +
+            '<div class="grid grid--sm mt-2"><div class="stat"><span class="stat__value">' + XIRU.fmt(sum) + '</span><span class="stat__label">USD UVP (CPU + GPU)</span></div>' +
+            '<div class="stat"><span class="stat__value">~' + load + ' W</span><span class="stat__label">Spitzenlast</span></div></div>' +
+            '<div class="row mt-3"><a class="btn btn--sm" href="balance.html">Balance prüfen</a><a class="btn btn--sm" href="netzteil-rechner.html">Netzteil rechnen</a></div></div>' +
+            '<ul class="build__parts">' +
+            '<li><span>⬛</span><span class="k">Prozessor</span><span>' + link('cpu', b.cpu) + '</span></li>' +
+            '<li><span>▤</span><span class="k">Grafikkarte</span><span>' + link('gpu', b.gpu) + '</span></li>' +
+            '<li><span>▦</span><span class="k">Mainboard</span><span>' + (b.chipset ? 'Board mit ' + link('chipset', b.chipset) : 'Ein altes Z68- oder P67-Board aus dem Keller') + '</span></li>' +
+            '<li><span>▥</span><span class="k">Arbeitsspeicher</span><span>' + link('memory', b.ram, b.ramText) + '</span></li>' +
+            '<li><span>💾</span><span class="k">Speicher</span><span>' + link('storage', b.storage, b.storageText) + '</span></li>' +
+            '<li><span>⚡</span><span class="k">Netzteil</span><span>' + link('psu', b.psu, b.psuText) + '</span></li>' +
+            '<li><span>❄</span><span class="k">Kühlung</span><span>' + (load > 400 ? 'Guter Tower-Luftkühler oder 280/360-mm-AiO, Gehäuse mit gutem Luftstrom' : 'Solider Tower-Luftkühler, 2–3 Gehäuselüfter') + '</span></li>' +
+            '</ul></article>';
+        if (b.egg) XIRU.egg('hw-zeitreise-pc');
+        XIRU.save('builds-tab', b.id);
+    }
+    XIRU.$('#tabs').addEventListener('click', e => { const t = e.target.closest('[data-b]'); if (t) show(t.dataset.b); });
+    show(XIRU.load('builds-tab') || 'einstieg');
+});
+</script>
+</body>
+</html>

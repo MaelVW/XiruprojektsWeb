@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Glossar · Xiruprojekts</title>
+    <meta name="description" content="Hardware-Fachbegriffe von AVX bis 12V-2x6 verständlich erklärt.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <style>
+        .abc { display: flex; flex-wrap: wrap; gap: .3rem; margin-bottom: 1.5rem; }
+        .abc a { width: 2rem; height: 2rem; display: grid; place-items: center; border-radius: 8px; background: var(--surface); border: 1px solid var(--border); font-weight: 700; color: var(--text); }
+        .abc a:hover { border-color: var(--rc); color: var(--rc); }
+        .abc span { width: 2rem; height: 2rem; display: grid; place-items: center; color: var(--text-faint); }
+        .gl-letter { font-size: 1.6rem; color: var(--rc); margin: 2rem 0 .75rem; scroll-margin-top: calc(var(--header-h) + 1rem); }
+        .gl { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); }
+        .gl dl { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1rem 1.15rem; scroll-margin-top: calc(var(--header-h) + 1rem); }
+        .gl dl:target { border-color: var(--rc); box-shadow: var(--glow); }
+        .gl dt { font-weight: 800; margin-bottom: .3rem; }
+        .gl dd { color: var(--text-muted); font-size: .93rem; }
+        .gl dd a { font-weight: 600; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">▣ Hardware-Archiv</span>
+        <h1>Glossar</h1>
+        <p class="lead">Fachbegriffe aus den Datenblättern – kurz und ohne Marketing-Sprech erklärt.</p>
+    </header>
+    <div class="row mb-2">
+        <input class="input" type="search" id="gl-q" placeholder="Begriff suchen …" style="max-width:360px" aria-label="Begriff suchen">
+        <span class="muted small" id="gl-count"></span>
+    </div>
+    <nav class="abc" id="abc" aria-label="Alphabet"></nav>
+    <div id="gl"></div>
+</main>
+<script>
+XIRU.ready(function () {
+    const T = [
+        ['12V-2x6', 'Stromstecker für Grafikkarten mit bis zu 600 W. Überarbeitete Version des 12VHPWR-Steckers mit kürzeren Signal-Pins, damit nur vollständig eingesteckte Kabel volle Leistung liefern.', 'netzteile/atx-3-1.html'],
+        ['80 PLUS', 'Siegel für Netzteile, das eine Mindest-Effizienz bei 20, 50 und 100 % Last garantiert. Stufen: Bronze, Silver, Gold, Platinum, Titanium.', 'netzteile.html'],
+        ['AVX-512', 'Befehlssatz-Erweiterung, mit der ein Prozessor 512 Bit Daten gleichzeitig verarbeitet. Nützlich für Wissenschaft, Video und KI, in Spielen kaum relevant.'],
+        ['Bandbreite', 'Wie viele Daten pro Sekunde zwischen Speicher und Chip fliessen. Bei Grafikkarten: Datenrate pro Pin × Busbreite ÷ 8, angegeben in GB/s.'],
+        ['Basistakt', 'Garantierte Taktfrequenz eines Prozessors unter Dauerlast innerhalb der TDP. In der Praxis takten moderne Chips fast immer höher.'],
+        ['Boost-Takt', 'Höchste Taktfrequenz, die ein Chip kurzzeitig erreicht – meist nur auf wenigen Kernen und wenn Temperatur und Strom es zulassen.'],
+        ['Bottleneck', 'Engpass: Das langsamste Bauteil bremst das ganze System. Bei Spielen meist CPU oder GPU – je nach Auflösung.', 'balance.html'],
+        ['Cache', 'Kleiner, sehr schneller Zwischenspeicher direkt im Prozessor. L1 ist am schnellsten und kleinsten, L3 am grössten und wird oft von allen Kernen geteilt.'],
+        ['Chiplet', 'Ein Prozessor aus mehreren kleineren Chips statt einem grossen. Günstiger herzustellen und flexibel kombinierbar – genutzt bei Ryzen, Radeon RX 7900 und Core Ultra.'],
+        ['Chipsatz', 'Baustein auf dem Mainboard, der zusätzliche Anschlüsse (USB, SATA, weitere PCIe-Slots) bereitstellt und festlegt, ob Übertakten erlaubt ist.', 'chipsatz.html'],
+        ['CUDA-Kerne', 'NVIDIAs Name für die Recheneinheiten (Shader) seiner Grafikkarten. AMD nennt sie Stream-Prozessoren.'],
+        ['DDR5', 'Aktuelle Arbeitsspeicher-Generation für Desktop-PCs: höhere Datenraten, zwei Subkanäle pro Modul und eigener Spannungswandler auf dem Modul.', 'speicher/ddr5.html'],
+        ['DLSS', 'NVIDIAs KI-Upscaling: Das Spiel wird in niedrigerer Auflösung berechnet und per KI hochgerechnet. Neuere Versionen erzeugen auch Zwischenbilder.'],
+        ['E-Kerne', 'Effizienzkerne bei Intel: kleiner und sparsamer als P-Kerne, ideal für Hintergrundaufgaben und Mehrkern-Lasten.'],
+        ['Easter Egg', 'Ein verstecktes Geheimnis in Software, Spielen oder Websites. Wie diesem Glossar-Eintrag hier. Klick mal drauf.', null, 'p-glossar'],
+        ['ECC', 'Fehlerkorrektur im Speicher. DDR5 hat On-Die-ECC innerhalb der Chips; echtes ECC über das ganze Modul gibt es bei Server-Speicher.'],
+        ['EXPO / XMP', 'Übertaktungsprofile für Arbeitsspeicher (EXPO bei AMD, XMP bei Intel). Ein Klick im BIOS und der RAM läuft mit der beworbenen Geschwindigkeit.'],
+        ['Fertigung (nm)', 'Bezeichnung des Herstellungsverfahrens, z. B. „5 nm". Kleinere Zahlen bedeuten meist dichtere, sparsamere Chips – die Zahl ist heute aber eher ein Name als ein Mass.'],
+        ['FPS', 'Bilder pro Sekunde (frames per second). Wie flüssig ein Spiel läuft. 60 FPS gelten als flüssig, kompetitive Spieler wollen 144 und mehr.'],
+        ['Frame Generation', 'Die Grafikkarte erzeugt per KI zusätzliche Zwischenbilder. Mehr FPS auf dem Zähler, aber nicht schnellere Reaktion auf Eingaben.'],
+        ['FSR', 'AMDs Upscaling-Technik (FidelityFX Super Resolution). Läuft auf vielen Grafikkarten; FSR 4 nutzt erstmals KI und braucht RDNA 4.'],
+        ['GDDR', 'Grafikspeicher, direkt neben der GPU verlötet. GDDR6 und GDDR7 sind aktuell; GDDR7 nutzt PAM3-Signale für mehr Tempo.', 'speicher/gddr7.html'],
+        ['HBM', 'High Bandwidth Memory: übereinandergestapelte Speicherchips mit extrem breitem Interface. Teuer, darum vor allem in KI-Beschleunigern.', 'speicher/hbm3.html'],
+        ['Hyper-Threading / SMT', 'Ein Kern bearbeitet zwei Threads gleichzeitig und nutzt so Leerlauf besser aus. Intel nennt es Hyper-Threading, AMD SMT.'],
+        ['iGPU', 'Integrierte Grafik im Prozessor. Reicht für Desktop und Video, für anspruchsvolle Spiele braucht man eine Grafikkarte.'],
+        ['Infinity Cache', 'Grosser Zwischenspeicher auf AMD-Grafikchips. Er gleicht ein schmaleres Speicherinterface aus.'],
+        ['IPC', 'Instructions per Clock – wie viel Arbeit ein Kern pro Takt erledigt. Neue Architekturen steigern vor allem die IPC.'],
+        ['Latenz', 'Verzögerung, bis eine Antwort kommt. Beim RAM in Nanosekunden, bei SSDs in Mikrosekunden, bei Festplatten in Millisekunden.'],
+        ['M.2', 'Kleiner Steckplatz für SSDs auf dem Mainboard. Kann SATA oder NVMe über PCIe sprechen – meistens NVMe.'],
+        ['Mainboard', 'Die Hauptplatine: verbindet CPU, RAM, Grafikkarte, Laufwerke und Anschlüsse. Der Sockel bestimmt, welche CPU passt.', 'sockel.html'],
+        ['MT/s', 'Megatransfers pro Sekunde – die echte Datenrate von Arbeitsspeicher. „DDR5-6000" bedeutet 6000 MT/s (oft fälschlich als MHz bezeichnet).'],
+        ['NVMe', 'Protokoll für schnelle SSDs über PCIe. Viel schneller als SATA, weil es für Flash-Speicher entwickelt wurde.', 'laufwerke/nvme-gen4.html'],
+        ['Netzteil', 'Wandelt Wechselstrom aus der Steckdose in die Gleichspannungen für den PC um. Qualität und Effizienz sind wichtiger als möglichst viele Watt.', 'netzteil-rechner.html'],
+        ['P-Kerne', 'Performance-Kerne bei Intel: gross, schnell, mit Fokus auf Single-Thread-Leistung und Spiele.'],
+        ['PCIe', 'Schnittstelle für Grafikkarten und SSDs. Jede Generation verdoppelt ungefähr die Geschwindigkeit pro Lane (3.0 → 4.0 → 5.0).'],
+        ['PMIC', 'Power Management IC: Spannungswandler direkt auf DDR5-Modulen.'],
+        ['RAM', 'Arbeitsspeicher: kurzfristiger Speicher für laufende Programme. Wird beim Ausschalten gelöscht. 16 GB sind Minimum, 32 GB komfortabel für Gaming.'],
+        ['Raytracing', 'Berechnet Licht, Schatten und Spiegelungen physikalisch korrekt über Lichtstrahlen. Sieht toll aus, kostet aber viel Leistung.'],
+        ['ReBAR', 'Resizable BAR: Die CPU kann den ganzen Grafikspeicher auf einmal ansprechen. Bringt in manchen Spielen etwas mehr Leistung; für Intel Arc fast Pflicht.'],
+        ['SATA', 'Ältere Schnittstelle für Festplatten und SSDs, maximal etwa 550 MB/s. Für Datengräber noch völlig ok.', 'laufwerke/sata-ssd.html'],
+        ['Shader', 'Kleine Recheneinheiten der Grafikkarte, die Pixel, Licht und Effekte berechnen. Mehr Shader heisst nicht automatisch schneller – die Architektur zählt.'],
+        ['Sockel', 'Die Fassung auf dem Mainboard, in die der Prozessor kommt. AM5, LGA1700, LGA1851 – nur passende CPUs funktionieren.', 'sockel.html'],
+        ['SSD', 'Solid State Drive: Datenträger mit Flash-Speicher, ohne bewegliche Teile. Viel schneller und robuster als eine Festplatte.'],
+        ['TDP / TBP', 'Thermal Design Power (CPU) bzw. Total Board Power (Grafikkarte): die Wärmeleistung, auf die Kühlung und Netzteil ausgelegt sein sollten. Kurzzeitig kann der Verbrauch höher sein.'],
+        ['Thermal Throttling', 'Wird ein Chip zu heiss, senkt er automatisch den Takt. Gute Kühlung verhindert das.'],
+        ['Thunderbolt / USB4', 'Sehr schnelle USB-C-Schnittstellen mit bis zu 40 Gbit/s (Thunderbolt 5 / USB4 v2: mehr). Können Bildschirme, Daten und Strom über ein Kabel übertragen.'],
+        ['Übertakten', 'Den Chip schneller laufen lassen als ab Werk vorgesehen. Bringt Leistung, kostet Strom und Wärme – und braucht oft ein passendes Mainboard.'],
+        ['Undervolting', 'Gleicher Takt mit weniger Spannung. Spart Strom und Wärme, oft ohne Leistungsverlust. Das Gegenteil vom klassischen Übertakten.'],
+        ['V-Cache (3D)', 'AMDs gestapelter Zusatz-Cache auf Ryzen-Prozessoren mit „X3D". Bringt in vielen Spielen deutlich mehr FPS.', 'cpu/ryzen-7-9800x3d.html'],
+        ['VRAM', 'Video-RAM: der Speicher der Grafikkarte für Texturen und Bilddaten. Zu wenig VRAM führt zu Rucklern oder unscharfen Texturen.'],
+        ['VRM', 'Spannungswandler auf dem Mainboard, die den Prozessor versorgen. Wichtig für stabile Leistung bei starken CPUs.'],
+        ['Wärmeleitpaste', 'Füllt winzige Unebenheiten zwischen CPU und Kühler, damit die Wärme gut abfliesst. Erbsengross reicht.'],
+        ['ATX', 'Standard für Grösse und Anschlüsse von Mainboards, Gehäusen und Netzteilen. Kleinere Varianten: Micro-ATX und Mini-ITX.', 'netzteile/atx-3-1.html'],
+        ['Diskette', 'Magnetischer Datenträger. Die 3,5-Zoll-HD-Diskette fasst 1,44 MB – und lebt als Speichern-Symbol ewig weiter.', 'laufwerke/diskette-3-5.html']
+    ].sort((a, b) => a[0].localeCompare(b[0], 'de'));
+
+    const slug = s => s.toLowerCase().replace(/[^a-z0-9äöü]+/g, '-').replace(/^-|-$/g, '');
+    const letterOf = s => /^[0-9]/.test(s) ? '#' : s[0].toUpperCase();
+    function render(q) {
+        q = (q || '').toLowerCase();
+        const list = T.filter(t => !q || t[0].toLowerCase().includes(q) || t[1].toLowerCase().includes(q));
+        const groups = {};
+        list.forEach(t => (groups[letterOf(t[0])] = groups[letterOf(t[0])] || []).push(t));
+        XIRU.$('#gl').innerHTML = Object.keys(groups).map(L =>
+            '<h2 class="gl-letter" id="buchstabe-' + (L === '#' ? 'zahl' : L) + '">' + L + '</h2><div class="gl">' +
+            groups[L].map(t => '<dl id="' + slug(t[0]) + '"' + (t[3] ? ' data-egg="' + t[3] + '" class="egg-spot"' : '') + '><dt>' + XIRU.esc(t[0]) + '</dt><dd>' + XIRU.esc(t[1]) +
+                (t[2] ? ' <a href="' + t[2] + '">Mehr →</a>' : '') + '</dd></dl>').join('') + '</div>').join('') ||
+            '<div class="empty"><div class="empty__icon">📖</div><p>Kein Begriff gefunden.</p></div>';
+        XIRU.$('#gl-count').textContent = list.length + ' von ' + T.length + ' Begriffen';
+        const letters = '#ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+        XIRU.$('#abc').innerHTML = letters.map(L => groups[L] ? '<a href="#buchstabe-' + (L === '#' ? 'zahl' : L) + '">' + L + '</a>' : '<span>' + L + '</span>').join('');
+    }
+    XIRU.$('#gl-q').addEventListener('input', e => render(e.target.value));
+    render();
+    if (location.hash) { const el = document.getElementById(decodeURIComponent(location.hash.slice(1))); if (el) el.scrollIntoView(); }
+});
+</script>
+</body>
+</html>

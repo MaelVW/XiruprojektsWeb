@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KI-Labor · Xiruprojekts</title>
+    <meta name="description" content="Das KI-Labor von Xiruprojekts: Textabenteuer, Kartenschmiede, Bildwerk, Taverne und mehr – mit Hugging Face oder ganz offline.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="ki.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/ai.js"></script>
+    <style>
+        .lab-hero { display: grid; grid-template-columns: minmax(0, 1fr) 220px; gap: 2rem; align-items: center; }
+        @media (max-width: 760px) { .lab-hero { grid-template-columns: 1fr; } .flask { order: -1; margin: 0 auto; } }
+        .flask { width: 200px; height: 220px; position: relative; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; }
+        .flask svg { width: 100%; height: 100%; overflow: visible; }
+        .flask .glass { fill: color-mix(in srgb, var(--surface-3) 60%, transparent); stroke: var(--border-strong); stroke-width: 3; }
+        .flask .liquid { fill: color-mix(in srgb, var(--rc) 70%, transparent); transition: fill .4s; }
+        .flask .shine { fill: none; stroke: color-mix(in srgb, var(--text) 30%, transparent); stroke-width: 3; stroke-linecap: round; }
+        .flask .bubble { fill: color-mix(in srgb, var(--text) 55%, transparent); animation: bubbleUp 2.4s ease-in infinite; }
+        .flask .bubble:nth-of-type(2) { animation-delay: .7s; } .flask .bubble:nth-of-type(3) { animation-delay: 1.3s; } .flask .bubble:nth-of-type(4) { animation-delay: 1.9s; }
+        .flask.is-hot .liquid { fill: color-mix(in srgb, var(--warning) 75%, transparent); }
+        .flask.is-hot .bubble { animation-duration: .9s; }
+        .flask.is-boom { animation: shake .5s linear 2; }
+        .flask .steam { fill: none; stroke: color-mix(in srgb, var(--text) 25%, transparent); stroke-width: 4; stroke-linecap: round; opacity: 0; }
+        .flask.is-hot .steam { animation: steam 1.6s ease-out infinite; }
+        .flask.is-hot .steam:nth-of-type(2) { animation-delay: .5s; }
+        @keyframes bubbleUp { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: 1; } 100% { transform: translateY(-70px); opacity: 0; } }
+        @keyframes steam { 0% { transform: translateY(0); opacity: 0; } 30% { opacity: .9; } 100% { transform: translateY(-40px); opacity: 0; } }
+        .lab-steps { counter-reset: s; }
+        .lab-step { position: relative; padding-left: 3.2rem; }
+        .lab-step::before {
+            counter-increment: s; content: counter(s); position: absolute; left: 1.25rem; top: 1.4rem;
+            width: 1.9rem; height: 1.9rem; border-radius: 50%; display: grid; place-items: center; font-weight: 800;
+            background: color-mix(in srgb, var(--rc) 18%, transparent); color: var(--rc);
+        }
+        .lab-step.card { padding-left: 4rem; }
+        .chain { display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; }
+        .chain .badge + .arrow { color: var(--text-faint); }
+        .tile .ok-off { color: var(--success); }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">✦ KI-Labor</span>
+        <h1>Das KI-Labor</h1>
+        <p class="lead">Hier blubbert es: Ein KI-Erzähler für Textabenteuer, eine Schmiede für Welten und Dungeons, ein Atelier für Bilder und eine Taverne voller Plaudertaschen. Alles läuft auch ohne Internet – mit einem eigenen KI-Schlüssel wird es aber erst richtig magisch.</p>
+    </header>
+    <div class="ki-top">
+        <div id="ai-status"></div>
+        <a class="btn btn--sm" href="../konto/dienste.html">🔑 Dienste &amp; Schlüssel</a>
+    </div>
+
+    <section class="card card--accent mb-4">
+        <div class="lab-hero">
+            <div>
+                <h2>Wie das Labor funktioniert</h2>
+                <p>Jedes Werkzeug hier hat zwei Gehirne: ein <strong>Offline-Gehirn</strong> aus Regeln, Vorlagen und Zufall, das immer funktioniert – und ein <strong>Online-Gehirn</strong>, das ein echtes Sprach- oder Bildmodell fragt, sobald du einen Dienst eingerichtet hast.</p>
+                <div class="stack">
+                    <div><span class="ki-label">Aktuelle Reihenfolge für Text</span><div class="chain" id="chain-chat"></div></div>
+                    <div><span class="ki-label">Aktuelle Reihenfolge für Bilder</span><div class="chain" id="chain-image"></div></div>
+                </div>
+            </div>
+            <div class="flask" id="flask" role="img" aria-label="Ein blubbernder Laborkolben">
+                <svg viewBox="0 0 200 220" aria-hidden="true">
+                    <path class="steam" d="M92 18c-6-8 6-12 0-20"/>
+                    <path class="steam" d="M108 20c-6-8 6-12 0-20"/>
+                    <clipPath id="flask-clip"><path d="M82 30h36v58l56 100c6 12-2 24-16 24H42c-14 0-22-12-16-24l56-100z"/></clipPath>
+                    <g clip-path="url(#flask-clip)">
+                        <path class="liquid" d="M10 130c30-10 50 10 90 0s60-10 90 0v100H10z">
+                            <animate attributeName="d" dur="3s" repeatCount="indefinite"
+                                values="M10 130c30-10 50 10 90 0s60-10 90 0v100H10z;M10 130c30 10 50-10 90 0s60 10 90 0v100H10z;M10 130c30-10 50 10 90 0s60-10 90 0v100H10z"/>
+                        </path>
+                        <circle class="bubble" cx="80" cy="190" r="5"/>
+                        <circle class="bubble" cx="110" cy="200" r="4"/>
+                        <circle class="bubble" cx="125" cy="185" r="6"/>
+                        <circle class="bubble" cx="95" cy="205" r="3"/>
+                    </g>
+                    <path class="glass" d="M82 30h36v58l56 100c6 12-2 24-16 24H42c-14 0-22-12-16-24l56-100z"/>
+                    <rect class="glass" x="76" y="22" width="48" height="10" rx="4"/>
+                    <path class="shine" d="M70 120l-20 36"/>
+                </svg>
+            </div>
+        </div>
+    </section>
+
+    <h2>Werkzeuge</h2>
+    <div class="grid ki-tiles mb-4" id="tiles"></div>
+
+    <h2>In drei Schritten zum Online-Gehirn</h2>
+    <div class="grid-3 lab-steps mb-4">
+        <div class="card lab-step" data-reveal>
+            <h3>Einfach loslegen</h3>
+            <p class="muted mb-0">Alles funktioniert sofort im Offline-Modus. Kein Konto, kein Schlüssel, keine einzige Anfrage ins Internet.</p>
+        </div>
+        <div class="card lab-step" data-reveal style="--d:.1s">
+            <h3>Schlüssel holen</h3>
+            <p class="muted mb-0">Erstelle bei <a href="https://huggingface.co/join" target="_blank" rel="noopener noreferrer">Hugging Face</a> ein Gratis-Konto und einen Token mit „Make calls to Inference Providers".</p>
+        </div>
+        <div class="card lab-step" data-reveal style="--d:.2s">
+            <h3>Eintragen &amp; testen</h3>
+            <p class="muted mb-0">Unter <a href="../konto/dienste.html">Dienste &amp; Schlüssel</a> einfügen, „Testen" drücken – fertig. Mehrere Schlüssel? Die wechseln sich bei Limits automatisch ab.</p>
+        </div>
+    </div>
+
+    <div class="callout">
+        <strong>🛡 Datenschutz im Labor</strong>
+        <p class="mt-1 mb-0">Offline verlässt nichts deinen Browser. Sobald ein Online-Dienst aktiv ist, wird dein Text bzw. deine Bildbeschreibung an diesen Anbieter geschickt (Hugging Face, dein eigener Dienst oder – nur wenn ausdrücklich erlaubt – Pollinations). Verläufe, Spielstände und Galerien bleiben lokal in deinem Browser. Schlüssel liegen unverschlüsselt im <code>localStorage</code> und sind nie im Export enthalten. Mehr dazu unter <a href="../datenschutz.html">Datenschutz</a>.</p>
+    </div>
+</main>
+<script>
+XIRU.ready(function () {
+    const AI = XIRU.ai, esc = XIRU.esc;
+    AI.ui.status('#ai-status');
+
+    const TOOLS = [
+        { p: 'ki/abenteuer.html', icon: '🗡', off: 'Vorgeschriebenes Mini-Abenteuer', on: 'KI-Erzähler mit Inventar' },
+        { p: 'ki/kartenschmiede.html', icon: '🗺', off: 'Generator läuft komplett lokal', on: 'Namen, Lore und Kartenbilder' },
+        { p: 'ki/bildwerk.html', icon: '🎨', off: 'Generative Kunst aus Mustern', on: 'Text-zu-Bild mit FLUX' },
+        { p: 'ki/taverne.html', icon: '🍺', off: 'Stammtischsprüche nach Regeln', on: 'Freie Gespräche mit Figuren' },
+        { p: 'ki/hardware-berater.html', icon: '🖥', off: 'Regelbasierte Empfehlung', on: 'KI-Begründung mit Datenblättern' },
+        { p: 'ki/textwerk.html', icon: '✍', off: 'Zählen, prüfen, kürzen', on: 'Übersetzen und Umformulieren' },
+        { p: 'ki/orakel.html', icon: '🔮', off: 'Über 100 Orakelsprüche', on: 'Rätsel in Reimform' }
+    ];
+    document.getElementById('tiles').innerHTML = TOOLS.map((t, i) => {
+        const pg = XIRU.pageFor(t.p) || { t: t.p, d: '' };
+        const locked = !XIRU.isUnlocked(pg);
+        const skill = pg.skill && XIRU.skillInfo(pg.skill);
+        return '<a class="tile' + (locked ? ' is-locked' : '') + (XIRU.isVisited(t.p) ? '' : ' is-new') + '" href="' + XIRU.url(t.p) + '" data-reveal style="--d:' + (i * .05) + 's">' +
+            '<div class="tile__icon">' + (locked ? '🔒' : t.icon) + '</div>' +
+            '<div class="tile__title">' + esc(pg.t) + '</div>' +
+            '<div class="tile__desc">' + esc(pg.d) + '</div>' +
+            '<div class="tile__meta">' + (locked && skill
+                ? '<span class="badge badge--warning">Skill „' + esc(skill.n) + '"</span>'
+                : '<span class="ok-off" title="Offline">◌ ' + esc(t.off) + '</span>') +
+            '</div><div class="tile__meta"><span title="Online">✦ ' + esc(t.on) + '</span></div></a>';
+    }).join('');
+    XIRU.initReveal();
+
+    function chain(kind) {
+        const st = AI.status(kind);
+        const names = st.chain.map(p => AI.providers[p].icon + ' ' + AI.providers[p].n);
+        names.push('◌ Offline' + (kind === 'image' ? ' (generativ)' : ''));
+        return names.map((n, i) => '<span class="badge' + (i === 0 ? ' badge--accent' : '') + '">' + esc(n) + '</span>').join('<span class="arrow" aria-hidden="true">→</span>');
+    }
+    function renderChain() {
+        document.getElementById('chain-chat').innerHTML = chain('chat');
+        document.getElementById('chain-image').innerHTML = chain('image');
+    }
+    renderChain();
+    XIRU.on('keys', renderChain);
+
+    // Kolben: zu oft schütteln und er kocht über
+    const flask = document.getElementById('flask');
+    let shakes = 0, cool;
+    flask.addEventListener('click', () => {
+        shakes++;
+        XIRU.beep(300 + shakes * 70, .05, 'sine');
+        flask.classList.toggle('is-hot', shakes >= 3);
+        clearTimeout(cool); cool = setTimeout(() => { shakes = 0; flask.classList.remove('is-hot'); }, 2500);
+        if (shakes >= 7) {
+            shakes = 0;
+            flask.classList.add('is-boom'); setTimeout(() => flask.classList.remove('is-boom', 'is-hot'), 1100);
+            XIRU.confetti(50);
+            XIRU.egg('k-labor-ueberkocht');
+        }
+    });
+});
+</script>
+</body>
+</html>

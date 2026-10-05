@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speicherstandards · Xiruprojekts</title>
+    <meta name="description" content="Arbeitsspeicher, Grafikspeicher und Stapelspeicher – die Standards hinter den Modulen.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">▣ Hardware-Archiv</span>
+        <h1>Speicherstandards</h1>
+        <p class="lead">Arbeitsspeicher, Grafikspeicher und Stapelspeicher – die Standards hinter den Modulen.</p>
+    </header>
+
+    <div class="card card--flat mb-3">
+        <div class="row">
+            <input class="input" type="search" id="hw-q" placeholder="Speicherstandards durchsuchen …" style="max-width:320px" aria-label="Suchen">
+            <div class="row" id="hw-filter" role="group" aria-label="Art"><button class="chip is-active" data-filter="">Alle</button><button class="chip" data-filter="Arbeitsspeicher">Arbeitsspeicher</button><button class="chip" data-filter="Grafikspeicher">Grafikspeicher</button><button class="chip" data-filter="Mobiler Speicher">Mobiler Speicher</button><button class="chip" data-filter="Stapelspeicher">Stapelspeicher</button></div>
+            <span class="spacer"></span>
+            <div class="row" role="group" aria-label="Ansicht">
+                <button class="chip is-active" data-view="table">Tabelle</button>
+                <button class="chip" data-view="tiles">Kacheln</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="hw-table" class="table-wrap">
+        <table class="table" data-sortable><thead><tr><th data-sort="text">Name</th><th data-sort="text">Art</th><th data-sort="num" class="num">Jahr</th><th data-sort="text">Datenrate</th><th data-sort="text">Spannung</th></tr></thead><tbody><tr data-f="Arbeitsspeicher" data-q="ddr3  "><td><a href="speicher/ddr3.html"><strong>DDR3</strong></a></td><td>Arbeitsspeicher</td><td class="num">2007</td><td>800–2133 MT/s</td><td>1,5 V (DDR3L: 1,35 V)</td></tr><tr data-f="Arbeitsspeicher" data-q="ddr4  "><td><a href="speicher/ddr4.html"><strong>DDR4</strong></a></td><td>Arbeitsspeicher</td><td class="num">2014</td><td>1600–3200 MT/s (JEDEC), mit XMP deutlich mehr</td><td>1,2 V</td></tr><tr data-f="Arbeitsspeicher" data-q="ddr5  "><td><a href="speicher/ddr5.html"><strong>DDR5</strong></a></td><td>Arbeitsspeicher</td><td class="num">2020</td><td>4800–8800 MT/s (JEDEC)</td><td>1,1 V (übertaktet höher)</td></tr><tr data-f="Grafikspeicher" data-q="gddr6  "><td><a href="speicher/gddr6.html"><strong>GDDR6</strong></a></td><td>Grafikspeicher</td><td class="num">2018</td><td>12–20 Gbit/s pro Pin</td><td>1,35 V</td></tr><tr data-f="Grafikspeicher" data-q="gddr7  "><td><a href="speicher/gddr7.html"><strong>GDDR7</strong></a></td><td>Grafikspeicher</td><td class="num">2024</td><td>28–32 Gbit/s pro Pin (weitere Stufen geplant)</td><td>1,1–1,2 V</td></tr><tr data-f="Mobiler Speicher" data-q="lpddr5x  "><td><a href="speicher/lpddr5x.html"><strong>LPDDR5X</strong></a></td><td>Mobiler Speicher</td><td class="num">2021</td><td>bis 8533 MT/s (später schneller)</td><td>ca. 1,05 V / 0,5 V (I/O)</td></tr><tr data-f="Stapelspeicher" data-q="hbm3  "><td><a href="speicher/hbm3.html"><strong>HBM3</strong></a></td><td>Stapelspeicher</td><td class="num">2022</td><td>bis 6,4 Gbit/s pro Pin (HBM3E: bis 9,6)</td><td>ca. 1,1 V</td></tr></tbody></table>
+    </div>
+    <div id="hw-tiles" class="grid" hidden><a class="tile" data-f="Arbeitsspeicher" href="speicher/ddr3.html" data-reveal style="--d:0.00s"><span class="tile__meta"><span class="badge">Arbeitsspeicher</span></span><span class="tile__title">DDR3</span><span class="tile__desc">Arbeitsspeicher · 2007</span></a><a class="tile" data-f="Arbeitsspeicher" href="speicher/ddr4.html" data-reveal style="--d:0.04s"><span class="tile__meta"><span class="badge">Arbeitsspeicher</span></span><span class="tile__title">DDR4</span><span class="tile__desc">Arbeitsspeicher · 2014</span></a><a class="tile" data-f="Arbeitsspeicher" href="speicher/ddr5.html" data-reveal style="--d:0.08s"><span class="tile__meta"><span class="badge">Arbeitsspeicher</span></span><span class="tile__title">DDR5</span><span class="tile__desc">Arbeitsspeicher · 2020</span></a><a class="tile" data-f="Grafikspeicher" href="speicher/gddr6.html" data-reveal style="--d:0.12s"><span class="tile__meta"><span class="badge">Grafikspeicher</span></span><span class="tile__title">GDDR6</span><span class="tile__desc">Grafikspeicher · 2018</span></a><a class="tile" data-f="Grafikspeicher" href="speicher/gddr7.html" data-reveal style="--d:0.16s"><span class="tile__meta"><span class="badge">Grafikspeicher</span></span><span class="tile__title">GDDR7</span><span class="tile__desc">Grafikspeicher · 2024</span></a><a class="tile" data-f="Mobiler Speicher" href="speicher/lpddr5x.html" data-reveal style="--d:0.20s"><span class="tile__meta"><span class="badge">Mobiler Speicher</span></span><span class="tile__title">LPDDR5X</span><span class="tile__desc">Mobiler Speicher · 2021</span></a><a class="tile" data-f="Stapelspeicher" href="speicher/hbm3.html" data-reveal style="--d:0.24s"><span class="tile__meta"><span class="badge">Stapelspeicher</span></span><span class="tile__title">HBM3</span><span class="tile__desc">Stapelspeicher · 2022</span></a></div>
+    <p class="small muted mt-2"><span id="hw-count">7</span> Einträge · Klick auf eine Spaltenüberschrift sortiert. <a href="vergleich.html">Zum Vergleich →</a></p>
+</main>
+<script>
+XIRU.ready(function () {
+    let filter = '', q = '';
+    const rows = XIRU.$$('#hw-table tbody tr'), tiles = XIRU.$$('#hw-tiles .tile');
+    function apply() {
+        let n = 0;
+        rows.forEach(r => { const ok = (!filter || r.dataset.f === filter) && (!q || r.dataset.q.includes(q)); r.hidden = !ok; if (ok) n++; });
+        tiles.forEach((t, i) => { t.hidden = rows[i].hidden; });
+        XIRU.$('#hw-count').textContent = n;
+    }
+    XIRU.$('#hw-filter').addEventListener('click', e => {
+        const b = e.target.closest('[data-filter]'); if (!b) return;
+        filter = b.dataset.filter;
+        XIRU.$$('#hw-filter .chip').forEach(c => c.classList.toggle('is-active', c === b));
+        apply();
+    });
+    XIRU.$('#hw-q').addEventListener('input', e => { q = e.target.value.trim().toLowerCase(); apply(); });
+    XIRU.$$('[data-view]').forEach(b => b.addEventListener('click', () => {
+        XIRU.$$('[data-view]').forEach(c => c.classList.toggle('is-active', c === b));
+        XIRU.$('#hw-table').hidden = b.dataset.view !== 'table';
+        XIRU.$('#hw-tiles').hidden = b.dataset.view !== 'tiles';
+        if (b.dataset.view === 'tiles') XIRU.initReveal();
+    }));
+});
+</script>
+</body>
+</html>

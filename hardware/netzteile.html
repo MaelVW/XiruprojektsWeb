@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Netzteil-Standards · Xiruprojekts</title>
+    <meta name="description" content="Wie effizient muss ein Netzteil sein, um ein 80-PLUS-Siegel zu bekommen – und was bringt ATX 3.1?">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">▣ Hardware-Archiv</span>
+        <h1>Netzteil-Standards</h1>
+        <p class="lead">Wie effizient muss ein Netzteil sein, um ein 80-PLUS-Siegel zu bekommen – und was bringt ATX 3.1?</p>
+    </header>
+
+    <div class="card card--flat mb-3">
+        <div class="row">
+            <input class="input" type="search" id="hw-q" placeholder="Netzteil-Standards durchsuchen …" style="max-width:320px" aria-label="Suchen">
+            <div class="row" id="hw-filter" role="group" aria-label="Art"><button class="chip is-active" data-filter="">Alle</button><button class="chip" data-filter="Effizienz">Effizienz</button><button class="chip" data-filter="Standard">Standard</button></div>
+            <span class="spacer"></span>
+            <div class="row" role="group" aria-label="Ansicht">
+                <button class="chip is-active" data-view="table">Tabelle</button>
+                <button class="chip" data-view="tiles">Kacheln</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="hw-table" class="table-wrap">
+        <table class="table" data-sortable><thead><tr><th data-sort="text">Name</th><th data-sort="text">Art</th><th data-sort="num" class="num">50 % Last (230 V)</th><th data-sort="num" class="num">50 % Last (115 V)</th></tr></thead><tbody><tr data-f="Effizienz" data-q="80 plus bronze  "><td><a href="netzteile/80-plus-bronze.html"><strong>80 PLUS Bronze</strong></a></td><td>Effizienz</td><td class="num" data-v="88">88 %</td><td class="num" data-v="85">85 %</td></tr><tr data-f="Effizienz" data-q="80 plus silver  "><td><a href="netzteile/80-plus-silver.html"><strong>80 PLUS Silver</strong></a></td><td>Effizienz</td><td class="num" data-v="90">90 %</td><td class="num" data-v="88">88 %</td></tr><tr data-f="Effizienz" data-q="80 plus gold  "><td><a href="netzteile/80-plus-gold.html"><strong>80 PLUS Gold</strong></a></td><td>Effizienz</td><td class="num" data-v="92">92 %</td><td class="num" data-v="90">90 %</td></tr><tr data-f="Effizienz" data-q="80 plus platinum  "><td><a href="netzteile/80-plus-platinum.html"><strong>80 PLUS Platinum</strong></a></td><td>Effizienz</td><td class="num" data-v="94">94 %</td><td class="num" data-v="92">92 %</td></tr><tr data-f="Effizienz" data-q="80 plus titanium  "><td><a href="netzteile/80-plus-titanium.html"><strong>80 PLUS Titanium</strong></a></td><td>Effizienz</td><td class="num" data-v="96">96 %</td><td class="num" data-v="94">94 %</td></tr><tr data-f="Standard" data-q="atx 3.1 &amp; 12v-2x6  "><td><a href="netzteile/atx-3-1.html"><strong>ATX 3.1 &amp; 12V-2x6</strong></a></td><td>Standard</td><td class="num" data-v="0">–</td><td class="num" data-v="0">–</td></tr></tbody></table>
+    </div>
+    <div id="hw-tiles" class="grid" hidden><a class="tile" data-f="Effizienz" href="netzteile/80-plus-bronze.html" data-reveal style="--d:0.00s"><span class="tile__meta"><span class="badge">Effizienz</span></span><span class="tile__title">80 PLUS Bronze</span><span class="tile__desc">Netzteil · Effizienz</span></a><a class="tile" data-f="Effizienz" href="netzteile/80-plus-silver.html" data-reveal style="--d:0.04s"><span class="tile__meta"><span class="badge">Effizienz</span></span><span class="tile__title">80 PLUS Silver</span><span class="tile__desc">Netzteil · Effizienz</span></a><a class="tile" data-f="Effizienz" href="netzteile/80-plus-gold.html" data-reveal style="--d:0.08s"><span class="tile__meta"><span class="badge">Effizienz</span></span><span class="tile__title">80 PLUS Gold</span><span class="tile__desc">Netzteil · Effizienz</span></a><a class="tile" data-f="Effizienz" href="netzteile/80-plus-platinum.html" data-reveal style="--d:0.12s"><span class="tile__meta"><span class="badge">Effizienz</span></span><span class="tile__title">80 PLUS Platinum</span><span class="tile__desc">Netzteil · Effizienz</span></a><a class="tile" data-f="Effizienz" href="netzteile/80-plus-titanium.html" data-reveal style="--d:0.16s"><span class="tile__meta"><span class="badge">Effizienz</span></span><span class="tile__title">80 PLUS Titanium</span><span class="tile__desc">Netzteil · Effizienz</span></a><a class="tile" data-f="Standard" href="netzteile/atx-3-1.html" data-reveal style="--d:0.20s"><span class="tile__meta"><span class="badge">Standard</span></span><span class="tile__title">ATX 3.1 &amp; 12V-2x6</span><span class="tile__desc">Netzteil · Standard</span></a></div>
+    <p class="small muted mt-2"><span id="hw-count">6</span> Einträge · Klick auf eine Spaltenüberschrift sortiert. <a href="vergleich.html">Zum Vergleich →</a></p>
+</main>
+<script>
+XIRU.ready(function () {
+    let filter = '', q = '';
+    const rows = XIRU.$$('#hw-table tbody tr'), tiles = XIRU.$$('#hw-tiles .tile');
+    function apply() {
+        let n = 0;
+        rows.forEach(r => { const ok = (!filter || r.dataset.f === filter) && (!q || r.dataset.q.includes(q)); r.hidden = !ok; if (ok) n++; });
+        tiles.forEach((t, i) => { t.hidden = rows[i].hidden; });
+        XIRU.$('#hw-count').textContent = n;
+    }
+    XIRU.$('#hw-filter').addEventListener('click', e => {
+        const b = e.target.closest('[data-filter]'); if (!b) return;
+        filter = b.dataset.filter;
+        XIRU.$$('#hw-filter .chip').forEach(c => c.classList.toggle('is-active', c === b));
+        apply();
+    });
+    XIRU.$('#hw-q').addEventListener('input', e => { q = e.target.value.trim().toLowerCase(); apply(); });
+    XIRU.$$('[data-view]').forEach(b => b.addEventListener('click', () => {
+        XIRU.$$('[data-view]').forEach(c => c.classList.toggle('is-active', c === b));
+        XIRU.$('#hw-table').hidden = b.dataset.view !== 'table';
+        XIRU.$('#hw-tiles').hidden = b.dataset.view !== 'tiles';
+        if (b.dataset.view === 'tiles') XIRU.initReveal();
+    }));
+});
+</script>
+</body>
+</html>

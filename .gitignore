@@ -1,1 +1,4 @@
 docs/.nachtschicht-lauf
+
+# Lokale Entwickler-Werkzeuge (Testkonto) – nie veröffentlichen
+dev/

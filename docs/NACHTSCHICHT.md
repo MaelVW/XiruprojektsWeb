@@ -10,6 +10,17 @@ Du arbeitest selbstständig (Nachtschicht, Mael schläft) an der statischen Webs
 4. Nach jeder Aufgabe: testen (siehe unten), `python tools/check_site.py` ausführen, in `docs/TASKS.md` abhaken (`- [x]`) und unter „Notizen der letzten Sitzung" eine Zeile mit Datum/Uhrzeit und dem Ergebnis ergänzen. So kann die nächste Schicht nahtlos weitermachen, auch wenn du mittendrin abbrichst.
 5. Zum Schluss: kurze Zusammenfassung der Schicht in den Notizen von `docs/TASKS.md` und die Sperrdatei `docs/.nachtschicht-lauf` löschen.
 
+## Komprimierung einplanen (sehr wahrscheinlich!)
+Diese Sitzung wird unterwegs sehr wahrscheinlich komprimiert – danach erinnerst du dich nur noch grob. Darum:
+- Bevor du eine Aufgabe beginnst, schreibe in `docs/TASKS.md` ganz oben unter „Notizen der letzten Sitzung" eine Zeile
+  `**IN ARBEIT (Uhrzeit):** <Aufgabe> – Stand: <was fertig ist, was als Nächstes kommt, betroffene Dateien>`.
+- Aktualisiere diese Zeile nach jedem Teilschritt (z. B. nach jeder fertigen Datei). Behalte nichts Wichtiges nur „im Kopf".
+- Nach einer Komprimierung (oder wenn du unsicher bist, wo du stehst): zuerst `docs/NACHTSCHICHT.md` und `docs/TASKS.md`
+  (Notizen + „IN ARBEIT") erneut lesen und genau dort weitermachen. Nichts doppelt bauen – vorher prüfen, ob die Datei schon existiert.
+- Ist eine Aufgabe fertig: abhaken, die „IN ARBEIT"-Zeile in eine normale Notiz umwandeln.
+- `konto/skilltree.html` (Werft) in dieser Nacht nur anfassen, wenn dort ein Fehler die Seite unbenutzbar macht.
+- **Horror-Teil gehört Mael:** `Why.html`, `why/*`, `assets/css/liminal.css`, `assets/js/liminal.js` nie bearbeiten – er arbeitet ab dem 7.10. selbst daran, teils gleichzeitig.
+
 ## Regeln (strikt)
 - **Keine Subagenten** (zu teuer). **Niemals committen**, keine Release-Texte, nichts pushen.
 - Keine Nutzerdaten an Server, keine CDNs/externen Schriften. Netzwerk nur in `assets/js/ai.js`.

@@ -1,0 +1,136 @@
+/* ==========================================================================
+   PIXMAG Mini – Oberfläche (arcade/dungeon.html)
+   ========================================================================== */
+.dgn .game { grid-template-columns: minmax(0, 1fr) 300px; }
+@media (max-width: 1000px) { .dgn .game { grid-template-columns: 1fr; } }
+.dgn-main { min-width: 0; }
+
+/* ── Kopfzeile: Werte & Balken ─────────────────────────────────────── */
+.dgn-hud {
+    display: flex; flex-wrap: wrap; align-items: center; gap: .4rem 1rem;
+    margin-bottom: .6rem; font-variant-numeric: tabular-nums; font-size: .9rem;
+}
+.dgn-hud .v { font-weight: 700; }
+.dgn-hud .l { color: var(--text-muted); margin-right: .25rem; }
+.dgn-bar {
+    position: relative; width: 130px; height: 16px; border-radius: 4px; overflow: hidden;
+    background: var(--surface-2); border: 1px solid var(--border);
+}
+.dgn-bar i { position: absolute; inset: 0 auto 0 0; width: var(--v, 100%); transition: width .2s; }
+.dgn-bar--hp i { background: linear-gradient(#ff6b6b, #c0392b); }
+.dgn-bar--mp i { background: linear-gradient(#60a5fa, #2563eb); }
+.dgn-bar--xp { width: 90px; height: 8px; }
+.dgn-bar--xp i { background: linear-gradient(#fde68a, #d4a017); }
+.dgn-bar b {
+    position: relative; display: block; text-align: center; font-size: .72rem; line-height: 14px;
+    color: #fff; text-shadow: 0 1px 2px #000;
+}
+.dgn-st { display: inline-block; padding: 0 .35rem; border-radius: 4px; font-size: .75rem; font-weight: 700; background: var(--surface-2); }
+.dgn-boss { flex-basis: 100%; display: flex; align-items: center; gap: .6rem; font-weight: 700; color: #c084fc; }
+.dgn-boss .dgn-bar { flex: 1; width: auto; }
+.dgn-boss .dgn-bar i { background: linear-gradient(#c084fc, #7e22ce); }
+
+/* ── Spielfeld ─────────────────────────────────────────────────────── */
+.dgn .game__stage { background: #07060a; cursor: crosshair; }
+.dgn .game__stage:focus-visible { outline: 2px solid var(--rc); outline-offset: 2px; }
+.dgn .game__stage canvas#cv { display: block; }
+.dgn-tip { min-height: 1.5em; margin-top: .4rem; font-size: .85rem; color: var(--text-muted); }
+.dgn-tip b { color: var(--text); }
+
+/* ── Overlay & Panels ──────────────────────────────────────────────── */
+.dgn-ov { background: rgba(6, 5, 10, .86); color: #ece6f5; text-align: center; padding: 1.5rem; }
+.dgn-ov p { color: #b9b2c8; }
+.dgn-ov .dgn-sum { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: .5rem; margin: .5rem 0; width: min(520px, 100%); }
+.dgn-ov .dgn-sum div { background: rgba(255,255,255,.06); border-radius: 6px; padding: .4rem; }
+.dgn-ov .dgn-sum b { display: block; font-size: 1.2rem; color: #fff; }
+.dgn-ov .row { justify-content: center; }
+
+.dgn-panel {
+    position: absolute; inset: 0; z-index: 3; overflow: auto; padding: 1rem 1.1rem;
+    background: rgba(10, 8, 16, .94); color: #ece6f5; font-size: .9rem;
+}
+.dgn-panel[hidden] { display: none; }
+.dgn-panel h2 { margin: 0 0 .6rem; font-size: 1.25rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+.dgn-panel h3 { margin: 1rem 0 .4rem; font-size: 1rem; color: #c4b5fd; }
+.dgn-panel p, .dgn-panel .muted { color: #b9b2c8; }
+.dgn-panel .btn { color: inherit; }
+.dgn-list { list-style: none; margin: 0; padding: 0; display: grid; gap: .35rem; }
+.dgn-list li {
+    display: grid; grid-template-columns: 34px 1fr auto; gap: .6rem; align-items: center;
+    background: rgba(255,255,255,.05); border-radius: 6px; padding: .35rem .5rem;
+}
+.dgn-list li.is-eq { outline: 1px solid rgba(250, 204, 21, .5); }
+.dgn-list img, .dgn-ic { width: 32px; height: 32px; image-rendering: pixelated; display: grid; place-items: center; font-size: 1.2rem; }
+.dgn-list .n { font-weight: 700; }
+.dgn-list .d { font-size: .8rem; color: #a8a0b8; }
+.dgn-list .act { display: flex; gap: .3rem; flex-wrap: wrap; justify-content: flex-end; }
+.dgn-runes { display: flex; flex-wrap: wrap; gap: .4rem; }
+.dgn-rune {
+    display: inline-flex; align-items: center; gap: .3rem; padding: .25rem .55rem; border-radius: 999px;
+    border: 1px solid var(--c, #888); color: var(--c, #ccc); font-weight: 700; background: rgba(255,255,255,.04);
+}
+.dgn-rune.is-off { opacity: .35; border-style: dashed; }
+.dgn-combine { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.dgn-combine select { background: #1c1826; color: #ece6f5; border: 1px solid #3a3350; border-radius: 6px; padding: .3rem .4rem; }
+.dgn-msg { min-height: 1.3em; margin-top: .4rem; font-weight: 600; }
+.dgn-msg.is-ok { color: #86efac; } .dgn-msg.is-bad { color: #fca5a5; }
+.dgn-pages { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: .35rem; }
+.dgn-pages div { font-size: .8rem; padding: .3rem .45rem; border-radius: 6px; background: rgba(255,255,255,.05); }
+.dgn-pages .is-new { color: #fde68a; }
+.dgn-pages .is-off { color: #6b6380; }
+.dgn-lvl { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .6rem; }
+.dgn-lvl button {
+    display: grid; gap: .25rem; padding: 1rem .6rem; border-radius: 10px; cursor: pointer; text-align: center;
+    background: rgba(255,255,255,.06); border: 1px solid #4a4060; color: #ece6f5; font: inherit;
+}
+.dgn-lvl button:hover, .dgn-lvl button:focus-visible { border-color: #c4b5fd; background: rgba(196,181,253,.12); }
+.dgn-lvl .i { font-size: 1.8rem; }
+.dgn-bigmap { width: 100%; height: auto; image-rendering: pixelated; border-radius: 6px; background: #000; }
+
+/* ── Zauberleiste & Aktionen ──────────────────────────────────────── */
+.dgn-spells { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: .4rem; margin-top: .5rem; }
+.dgn-spell {
+    position: relative; display: grid; gap: .1rem; text-align: left; padding: .4rem .5rem .4rem 1.9rem;
+    border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text);
+    cursor: pointer; font: inherit; font-size: .8rem; min-height: 46px;
+}
+.dgn-spell::before { content: attr(data-k); position: absolute; left: .45rem; top: .4rem; font-weight: 800; color: var(--text-faint); }
+.dgn-spell .n { font-weight: 700; color: var(--c, var(--text)); }
+.dgn-spell .m { color: var(--text-muted); font-size: .72rem; }
+.dgn-spell:hover:not(:disabled) { border-color: var(--c, var(--rc)); }
+.dgn-spell.is-active { border-color: var(--c, var(--rc)); box-shadow: 0 0 0 2px var(--c, var(--rc)) inset; }
+.dgn-spell:disabled { opacity: .45; cursor: not-allowed; }
+.dgn-spell.is-empty { color: var(--text-faint); border-style: dashed; cursor: default; }
+.dgn-actions { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .5rem; }
+.dgn-actions kbd { font-size: .7rem; opacity: .7; }
+
+/* ── Touch-Steuerkreuz ────────────────────────────────────────────── */
+.dgn-touch { justify-content: center; }
+.dgn-pad { display: grid; grid-template-columns: repeat(3, 52px); gap: .3rem; }
+.dgn-pad button { width: 52px; height: 52px; padding: 0; font-size: 1.1rem; }
+
+/* ── Protokoll & Minikarte ────────────────────────────────────────── */
+.dgn-bottom { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .75rem; margin-top: .6rem; }
+@media (max-width: 560px) { .dgn-bottom { grid-template-columns: 1fr; } }
+.dgn-log {
+    font-size: .82rem; line-height: 1.4; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: .45rem .6rem; height: 9.6em; overflow-y: auto;
+}
+.dgn-log p { margin: 0; color: var(--text-muted); }
+.dgn-log p:last-child { color: var(--text); }
+.dgn-log .c-bad { color: #f87171; } .dgn-log .c-good { color: #4ade80; } .dgn-log .c-magic { color: #c084fc; }
+.dgn-log .c-gold { color: #facc15; } .dgn-log .c-boss { color: #f472b6; font-weight: 700; } .dgn-log .c-info { color: #93c5fd; }
+.dgn-log .x { color: var(--text-faint); font-size: .75rem; }
+.dgn-mini { text-align: center; }
+.dgn-mini canvas { display: block; width: 192px; height: 128px; image-rendering: pixelated; background: #000; border-radius: 6px; border: 1px solid var(--border); }
+
+/* ── Seitenleiste ─────────────────────────────────────────────────── */
+.dgn #classes { gap: .35rem; }
+.dgn #classes .chip { cursor: pointer; }
+.dgn-menu { margin-top: .6rem; gap: .4rem; }
+.dgn-menu .btn { width: 100%; justify-content: center; }
+.dgn #book-side .bar { margin: .3rem 0; }
+.keys-help { list-style: none; margin: 0; padding: 0; display: grid; gap: .35rem; font-size: .82rem; color: var(--text-muted); }
+.keys-help kbd { font-size: .72rem; }
+
+@media (prefers-reduced-motion: reduce) { .dgn-bar i { transition: none; } }

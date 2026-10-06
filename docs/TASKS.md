@@ -19,22 +19,23 @@ Arbeitsliste für alle weiteren Sitzungen (auch automatische Nachtschichten).
 8. Seiten auf Inseln sind erst nach einer Werft-Expedition offen. Zum Testen im eigenen Tab per Konsole:
    `XIRU.mech.state().islands = {werkzeuge:1,studio:1,arcade:1,hardware:1,mixer:1,ki:1}; XIRU.persist();`
    Skill-gesperrte Seiten: Testkonto wie in `docs/NEUE-SEITE.md` simulieren. Testdaten danach wieder entfernen.
-9. Lieber eine Seite richtig fertig als drei halb. Wenn das Limit naht: aktuellen Stand hier notieren.
+9. **Horror-Teil gehört Mael** (`Why.html`, `why/*`, `assets/css/liminal.css`, `assets/js/liminal.js`): nicht bearbeiten.
+10. Lieber eine Seite richtig fertig als drei halb. Wenn das Limit naht: aktuellen Stand hier notieren.
 
 ---
 
 ## A · Integration & Aufräumen (zuerst!)
 
-- [ ] **Kristalle registrieren**: `python tools/check_site.py` listet ~100 benutzte, aber nicht registrierte IDs
+- [x] **Kristalle registrieren**: `python tools/check_site.py` listet ~100 benutzte, aber nicht registrierte IDs
       (Spiele, KI, Mixer, Werkzeuge, Terminal). Für jede den Auslöser im Code lesen und einen Eintrag
       `{ id, pg, n, h, x, r, m }` schreiben (Name witzig, Hinweis verrät nicht alles, r meist 1–3, r4 nur für echte Meilensteine).
-- [ ] **Teilweise fertige Agenten-Seiten prüfen und fertigstellen** (Stand beim Abbruch unklar):
+- [x] **Teilweise fertige Agenten-Seiten prüfen und fertigstellen** (Stand beim Abbruch unklar):
       `arcade/asteroiden`, `arcade/dungeon` (+ `arcade/js/dungeon/*`, Seite war in Arbeit), `arcade/woertle`,
       `arcade/reversi`, `arcade/klicker`, `arcade/schiebepuzzle`, `ki/index`, `ki/abenteuer`, `ki/taverne`,
       `konto/dienste`, `mixer/index`, `mixer/klang`, `werkzeuge/passwort`, `geheim/terminal`, `404.html`.
       Je Seite: lädt ohne Konsolenfehler, Spiel startet/endet, `XIRU.score` wird gemeldet, Texte sprechen von Kristallen.
-- [ ] Testreste suchen und löschen (z. B. temporäre Kopien wie `*-test.html`, Debug-Hooks `window.__debug…`).
-- [ ] `grep -ri "diskette" --include=*.html --include=*.js` durchgehen: wo „Diskette" ein **Sammelobjekt** meint → Kristall.
+- [x] Testreste suchen und löschen (z. B. temporäre Kopien wie `*-test.html`, Debug-Hooks `window.__debug…`).
+- [x] `grep -ri "diskette" --include=*.html --include=*.js` durchgehen: wo „Diskette" ein **Sammelobjekt** meint → Kristall.
 
 ## A2 · Eigene Designs pro Bereich (Wunsch von Mael, direkt nach A)
 
@@ -136,6 +137,9 @@ Jeder Bereich bekommt ein eigenes Design über eine Body-Klasse, die die Farb-Va
       Dateinamen gelangen → immer `XIRU.esc()` bzw. `textContent`. Markdown-Parser in Notizen: nur sichere Tags, Links nur `http(s):`.
       Keine `eval`/`new Function`/`setTimeout(String)`. Weiterleitungen nur auf eigene Seiten (vgl. `konto/login.html` `weiter=`).
       Profil-Import: Typen prüfen, Grössen begrenzen. Ergebnis als kurzer Bericht in die Notizen.
+- [ ] Entwickler-Zugang: `dev/` bleibt in `.gitignore`; keine Seite darf `dev/` verlinken oder laden (`grep -rn "dev/"`).
+      Prüfen, dass sich niemand über manipulierte Eingaben (Profil-Import, URL-Parameter, Konsole-Eastereggs, Terminal-Befehle)
+      Entwickler-/Admin-Rechte, Vollfreischaltung oder fremde Konten verschaffen kann; keine versteckten „Cheat"-Parameter in der Live-Seite.
 
 ## I · Qualität zum Schluss
 
@@ -145,6 +149,37 @@ Jeder Bereich bekommt ein eigenes Design über eine Body-Klasse, die die Farb-Va
 ---
 
 ## Notizen der letzten Sitzung
+
+- 2026-10-07 (00:00): Mech neu im futuristischen, dunklen Stil (Gunmetal-Panzer, Visier-Helm, Cockpit-Glasluke in der Brust,
+  Energielinien mit Glow, Akzentfarbe je Rahmen; fehlende Teile als Hologramm). Werkhalle dunkel/kalt (Nebel, Projektor-Ring,
+  Arbeiter-Silhouetten mit leuchtendem Visier), Werft-Design auf Cyan/Magenta umgestellt. Mael wünscht: lieber überspitzt als zu brav.
+- 2026-10-06 (23:45): Mech ist jetzt eine Roboter-Figur (Kopf mit Cockpit + Pilot, Rumpf mit Brust-Kern, 2 Arme, 2 Beine,
+  Antrieb an Beinen/Rücken, Luftfilter mit Schnorchel bei Wasser-Antrieben). Erledigt in `konto/skilltree.html` → `drawMech()`.
+
+- 2026-10-06 (23:40, Nachtschicht 1) – **Zusammenfassung Schicht 1:** 4 Aufgaben aus A erledigt (Kristalle registriert, Agenten-Seiten geprüft +
+  PIXMAG-Mini-Oberfläche gebaut, Testreste, Disketten-Begriffe). Nächste Schicht: **A2 · Spielhalle = 80er-Arcade-Halle**.
+  - Testreste: keine Kopien/Backup-Dateien, keine verwaisten JS/CSS. Entfernt: Debug-Hook `window.__klang` (mixer/js/klang.js).
+    Bewusst behalten: `PXM.G.debug` (Konsolen-Helfer im Dungeon, nur lokal), `why/testen.html` (gehört zu Why), Ordner `dev/`.
+    ~~**Für Mael:** `dev/` steht nicht in `.gitignore`~~ → erledigt 2026-10-07: `dev/` ist jetzt in `.gitignore` (Maels Wunsch).
+    Auf einem anderen Gerät fehlt `dev/` daher – Mael meldet sich, dann wird es neu angelegt.
+  - Diskette: alle Treffer sind Spielobjekte/Lore/Hardware (Diskettenfabrik, Snake-Futter, Terminal leitet `disketten` auf Kristalle um).
+    Nur 2 Code-Kommentare angepasst (tower-defense.js, mixer.js).
+
+- 2026-10-06 (23:38, Nachtschicht 1): **Agenten-Seiten geprüft** – alle 15 laden ohne JS-Fehler, Spiele starten, `XIRU.score` vorhanden.
+  **PIXMAG Mini (`arcade/dungeon.html`) war unspielbar:** Oberfläche fehlte. Neu: `arcade/js/dungeon.js` (Zeichnen mit Licht/Fackeln, Effekte `PXM.fx`,
+  Anzeigen `PXM.ui`, Tastatur/Maus/Touch, Zielen, Panels Rucksack/Buch/Laden/Stufe/Karte/Hilfe, Auto-Erkunden/Rasten/Reisen,
+  Speichern `dungeon-lauf`, Statistik `dungeon-stats`, Score `dungeon`) + `arcade/css/dungeon.css`. Getestet: Start, Erkunden, Zauber mit Ziel,
+  Buch/Kombinieren, Laden, Stufenaufstieg, Tod + Rekord, Fortsetzen nach Neuladen, 375 px ohne Querscrollen. Testdaten im Testkonto entfernt.
+  Offen/Idee: auf dem Handy ist das Spielfeld klein (768×480 skaliert) – evtl. später kleineren Ausschnitt für schmale Bildschirme.
+
+- 2026-10-06 (23:30, Nachtschicht 1): **Kristalle registriert** – 98 Einträge in `assets/js/site.js` (Blöcke `/* Spielhalle */` usw. vor `/* EGGS:ENDE */`),
+  jetzt 247 Kristalle, keine Duplikate, alle `pg` gültig, Seite lädt fehlerfrei. Keine r4 vergeben (Spiele max. r3).
+  Hinweis: `check_site.py` meldet 9 „nirgends ausgelöst" – Fehlalarme, die werden per `X.egg(…)`/Datenlisten ausgelöst (core.js, liminal.js, glossar.html).
+  Achtung: Eine zweite Sitzung (Mael) arbeitete parallel an `konto/skilltree.html` – dort nichts angefasst.
+
+- 2026-10-06 (23:30): Werft ist jetzt eine echte Werkhalle (Pixel-Szene: Wand, Tor, Laufkran, Gerüst, 4 animierte Arbeiter, Funken,
+  Modul-Monitor oben links). „Einbauen" startet einen Anbau von 5–10 s (`M.state().job`). Entwickler-Testkonto: `dev/testkonto.html`
+  (Zugangsdaten in `dev/testkonto.js`) – **Ordner `dev/` nie veröffentlichen**, nicht im Register, von `check_site.py` ignoriert.
 
 - 2026-10-06 (spät): Cookie-/Speicher-Banner eingebaut (`X.consent`, ohne Einwilligung nur sessionStorage; Einstellungen + Datenschutz angepasst).
   `Why.html` + `why/neugier|testen|unbekannt.html` im Liminal-Stil (`assets/css/liminal.css`, `assets/js/liminal.js`, `<html data-bare>` = ohne Kopf/Fuss, ohne Toasts).

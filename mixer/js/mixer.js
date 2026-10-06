@@ -66,7 +66,7 @@
         const mq = matchMedia('(prefers-color-scheme: light)');
         if (mq.addEventListener) mq.addEventListener('change', themeChanged);
     }
-    // Disketten-/Kristall-Effekte wie "retro" setzen data-theme kurz um
+    // Kristall-Effekte wie "retro" setzen data-theme kurz um
     if ('MutationObserver' in window) {
         new MutationObserver(themeChanged).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
     }

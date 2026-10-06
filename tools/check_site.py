@@ -15,7 +15,7 @@ import os
 import re
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SKIP_DIRS = {'.git', 'node_modules', '.claude', 'tools', 'docs'}
+SKIP_DIRS = {'.git', 'node_modules', '.claude', 'tools', 'docs', 'dev'}
 
 
 def read(path):

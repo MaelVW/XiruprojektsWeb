@@ -5,7 +5,7 @@
 XIRU.ready(function () {
     'use strict';
     const G = XIRU.Game;
-    XIRU.typedEggs = false;              // viele Tastenkürzel → hier keine getippten Wort-Disketten
+    XIRU.typedEggs = false;              // viele Tastenkürzel → hier keine getippten Wort-Kristalle
 
     const COLS = 20, ROWS = 13, CS = 32, LAST = 25, TAU = Math.PI * 2;
     const { cv, ctx, W, H, dpr } = G.canvas('#cv', COLS * CS, ROWS * CS);

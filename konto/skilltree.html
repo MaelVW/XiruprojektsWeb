@@ -63,7 +63,7 @@
         .tree svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
         .tree line { stroke: var(--border-strong); stroke-width: 3; stroke-linecap: round; }
         .tree line.on { stroke: var(--bc); filter: drop-shadow(0 0 4px var(--bc)); }
-        .node { position: absolute; transform: translate(-50%, -50%); width: 64px; height: 64px; border-radius: 18px; display: grid; place-items: center; background: var(--surface-2); border: 2px solid var(--border-strong); color: var(--text-faint); font-weight: 800; font-size: .68rem; text-align: center; cursor: pointer; padding: .25rem; line-height: 1.1; }
+        .node { position: absolute; transform: translate(-50%, -50%); width: 80px; min-height: 64px; border-radius: 18px; display: grid; place-items: center; background: var(--surface-2); border: 2px solid var(--border-strong); color: var(--text-faint); font-weight: 800; font-size: .62rem; letter-spacing: 0; text-align: center; cursor: pointer; padding: .35rem .3rem; line-height: 1.15; hyphens: auto; -webkit-hyphens: auto; overflow-wrap: anywhere; }
         .node__cost { position: absolute; top: -9px; right: -9px; width: 22px; height: 22px; border-radius: 50%; background: var(--surface-3); border: 1px solid var(--border-strong); font-size: .72rem; display: grid; place-items: center; color: var(--text); }
         .node.is-learned { background: color-mix(in srgb, var(--bc) 22%, var(--surface)); border-color: var(--bc); color: var(--text); box-shadow: 0 0 18px -4px var(--bc); }
         .node.is-available { border-color: var(--bc); color: var(--text); --pc: var(--bc); animation: pulse 1.8s infinite; }
@@ -71,13 +71,13 @@
         .root-egg { cursor: pointer; font-size: 1.6rem; }
         /* ── Werft-Design: Pixel-Retro mit modernen Hologramm-Akzenten ── */
         body.theme-werft {
-            --bg: #0d0f1a; --bg-2: #0a0c14; --surface: #171a2b; --surface-2: #1f2338; --surface-3: #2a2f4a; --border: #000; --border-strong: #3b4166;
-            --text: #f4ecd8; --text-muted: #b9b3a0; --text-faint: #7d7866; --accent: #ffb000; --accent-2: #4ff0ff; --rc: #ffb000; --rc-raw: #ffb000; --accent-ink: #1a1000;
+            --bg: #04060b; --bg-2: #03040a; --surface: #0b0f1a; --surface-2: #111727; --surface-3: #1a2236; --border: #000; --border-strong: #1f2a44;
+            --text: #dbe7f5; --text-muted: #8796ad; --text-faint: #56627a; --accent: #3ff3ff; --accent-2: #ff3df0; --rc: #3ff3ff; --rc-raw: #3ff3ff; --accent-ink: #001417;
             --font: "Cascadia Code", Consolas, "Courier New", monospace; --radius: 0px; --radius-sm: 0px;
             background: repeating-linear-gradient(0deg, rgba(255,255,255,.025) 0 2px, transparent 2px 4px), var(--bg);
         }
         .theme-werft h1, .theme-werft h2, .theme-werft h3 { text-transform: uppercase; letter-spacing: .06em; text-shadow: 3px 3px 0 #000; }
-        .theme-werft h1 { color: var(--accent); }
+        .theme-werft h1 { color: var(--accent); text-shadow: 3px 3px 0 #000, 0 0 18px rgba(63,243,255,.45); }
         .theme-werft .card, .theme-werft .slot-card, .theme-werft .stats div, .theme-werft .bay, .theme-werft .modal {
             border: 0; border-radius: 0;
             box-shadow: 0 0 0 3px #000, 0 0 0 6px var(--border-strong), 6px 6px 0 6px rgba(0,0,0,.55);
@@ -87,7 +87,7 @@
         .theme-werft .btn--primary { background: var(--accent); color: #1a1000; }
         .theme-werft .badge { border-radius: 0; box-shadow: 0 0 0 2px #000; }
         .theme-werft .bar { border-radius: 0; height: 10px; box-shadow: 0 0 0 2px #000; }
-        .theme-werft .bar__fill { border-radius: 0; background: repeating-linear-gradient(90deg, var(--accent) 0 6px, #ffcf4d 6px 8px); }
+        .theme-werft .bar__fill { border-radius: 0; background: repeating-linear-gradient(90deg, var(--accent) 0 6px, #0ea5b7 6px 8px); }
         .theme-werft .tabs button[aria-selected="true"] { color: var(--accent); border-bottom: 4px solid var(--accent); }
         .theme-werft .bay { background:
             linear-gradient(transparent 78%, rgba(0,0,0,.35) 78%),
@@ -97,8 +97,18 @@
             repeating-linear-gradient(0deg, transparent 0 31px, rgba(79,240,255,.07) 31px 32px), #0b0e18; padding: 1.25rem 1rem 1.6rem; }
         .theme-werft .bay canvas { width: 100%; height: auto; display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
         .theme-werft .bay::after { content: "WERFT-BUCHT 01"; position: absolute; top: 8px; left: 10px; font-size: .7rem; letter-spacing: .2em; color: var(--accent-2); text-shadow: 0 0 8px var(--accent-2); }
-        .theme-werft .guide { box-shadow: 0 0 0 3px #000, 0 0 0 6px var(--accent), 0 0 24px rgba(255,176,0,.35); background: #1d1708; }
+        .theme-werft .guide { box-shadow: 0 0 0 3px #000, 0 0 0 6px var(--accent), 0 0 24px rgba(63,243,255,.3); background: #041016; }
         .holo { color: var(--accent-2); text-shadow: 0 0 6px var(--accent-2); }
+        .theme-werft .bay { padding: 0; overflow: hidden; }
+        .theme-werft .bay::after { content: none; }
+        .monitor { position: absolute; top: 10px; left: 10px; width: min(46%, 230px); padding: .45rem .6rem; font-size: .68rem; line-height: 1.35;
+            background: #02090d; color: #7df9ff; text-shadow: 0 0 6px rgba(63,243,255,.6); box-shadow: 0 0 0 3px #000, 0 0 0 5px #3b4166, inset 0 0 18px rgba(0,0,0,.6); }
+        .monitor::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0,0,0,.25) 0 1px, transparent 1px 3px); }
+        .monitor b { color: #e0fdff; font-weight: 700; letter-spacing: .08em; }
+        .monitor .mbar { height: 7px; margin-top: .3rem; background: #032026; box-shadow: 0 0 0 1px #3ff3ff; }
+        .monitor .mbar span { display: block; height: 100%; background: repeating-linear-gradient(90deg, #3ff3ff 0 5px, #0ea5b7 5px 7px); }
+        .monitor .blink { animation: blink 1s step-end infinite; }
+        @media (max-width: 560px) { .monitor { font-size: .6rem; width: 58%; } }
         /* Kabel-Minispiel */
         .wires { width: 100%; max-width: 360px; display: block; margin: 0 auto; touch-action: none; user-select: none; background: #0b0e18; box-shadow: 0 0 0 3px #000, 0 0 0 6px var(--border-strong); }
         .wires .plug { cursor: grab; }
@@ -129,7 +139,7 @@
     <section data-panel="mech">
         <div class="yard">
             <div>
-                <div class="bay"><div class="bay__floor"></div><div id="mech"></div></div>
+                <div class="bay"><div id="mech"></div><div class="monitor" id="monitor" aria-live="polite"></div></div>
                 <div class="stats" id="stats"></div>
                 <div class="row mt-2"><button class="btn" id="testrun" type="button">▶ Testlauf</button><span class="small muted" id="ready"></span></div>
             </div>
@@ -162,62 +172,267 @@ XIRU.ready(function () {
         return [0, .5].map(o => { const k = (f * .6 + o) % 1; return '<circle cx="' + (x + k * 8) + '" cy="' + (y - k * 36) + '" r="' + (5 + k * 7) + '" fill="#8792a8" opacity="' + (.7 - k * .7).toFixed(2) + '"/>'; }).join('');
     }
     /* f = Zeit in Sekunden, run = Testlauf (schneller, wackelt) */
+    /* Der Mech: eine schlanke, schwer gepanzerte Kampfmaschine. Cockpit als dunkle Glasluke in der Brust,
+       Helm mit Visier-Schlitz, breite Schulterpanzer, Energielinien. Fehlende Teile erscheinen als Hologramm. */
+    const FRAME = {
+        none:         { ac: '#3ff3ff', base: 'none',    plate: 'none',    edge: '#3ff3ff' },
+        'r-schrott':  { ac: '#ff8a3d', base: '#1e1712', plate: '#2c2119', edge: '#000' },
+        'r-alu':      { ac: '#3ff3ff', base: '#161c28', plate: '#232c3e', edge: '#000' },
+        'r-titan':    { ac: '#5b8cff', base: '#10141f', plate: '#1c2336', edge: '#000' },
+        'r-kristall': { ac: '#c084fc', base: '#140f24', plate: '#241a40', edge: '#000' }
+    };
+    const pts = arr => arr.map(q => q[0] + ',' + q[1]).join(' ');
+    const mirror = arr => arr.map(q => [240 - q[0], q[1]]);
     function drawMech(f, run) {
         f = f || 0;
         const ins = sl => M.installed(sl), cond = sl => { const p = ins(sl); return p ? M.cond(p.id) : 100; };
-        const sp = run ? 4 : 1, A = f * 220 * sp, pulse = (.65 + Math.sin(f * 4) * .35).toFixed(2);
+        const sp = run ? 4 : 1, A = f * 220 * sp, pulse = (.6 + Math.sin(f * 3) * .4).toFixed(2);
+        const r = ins('rahmen'), a = ins('antrieb'), k = ins('kern'), sn = ins('sensor'), w = ins('arm'), pz = ins('panzer');
+        const F = FRAME[r ? r.id : 'none'], AC = F.ac, holo = !r;
+        const bob = run ? (Math.floor(f * 10) % 2 ? -2 : 0) : Math.round(Math.sin(f * 1.4) * 1.2);
+        const step = run ? Math.sin(f * 14) * 5 : 0;
+        const water = a && (a.id === 'a-paddel' || a.id === 'a-schraube');
+        // Panzerteil: im Hologramm-Modus nur leuchtende Umrisse
+        const armor = (arr, fill, extra) => holo
+            ? '<polygon points="' + pts(arr) + '" fill="#3ff3ff" fill-opacity=".05" stroke="#3ff3ff" stroke-opacity=".7" stroke-width="1.5" stroke-dasharray="4 3"/>'
+            : '<polygon points="' + pts(arr) + '" fill="' + (fill || F.base) + '" stroke="#000" stroke-width="2"' + (extra || '') + '/>';
+        const glow = (inner, op) => '<g filter="url(#mglow)" opacity="' + (op == null ? 1 : op) + '">' + inner + '</g>';
+        const line = (x1, y1, x2, y2, c, wdt, op) => '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="' + (c || AC) + '" stroke-width="' + (wdt || 2) + '"' + (op != null ? ' opacity="' + op + '"' : '') + '/>';
+        let g = '<defs><filter id="mglow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>';
+
+        /* ── Rücken: Turbinen, Triebwerke, Rebreather ── */
+        if (a && a.id === 'a-paddel') [86, 154].forEach(cx => {   // Hydro-Turbinen
+            g += '<circle cx="' + cx + '" cy="34" r="16" fill="#0a0e18" stroke="#000" stroke-width="2"/>';
+            g += '<g ' + rot(A * 1.4, cx, 34) + '>' + [0, 60, 120].map(d => '<rect x="' + (cx - 2) + '" y="20" width="4" height="28" fill="#2a3446" transform="rotate(' + d + ' ' + cx + ' 34)"/>').join('') + '</g>';
+            g += glow('<circle cx="' + cx + '" cy="34" r="15" fill="none" stroke="' + AC + '" stroke-width="2" opacity="' + pulse + '"/>');
+        });
+        if (a && a.id === 'a-duesen') [[94, 1], [146, -1]].forEach(([cx]) => {   // Plasma-Triebwerke
+            const fl = 26 + (Math.floor(f * 14) % 2) * 10;
+            g += '<polygon points="' + pts([[cx - 10, 64], [cx + 10, 64], [cx + 8, 104], [cx - 8, 104]]) + '" fill="#0d1120" stroke="#000" stroke-width="2"/>';
+            g += glow('<polygon points="' + pts([[cx - 7, 104], [cx + 7, 104], [cx, 104 + fl]]) + '" fill="#ff3df0" opacity=".85"/><polygon points="' + pts([[cx - 3, 104], [cx + 3, 104], [cx, 104 + fl * .6]]) + '" fill="#fff"/>');
+        });
+        if (water) {   // Rebreather: Atemluft-Filter hinter dem Nacken, Schnorchel-Rückgrat
+            g += '<rect x="100" y="28" width="12" height="26" fill="#0d1322" stroke="#000" stroke-width="2"/><rect x="128" y="28" width="12" height="26" fill="#0d1322" stroke="#000" stroke-width="2"/>';
+            g += glow([33, 39, 45].map(y => '<rect x="102" y="' + y + '" width="8" height="2" fill="' + AC + '"/><rect x="130" y="' + y + '" width="8" height="2" fill="' + AC + '"/>').join(''), pulse);
+            g += '<polyline points="' + pts([[150, 50], [158, 30], [158, -4], [150, -8]]) + '" fill="none" stroke="#0d1322" stroke-width="6"/>' + glow(line(158, 30, 158, -2, AC, 1.5, .8));
+            const bub = (f * 26) % 26;
+            g += '<rect x="' + (149 + Math.round(Math.sin(f * 3) * 2)) + '" y="' + Math.round(-10 - bub) + '" width="3" height="3" fill="#a5f3fc" opacity="' + (1 - bub / 26).toFixed(2) + '"/>';
+        }
+
+        /* ── Beine ── */
+        const leg = s0 => {
+            const hx = 120 + s0 * 14, kb = s0 * step;
+            let L = '';
+            if (!a) {
+                L += '<polyline points="' + pts([[hx, 120], [hx + s0 * 3, 152], [hx + s0 * 5, 196]]) + '" fill="none" stroke="#3ff3ff" stroke-opacity=".5" stroke-width="2" stroke-dasharray="4 3"/>';
+                return L;
+            }
+            if (a.id === 'a-beine') {   // Rückwärtsgelenk mit Hydraulik
+                const kx = hx + s0 * 16, ky = 146 + kb, ax = hx + s0 * 6, ay = 180;
+                L += armor([[hx - 8, 120], [hx + 8, 120], [kx + 6, ky], [kx - 6, ky]], F.plate);
+                L += armor([[kx - 7, ky], [kx + 7, ky], [ax + 6, ay], [ax - 6, ay]]);
+                L += line(hx + s0 * 4, 128, ax, ay - 6, '#5b6478', 3);
+                L += armor([[ax - 14, ay], [ax + 14, ay], [ax + 20, 200], [ax + 4, 194], [ax - 4, 194], [ax - 20, 200]], F.plate);
+                L += glow('<polygon points="' + pts([[kx, ky - 6], [kx + 6, ky], [kx, ky + 6], [kx - 6, ky]]) + '" fill="' + AC + '"/>', pulse);
+                return L;
+            }
+            const kx = hx + s0 * 2, ky = 150 + kb;
+            L += armor([[hx - 9, 120], [hx + 9, 120], [kx + 7, ky], [kx - 7, ky]], F.plate);                            // Oberschenkel
+            L += armor([[kx - 8, ky + 2], [kx + 8, ky + 2], [kx + s0 * 3 + 10, 186], [kx + s0 * 3 - 10, 186]]);          // Schienbein
+            L += armor([[kx + s0 * 3 + (s0 > 0 ? 2 : -12), ky + 8], [kx + s0 * 3 + (s0 > 0 ? 12 : -2), ky + 8], [kx + s0 * 3 + (s0 > 0 ? 12 : -2), 178]], F.plate); // Wadenpanzer
+            L += glow('<polygon points="' + pts([[kx, ky - 5], [kx + 5, ky], [kx, ky + 5], [kx - 5, ky]]) + '" fill="' + AC + '"/>' + line(kx, ky + 8, kx + s0 * 3, 182, AC, 1.5, .7), pulse);
+            const fx = kx + s0 * 3;
+            if (a.id === 'a-raupe') {
+                L += '<rect x="' + (fx - 18) + '" y="184" width="36" height="16" fill="#0b0f1a" stroke="#000" stroke-width="2"/>' + [-12, -4, 4, 12].map(o => '<g ' + rot(A, fx + o, 192) + '><rect x="' + (fx + o - 3) + '" y="189" width="6" height="6" fill="#2a3446"/></g>').join('') + glow(line(fx - 16, 186, fx + 16, 186, AC, 1.5, .8));
+            } else {
+                L += armor([[fx - 12, 186], [fx + 12, 186], [fx + 16, 198], [fx - 16, 198]], F.plate);
+                if (a.id === 'a-schraube') {   // Hydro-Jet an der Wade
+                    const jx = fx + s0 * 16;
+                    L += '<rect x="' + (jx - 6) + '" y="160" width="12" height="24" fill="#0d1120" stroke="#000" stroke-width="2"/><g ' + rot(A * 2, jx, 186) + '><rect x="' + (jx - 7) + '" y="185" width="14" height="2" fill="' + AC + '"/></g>' + glow('<circle cx="' + jx + '" cy="186" r="5" fill="none" stroke="' + AC + '" stroke-width="1.5"/>', pulse);
+                }
+                if (a.id === 'a-duesen') { const fl = 8 + (Math.floor(f * 14) % 2) * 6; L += glow('<polygon points="' + pts([[fx - 5, 198], [fx + 5, 198], [fx, 198 + fl]]) + '" fill="#ff3df0"/>'); }
+            }
+            return L;
+        };
+        g += leg(-1) + leg(1);
+        if (a && cond('antrieb') < 40) g += smoke(120, 170, f) + glow('<rect x="' + (104 + (Math.floor(f * 9) % 3) * 6) + '" y="150" width="2" height="2" fill="#ffe066"/>');
+
+        /* ── Oberkörper (atmet) ── */
+        let u = '';
+        // Hüftschürze und Taille
+        u += armor([[96, 118], [116, 118], [114, 136], [98, 132]], F.plate) + armor(mirror([[96, 118], [116, 118], [114, 136], [98, 132]]), F.plate);
+        u += armor([[110, 106], [130, 106], [128, 122], [112, 122]]);
+        if (!holo) u += glow(line(112, 114, 128, 114, AC, 1.5), pulse);
+        // Arme hinter den Schultern
+        const sw = run ? Math.sin(f * 14) * 5 : Math.sin(f * 1.4) * 1.2;
+        const arm = (side) => {
+            const sx = side < 0 ? 66 : 174, ex = sx + side * 6 - (side < 0 ? sw : -sw), hx = ex + side * 1, hy = 130;
+            let R = armor([[sx - 6, 72], [sx + 6, 72], [ex + 5, 100], [ex - 5, 100]], F.plate);                  // Oberarm
+            R += armor([[ex - 9, 100], [ex + 9, 100], [hx + 8, hy], [hx - 8, hy]]);                                 // Unterarm-Panzer
+            if (!holo) R += glow(line(ex, 104, hx, hy - 4, AC, 1.5, .8), pulse) + glow('<circle cx="' + ex + '" cy="100" r="3" fill="' + AC + '"/>', pulse);
+            return R;
+        };
+        u += arm(-1) + arm(1);
+        // Linke Hand: Klauen
+        const lhx = 60 - sw * 0 + (60 - 60), lhy = 130;
+        u += '<path d="M' + (lhx - 7) + ' ' + lhy + ' l-3 10 M' + lhx + ' ' + lhy + ' l0 11 M' + (lhx + 7) + ' ' + lhy + ' l3 10" stroke="' + (holo ? '#3ff3ff' : '#5b6478') + '" stroke-width="3"/>';
+        // Rechte Hand: Werkzeug
+        const rhx = 181 + sw, rhy = 130;
+        if (!w) u += '<path d="M' + (rhx - 7) + ' ' + rhy + ' l-3 10 M' + rhx + ' ' + rhy + ' l0 11 M' + (rhx + 7) + ' ' + rhy + ' l3 10" stroke="' + (holo ? '#3ff3ff' : '#5b6478') + '" stroke-width="3"/>';
+        else if (w.id === 'w-schluessel') u += glow('<path d="M' + rhx + ' ' + rhy + ' v18 M' + (rhx - 7) + ' ' + (rhy + 22) + ' l7 -6 l7 6" stroke="' + AC + '" stroke-width="3" fill="none"/>');
+        else if (w.id === 'w-greifer') { const o = run ? (Math.floor(f * 8) % 2) * 4 : 0; u += '<path d="M' + rhx + ' ' + rhy + ' l' + (-9 - o) + ' 16 M' + rhx + ' ' + rhy + ' l0 18 M' + rhx + ' ' + rhy + ' l' + (9 + o) + ' 16" stroke="#8792a8" stroke-width="3"/>' + glow('<circle cx="' + rhx + '" cy="' + (rhy + 2) + '" r="2.5" fill="' + AC + '"/>'); }
+        else u += '<polygon points="' + pts([[rhx - 6, rhy], [rhx + 6, rhy], [rhx, rhy + 26]]) + '" fill="#1c2336" stroke="#000" stroke-width="2"/><g ' + rot(A * 3, rhx, rhy + 10) + '>' + glow(line(rhx - 4, rhy + 6, rhx + 4, rhy + 14, AC, 1.5)) + '</g>' + glow('<circle cx="' + rhx + '" cy="' + (rhy + 27) + '" r="2" fill="#ff3df0"/>', pulse);
+        // Brustpanzer
+        const chest = [[84, 52], [156, 52], [168, 70], [152, 98], [134, 108], [106, 108], [88, 98], [72, 70]];
+        u += armor(chest);
+        if (!holo) {
+            u += '<polygon points="' + pts([[92, 57], [148, 57], [158, 70], [146, 92], [94, 92], [82, 70]]) + '" fill="' + F.plate + '"/>';
+            u += glow(line(82, 70, 94, 92, AC, 1.5, .8) + line(158, 70, 146, 92, AC, 1.5, .8) + line(106, 104, 134, 104, AC, 1.5, .6), pulse);
+        }
+        // Cockpit-Luke: dunkles Glas, Pilot nur als Schatten
+        if (!holo) {
+            u += '<polygon points="' + pts([[104, 60], [136, 60], [143, 71], [134, 84], [106, 84], [97, 71]]) + '" fill="#03050a" stroke="#000" stroke-width="2"/>';
+            u += '<polygon points="' + pts([[116, 66], [124, 66], [126, 72], [128, 82], [112, 82], [114, 72]]) + '" fill="#0d1424" opacity=".9"/>';   // Pilot-Silhouette
+            u += '<rect x="117" y="68" width="6" height="2" fill="' + AC + '" opacity=".35"/>';
+            const scan = 61 + ((f * 18) % 22);
+            u += '<rect x="100" y="' + scan.toFixed(1) + '" width="40" height="1" fill="' + AC + '" opacity=".22"/>';
+            u += '<polyline points="' + pts([[106, 62], [118, 62]]) + '" stroke="#fff" stroke-opacity=".25" stroke-width="1.5"/>';
+            u += glow('<polygon points="' + pts([[104, 60], [136, 60], [143, 71], [134, 84], [106, 84], [97, 71]]) + '" fill="none" stroke="' + AC + '" stroke-width="1.5"/>', pulse);
+        }
+        // Energiekern unter der Luke
+        if (k && !holo) {
+            const kc = k.id === 'k-batterie' ? '#ffb000' : k.id === 'k-diskette' ? '#a78bfa' : k.id === 'k-cd' ? '#3ff3ff' : '#f5e9ff';
+            if (k.id === 'k-cd') u += '<g ' + rot(A * 2, 120, 96) + '>' + glow('<circle cx="120" cy="96" r="7" fill="none" stroke="' + kc + '" stroke-width="2" stroke-dasharray="6 3"/>') + '</g>';
+            else if (k.id === 'k-kristall') u += glow('<polygon points="' + pts([[120, 86], [126, 96], [120, 106], [114, 96]]) + '" fill="' + kc + '"/>' + line(108, 96, 132, 96, '#c084fc', 1, pulse) + line(120, 84, 120, 108, '#c084fc', 1, pulse));
+            else if (k.id === 'k-diskette') u += glow('<rect x="114" y="90" width="12" height="12" fill="' + kc + '" opacity="' + pulse + '"/>');
+            else u += glow('<rect x="115" y="93" width="10" height="6" fill="' + kc + '" opacity="' + pulse + '"/>');
+        } else if (!holo) u += '<rect x="113" y="89" width="14" height="14" fill="none" stroke="#3ff3ff" stroke-opacity=".5" stroke-dasharray="3 2"/>';
+        if (r && cond('rahmen') < 40) u += '<polyline points="' + pts([[90, 62], [98, 76], [94, 86], [102, 96]]) + '" fill="none" stroke="#ff3b3b" stroke-width="2" opacity="' + (Math.floor(f * 6) % 2 ? 1 : .3) + '"/>' + smoke(150, 56, f + .3);
+        // Schulterpanzer
+        const pad = [[88, 50], [60, 44], [48, 60], [56, 82], [80, 80], [94, 64]];
+        [pad, mirror(pad)].forEach((P0, i) => {
+            u += armor(P0, F.plate);
+            if (!holo) u += glow(line(i ? 184 : 56, 82, i ? 160 : 80, 80, AC, 1.5, .9), pulse);
+            if (pz && !holo) {
+                const col = pz.id === 'p-blech' ? '#2a3446' : pz.id === 'p-ram' ? '#0f3d24' : '#05070c';
+                const layer = i ? mirror([[84, 46], [56, 38], [44, 52], [50, 64], [86, 56]]) : [[84, 46], [56, 38], [44, 52], [50, 64], [86, 56]];
+                u += '<polygon points="' + pts(layer) + '" fill="' + col + '" stroke="#000" stroke-width="2"/>';
+                if (pz.id === 'p-ram') u += glow([0, 8, 16].map(o => '<rect x="' + (i ? 168 + o - 16 : 56 + o) + '" y="46" width="5" height="3" fill="#22c55e"/>').join(''), pulse);
+                if (pz.id === 'p-tower') u += glow(line(i ? 194 : 46, 52, i ? 160 : 80, 44, '#22c55e', 1.5, pulse));
+            }
+        });
+        // Hals und Helm mit Visier
+        u += armor([[115, 44], [125, 44], [124, 54], [116, 54]]);
+        u += armor([[108, 22], [132, 22], [139, 32], [133, 46], [107, 46], [101, 32]], F.plate);
+        if (!holo) {
+            u += '<polygon points="' + pts([[111, 38], [129, 38], [125, 46], [115, 46]]) + '" fill="' + F.base + '"/>';
+            u += '<rect x="104" y="30" width="32" height="4" fill="#02030a"/>';
+            const eye = 106 + ((Math.sin(f * 1.3) + 1) / 2) * 24;
+            u += glow('<rect x="104" y="31" width="32" height="2" fill="' + AC + '" opacity=".55"/><rect x="' + eye.toFixed(1) + '" y="30" width="6" height="4" fill="#fff"/>');
+        }
+        // Sensor auf dem Helm
+        if (!sn) u += '<polygon points="' + pts([[112, 20], [128, 20], [124, 4], [116, 4]]) + '" fill="none" stroke="#3ff3ff" stroke-opacity=".5" stroke-dasharray="3 3"/>';
+        else if (sn.id === 's-antenne') u += '<polygon points="' + pts([[118, 24], [100, 2], [104, 2], [120, 20], [136, 2], [140, 2], [122, 24]]) + '" fill="#2a3446" stroke="#000" stroke-width="1.5"/>' + glow(line(102, 3, 118, 22, AC, 1, .8) + line(138, 3, 122, 22, AC, 1, .8));
+        else if (sn.id === 's-radar') u += '<g ' + rot(Math.sin(f * 1.2) * 20, 142, 28) + '><polygon points="' + pts([[140, 28], [158, 12], [162, 20], [146, 32]]) + '" fill="#1c2336" stroke="#000" stroke-width="1.5"/>' + glow(line(158, 13, 161, 19, AC, 2)) + '</g>';
+        else if (sn.id === 's-hdd') { const ang = f * 3 * sp; u += glow('<ellipse cx="120" cy="18" rx="24" ry="6" fill="none" stroke="' + AC + '" stroke-width="1.5" opacity=".8"/><rect x="' + (118 + Math.cos(ang) * 22).toFixed(1) + '" y="' + (16 + Math.sin(ang) * 5).toFixed(1) + '" width="4" height="4" fill="#fff"/>'); }
+        else { const fy = Math.sin(f * 2) * 2; u += glow('<polygon points="' + pts([[120, 0 + fy], [127, 9 + fy], [120, 18 + fy], [113, 9 + fy]]) + '" fill="#e9d5ff"/>' + line(120, -6 + fy, 120, -14 + fy, '#c084fc', 1, pulse)); }
+
+        const shake = run ? (Math.floor(f * 20) % 2 ? 2 : -2) : 0;
+        g += '<g transform="translate(' + shake + ' ' + bob + ')">' + u + '</g>';
+        return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -20 240 240" width="240" height="240">' + g + '</svg>';
+    }
+    /* ── Die Werkhalle ──────────────────────────────────────────────────── */
+    const SLOT_POINT = { rahmen: [160, 80], antrieb: [160, 146], kern: [160, 95], sensor: [160, 38], arm: [201, 118], panzer: [124, 72] };
+    const SLOT_COLOR = { rahmen: '#9ca3af', antrieb: '#f97316', kern: '#a78bfa', sensor: '#4ff0ff', arm: '#facc15', panzer: '#22c55e' };
+    function worker(x, y, f, face, busy) {
+        const step = Math.floor(f * 8) % 2, X0 = Math.round(x), Y0 = Math.round(y), d = face < 0;
+        let g = '<g>';
+        g += '<rect x="' + (X0 + 1) + '" y="' + (Y0 - 15) + '" width="6" height="6" fill="#111827"/>';                       // Helm
+        g += '<rect x="' + (X0 + (d ? 1 : 3)) + '" y="' + (Y0 - 13) + '" width="4" height="1" fill="#3ff3ff"/>';            // leuchtendes Visier
+        g += '<rect x="' + (X0 + 1) + '" y="' + (Y0 - 9) + '" width="6" height="5" fill="#0b1220"/>';                       // Anzug
+        g += '<rect x="' + (X0 + 1) + '" y="' + (Y0 - 7) + '" width="6" height="1" fill="#ff3df0" opacity=".7"/>';          // Leuchtstreifen
+        g += '<rect x="' + (X0 + 1 + (step ? 0 : 1)) + '" y="' + (Y0 - 4) + '" width="2" height="4" fill="#070b14"/>';      // Beine
+        g += '<rect x="' + (X0 + 5 - (step ? 0 : 1)) + '" y="' + (Y0 - 4) + '" width="2" height="4" fill="#070b14"/>';
+        if (busy) {                                                                                                            // Plasmaschweisser
+            const on = Math.floor(f * 8) % 2;
+            const hx = X0 + (d ? -3 : 8), hy = Y0 - 10;
+            g += '<rect x="' + hx + '" y="' + hy + '" width="3" height="2" fill="#2a3446"/>' + (on ? '<rect x="' + (hx + (d ? -2 : 3)) + '" y="' + (hy - 1) + '" width="2" height="2" fill="#bff8ff"/>' : '');
+        }
+        return g + '</g>';
+    }
+    function sceneSVG(f, run) {
+        const job = M.state().job, now = Date.now();
+        const jp = job ? Math.min(1, Math.max(0, (now - job.start) / (job.end - job.start))) : 0;
+        const jpart = job && M.part(job.id), target = jpart ? SLOT_POINT[jpart.slot] : null;
         let g = '';
-        const a = ins('antrieb');
-        if (!a) g += '<rect x="80" y="160" width="80" height="34" fill="none" stroke="#3b4166" stroke-width="3" stroke-dasharray="6 6"/>';
-        else if (a.id === 'a-paddel') g += '<g ' + rot(A, 120, 176) + '><circle cx="120" cy="176" r="22" fill="#78350f" stroke="#a16207" stroke-width="4"/>' + [0, 45, 90, 135].map(r => '<rect x="116" y="152" width="8" height="48" fill="#d97706" transform="rotate(' + r + ' 120 176)"/>').join('') + '<circle cx="120" cy="176" r="6" fill="#facc15"/></g>';
-        else if (a.id === 'a-raupe') g += '<rect x="58" y="160" width="124" height="34" rx="17" fill="#1f2937" stroke="#4b5563" stroke-width="4"/>' + [76, 102, 128, 154].map(x => '<g ' + rot(A, x, 177) + '><circle cx="' + x + '" cy="177" r="10" fill="#6b7280"/><rect x="' + (x - 2) + '" y="167" width="4" height="20" fill="#1f2937"/></g>').join('');
-        else if (a.id === 'a-schraube') g += '<ellipse cx="70" cy="182" rx="26" ry="9" fill="#ef4444"/><ellipse cx="170" cy="182" rx="26" ry="9" fill="#ef4444"/><rect x="40" y="162" width="160" height="6" fill="#9ca3af"/><g ' + rot(A * 1.5, 28, 150) + '><ellipse cx="28" cy="138" rx="5" ry="12" fill="#cbd5e1"/><ellipse cx="28" cy="162" rx="5" ry="12" fill="#94a3b8"/><circle cx="28" cy="150" r="4" fill="#475569"/></g>';
-        else if (a.id === 'a-duesen') { const fl = 18 + (Math.floor(f * 12) % 2) * 8; g += '<path d="M78 158h22l-4 22h-14z M140 158h22l-4 22h-14z" fill="#475569"/><path d="M82 180h14l-7 ' + fl + 'z M144 180h14l-7 ' + fl + 'z" fill="#f97316"/><path d="M85 180h8l-4 ' + (fl - 8) + 'z M147 180h8l-4 ' + (fl - 8) + 'z" fill="#fde047"/>'; }
-        else if (a.id === 'a-beine') { const b = Math.sin(f * 3 * sp) * 4; g += '<path d="M90 156 L72 ' + (182 + b) + ' L86 206 M150 156 L168 ' + (182 - b) + ' L154 206" stroke="#64748b" stroke-width="12" fill="none" stroke-linecap="square" stroke-linejoin="miter"/><rect x="66" y="' + (176 + b) + '" width="12" height="12" fill="#4ff0ff"/><rect x="162" y="' + (176 - b) + '" width="12" height="12" fill="#4ff0ff"/><rect x="70" y="204" width="34" height="8" fill="#334155"/><rect x="138" y="204" width="34" height="8" fill="#334155"/>'; }
-        if (a && cond('antrieb') < 40) g += smoke(108, 160, f);
-        const r = ins('rahmen');
-        let body;
-        if (!r) body = '<rect x="62" y="70" width="116" height="90" fill="none" stroke="#3b4166" stroke-width="3" stroke-dasharray="8 6"/>';
-        else if (r.id === 'r-schrott') body = '<rect x="62" y="70" width="116" height="90" fill="#7c4a2d" stroke="#2a170a" stroke-width="4"/><rect x="70" y="128" width="30" height="22" fill="#9a6b45"/><path d="M150 76l10 14" stroke="#2a170a" stroke-width="3"/>' + [[68, 76], [172, 76], [68, 154], [172, 154]].map(c => '<rect x="' + (c[0] - 2) + '" y="' + (c[1] - 2) + '" width="5" height="5" fill="#d6a76b"/>').join('');
-        else if (r.id === 'r-alu') body = '<rect x="60" y="68" width="120" height="92" fill="#9ca3af" stroke="#e5e7eb" stroke-width="4"/><rect x="68" y="74" width="104" height="12" fill="#e5e7eb" opacity=".6"/>';
-        else if (r.id === 'r-titan') body = '<path d="M74 66h92l16 24v52l-16 20H74l-16-20V90z" fill="#475569" stroke="#94a3b8" stroke-width="3"/><path d="M66 110h108" stroke="#ffb000" stroke-width="4" stroke-dasharray="10 6"/>';
-        else body = '<path d="M120 58l60 30v54l-60 30-60-30V88z" fill="#a78bfa" fill-opacity=".7" stroke="#d8ccff" stroke-width="3"/><path d="M120 58v114M60 88l120 54M180 88L60 142" stroke="#fff" stroke-opacity=".4" stroke-width="2"/>';
-        const pz = ins('panzer');
-        if (pz && r) {
-            const col = pz.id === 'p-blech' ? '#9ca3af' : pz.id === 'p-ram' ? '#15803d' : '#111827';
-            body += '<rect x="50" y="80" width="14" height="70" fill="' + col + '" stroke="#000" stroke-width="2"/><rect x="176" y="80" width="14" height="70" fill="' + col + '" stroke="#000" stroke-width="2"/>' +
-                (pz.id === 'p-ram' ? [86, 100, 114, 128].map(y => '<rect x="53" y="' + y + '" width="8" height="6" fill="#0f172a"/><rect x="179" y="' + y + '" width="8" height="6" fill="#0f172a"/>').join('') : '') +
-                (pz.id === 'p-tower' ? '<rect x="54" y="86" width="5" height="5" fill="#22c55e" opacity="' + pulse + '"/><rect x="180" y="86" width="5" height="5" fill="#22c55e"/>' : '');
+        // Dunkle Halle: kaltes Licht, Nebel, Hologramm-Projektor
+        g += '<defs><linearGradient id="fog" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3ff3ff" stop-opacity="0"/><stop offset="1" stop-color="#7dd3fc" stop-opacity=".16"/></linearGradient>' +
+             '<radialGradient id="pit" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#3ff3ff" stop-opacity=".35"/><stop offset="1" stop-color="#3ff3ff" stop-opacity="0"/></radialGradient></defs>';
+        g += '<rect x="0" y="0" width="320" height="200" fill="#05070d"/>';
+        for (let x = 0; x < 320; x += 32) g += '<rect x="' + x + '" y="16" width="1" height="152" fill="#0d1220"/>';
+        g += '<rect x="60" y="28" width="200" height="140" fill="#04060b"/>';
+        for (let y = 32; y < 166; y += 9) g += '<rect x="64" y="' + y + '" width="192" height="4" fill="#0a0e18"/>';
+        g += '<rect x="60" y="26" width="200" height="2" fill="#3ff3ff" opacity="' + (.25 + Math.sin(f) * .1).toFixed(2) + '"/>';
+        g += '<text x="160" y="44" text-anchor="middle" font-family="monospace" font-size="7" letter-spacing="3" fill="#3ff3ff" opacity=".35">XIRU · WERFT 01</text>';
+        [40, 160, 280].forEach((lx, i) => { const on = !(Math.floor(f * 3 + i * 7) % 29 === 0); g += '<rect x="' + (lx - 8) + '" y="16" width="16" height="2" fill="' + (on ? '#bff8ff' : '#1d3a40') + '"/>' + (on ? '<path d="M' + (lx - 8) + ' 18 L' + (lx - 30) + ' 168 L' + (lx + 30) + ' 168 L' + (lx + 8) + ' 18 Z" fill="#9be9ff" opacity=".035"/>' : ''); });
+        // Boden mit Leuchtraster und Projektor-Ring
+        g += '<rect x="0" y="168" width="320" height="32" fill="#070a12"/>';
+        for (let x = 0; x < 320; x += 20) g += '<rect x="' + x + '" y="168" width="1" height="32" fill="#3ff3ff" opacity=".08"/>';
+        g += '<rect x="0" y="168" width="320" height="1" fill="#3ff3ff" opacity=".35"/>';
+        g += '<ellipse cx="160" cy="176" rx="70" ry="9" fill="url(#pit)"/><ellipse cx="160" cy="176" rx="' + (56 + Math.sin(f * 2) * 4).toFixed(1) + '" ry="6" fill="none" stroke="#3ff3ff" stroke-width="1" opacity=".55"/>';
+        // Werkbank rechts, Behälter links (nur als Silhouetten mit Statuslichtern)
+        g += '<rect x="262" y="148" width="50" height="4" fill="#111827"/><rect x="265" y="152" width="3" height="16" fill="#0b1220"/><rect x="306" y="152" width="3" height="16" fill="#0b1220"/>';
+        g += '<rect x="270" y="140" width="10" height="8" fill="#0f172a"/><rect x="272" y="142" width="6" height="1" fill="#3ff3ff" opacity=".7"/><rect x="300" y="138" width="3" height="10" fill="#ff3df0" opacity="' + (.4 + Math.sin(f * 5) * .3).toFixed(2) + '"/>';
+        g += '<rect x="8" y="146" width="14" height="22" fill="#0b1220"/><rect x="10" y="150" width="10" height="1" fill="#ff3df0" opacity=".6"/><rect x="24" y="152" width="12" height="16" fill="#0b1220"/><rect x="26" y="156" width="8" height="1" fill="#3ff3ff" opacity=".6"/>';
+        // Gerüst hinten
+        g += '<rect x="74" y="36" width="3" height="132" fill="#1c2336"/><rect x="243" y="36" width="3" height="132" fill="#1c2336"/>';
+        [70, 122].forEach(y => { g += '<rect x="70" y="' + y + '" width="180" height="3" fill="#1c2336"/><rect x="70" y="' + (y + 3) + '" width="180" height="1" fill="#3ff3ff" opacity=".18"/>'; });
+        g += '<path d="M77 70 L243 122 M243 70 L77 122" stroke="#141a2a" stroke-width="2"/>';
+        // Mech
+        const mech = drawMech(f, run).replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '');
+        g += '<g transform="translate(78 30) scale(.68)">' + mech + '</g>';
+        // Bodennebel vor dem Mech
+        g += '<rect x="0" y="140" width="320" height="60" fill="url(#fog)"/>';
+        // Gerüst vorne (seitliche Stangen + Leiter)
+        g += '<rect x="68" y="36" width="3" height="132" fill="#2a3446"/><rect x="249" y="36" width="3" height="132" fill="#2a3446"/>';
+        for (let y = 80; y < 168; y += 8) g += '<rect x="252" y="' + y + '" width="10" height="1" fill="#2a3446"/>';
+        g += '<rect x="262" y="76" width="2" height="92" fill="#2a3446"/>';
+        g += '<rect x="68" y="36" width="3" height="3" fill="#ff3b3b" opacity="' + (Math.floor(f * 2) % 2 ? .9 : .2) + '"/><rect x="249" y="36" width="3" height="3" fill="#ff3b3b" opacity="' + (Math.floor(f * 2 + 1) % 2 ? .9 : .2) + '"/>';
+        // Arbeiter: zwei am Boden, je einer auf den Planken
+        const busy = !!job;
+        const wFloorL = busy ? 40 + (Math.min(jp, .25) / .25) * 70 : 30 + Math.sin(f * .7) * 22;
+        const wFloorR = busy ? 280 - (Math.min(jp, .25) / .25) * 60 : 286 - Math.sin(f * .5 + 1) * 20;
+        const wPlankA = busy ? 96 + Math.sin(f * 2) * 3 : 90 + Math.sin(f * .9 + 2) * 12;
+        const wPlankB = busy ? 222 + Math.sin(f * 2.4) * 3 : 225 + Math.sin(f * .6) * 14;
+        g += worker(wFloorL, 168, f, busy ? 1 : Math.cos(f * .7), busy && jp > .25);
+        g += worker(wFloorR, 168, f + .3, busy ? -1 : -Math.cos(f * .5 + 1), busy && jp > .25);
+        g += worker(wPlankA, 72, f + .6, 1, busy && jp > .2);
+        g += worker(wPlankB, 122, f + .9, -1, busy && jp > .2);
+        // Funken an der Montagestelle
+        if (busy && jp > .3 && jp < .95 && target) {
+            for (let i = 0; i < 9; i++) {
+                const a = (f * 13 + i * 2.1) % 6.28, r = ((f * 40 + i * 7) % 14);
+                g += '<rect x="' + Math.round(target[0] + Math.cos(a) * r) + '" y="' + Math.round(target[1] + Math.sin(a) * r * .7) + '" width="2" height="2" fill="' + (i % 3 ? '#7dd3fc' : '#ffffff') + '"/>';
+            }
         }
-        const k = ins('kern');
-        if (k && r) {
-            if (k.id === 'k-batterie') body += '<rect x="103" y="98" width="34" height="24" fill="#1f2937" stroke="#facc15" stroke-width="3"/><rect x="108" y="93" width="6" height="5" fill="#ef4444"/><rect x="126" y="93" width="6" height="5" fill="#9ca3af"/><rect x="110" y="106" width="20" height="6" fill="#facc15" opacity="' + pulse + '"/>';
-            else if (k.id === 'k-diskette') body += '<g opacity="' + (.75 + pulse * .25) + '"><rect x="104" y="94" width="32" height="32" fill="#a78bfa"/><rect x="112" y="94" width="16" height="10" fill="#cbd5e1"/><rect x="109" y="112" width="22" height="12" fill="#fff"/></g>';
-            else if (k.id === 'k-cd') body += '<g ' + rot(A * 2, 120, 110) + '><circle cx="120" cy="110" r="18" fill="#d6dcf5" stroke="#4ff0ff" stroke-width="2"/><path d="M120 95a15 15 0 0 1 15 15" stroke="#f472b6" stroke-width="4" fill="none"/><circle cx="120" cy="110" r="5" fill="#0b0e18"/></g>';
-            else body += '<g opacity="' + (.7 + pulse * .3) + '">' + XIRU.crystalSVG(4, 30).replace('<svg ', '<svg x="105" y="90" ') + '</g>';
-        }
-        if (r && cond('rahmen') < 40) body += '<path d="M90 74l8 18-6 10 10 16" stroke="#000" stroke-width="3" fill="none"/>' + smoke(150, 70, f + .3);
-        const shake = run ? ' transform="translate(' + (Math.floor(f * 20) % 2 ? 2 : -2) + ',0)"' : '';
-        g += '<g' + shake + '>' + body;
-        const s2 = ins('sensor');
-        if (!s2) g += '<rect x="100" y="30" width="40" height="30" fill="none" stroke="#3b4166" stroke-width="3" stroke-dasharray="6 6"/>';
-        else if (s2.id === 's-antenne') g += '<path d="M120 70 V30 M120 30 l-12 -10 M120 30 l12 -10" stroke="#cbd5e1" stroke-width="4" fill="none"/><rect x="116" y="24" width="8" height="8" fill="#ef4444" opacity="' + pulse + '"/>';
-        else if (s2.id === 's-radar') g += '<rect x="116" y="44" width="8" height="26" fill="#64748b"/><g ' + rot(Math.sin(f * 1.2) * 18, 120, 44) + '><path d="M96 30 Q120 62 144 30 Z" fill="#cbd5e1" stroke="#94a3b8" stroke-width="2"/><line x1="120" y1="44" x2="120" y2="24" stroke="#94a3b8" stroke-width="3"/></g>';
-        else if (s2.id === 's-hdd') { const ang = f * 6 * sp; g += '<rect x="116" y="50" width="8" height="20" fill="#64748b"/><ellipse cx="120" cy="40" rx="22" ry="10" fill="#cbd5e1" stroke="#64748b" stroke-width="2"/><rect x="' + (118 + Math.cos(ang) * 15).toFixed(1) + '" y="' + (38 + Math.sin(ang) * 6).toFixed(1) + '" width="4" height="4" fill="#475569"/><line x1="140" y1="32" x2="124" y2="40" stroke="#facc15" stroke-width="4"/>'; }
-        else g += '<path d="M120 18 L140 64 H100 Z" fill="#4ff0ff" fill-opacity="' + (.35 + pulse * .3) + '" stroke="#4ff0ff" stroke-width="2"/><path d="M120 18 V64" stroke="#fff" stroke-opacity=".5" stroke-width="2"/>';
-        const w = ins('arm');
-        if (w) {
-            g += '<path d="M178 100 L206 92 L218 120" stroke="#64748b" stroke-width="10" fill="none" stroke-linejoin="miter"/><rect x="200" y="86" width="12" height="12" fill="#ffb000"/>';
-            if (w.id === 'w-schluessel') g += '<path d="M218 120 l0 18 M210 140 a8 8 0 1 0 16 0" stroke="#cbd5e1" stroke-width="6" fill="none"/>';
-            else if (w.id === 'w-greifer') { const o = run ? (Math.floor(f * 8) % 2) * 4 : 0; g += '<path d="M218 120 l' + (-8 - o) + ' 18 M218 120 l' + (8 + o) + ' 18" stroke="#cbd5e1" stroke-width="6"/>'; }
-            else g += '<g ' + rot(A * 2, 218, 133) + '><path d="M211 120 h14 l-7 26 z" fill="#facc15"/></g>';
-        }
-        g += '</g>';
-        if (r) g += '<rect x="96" y="76" width="48" height="14" fill="#0b0e18"/><rect x="104" y="79" width="9" height="8" fill="#4ff0ff" opacity="' + pulse + '"/><rect x="127" y="79" width="9" height="8" fill="#4ff0ff" opacity="' + pulse + '"/>';
-        return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 220" width="240" height="220" shape-rendering="crispEdges">' + g + '</svg>';
+        // Laufkran mit Haken
+        g += '<rect x="0" y="6" width="320" height="4" fill="#141a2a"/>';
+        for (let x = 0; x < 320; x += 12) g += '<rect x="' + x + '" y="9" width="6" height="1" fill="#ffb000" opacity=".35"/>';
+        let tx, hookY, carry = false;
+        if (busy && target) {
+            const k1 = Math.min(1, jp / .25), k3 = jp > .85 ? (jp - .85) / .15 : 0;
+            tx = 30 + (target[0] - 30) * k1;
+            hookY = 24 + (jp < .25 ? 0 : jp < .85 ? Math.min(1, (jp - .25) / .15) * (target[1] - 34) : (1 - k3) * (target[1] - 34));
+            carry = jp < .85;
+        } else { tx = 40 + Math.sin(f * .25) * 25; hookY = 24 + Math.sin(f * .8) * 2; }
+        tx = Math.round(tx); hookY = Math.round(hookY);
+        g += '<rect x="' + (tx - 8) + '" y="10" width="16" height="6" fill="#1c2336"/><rect x="' + (tx - 1) + '" y="11" width="2" height="2" fill="#ff3b3b" opacity="' + (Math.floor(f * 3) % 2 ? 1 : .2) + '"/><rect x="' + tx + '" y="16" width="1" height="' + (hookY - 16) + '" fill="#5b6478"/>';
+        g += '<rect x="' + (tx - 3) + '" y="' + hookY + '" width="7" height="3" fill="#9ca3af"/>';
+        if (carry && jpart) g += '<rect x="' + (tx - 7) + '" y="' + (hookY + 3) + '" width="15" height="11" fill="' + SLOT_COLOR[jpart.slot] + '" stroke="#000" stroke-width="1"/><rect x="' + (tx - 4) + '" y="' + (hookY + 6) + '" width="9" height="2" fill="#000" opacity=".4"/>';
+        return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" width="320" height="200" shape-rendering="crispEdges">' + g + '</svg>';
     }
     /* Pixel-Raster: SVG in kleiner Auflösung auf ein Canvas malen, das grob hochskaliert wird */
-    const PX_W = 150, PX_H = 138;
+    const PX_W = 480, PX_H = 300;
     let mechCanvas = null, runUntil = 0, painting = false;
     function paintMech() {
         if (!mechCanvas || painting || document.hidden) return;
@@ -226,9 +441,40 @@ XIRU.ready(function () {
         const img = new Image();
         img.onload = () => { const c = mechCanvas.getContext('2d'); c.imageSmoothingEnabled = false; c.clearRect(0, 0, PX_W, PX_H); c.drawImage(img, 0, 0, PX_W, PX_H); painting = false; };
         img.onerror = () => { painting = false; };
-        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(drawMech(t, run));
+        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(sceneSVG(t, run));
+        tickJob();
     }
     setInterval(paintMech, 110);
+
+    /* ── Anbau dauert ein paar Sekunden (max. 10) ── */
+    const jobDuration = p => Math.min(10, 3.5 + p.t * 1.5) * 1000;
+    function startInstall(id) {
+        const m = M.state(), pt = M.part(id);
+        if (m.job) { XIRU.toast('Die Crew ist beschäftigt', 'Erst muss der aktuelle Anbau fertig sein.', { icon: '⏳' }); return; }
+        m.job = { id, start: Date.now(), end: Date.now() + jobDuration(pt) }; XIRU.persist();
+        XIRU.beep(330, .1, 'triangle'); render();
+    }
+    let lastMon = '';
+    function tickJob() {
+        const m = M.state(), job = m.job;
+        if (job && Date.now() >= job.end) {
+            delete m.job; XIRU.persist();
+            if (M.install(job.id)) { [523, 659, 784].forEach((f, i) => setTimeout(() => XIRU.beep(f, .08, 'square', .04), i * 90)); XIRU.toast('Angebaut: ' + M.part(job.id).n, 'Die Crew klatscht sich ab.', { icon: '🔧' }); }
+            render(); return;
+        }
+        // Modul-Monitor oben links
+        let html;
+        if (job) {
+            const pt = M.part(job.id), sl = XIRU.mechSlots.find(x => x.id === pt.slot), k = Math.min(1, (Date.now() - job.start) / (job.end - job.start));
+            const left = Math.max(0, Math.ceil((job.end - Date.now()) / 1000));
+            html = '<b>▶ MONTAGE</b><br>' + XIRU.esc(sl.n.toUpperCase()) + ': ' + XIRU.esc(pt.n) + '<br>' +
+                (k < .25 ? 'Kran holt Bauteil …' : k < .85 ? 'Crew schraubt & schweisst …' : 'Abschlusstest …') + '<div class="mbar"><span style="width:' + Math.round(k * 100) + '%"></span></div>noch ' + left + ' s';
+        } else {
+            const st = M.stats(), last = XIRU.mechSlots.map(x => M.installed(x.id)).filter(Boolean).length;
+            html = '<b>MODUL-MONITOR</b><br>' + (M.ready() ? 'STATUS: EINSATZBEREIT' : 'STATUS: UNVOLLSTÄNDIG') + '<br>R' + st.R + ' · E' + st.E + ' · S' + st.S + ' · P' + st.P + '<br>Bauplätze ' + last + '/6 <span class="blink">█</span>';
+        }
+        if (html !== lastMon) { const mon = $('#monitor'); if (mon) mon.innerHTML = html; lastMon = html; }
+    }
 
     /* ── Tutorial ── */
     function tutorialStep() {
@@ -245,7 +491,7 @@ XIRU.ready(function () {
     }
     const STEPS = {
         intro: ['1/7', 'Willkommen in der Werft!', 'Ich bin Schraube, die Werftmeisterin. Die Inseln dieser Welt erreichst du nur mit einem Mech. Hier ist dein Startpaket: ein Schrottrahmen, ein Paddelrad und eine Autobatterie. Nicht schön, aber es schwimmt.', '<button class="btn btn--primary" id="t-open">📦 Startpaket öffnen</button>'],
-        rahmen: ['2/7', 'Zuerst der Rahmen', 'Öffne rechts „Rahmen", klicke beim Schrottrahmen auf <b>Bauen</b> und danach auf <b>Einbauen</b>. Der Rahmen hält alles zusammen.', ''],
+        rahmen: ['2/7', 'Zuerst der Rahmen', 'Öffne rechts „Rahmen", klicke beim Schrottrahmen auf <b>Bauen</b> und danach auf <b>Einbauen</b>. Dann holt der Kran das Teil und meine Crew montiert es – das dauert ein paar Sekunden. Oben links auf dem Monitor siehst du, was gerade passiert.', ''],
         antrieb: ['3/7', 'Jetzt der Antrieb', 'Ohne Antrieb kein Vorwärtskommen. Bau und montiere das Paddelrad unter „Antrieb".', ''],
         kern: ['4/7', 'Energie!', 'Ein Mech braucht einen Energiekern. Die Autobatterie unter „Energiekern" reicht für den Anfang.', ''],
         test: ['5/7', 'Testlauf', 'Alles drin? Dann wirf den Motor an! Drück links auf <b>▶ Testlauf</b>.', ''],
@@ -320,7 +566,8 @@ XIRU.ready(function () {
                     const built = M.isBuilt(p.id), avail = M.available(p), on = cur && cur.id === p.id, c = M.cond(p.id);
                     let act;
                     if (on) act = '<span class="badge badge--success">eingebaut</span>';
-                    else if (built) act = '<button class="btn btn--sm btn--primary" data-install="' + p.id + '">Einbauen</button>';
+                    else if (M.state().job && M.state().job.id === p.id) act = '<span class="badge badge--warning">⏳ wird montiert</span>';
+                    else if (built) act = '<button class="btn btn--sm btn--primary" data-install="' + p.id + '"' + (M.state().job ? ' disabled' : '') + '>Einbauen</button>';
                     else if (avail) act = '<button class="btn btn--sm" data-build="' + p.id + '"' + (M.scrap() < p.cost ? ' disabled' : '') + '>Bauen · ' + p.cost + ' 🔩</button>';
                     else act = '<span class="small faint">🔒 ' + XIRU.esc(M.reqText(p)) + '</span>';
                     const repCost = built ? M.repairCost(p.id) : 0;
@@ -334,7 +581,7 @@ XIRU.ready(function () {
     $('#slots').addEventListener('click', e => {
         const b = e.target.closest('button'); if (!b) return;
         if (b.dataset.build && M.build(b.dataset.build)) { XIRU.beep(440, .08); XIRU.toast('Gebaut: ' + M.part(b.dataset.build).n, 'Jetzt noch einbauen.', { icon: '🔩' }); }
-        if (b.dataset.install && M.install(b.dataset.install)) XIRU.beep(660, .08);
+        if (b.dataset.install) startInstall(b.dataset.install);
         if (b.dataset.repair) {
             const id = b.dataset.repair;
             if (M.scrap() < M.repairCost(id)) return;
@@ -350,7 +597,7 @@ XIRU.ready(function () {
         $('#stats').innerHTML = ['R', 'E', 'S', 'P'].map(k => '<div><b>' + st[k] + '</b><span>' + STAT[k] + '</span></div>').join('');
         $('#scrap').textContent = XIRU.fmt(M.scrap());
         $('#ready').textContent = M.ready() ? '✓ Einsatzbereit' : 'Noch nicht einsatzbereit: Rahmen, Antrieb und Energiekern nötig.';
-        if (!mechCanvas) { $('#mech').innerHTML = '<canvas width="' + PX_W + '" height="' + PX_H + '" role="img" aria-label="Dein Mech"></canvas>'; mechCanvas = $('#mech canvas'); }
+        if (!mechCanvas) { $('#mech').innerHTML = '<canvas width="' + PX_W + '" height="' + PX_H + '" role="img" aria-label="Werkhalle mit deinem Mech"></canvas>'; mechCanvas = $('#mech canvas'); }
         paintMech();
     }
     $('#testrun').addEventListener('click', () => {
@@ -396,6 +643,9 @@ XIRU.ready(function () {
 
     /* ── Module (die früheren Skills) ── */
     const POS = { 1: [50, 10], 2: [24, 36], 3: [76, 36], 5: [24, 63], 4: [76, 63], 6: [50, 90] };
+    // Lange Modulnamen an der Wortfuge weich trennen (nicht jeder Browser hat deutsche Silbentrennung)
+    const HY_TAIL = /(meister|reisender|wanderer|zieher|architekt|einwurf|marker|stimme|schmied|weber|leser|magier|graph|takter|nase)$/i;
+    const hy = t => t.split(' ').map(w => w.length > 10 ? w.replace(HY_TAIL, '­$1') : w).join(' ');
     function sState(s) {
         if (XIRU.hasSkill(s.id)) return 'learned';
         if (XIRU.user && s.req.every(r => XIRU.hasSkill(r)) && XIRU.skillPoints().free >= s.c) return 'available';
@@ -407,7 +657,7 @@ XIRU.ready(function () {
         $('#branches').innerHTML = XIRU.branches.map(b => {
             const skills = XIRU.skills.filter(s => s.b === b.id);
             const lines = skills.flatMap(s => s.req.map(r => { const a = POS[r.slice(1)], c = POS[s.id.slice(1)]; return '<line x1="' + a[0] + '%" y1="' + a[1] + '%" x2="' + c[0] + '%" y2="' + c[1] + '%"' + (XIRU.hasSkill(s.id) ? ' class="on"' : '') + '/>'; })).join('');
-            const nodes = skills.map(s => { const p = POS[s.id.slice(1)], st = sState(s); return '<button class="node is-' + st + '" type="button" data-s="' + s.id + '" style="left:' + p[0] + '%;top:' + p[1] + '%"><span class="node__cost">' + (st === 'learned' ? '✓' : s.c) + '</span>' + XIRU.esc(s.n) + '</button>'; }).join('');
+            const nodes = skills.map(s => { const p = POS[s.id.slice(1)], st = sState(s); return '<button class="node is-' + st + '" type="button" data-s="' + s.id + '" style="left:' + p[0] + '%;top:' + p[1] + '%"><span class="node__cost">' + (st === 'learned' ? '✓' : s.c) + '</span>' + hy(XIRU.esc(s.n)) + '</button>'; }).join('');
             return '<section class="card branch" style="--bc:' + b.color + '"><h3>' + XIRU.esc(b.name) + '-Modul</h3><p class="small muted mb-0">' + XIRU.esc(b.desc) + '</p><div class="tree"><svg>' + lines + '</svg>' + nodes + '</div></section>';
         }).join('');
     }

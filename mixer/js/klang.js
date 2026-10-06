@@ -774,7 +774,4 @@ XIRU.ready(function () {
     renderMaster(); renderMixes(); renderStatus(); renderPlay();
     draw(performance.now(), 0);
     addEventListener('pagehide', persist);
-
-    // für Tests/Neugierige
-    window.__klang = { CH, state, kit, nodes: () => nodes, play, stop, setVol };
 });

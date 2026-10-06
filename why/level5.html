@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="de" data-bare>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liminal Level 5 – Das Summen</title>
+    <meta name="robots" content="noindex">
+    <link rel="stylesheet" href="../assets/css/liminal.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/liminal.js"></script>
+    <style>
+        body.liminal {
+            background:
+                radial-gradient(ellipse at 50% 43%, rgba(198, 192, 158, .09), transparent 54%),
+                repeating-linear-gradient(90deg, rgba(20, 22, 20, .28) 0 2px, transparent 2px 46px),
+                #696b60;
+            color: #11130f;
+        }
+        .lm-room { filter: contrast(1.4) brightness(.76) saturate(.58); }
+        .lm-code {
+            display: inline-block;
+            margin: .4rem 0;
+            padding: .45rem .9rem;
+            border: 1px solid rgba(17, 19, 15, .48);
+            font: 500 clamp(1.7rem, 7vw, 3.2rem)/1.2 ui-monospace, Consolas, monospace;
+            letter-spacing: .32em;
+            text-shadow: 0 0 14px rgba(228, 224, 188, .35);
+        }
+        .lm-audio {
+            margin-top: 1.5rem;
+            padding: .55rem .8rem;
+            border: 1px solid rgba(17, 19, 15, .35);
+            background: transparent;
+            color: inherit;
+            font: inherit;
+            letter-spacing: .12em;
+            cursor: pointer;
+        }
+        .lm-audio-status { min-height: 1.5em; font-size: .72rem; opacity: .62; }
+        .lm-search { margin-top: 1.5rem; }
+        .lm-track {
+            position: relative;
+            width: min(360px, 75vw);
+            height: 30px;
+            margin: 1rem auto;
+            border: 1px solid rgba(17, 19, 15, .5);
+            background: rgba(17, 19, 15, .08);
+        }
+        .lm-target {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            background: rgba(222, 221, 190, .35);
+            border-inline: 1px solid rgba(17, 19, 15, .45);
+        }
+        .lm-needle {
+            position: absolute;
+            top: -5px;
+            bottom: -5px;
+            left: 0;
+            width: 2px;
+            background: #181a14;
+            box-shadow: 0 0 8px rgba(239, 235, 205, .55);
+            transform: translateX(-1px);
+        }
+        .lm-check-button {
+            min-width: 13rem;
+            margin: .35rem;
+            padding: .65rem .9rem;
+            border: 1px solid rgba(17, 19, 15, .4);
+            background: rgba(235, 232, 205, .08);
+            color: inherit;
+            font: inherit;
+            letter-spacing: .1em;
+            cursor: pointer;
+        }
+        .lm-check-button:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+        .lm-check-status { min-height: 2.5em; font-size: .78rem; opacity: .75; }
+        .lm-tallies { display: flex; justify-content: center; gap: .8rem; min-height: 42px; margin: .7rem auto; }
+        .lm-tally { width: 34px; height: 38px; overflow: visible; opacity: .82; }
+        .lm-tally line {
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2.2;
+            stroke-linecap: round;
+            stroke-dasharray: 40;
+            stroke-dashoffset: 40;
+            transition: stroke-dashoffset .35s ease;
+        }
+        .lm-tally.is-found line { stroke-dashoffset: 0; }
+        .lm-tally line:nth-child(2) { transform: translateY(1px); }
+        .lm-tally line:nth-child(3) { transform: translateX(-1px); }
+        .lm-tally line:nth-child(4) { transform: translateY(-1px); }
+        .lm-tally line:nth-child(5) { stroke-width: 2.8; }
+        .lm-discovery { min-height: 3em; max-width: 34rem; margin: 1rem auto; font-size: .92rem; }
+        .lm-next { display: inline-block; margin-top: .6rem; color: inherit; letter-spacing: .2em; }
+        @media (prefers-reduced-motion: reduce) {
+            .lm-tally line { transition: none; }
+            .lm-needle { box-shadow: none; }
+        }
+    </style>
+</head>
+<body class="liminal">
+    <main class="lm-room">
+        <p class="lm-small">Liminal Level 5 · <span class="lm-text" data-v="das summen|raum null|der letzte käfig|hier endet nichts">Das Summen</span></p>
+        <div class="lm-gap"></div>
+        <p class="lm-big"><span class="lm-text" data-v="Der Nebel ist nie ganz weggegangen.|Er ist jetzt direkt vor der Tür.|Die Maske wartet im Nebel.|Vier Paar Schritte. Drei entfernen sich." data-idle="Du hörst es auch.">Der Nebel ist nie ganz weggegangen.</span></p>
+        <div class="lm-gap"></div>
+        <p class="lm-small">Auf dem Generator steht:</p>
+        <p class="lm-code" aria-label="Code A7L-3N8">A7L-3N8</p>
+        <p class="lm-discovery" id="discovery" aria-live="polite">Ein Kontakt zittert. Vier Stimmen sind auf der Aufnahme.</p>
+        <section class="lm-search" id="search" aria-label="Generator prüfen">
+            <p class="lm-check-status" id="check-status" aria-live="polite">Drücke die Leertaste oder den Knopf, um den Generator zu prüfen.</p>
+            <div class="lm-track" id="check-track" role="img" aria-label="Bewege den Zeiger in den hellen Bereich">
+                <span class="lm-target" id="check-target"></span>
+                <span class="lm-needle" id="check-needle"></span>
+            </div>
+            <div class="lm-tallies" id="tallies" aria-label="Noch keine Treffer"></div>
+            <button class="lm-check-button" id="check-button" type="button">Skillcheck starten</button>
+        </section>
+        <button class="lm-audio" id="hum-toggle" type="button" aria-pressed="false">Summen einschalten</button>
+        <p class="lm-audio-status" id="hum-status" aria-live="polite">Ein leises Summen wartet hinter dem Geräusch.</p>
+    </main>
+    <a class="lm-back" id="continue-link" href="../index.html">zurück</a>
+    <script src="liminal-skillcheck.js"></script>
+    <script>
+        XIRU.ready(function () {
+            const button = document.getElementById('hum-toggle');
+            const status = document.getElementById('hum-status');
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            let context = null;
+            let master = null;
+            let oscillators = [];
+
+            function stopHum() {
+                if (!context || !master) return;
+                const now = context.currentTime;
+                master.gain.cancelScheduledValues(now);
+                master.gain.setTargetAtTime(0.0001, now, 0.08);
+                oscillators.forEach(function (oscillator) {
+                    oscillator.stop(now + 0.4);
+                });
+                oscillators = [];
+                master = null;
+                button.textContent = 'Summen einschalten';
+                button.setAttribute('aria-pressed', 'false');
+                status.textContent = 'Das Summen ist verstummt.';
+            }
+
+            async function startHum() {
+                if (XIRU.setting('sound') === false) {
+                    status.textContent = 'Der Website-Ton ist in deinen Einstellungen ausgeschaltet.';
+                    return;
+                }
+                if (!AudioContext) {
+                    status.textContent = 'Dein Browser kann dieses Summen nicht wiedergeben.';
+                    return;
+                }
+                try {
+                    context = context || new AudioContext();
+                    if (context.state !== 'running') await context.resume();
+                    if (context.state !== 'running' || master) return;
+
+                    master = context.createGain();
+                    master.gain.setValueAtTime(0.0001, context.currentTime);
+                    master.gain.setTargetAtTime(0.012, context.currentTime, 0.7);
+                    master.connect(context.destination);
+                    [110, 111.2].forEach(function (frequency, index) {
+                        const oscillator = context.createOscillator();
+                        const voice = context.createGain();
+                        oscillator.type = 'sine';
+                        oscillator.frequency.value = frequency;
+                        voice.gain.value = index ? 0.32 : 0.55;
+                        oscillator.connect(voice).connect(master);
+                        oscillator.start();
+                        oscillators.push(oscillator);
+                    });
+                    button.textContent = 'Summen ausschalten';
+                    button.setAttribute('aria-pressed', 'true');
+                    status.textContent = 'Ein leises, gleichmässiges Summen läuft.';
+                } catch (error) {
+                    status.textContent = 'Tippe auf «Summen einschalten», damit dein Browser den Ton freigibt.';
+                }
+            }
+
+            button.addEventListener('click', function () {
+                if (master) stopHum();
+                else startHum();
+            });
+            startHum();
+            addEventListener('pagehide', function () {
+                if (context && context.state !== 'closed') context.close();
+            }, { once: true });
+        });
+    </script>
+</body>
+</html>

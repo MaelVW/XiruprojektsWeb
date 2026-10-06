@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="de" data-bare>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liminal Level 4 – Der Generator</title>
+    <meta name="robots" content="noindex">
+    <link rel="stylesheet" href="../assets/css/liminal.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/liminal.js"></script>
+    <style>
+        body.liminal {
+            background:
+                radial-gradient(ellipse at 50% 35%, rgba(150, 140, 70, .05), transparent 60%),
+                repeating-linear-gradient(90deg, rgba(20, 10, 0, .45) 0 2px, transparent 2px 46px),
+                repeating-linear-gradient(0deg, rgba(0, 0, 0, .02) 0 1px, transparent 1px 2px),
+                #7a6a40;
+            color: #000000;
+        }
+        .lm-room {
+            filter: contrast(1.8) brightness(0.6) saturate(0.4) hue-rotate(10deg);
+            animation: lm-disturb 8s infinite;
+        }
+        @keyframes lm-disturb {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-1px); }
+            50% { transform: translateY(1px); }
+            75% { transform: translateX(1px); }
+        }
+        .lm-text {
+            opacity: 0.7;
+            text-shadow: 
+                3px 3px rgba(255, 0, 0, 0.3),
+                -3px -3px rgba(0, 255, 200, 0.3),
+                6px 0 rgba(0, 0, 0, 0.3);
+            animation: lm-chaotic-glitch 0.15s ease-in-out infinite;
+            font-weight: 800;
+            letter-spacing: 0.15em;
+        }
+        @keyframes lm-chaotic-glitch {
+            0%, 100% { opacity: 0.7; transform: translate(0, 0); text-shadow: 3px 3px rgba(255, 0, 0, 0.3), -3px -3px rgba(0, 255, 200, 0.3), 6px 0 rgba(0, 0, 0, 0.3); }
+            10% { opacity: 0.4; transform: translate(-2px, 2px); text-shadow: -3px 3px rgba(255, 0, 0, 0.4), 3px -3px rgba(0, 255, 200, 0.4), -6px 0 rgba(0, 0, 0, 0.3); }
+            20% { opacity: 0.6; transform: translate(2px, -2px); }
+            30% { opacity: 0.5; transform: translate(-1px, -1px); }
+            40% { opacity: 0.75; transform: translate(3px, 1px); text-shadow: 4px 0 rgba(255, 0, 0, 0.4), -4px 0 rgba(0, 255, 200, 0.4); }
+            50% { opacity: 0.4; transform: translate(-3px, 2px); }
+            60% { opacity: 0.65; transform: translate(1px, -2px); }
+            70% { opacity: 0.5; transform: translate(-2px, -2px); text-shadow: 3px 3px rgba(255, 0, 0, 0.5), -3px -3px rgba(0, 255, 200, 0.5), 6px 0 rgba(0, 0, 0, 0.4); }
+            80% { opacity: 0.7; transform: translate(2px, 2px); }
+            90% { opacity: 0.45; transform: translate(-3px, 0); }
+        }
+        .lm-ghost {
+            font-size: 1.6rem;
+            font-weight: 900;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body class="liminal">
+    <main class="lm-room">
+        <p class="lm-small">Liminal Level 4 · <span class="lm-text" data-v="GENERATOR|KEIN AUSWEG|IMMER HIER|VERGESSEN">GENERATOR</span></p>
+        <div class="lm-gap"></div>
+        <p class="lm-big"><span class="lm-text" data-v="Der Generator ist nicht ganz fertig.|Das Kabel endet in der Wand.|Es fehlt ein Teil.|Er summt trotzdem." data-idle="Das fehlende Teil liegt hinter dir.">Der Generator ist nicht ganz fertig.</span></p>
+        <div class="lm-gap"></div>
+        <p class="lm-big"><span class="lm-text" data-v="Der Nebel kommt näher.|Der Nebel ist schon im Raum.|Die Maske bewegt sich im Nebel.|Vier Stimmen haben den Generator gehört." data-idle="Die Hütte steht weit oben am Berg.">Der Nebel kommt näher.</span></p>
+    </main>
+    <a class="lm-back" href="../Why.html" data-lm-back data-lm-next="level4.html|level4b.html|level4d.html|level4e.html|level5.html">zurück</a>
+    <script>
+        XIRU.ready(function () {
+            const GHOSTS_LEVEL4C = ['ENDLOS', 'TOT', 'NIEMALS', 'IMMER', 'ALLEIN', 'EWIG', 'HIE', 'WIE OFT', 'VERGESSEN', 'SCHREIB'];
+            
+            let ghostInterval = null;
+            function startIntenseGhosts() {
+                ghostInterval = setInterval(function() {
+                    if (!document.hidden) {
+                        // Mehrere Ghosts gleichzeitig
+                        for (let i = 0; i < Math.random() * 2 + 1; i++) {
+                            setTimeout(() => {
+                                const g = document.createElement('div');
+                                g.className = 'lm-ghost';
+                                g.textContent = GHOSTS_LEVEL4C[Math.floor(Math.random() * GHOSTS_LEVEL4C.length)];
+                                const edge = Math.floor(Math.random() * 4);
+                                g.style.left = (edge === 1 ? 92 : edge === 3 ? 3 : Math.random() * 85 + 5) + 'vw';
+                                g.style.top = (edge === 0 ? 3 : edge === 2 ? 94 : Math.random() * 80 + 8) + 'vh';
+                                g.style.opacity = '0';
+                                g.style.color = Math.random() > 0.5 ? '#ff0000' : '#00ffcc';
+                                document.body.appendChild(g);
+                                requestAnimationFrame(() => { g.style.opacity = '.25'; });
+                                setTimeout(() => { g.style.opacity = '0'; }, 800);
+                                setTimeout(() => g.remove(), 1600);
+                            }, i * 200);
+                        }
+                    }
+                }, Math.random() * 1500 + 1000);
+            }
+            startIntenseGhosts();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="de" data-bare>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liminal Level 4 – Die Maske</title>
+    <meta name="robots" content="noindex">
+    <link rel="stylesheet" href="../assets/css/liminal.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/liminal.js"></script>
+    <style>
+        body.liminal {
+            background:
+                radial-gradient(ellipse at 50% 40%, rgba(180, 175, 100, .08), transparent 65%),
+                repeating-linear-gradient(90deg, rgba(30, 20, 0, .35) 0 2px, transparent 2px 46px),
+                #9a8a50;
+            color: #0a0a00;
+        }
+        .lm-room {
+            filter: contrast(1.5) brightness(0.75) saturate(0.6) hue-rotate(5deg);
+        }
+        .lm-text {
+            opacity: 0.8;
+            text-shadow: 
+                2px 2px rgba(255, 0, 0, 0.2),
+                -2px -2px rgba(0, 255, 200, 0.2),
+                4px 0 rgba(0, 0, 0, 0.2);
+            animation: lm-severe-glitch 0.2s ease-in-out infinite;
+            font-weight: 600;
+        }
+        @keyframes lm-severe-glitch {
+            0%, 100% { opacity: 0.8; transform: translate(0, 0); }
+            20% { opacity: 0.5; transform: translate(-1px, 1px); }
+            40% { opacity: 0.75; transform: translate(1px, -1px); }
+            60% { opacity: 0.6; transform: translate(-2px, 0); }
+            80% { opacity: 0.8; transform: translate(2px, 1px); }
+        }
+        .lm-ghost {
+            font-size: 1.4rem;
+            font-weight: 700;
+            letter-spacing: 0.2em;
+        }
+    </style>
+</head>
+<body class="liminal">
+    <main class="lm-room">
+        <p class="lm-small">Liminal Level 4 · <span class="lm-text" data-v="allein|ganz allein|für immer|kein ausweg">DIE MASKE</span></p>
+        <div class="lm-gap"></div>
+        <p class="lm-big"><span class="lm-text" data-v="Die anderen sind weg.|Die anderen sind weg|Sie kommen nicht zurück|Du bist allein." data-idle="Du warst nie hier.">Die anderen sind weg.</span></p>
+        <div class="lm-gap"></div>
+        <p class="lm-big"><span class="lm-text" data-v="Die Maske folgt dir nicht.|Sie wartet nur dort, wohin du gehst.|Sie steht immer am Ende des Gangs.|Du hast sie schon einmal gesehen." data-idle="Jetzt steht sie näher.">Die Maske folgt dir nicht.</span></p>
+        <div class="lm-gap"></div>
+        <p class="lm-big"><span class="lm-text" data-v="Auf dem Pin ist ein Netz in die Rückseite geritzt.|Das Auge in der Mitte ist nicht aufgemalt.|Ein Faden führt aus dem Bild hinaus.|Das Metall ist warm, obwohl der Raum eiskalt ist." data-idle="Ormond. Frank. Dann ist die Schrift verwischt.">Auf dem Pin ist ein Netz in die Rückseite geritzt.</span></p>
+    </main>
+    <a class="lm-back" href="../Why.html" data-lm-back data-lm-next="level4.html|level4c.html|level4e.html|level5.html">zurück</a>
+    <script>
+        XIRU.ready(function () {
+            const GHOSTS_LEVEL4B = ['ALLEIN', 'WIR', 'BLEIB', 'EWIG', 'HIER', 'NIE', 'MEHR', 'VERGISS', 'SCHREI'];
+            
+            let ghostInterval = null;
+            function startIntenseGhosts() {
+                ghostInterval = setInterval(function() {
+                    if (!document.hidden) {
+                        const g = document.createElement('div');
+                        g.className = 'lm-ghost';
+                        g.textContent = GHOSTS_LEVEL4B[Math.floor(Math.random() * GHOSTS_LEVEL4B.length)];
+                        const edge = Math.floor(Math.random() * 4);
+                        g.style.left = (edge === 1 ? 92 : edge === 3 ? 3 : Math.random() * 85 + 5) + 'vw';
+                        g.style.top = (edge === 0 ? 3 : edge === 2 ? 94 : Math.random() * 80 + 8) + 'vh';
+                        g.style.opacity = '0';
+                        document.body.appendChild(g);
+                        requestAnimationFrame(() => { g.style.opacity = '.2'; });
+                        setTimeout(() => { g.style.opacity = '0'; }, 700);
+                        setTimeout(() => g.remove(), 1400);
+                    }
+                }, Math.random() * 2000 + 1500);
+            }
+            startIntenseGhosts();
+        });
+    </script>
+</body>
+</html>

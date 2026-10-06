@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="de" data-bare>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liminal Level 3 – Deine Erinnerung</title>
+    <meta name="robots" content="noindex">
+    <link rel="stylesheet" href="../assets/css/liminal.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/liminal.js"></script>
+    <style>
+        body.liminal {
+            background:
+                radial-gradient(ellipse at 50% 40%, rgba(230, 235, 160, .25), transparent 65%),
+                repeating-linear-gradient(90deg, rgba(60, 50, 10, .18) 0 2px, transparent 2px 46px),
+                #d0c080;
+            color: #000000;
+        }
+        .lm-room {
+            filter: contrast(1.1) brightness(0.95);
+        }
+        .lm-text {
+            animation: lm-glitch-heavy 0.4s ease-in-out 1;
+            text-shadow: 2px 0 rgba(255, 0, 0, 0.1), -2px 0 rgba(0, 255, 255, 0.1);
+        }
+        @keyframes lm-glitch-heavy {
+            0%, 100% { opacity: 1; }
+            33% { opacity: 0.92; text-shadow: 3px 0 rgba(255, 0, 0, 0.2), -3px 0 rgba(0, 255, 255, 0.2); }
+            66% { opacity: 0.88; }
+        }
+    </style>
+</head>
+<body class="liminal">
+    <main class="lm-room">
+        <p class="lm-small">Liminal Level 3 · <span class="lm-text" data-v="deine erinnerung|erinnern|was erinnerst du|erinnerung">deine erinnerung</span></p>
+        <div class="lm-gap"></div>
+        <p class="lm-big"><span class="lm-text" data-v="Wer bist du?|Wer bist du wirklich?|Kennst du dich selbst?|Du kennst dich nicht." data-idle="Du weisst es nicht mehr.">Wer bist du?</span></p>
+        <div class="lm-gap"></div>
+        <p class="lm-big"><span class="lm-text" data-v="Die Maske war eben noch am anderen Ende des Gangs.|Die Maske ist näher gekommen.|Sie hat sich nicht bewegt. Du bist näher gekommen.|Die Maske wartet dort, wo du hinsiehst." data-idle="Sie steht jetzt hinter dir.">Die Maske war eben noch am anderen Ende des Gangs.</span></p>
+        <div class="lm-gap"></div>
+        <p class="lm-big"><span class="lm-text" data-v="Wie viele Schritte hast du gehört?|Es waren vier Schritte.|Dann kamen vier weitere.|Du warst allein." data-idle="Die vierte Stimme war auf der Aufnahme.">Wie viele Schritte hast du gehört?</span></p>
+    </main>
+    <a class="lm-back" href="../Why.html" data-lm-back data-lm-next="level4.html|level4b.html|level4e.html">zurück</a>
+</body>
+</html>

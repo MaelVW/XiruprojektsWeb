@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="de" data-bare>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liminal Level 2 – Wie lange noch?</title>
+    <meta name="robots" content="noindex">
+    <link rel="stylesheet" href="../assets/css/liminal.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/liminal.js"></script>
+    <style>
+        body.liminal {
+            background:
+                radial-gradient(ellipse at 50% 40%, rgba(240, 245, 200, .35), transparent 65%),
+                repeating-linear-gradient(90deg, rgba(80, 70, 30, .12) 0 2px, transparent 2px 46px),
+                #ddd499;
+            color: #0a0800;
+        }
+        .lm-text {
+            animation: lm-flicker-fast 0.3s ease-in-out infinite;
+        }
+        @keyframes lm-flicker-fast {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.85; }
+        }
+    </style>
+</head>
+<body class="liminal">
+    <main class="lm-room">
+        <p class="lm-small">Liminal Level 2 · <span class="lm-text" data-v="wie lange noch|wie lange|noch|immer noch">wie lange noch</span></p>
+        <div class="lm-gap"></div>
+        <p class="lm-big"><span class="lm-text" data-v="Die Fenster sind zugebaut.|Die Fenster sind zugebaut|Seit wann sind die Fenster zu?|Wann wurden die Fenster zugebaut?" data-idle="Du kannst nicht hinaus.">Die Fenster sind zugebaut.</span></p>
+        <div class="lm-gap"></div>
+        <p class="lm-big"><span class="lm-text" data-v="Die Tür ist immer noch verschlossen.|Die Tür ist verschlossen|Die Tür war offen|Wo ist die Tür?" data-idle="Es gibt keine Tür.">Die Tür ist immer noch verschlossen.</span></p>
+    </main>
+    <a class="lm-back" href="../Why.html" data-lm-back data-lm-next="level3.html|level4.html|level4d.html">zurück</a>
+</body>
+</html>

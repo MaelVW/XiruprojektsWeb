@@ -9,6 +9,13 @@
 (function () {
     'use strict';
     const X = window.XIRU;
+    const pagePath = location.pathname.toLowerCase();
+    if (X.load('why-abdrift-locked', false) === true) {
+        if (pagePath.includes('/why/') || /\/why\.html$/.test(pagePath)) {
+            location.replace(/\/why\//.test(pagePath) ? '../index.html' : 'index.html');
+            return;
+        }
+    }
     const visits = (X.load('liminal-besuche', 0) || 0) + 1;
     X.save('liminal-besuche', visits);
     const rnd = (a, b) => a + Math.random() * (b - a);
@@ -85,6 +92,21 @@
         X.$$('.lm-text').forEach(el => { pickVariant(el); drift(el); });
         setTimeout(ghost, rnd(9000, 20000));
         idle();
+        if (/\/why\.html$/i.test(location.pathname)) X.save('why-back-clicks', 0);
+        const back = document.querySelector('[data-lm-back]');
+        if (back) {
+            back.addEventListener('click', function (event) {
+                const destinations = (back.getAttribute('data-lm-next') || '').split('|').filter(Boolean);
+                if (!destinations.length) return;
+                const clicks = (X.load('why-back-clicks', 0) || 0) + 1;
+                X.save('why-back-clicks', clicks);
+                const chance = clicks === 1 ? .33 : .66;
+                if (Math.random() < chance) {
+                    event.preventDefault();
+                    location.href = X.pick(destinations);
+                }
+            });
+        }
         // Wer alle drei Antworten gegeben hat …
         const page = (X.page && X.page.p) || '';
         const seen = X.load('why-gesehen', {}) || {};

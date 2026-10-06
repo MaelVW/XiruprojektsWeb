@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="de" data-bare>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liminal Level 4 – Der Ausweg</title>
+    <meta name="robots" content="noindex">
+    <link rel="stylesheet" href="../assets/css/liminal.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/liminal.js"></script>
+    <style>
+        body.liminal {
+            background:
+                radial-gradient(ellipse at 50% 40%, rgba(200, 200, 120, .15), transparent 65%),
+                repeating-linear-gradient(90deg, rgba(40, 30, 0, .25) 0 2px, transparent 2px 46px),
+                #b8a060;
+            color: #1a1410;
+        }
+        .lm-room {
+            filter: contrast(1.3) brightness(0.85) saturate(0.8);
+        }
+        .lm-text {
+            opacity: 0.9;
+            text-shadow: 
+                1px 1px rgba(255, 0, 0, 0.15),
+                -1px -1px rgba(0, 255, 200, 0.15),
+                2px 2px rgba(0, 0, 0, 0.1);
+            animation: lm-intense-flicker 0.25s ease-in-out infinite;
+        }
+        @keyframes lm-intense-flicker {
+            0%, 100% { opacity: 0.9; }
+            25% { opacity: 0.7; }
+            50% { opacity: 0.85; }
+            75% { opacity: 0.65; }
+        }
+        .lm-ghost {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="liminal">
+    <main class="lm-room">
+        <p class="lm-small">Liminal Level 4 · <span class="lm-text" data-v="ausweg|es gibt keinen ausweg|stillschweigen|vergessen">ausweg</span></p>
+        <div class="lm-gap"></div>
+        <p class="lm-big"><span class="lm-text" data-v="Der Nebel ist nie ganz weggegangen.|Der Nebel kommt näher.|Er füllt jetzt den ganzen Gang.|Du kannst ihn atmen hören." data-idle="Nicht umdrehen.">Der Nebel ist nie ganz weggegangen.</span></p>
+        <div class="lm-gap"></div>
+        <p class="lm-big"><span class="lm-text" data-v="Der Generator ist nicht ganz fertig.|Der Generator läuft nicht.|Noch ein Kabel fehlt.|Wer hat ihn eingeschaltet?" data-idle="Er läuft, wenn du nicht hinsiehst.">Der Generator ist nicht ganz fertig.</span></p>
+        <div class="lm-gap"></div>
+        <p class="lm-big"><span class="lm-text" data-v="Auf dem Band: Frank.|Dann Julie. Ein Stuhl scharrt.|Joey lacht auf der zweiten Spur.|Susie sagt nichts. Ihr Atem ist trotzdem zu hören." data-idle="Die Aufnahme wurde vor der Hütte gemacht.">Auf dem Band: Frank.</span></p>
+    </main>
+    <a class="lm-back" href="../Why.html" data-lm-back data-lm-next="level4b.html|level4c.html|level4d.html|level4e.html|level5.html">zurück</a>
+    <script>
+        XIRU.ready(function () {
+            // Intensiverer Ghost-Text bei Level 4
+            const GHOSTS_LEVEL4 = ['BLEIB', 'du', 'immer', 'hier', 'niemals', 'vergiss', 'WIR', 'ALLEIN', 'ewig', 'still'];
+            
+            // Ghosts öfter und aggressiver bei Level 4
+            let ghostInterval = null;
+            function startIntenseGhosts() {
+                ghostInterval = setInterval(function() {
+                    if (!document.hidden) {
+                        const g = document.createElement('div');
+                        g.className = 'lm-ghost';
+                        g.textContent = GHOSTS_LEVEL4[Math.floor(Math.random() * GHOSTS_LEVEL4.length)];
+                        const edge = Math.floor(Math.random() * 4);
+                        g.style.left = (edge === 1 ? 92 : edge === 3 ? 3 : Math.random() * 85 + 5) + 'vw';
+                        g.style.top = (edge === 0 ? 3 : edge === 2 ? 94 : Math.random() * 80 + 8) + 'vh';
+                        g.style.fontSize = (Math.random() * 0.3 + 0.7) + 'rem';
+                        document.body.appendChild(g);
+                        requestAnimationFrame(() => { g.style.opacity = '.15'; });
+                        setTimeout(() => { g.style.opacity = '0'; }, 600);
+                        setTimeout(() => g.remove(), 1200);
+                    }
+                }, Math.random() * 3000 + 2000);
+            }
+            startIntenseGhosts();
+        });
+    </script>
+</body>
+</html>

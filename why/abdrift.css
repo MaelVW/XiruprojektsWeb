@@ -1,0 +1,118 @@
+body.lm-drift {
+    position: relative;
+    isolation: isolate;
+    background:
+        radial-gradient(ellipse at 50% 48%, rgba(88, 83, 69, .12), transparent 53%),
+        repeating-linear-gradient(90deg, rgba(20, 18, 16, .3) 0 2px, transparent 2px 42px),
+        #45433e;
+    color: #aaa69b;
+}
+body.lm-drift::before,
+body.lm-drift::after {
+    content: "";
+    position: fixed;
+    inset: -18%;
+    pointer-events: none;
+}
+body.lm-drift::before {
+    z-index: 2;
+    opacity: .5;
+    background:
+        radial-gradient(ellipse at 5% 50%, rgba(174, 178, 166, .25), transparent 34%),
+        radial-gradient(ellipse at 96% 45%, rgba(174, 178, 166, .22), transparent 32%),
+        radial-gradient(ellipse at 52% 105%, rgba(174, 178, 166, .2), transparent 38%);
+    filter: blur(24px);
+    animation: lm-mist 18s ease-in-out infinite alternate;
+}
+body.lm-drift::after {
+    z-index: 3;
+    opacity: .26;
+    background-image:
+        radial-gradient(circle, rgba(205, 201, 184, .7) 0 1px, transparent 2px),
+        radial-gradient(circle, rgba(205, 201, 184, .45) 0 1px, transparent 2px);
+    background-size: 83px 97px, 127px 139px;
+    animation: lm-ash 24s linear infinite;
+}
+.lm-drift .lm-room { z-index: 4; }
+.lm-drift__cracks {
+    position: fixed;
+    z-index: 1;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    opacity: .52;
+}
+.lm-drift__cracks path {
+    fill: none;
+    stroke: rgba(15, 14, 13, .84);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-dasharray: 180;
+    stroke-dashoffset: 180;
+    animation: lm-crack 16s ease-in-out forwards;
+}
+.lm-drift__mark {
+    position: fixed;
+    z-index: 1;
+    right: clamp(1rem, 8vw, 8rem);
+    top: 50%;
+    width: clamp(96px, 17vw, 220px);
+    height: auto;
+    transform: translateY(-50%) rotate(-8deg);
+    overflow: visible;
+    opacity: .56;
+    filter: blur(.45px);
+    pointer-events: none;
+}
+.lm-drift__stain { fill: #39201e; }
+.lm-drift__smear { fill: none; stroke: #4c2522; stroke-width: 8; stroke-linecap: round; opacity: .58; }
+.lm-drift__knife { fill: #908b7d; stroke: #292824; stroke-width: 2; }
+.lm-drift__blade-mark { stroke: #191817; stroke-width: 4; stroke-linecap: round; }
+.lm-drift__room {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 2rem;
+    text-align: center;
+    transition: filter 12s linear, opacity 12s linear;
+}
+.lm-drift__room.is-failing { filter: brightness(.55) contrast(1.35); opacity: .82; }
+.lm-drift__room p { max-width: 38rem; }
+.lm-drift__continue {
+    position: relative;
+    z-index: 5;
+    margin-top: 1.5rem;
+    padding: .65rem 1rem;
+    border: 1px solid rgba(170, 166, 155, .35);
+    background: rgba(10, 10, 10, .12);
+    color: inherit;
+    font: inherit;
+    letter-spacing: .22em;
+    cursor: pointer;
+}
+.lm-drift__continue:hover,
+.lm-drift__continue:focus-visible { background: rgba(170, 166, 155, .1); outline: 1px solid currentColor; }
+.lm-drift__status { min-height: 1.7em; font-size: .72rem; opacity: .68; }
+@keyframes lm-mist {
+    from { transform: translate3d(-3%, 1%, 0) scale(1); }
+    to { transform: translate3d(3%, -2%, 0) scale(1.08); }
+}
+@keyframes lm-ash {
+    from { background-position: 0 0, 30px 50px; }
+    to { background-position: 0 180px, 30px -110px; }
+}
+@keyframes lm-crack {
+    0%, 12% { stroke-dashoffset: 180; opacity: .08; }
+    55%, 100% { stroke-dashoffset: 0; opacity: .82; }
+}
+@media (max-width: 560px) {
+    .lm-drift__mark { right: .15rem; width: 86px; opacity: .4; }
+}
+@media (prefers-reduced-motion: reduce) {
+    body.lm-drift::before,
+    body.lm-drift::after,
+    .lm-drift__cracks path { animation: none; }
+    .lm-drift__cracks path { stroke-dashoffset: 0; }
+    .lm-drift__room { transition: none; }
+}

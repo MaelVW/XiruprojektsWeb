@@ -30,7 +30,7 @@
 
     <div class="tldr">
         <div class="card card--flat"><b>0</b><span class="small muted">Tracker</span></div>
-        <div class="card card--flat"><b>0</b><span class="small muted">Cookies</span></div>
+        <div class="card card--flat"><b>0</b><span class="small muted">Werbe- oder Tracking-Cookies</span></div>
         <div class="card card--flat"><b>0</b><span class="small muted">Server-Datenbanken</span></div>
         <div class="card card--flat"><b>100 %</b><span class="small muted">in deinem Browser</span></div>
     </div>
@@ -50,9 +50,15 @@
     </ul>
     <p>Wir können diese Daten nicht sehen. Wenn du die Browserdaten löschst, sind sie weg – darum gibt es im <a href="konto/profil.html">Profil</a> einen Export.</p>
 
-    <h2>3. Cookies <span class="crumbs" data-egg="p-krumen" title="Krümel">🍪 · · ·</span></h2>
-    <p>Diese Website setzt keine Cookies und benutzt keine Analyse- oder Werbedienste. Es gibt auch keine eingebetteten Inhalte von Dritten
-        wie Videos, Schriftarten oder Social-Media-Knöpfe, die beim Laden Daten übertragen würden.</p>
+    <h2>3. Cookies & Speicher-Einwilligung <span class="crumbs" data-egg="p-krumen" title="Krümel">🍪 · · ·</span></h2>
+    <p>Beim ersten Besuch fragt dich ein Banner, wie gespeichert werden darf:</p>
+    <ul>
+        <li><strong>Alles erlauben:</strong> Fortschritt, lokales Konto und Einstellungen werden dauerhaft im localStorage (bzw. künftig in kleinen, rein technischen Cookies) deines Browsers gespeichert.</li>
+        <li><strong>Nur notwendige:</strong> Alles funktioniert, wird aber nur im sessionStorage gehalten und beim Schliessen des Browsers gelöscht.
+            Dauerhaft gespeichert wird nur deine Entscheidung selbst, damit das Banner nicht bei jedem Besuch erscheint.</li>
+    </ul>
+    <p>Du kannst deine Entscheidung jederzeit ändern: <button class="btn btn--sm" type="button" id="consent-open">🍪 Einstellung ändern</button></p>
+    <p>Wir benutzen keine Analyse- oder Werbedienste und keine eingebetteten Inhalte von Dritten (Videos, Schriftarten, Social-Media-Knöpfe), die beim Laden Daten übertragen würden.</p>
 
     <h2>4. KI-Labor und externe Dienste</h2>
     <p>Das KI-Labor funktioniert ohne Internetverbindung mit eingebauten Generatoren. Nur wenn du <strong>selbst</strong> einen KI-Dienst aktivierst
@@ -75,5 +81,6 @@
     <p>Da wir keine Daten von dir speichern, gibt es bei uns nichts einzusehen oder zu löschen. Du hast jederzeit die volle Kontrolle:
         In den <a href="konto/einstellungen.html">Einstellungen</a> kannst du deinen Fortschritt zurücksetzen oder alle Daten dieser Website aus deinem Browser löschen.</p>
 </main>
+<script>XIRU.ready(function () { XIRU.$('#consent-open').addEventListener('click', () => XIRU.consent.open()); });</script>
 </body>
 </html>

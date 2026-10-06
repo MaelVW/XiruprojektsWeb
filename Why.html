@@ -1,21 +1,32 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de" data-bare>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Why?</title>
+    <meta name="robots" content="noindex">
+    <link rel="stylesheet" href="assets/css/liminal.css">
+    <script src="assets/js/site.js"></script>
+    <script src="assets/js/core.js"></script>
+    <script src="assets/js/liminal.js"></script>
 </head>
-<body>
-    
-    <h1>WARUM BIST DU HIER</h1>
+<body class="liminal">
+    <main class="lm-room">
+        <h1><span class="lm-text" data-v="WARUM BIST DU HIER|WARUM BIST DU NOCH HIER|WARUM BIST DU HIER?|WARUM BIST DU" data-idle="DU BIST SCHON LANGE HIER">WARUM BIST DU HIER</span></h1>
 
-    <table>
-        <tr>
-            <th><button id="THEFirst">Neugier</button></th>
-            <th><button id="THESecond">Testen</button></th>
-            <th><button id="THEThird">Ich Weiss es Nicht</button></th>
-        </tr>
-    </table>
-
+        <table>
+            <tr>
+                <th><button id="THEFirst" data-href="why/neugier.html">Neugier</button></th>
+                <th><button id="THESecond" data-href="why/testen.html">Testen</button></th>
+                <th><button id="THEThird" data-href="why/unbekannt.html">Ich Weiss es Nicht</button></th>
+            </tr>
+        </table>
+    </main>
+    <script>
+        // Jeder Knopf führt zu der Seite mit seiner Antwort
+        document.querySelectorAll('button[data-href]').forEach(function (b) {
+            b.addEventListener('click', function () { location.href = b.getAttribute('data-href'); });
+        });
+    </script>
 </body>
 </html>

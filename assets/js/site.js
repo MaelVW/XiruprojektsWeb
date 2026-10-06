@@ -235,6 +235,10 @@ XIRU.pages = [
     { p: 'geheim/kristallschrein.html',  t: 'Kristallschrein',   r: 'geheim', d: 'Ein Altar für Sammler.', hidden: true },
     { p: 'geheim/katzen.html',           t: 'Katzenzimmer',      r: 'geheim', d: 'Miau.', hidden: true },
     { p: 'geheim/rueckwaerts.html',      t: 'sträwkcüR',         r: 'geheim', d: '.tlerhekmu tsi seilA', hidden: true },
+    { p: 'Why.html',                 t: 'Warum?',            r: 'geheim', d: 'Warum bist du hier?', hidden: true },
+    { p: 'why/neugier.html',         t: 'Neugier',           r: 'geheim', d: 'Expect us.', hidden: true },
+    { p: 'why/testen.html',          t: 'Testen',            r: 'geheim', d: 'We do not forget.', hidden: true },
+    { p: 'why/unbekannt.html',       t: 'Ich weiss es nicht', r: 'geheim', d: 'To be present.', hidden: true },
     { p: 'geheim/ende.html',             t: 'Das Ende?',         r: 'geheim', d: 'Nur wer alles gemeistert hat.', hidden: true }
 ];
 
@@ -510,5 +514,6 @@ XIRU.eggs.push(
     { id: 'm-vollausbau',  pg: 'konto/skilltree.html', n: 'Vollausstattung', h: 'Belege alle sechs Bauplätze des Mechs.', x: 60, r: 3, m: 'Ein richtiger Mech!' },
     { id: 'm-beine',       pg: 'konto/skilltree.html', n: 'Mech-Pilot',      h: 'Gib deinem Mech echte Beine.', x: 80, r: 3, m: 'STAMPF. STAMPF. STAMPF.' },
     { id: 'm-alle-inseln', pg: 'weltkarte.html',       n: 'Kartenmacher',    h: 'Erreiche jede Insel der bekannten Welt.', x: 200, r: 4, m: 'Die bekannte Welt gehört dir. Aber was liegt im Nebel? +1 Skillpunkt' }
+    ,{ id: 'h-why-alle',   pg: 'Why.html', n: 'Drei Antworten', h: 'Gib auf die Frage „Warum?" jede Antwort einmal.', x: 60, r: 3, m: 'Expect us.' }
     /* EGGS:ENDE */
 );

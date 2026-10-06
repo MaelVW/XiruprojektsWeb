@@ -55,7 +55,9 @@
             <h2>Deine Daten</h2>
             <p class="muted small">Alles liegt im localStorage dieses Browsers. Wenn du die Browserdaten löschst, ist auch hier alles weg – darum: <a href="profil.html">exportieren</a>.</p>
             <p class="small" id="usage"></p>
+            <p class="small" id="consent-state"></p>
             <div class="row mt-2">
+                <button class="btn btn--sm" id="consent" type="button">🍪 Speicher-Einwilligung ändern</button>
                 <button class="btn btn--sm" id="reset-progress" type="button">Fortschritt zurücksetzen</button>
                 <button class="btn btn--sm btn--danger" id="wipe" type="button">Alle Xiru-Daten löschen</button>
             </div>
@@ -113,11 +115,15 @@ XIRU.ready(function () {
     $('#test-sound').addEventListener('click', () => { XIRU.audio(); setTimeout(() => { [523, 659, 784].forEach((f, i) => setTimeout(() => XIRU.beep(f, .1, 'triangle', .07), i * 100)); }, 50); if (XIRU.setting('sound') === false) XIRU.toast('Töne sind aus', 'Schalte sie oben ein.', { icon: '🔇' }); });
 
     // Speicherverbrauch
-    try {
-        let bytes = 0, n = 0;
-        Object.keys(localStorage).filter(k => k.startsWith('xiru:')).forEach(k => { bytes += (k.length + (localStorage.getItem(k) || '').length) * 2; n++; });
-        $('#usage').textContent = n + ' Einträge, ca. ' + XIRU.fmt(bytes / 1024, 1) + ' KB belegt.';
-    } catch (e) { $('#usage').textContent = 'Der Browser erlaubt hier keinen Zugriff auf den Speicher.'; }
+    {
+        const keys = XIRU.store.keys();
+        const bytes = keys.reduce((a, k) => a + (k.length + JSON.stringify(XIRU.store.get(k)).length) * 2, 0);
+        $('#usage').textContent = keys.length + ' Einträge, ca. ' + XIRU.fmt(bytes / 1024, 1) + ' KB belegt.';
+        const c = XIRU.consent.get();
+        $('#consent-state').textContent = !c ? 'Noch keine Speicher-Entscheidung getroffen – alles gilt nur für diese Sitzung.'
+            : c.all ? '🍪 Dauerhaftes Speichern ist erlaubt.' : '🍪 Nur notwendige: alles wird beim Schliessen des Browsers vergessen.';
+        $('#consent').addEventListener('click', () => XIRU.consent.open());
+    }
 
     $('#reset-progress').addEventListener('click', () => {
         const m = XIRU.modal('<h2>Fortschritt zurücksetzen?</h2><p class="muted">XP, Entdeckungen, Kristalle, Skills und Rekorde von <strong>' + XIRU.esc(XIRU.user || 'Gast') + '</strong> werden gelöscht. Das Konto selbst bleibt bestehen.</p>' +
@@ -132,7 +138,7 @@ XIRU.ready(function () {
             '<input class="input" id="confirm" autocomplete="off"><div class="row mt-2"><button class="btn btn--danger" id="ok">Alles löschen</button><button class="btn" data-close>Abbrechen</button></div>');
         m.el.querySelector('#ok').addEventListener('click', () => {
             if (m.el.querySelector('#confirm').value.trim().toUpperCase() !== 'LÖSCHEN') { m.el.querySelector('#confirm').focus(); return; }
-            try { Object.keys(localStorage).filter(k => k.startsWith('xiru:')).forEach(k => localStorage.removeItem(k)); sessionStorage.clear(); } catch (e) { }
+            [localStorage, sessionStorage].forEach(st => { try { Object.keys(st).filter(k => k.startsWith('xiru:')).forEach(k => st.removeItem(k)); } catch (e) { } });
             location.href = XIRU.url('index.html');
         });
     });

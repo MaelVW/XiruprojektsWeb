@@ -69,9 +69,43 @@
         .node.is-available { border-color: var(--bc); color: var(--text); --pc: var(--bc); animation: pulse 1.8s infinite; }
         .node.is-blocked { opacity: .5; }
         .root-egg { cursor: pointer; font-size: 1.6rem; }
+        /* ── Werft-Design: Pixel-Retro mit modernen Hologramm-Akzenten ── */
+        body.theme-werft {
+            --bg: #0d0f1a; --bg-2: #0a0c14; --surface: #171a2b; --surface-2: #1f2338; --surface-3: #2a2f4a; --border: #000; --border-strong: #3b4166;
+            --text: #f4ecd8; --text-muted: #b9b3a0; --text-faint: #7d7866; --accent: #ffb000; --accent-2: #4ff0ff; --rc: #ffb000; --rc-raw: #ffb000; --accent-ink: #1a1000;
+            --font: "Cascadia Code", Consolas, "Courier New", monospace; --radius: 0px; --radius-sm: 0px;
+            background: repeating-linear-gradient(0deg, rgba(255,255,255,.025) 0 2px, transparent 2px 4px), var(--bg);
+        }
+        .theme-werft h1, .theme-werft h2, .theme-werft h3 { text-transform: uppercase; letter-spacing: .06em; text-shadow: 3px 3px 0 #000; }
+        .theme-werft h1 { color: var(--accent); }
+        .theme-werft .card, .theme-werft .slot-card, .theme-werft .stats div, .theme-werft .bay, .theme-werft .modal {
+            border: 0; border-radius: 0;
+            box-shadow: 0 0 0 3px #000, 0 0 0 6px var(--border-strong), 6px 6px 0 6px rgba(0,0,0,.55);
+        }
+        .theme-werft .btn { border-radius: 0; border: 0; box-shadow: inset -3px -3px 0 rgba(0,0,0,.45), inset 3px 3px 0 rgba(255,255,255,.18), 0 0 0 3px #000; text-transform: uppercase; letter-spacing: .05em; }
+        .theme-werft .btn:active { box-shadow: inset 3px 3px 0 rgba(0,0,0,.45), 0 0 0 3px #000; transform: translate(1px, 1px); }
+        .theme-werft .btn--primary { background: var(--accent); color: #1a1000; }
+        .theme-werft .badge { border-radius: 0; box-shadow: 0 0 0 2px #000; }
+        .theme-werft .bar { border-radius: 0; height: 10px; box-shadow: 0 0 0 2px #000; }
+        .theme-werft .bar__fill { border-radius: 0; background: repeating-linear-gradient(90deg, var(--accent) 0 6px, #ffcf4d 6px 8px); }
+        .theme-werft .tabs button[aria-selected="true"] { color: var(--accent); border-bottom: 4px solid var(--accent); }
+        .theme-werft .bay { background:
+            linear-gradient(transparent 78%, rgba(0,0,0,.35) 78%),
+            repeating-linear-gradient(45deg, #ffb000 0 14px, #1a1000 14px 28px) bottom / 100% 14px no-repeat,
+            radial-gradient(ellipse at 50% 80%, rgba(79,240,255,.16), transparent 60%),
+            repeating-linear-gradient(90deg, transparent 0 31px, rgba(79,240,255,.07) 31px 32px),
+            repeating-linear-gradient(0deg, transparent 0 31px, rgba(79,240,255,.07) 31px 32px), #0b0e18; padding: 1.25rem 1rem 1.6rem; }
+        .theme-werft .bay canvas { width: 100%; height: auto; display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
+        .theme-werft .bay::after { content: "WERFT-BUCHT 01"; position: absolute; top: 8px; left: 10px; font-size: .7rem; letter-spacing: .2em; color: var(--accent-2); text-shadow: 0 0 8px var(--accent-2); }
+        .theme-werft .guide { box-shadow: 0 0 0 3px #000, 0 0 0 6px var(--accent), 0 0 24px rgba(255,176,0,.35); background: #1d1708; }
+        .holo { color: var(--accent-2); text-shadow: 0 0 6px var(--accent-2); }
+        /* Kabel-Minispiel */
+        .wires { width: 100%; max-width: 360px; display: block; margin: 0 auto; touch-action: none; user-select: none; background: #0b0e18; box-shadow: 0 0 0 3px #000, 0 0 0 6px var(--border-strong); }
+        .wires .plug { cursor: grab; }
+        .wires .sock.is-done, .wires .plug.is-done { opacity: .55; }
     </style>
 </head>
-<body>
+<body class="theme-werft">
 <main class="content content--wide">
     <header class="page-head row" style="align-items:flex-end">
         <div>
@@ -123,66 +157,78 @@ XIRU.ready(function () {
     const ISLE_ICON = { werkzeuge: '⚒', studio: '⬇', arcade: '▶', hardware: '▣', mixer: '≋', ki: '✦' };
 
     /* ── Mech zeichnen: jedes Bauteil hat seine eigene Grafik ── */
-    function smoke(x, y) { return '<g class="smoke"><circle cx="' + x + '" cy="' + y + '" r="7" fill="#64748b"/></g><g class="smoke" style="animation-delay:1.1s"><circle cx="' + (x + 6) + '" cy="' + y + '" r="5" fill="#94a3b8"/></g>'; }
-    function drawMech() {
+    const rot = (a, x, y) => 'transform="rotate(' + a.toFixed(1) + ' ' + x + ' ' + y + ')"';
+    function smoke(x, y, f) {
+        return [0, .5].map(o => { const k = (f * .6 + o) % 1; return '<circle cx="' + (x + k * 8) + '" cy="' + (y - k * 36) + '" r="' + (5 + k * 7) + '" fill="#8792a8" opacity="' + (.7 - k * .7).toFixed(2) + '"/>'; }).join('');
+    }
+    /* f = Zeit in Sekunden, run = Testlauf (schneller, wackelt) */
+    function drawMech(f, run) {
+        f = f || 0;
         const ins = sl => M.installed(sl), cond = sl => { const p = ins(sl); return p ? M.cond(p.id) : 100; };
-        const st = M.stats();
+        const sp = run ? 4 : 1, A = f * 220 * sp, pulse = (.65 + Math.sin(f * 4) * .35).toFixed(2);
         let g = '';
-        // Antrieb
         const a = ins('antrieb');
-        if (!a) g += '<rect x="80" y="160" width="80" height="34" rx="8" fill="none" stroke="var(--border-strong)" stroke-dasharray="5 4"/><text x="120" y="182" text-anchor="middle" font-size="10" fill="var(--text-faint)">Antrieb</text>';
-        else if (a.id === 'a-paddel') g += '<g class="spin"><circle cx="120" cy="176" r="22" fill="#78350f" stroke="#a16207" stroke-width="3"/>' + [0, 45, 90, 135].map(r => '<rect x="117" y="152" width="6" height="48" fill="#a16207" transform="rotate(' + r + ' 120 176)"/>').join('') + '<circle cx="120" cy="176" r="5" fill="#facc15"/></g>';
-        else if (a.id === 'a-raupe') g += '<rect x="58" y="160" width="124" height="34" rx="17" fill="#1f2937" stroke="#4b5563" stroke-width="3"/>' + [76, 102, 128, 154].map(x => '<g class="spin"><circle cx="' + x + '" cy="177" r="10" fill="#6b7280"/><rect x="' + (x - 1.5) + '" y="168" width="3" height="18" fill="#374151"/></g>').join('');
-        else if (a.id === 'a-schraube') g += '<ellipse cx="70" cy="182" rx="26" ry="9" fill="#ef4444"/><ellipse cx="170" cy="182" rx="26" ry="9" fill="#ef4444"/><rect x="40" y="162" width="160" height="6" fill="#9ca3af"/><g class="spin" style="transform-origin:28px 150px"><ellipse cx="28" cy="140" rx="5" ry="14" fill="#cbd5e1"/><ellipse cx="28" cy="160" rx="5" ry="14" fill="#94a3b8"/></g>';
-        else if (a.id === 'a-duesen') g += '<path d="M78 158h22l-4 22h-14z M140 158h22l-4 22h-14z" fill="#475569"/><path class="flame" d="M82 180h14l-7 22z M144 180h14l-7 22z" fill="#f97316"/><path class="flame" d="M85 180h8l-4 12z M147 180h8l-4 12z" fill="#fde047"/>';
-        else if (a.id === 'a-beine') g += '<path d="M90 156 L72 182 L86 206 M150 156 L168 182 L154 206" stroke="#64748b" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="72" cy="182" r="7" fill="var(--rc)"/><circle cx="168" cy="182" r="7" fill="var(--rc)"/><rect x="70" y="204" width="34" height="8" rx="3" fill="#334155"/><rect x="138" y="204" width="34" height="8" rx="3" fill="#334155"/>';
-        if (a && cond('antrieb') < 40) g += smoke(110, 160);
-        // Rahmen
+        if (!a) g += '<rect x="80" y="160" width="80" height="34" fill="none" stroke="#3b4166" stroke-width="3" stroke-dasharray="6 6"/>';
+        else if (a.id === 'a-paddel') g += '<g ' + rot(A, 120, 176) + '><circle cx="120" cy="176" r="22" fill="#78350f" stroke="#a16207" stroke-width="4"/>' + [0, 45, 90, 135].map(r => '<rect x="116" y="152" width="8" height="48" fill="#d97706" transform="rotate(' + r + ' 120 176)"/>').join('') + '<circle cx="120" cy="176" r="6" fill="#facc15"/></g>';
+        else if (a.id === 'a-raupe') g += '<rect x="58" y="160" width="124" height="34" rx="17" fill="#1f2937" stroke="#4b5563" stroke-width="4"/>' + [76, 102, 128, 154].map(x => '<g ' + rot(A, x, 177) + '><circle cx="' + x + '" cy="177" r="10" fill="#6b7280"/><rect x="' + (x - 2) + '" y="167" width="4" height="20" fill="#1f2937"/></g>').join('');
+        else if (a.id === 'a-schraube') g += '<ellipse cx="70" cy="182" rx="26" ry="9" fill="#ef4444"/><ellipse cx="170" cy="182" rx="26" ry="9" fill="#ef4444"/><rect x="40" y="162" width="160" height="6" fill="#9ca3af"/><g ' + rot(A * 1.5, 28, 150) + '><ellipse cx="28" cy="138" rx="5" ry="12" fill="#cbd5e1"/><ellipse cx="28" cy="162" rx="5" ry="12" fill="#94a3b8"/><circle cx="28" cy="150" r="4" fill="#475569"/></g>';
+        else if (a.id === 'a-duesen') { const fl = 18 + (Math.floor(f * 12) % 2) * 8; g += '<path d="M78 158h22l-4 22h-14z M140 158h22l-4 22h-14z" fill="#475569"/><path d="M82 180h14l-7 ' + fl + 'z M144 180h14l-7 ' + fl + 'z" fill="#f97316"/><path d="M85 180h8l-4 ' + (fl - 8) + 'z M147 180h8l-4 ' + (fl - 8) + 'z" fill="#fde047"/>'; }
+        else if (a.id === 'a-beine') { const b = Math.sin(f * 3 * sp) * 4; g += '<path d="M90 156 L72 ' + (182 + b) + ' L86 206 M150 156 L168 ' + (182 - b) + ' L154 206" stroke="#64748b" stroke-width="12" fill="none" stroke-linecap="square" stroke-linejoin="miter"/><rect x="66" y="' + (176 + b) + '" width="12" height="12" fill="#4ff0ff"/><rect x="162" y="' + (176 - b) + '" width="12" height="12" fill="#4ff0ff"/><rect x="70" y="204" width="34" height="8" fill="#334155"/><rect x="138" y="204" width="34" height="8" fill="#334155"/>'; }
+        if (a && cond('antrieb') < 40) g += smoke(108, 160, f);
         const r = ins('rahmen');
         let body;
-        if (!r) body = '<rect x="62" y="70" width="116" height="90" rx="10" fill="none" stroke="var(--border-strong)" stroke-dasharray="6 5"/><text x="120" y="118" text-anchor="middle" font-size="11" fill="var(--text-faint)">Rahmen fehlt</text>';
-        else if (r.id === 'r-schrott') body = '<rect x="62" y="70" width="116" height="90" rx="4" fill="#7c4a2d" stroke="#3f2a1d" stroke-width="3"/><rect x="70" y="128" width="30" height="22" fill="#9a6b45"/><path d="M150 76l10 14" stroke="#3f2a1d" stroke-width="2"/>' + [[68, 76], [172, 76], [68, 154], [172, 154]].map(c => '<circle cx="' + c[0] + '" cy="' + c[1] + '" r="2.5" fill="#d6a76b"/>').join('');
-        else if (r.id === 'r-alu') body = '<rect x="60" y="68" width="120" height="92" rx="18" fill="#9ca3af" stroke="#e5e7eb" stroke-width="2"/><rect x="68" y="74" width="104" height="14" rx="7" fill="#e5e7eb" opacity=".6"/>';
-        else if (r.id === 'r-titan') body = '<path d="M74 66h92l16 24v52l-16 20H74l-16-20V90z" fill="#475569" stroke="#94a3b8" stroke-width="2"/><path d="M66 110h108" stroke="#facc15" stroke-width="3" stroke-dasharray="8 6"/>';
-        else body = '<path d="M120 58l60 30v54l-60 30-60-30V88z" fill="var(--accent-2)" fill-opacity=".55" stroke="var(--accent-2)" stroke-width="2"/><path d="M120 58v114M60 88l120 54M180 88L60 142" stroke="#fff" stroke-opacity=".35"/>';
-        // Panzerung
+        if (!r) body = '<rect x="62" y="70" width="116" height="90" fill="none" stroke="#3b4166" stroke-width="3" stroke-dasharray="8 6"/>';
+        else if (r.id === 'r-schrott') body = '<rect x="62" y="70" width="116" height="90" fill="#7c4a2d" stroke="#2a170a" stroke-width="4"/><rect x="70" y="128" width="30" height="22" fill="#9a6b45"/><path d="M150 76l10 14" stroke="#2a170a" stroke-width="3"/>' + [[68, 76], [172, 76], [68, 154], [172, 154]].map(c => '<rect x="' + (c[0] - 2) + '" y="' + (c[1] - 2) + '" width="5" height="5" fill="#d6a76b"/>').join('');
+        else if (r.id === 'r-alu') body = '<rect x="60" y="68" width="120" height="92" fill="#9ca3af" stroke="#e5e7eb" stroke-width="4"/><rect x="68" y="74" width="104" height="12" fill="#e5e7eb" opacity=".6"/>';
+        else if (r.id === 'r-titan') body = '<path d="M74 66h92l16 24v52l-16 20H74l-16-20V90z" fill="#475569" stroke="#94a3b8" stroke-width="3"/><path d="M66 110h108" stroke="#ffb000" stroke-width="4" stroke-dasharray="10 6"/>';
+        else body = '<path d="M120 58l60 30v54l-60 30-60-30V88z" fill="#a78bfa" fill-opacity=".7" stroke="#d8ccff" stroke-width="3"/><path d="M120 58v114M60 88l120 54M180 88L60 142" stroke="#fff" stroke-opacity=".4" stroke-width="2"/>';
         const pz = ins('panzer');
         if (pz && r) {
             const col = pz.id === 'p-blech' ? '#9ca3af' : pz.id === 'p-ram' ? '#15803d' : '#111827';
-            body += '<rect x="52" y="80" width="12" height="70" rx="3" fill="' + col + '"/><rect x="176" y="80" width="12" height="70" rx="3" fill="' + col + '"/>' +
-                (pz.id === 'p-ram' ? [86, 100, 114, 128].map(y => '<rect x="54" y="' + y + '" width="8" height="5" fill="#0f172a"/><rect x="178" y="' + y + '" width="8" height="5" fill="#0f172a"/>').join('') : '') +
-                (pz.id === 'p-tower' ? '<circle cx="58" cy="88" r="2.5" fill="#22c55e" class="glow"/><circle cx="182" cy="88" r="2.5" fill="#22c55e"/>' : '');
+            body += '<rect x="50" y="80" width="14" height="70" fill="' + col + '" stroke="#000" stroke-width="2"/><rect x="176" y="80" width="14" height="70" fill="' + col + '" stroke="#000" stroke-width="2"/>' +
+                (pz.id === 'p-ram' ? [86, 100, 114, 128].map(y => '<rect x="53" y="' + y + '" width="8" height="6" fill="#0f172a"/><rect x="179" y="' + y + '" width="8" height="6" fill="#0f172a"/>').join('') : '') +
+                (pz.id === 'p-tower' ? '<rect x="54" y="86" width="5" height="5" fill="#22c55e" opacity="' + pulse + '"/><rect x="180" y="86" width="5" height="5" fill="#22c55e"/>' : '');
         }
-        // Energiekern im Inneren
         const k = ins('kern');
         if (k && r) {
-            if (k.id === 'k-batterie') body += '<rect x="103" y="98" width="34" height="24" rx="3" fill="#1f2937" stroke="#facc15" stroke-width="2"/><rect x="108" y="94" width="6" height="4" fill="#ef4444"/><rect x="126" y="94" width="6" height="4" fill="#1f2937" stroke="#9ca3af"/><text x="120" y="115" text-anchor="middle" font-size="9" fill="#facc15">12V</text>';
-            else if (k.id === 'k-diskette') body += '<g class="glow"><rect x="104" y="94" width="32" height="32" rx="2" fill="var(--accent-2)"/><rect x="112" y="94" width="16" height="10" fill="#cbd5e1"/><rect x="109" y="112" width="22" height="12" fill="#fff"/></g>';
-            else if (k.id === 'k-cd') body += '<g class="spin"><circle cx="120" cy="110" r="18" fill="#d6dcf5" stroke="var(--rc)"/><path d="M120 95a15 15 0 0 1 15 15" stroke="#f472b6" stroke-width="3" fill="none"/><circle cx="120" cy="110" r="4" fill="var(--bg)"/></g>';
-            else body += '<g class="glow">' + XIRU.crystalSVG(4, 30).replace('<svg ', '<svg x="105" y="90" ') + '</g>';
+            if (k.id === 'k-batterie') body += '<rect x="103" y="98" width="34" height="24" fill="#1f2937" stroke="#facc15" stroke-width="3"/><rect x="108" y="93" width="6" height="5" fill="#ef4444"/><rect x="126" y="93" width="6" height="5" fill="#9ca3af"/><rect x="110" y="106" width="20" height="6" fill="#facc15" opacity="' + pulse + '"/>';
+            else if (k.id === 'k-diskette') body += '<g opacity="' + (.75 + pulse * .25) + '"><rect x="104" y="94" width="32" height="32" fill="#a78bfa"/><rect x="112" y="94" width="16" height="10" fill="#cbd5e1"/><rect x="109" y="112" width="22" height="12" fill="#fff"/></g>';
+            else if (k.id === 'k-cd') body += '<g ' + rot(A * 2, 120, 110) + '><circle cx="120" cy="110" r="18" fill="#d6dcf5" stroke="#4ff0ff" stroke-width="2"/><path d="M120 95a15 15 0 0 1 15 15" stroke="#f472b6" stroke-width="4" fill="none"/><circle cx="120" cy="110" r="5" fill="#0b0e18"/></g>';
+            else body += '<g opacity="' + (.7 + pulse * .3) + '">' + XIRU.crystalSVG(4, 30).replace('<svg ', '<svg x="105" y="90" ') + '</g>';
         }
-        if (r && cond('rahmen') < 40) body += '<path d="M90 74l8 18-6 10 10 16" stroke="#111" stroke-width="2" fill="none"/>' + smoke(150, 70);
-        g += '<g class="body">' + body;
-        // Sensor oben
-        const s = ins('sensor');
-        if (!s) g += '<rect x="100" y="30" width="40" height="30" rx="6" fill="none" stroke="var(--border-strong)" stroke-dasharray="4 4"/>';
-        else if (s.id === 's-antenne') g += '<path d="M120 70 V30 M120 30 l-12 -10 M120 30 l12 -10" stroke="#cbd5e1" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="120" cy="28" r="3" fill="#ef4444" class="glow"/>';
-        else if (s.id === 's-radar') g += '<rect x="117" y="44" width="6" height="26" fill="#64748b"/><g class="dish"><path d="M96 30 Q120 62 144 30 Z" fill="#cbd5e1" stroke="#94a3b8"/><line x1="120" y1="44" x2="120" y2="26" stroke="#94a3b8" stroke-width="2"/></g>';
-        else if (s.id === 's-hdd') g += '<rect x="117" y="50" width="6" height="20" fill="#64748b"/><g class="spin"><ellipse cx="120" cy="40" rx="22" ry="10" fill="#cbd5e1" stroke="#64748b"/><circle cx="120" cy="40" r="3" fill="#475569"/></g><line x1="138" y1="34" x2="124" y2="40" stroke="#facc15" stroke-width="3"/>';
-        else g += '<path d="M120 18 L140 64 H100 Z" fill="var(--rc)" fill-opacity=".5" stroke="var(--rc)" class="glow"/><path d="M120 18 V64" stroke="#fff" stroke-opacity=".5"/>';
-        // Werkzeugarm rechts
+        if (r && cond('rahmen') < 40) body += '<path d="M90 74l8 18-6 10 10 16" stroke="#000" stroke-width="3" fill="none"/>' + smoke(150, 70, f + .3);
+        const shake = run ? ' transform="translate(' + (Math.floor(f * 20) % 2 ? 2 : -2) + ',0)"' : '';
+        g += '<g' + shake + '>' + body;
+        const s2 = ins('sensor');
+        if (!s2) g += '<rect x="100" y="30" width="40" height="30" fill="none" stroke="#3b4166" stroke-width="3" stroke-dasharray="6 6"/>';
+        else if (s2.id === 's-antenne') g += '<path d="M120 70 V30 M120 30 l-12 -10 M120 30 l12 -10" stroke="#cbd5e1" stroke-width="4" fill="none"/><rect x="116" y="24" width="8" height="8" fill="#ef4444" opacity="' + pulse + '"/>';
+        else if (s2.id === 's-radar') g += '<rect x="116" y="44" width="8" height="26" fill="#64748b"/><g ' + rot(Math.sin(f * 1.2) * 18, 120, 44) + '><path d="M96 30 Q120 62 144 30 Z" fill="#cbd5e1" stroke="#94a3b8" stroke-width="2"/><line x1="120" y1="44" x2="120" y2="24" stroke="#94a3b8" stroke-width="3"/></g>';
+        else if (s2.id === 's-hdd') { const ang = f * 6 * sp; g += '<rect x="116" y="50" width="8" height="20" fill="#64748b"/><ellipse cx="120" cy="40" rx="22" ry="10" fill="#cbd5e1" stroke="#64748b" stroke-width="2"/><rect x="' + (118 + Math.cos(ang) * 15).toFixed(1) + '" y="' + (38 + Math.sin(ang) * 6).toFixed(1) + '" width="4" height="4" fill="#475569"/><line x1="140" y1="32" x2="124" y2="40" stroke="#facc15" stroke-width="4"/>'; }
+        else g += '<path d="M120 18 L140 64 H100 Z" fill="#4ff0ff" fill-opacity="' + (.35 + pulse * .3) + '" stroke="#4ff0ff" stroke-width="2"/><path d="M120 18 V64" stroke="#fff" stroke-opacity=".5" stroke-width="2"/>';
         const w = ins('arm');
         if (w) {
-            g += '<path d="M178 100 L206 92 L218 120" stroke="#64748b" stroke-width="9" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="206" cy="92" r="6" fill="var(--rc)"/>';
-            if (w.id === 'w-schluessel') g += '<path d="M218 120 l0 18 M210 140 a8 8 0 1 0 16 0" stroke="#cbd5e1" stroke-width="5" fill="none"/>';
-            else if (w.id === 'w-greifer') g += '<path d="M218 120 l-8 18 M218 120 l8 18" stroke="#cbd5e1" stroke-width="5" stroke-linecap="round"/>';
-            else g += '<path class="spin" d="M211 120 h14 l-7 26 z" fill="#facc15"/>';
+            g += '<path d="M178 100 L206 92 L218 120" stroke="#64748b" stroke-width="10" fill="none" stroke-linejoin="miter"/><rect x="200" y="86" width="12" height="12" fill="#ffb000"/>';
+            if (w.id === 'w-schluessel') g += '<path d="M218 120 l0 18 M210 140 a8 8 0 1 0 16 0" stroke="#cbd5e1" stroke-width="6" fill="none"/>';
+            else if (w.id === 'w-greifer') { const o = run ? (Math.floor(f * 8) % 2) * 4 : 0; g += '<path d="M218 120 l' + (-8 - o) + ' 18 M218 120 l' + (8 + o) + ' 18" stroke="#cbd5e1" stroke-width="6"/>'; }
+            else g += '<g ' + rot(A * 2, 218, 133) + '><path d="M211 120 h14 l-7 26 z" fill="#facc15"/></g>';
         }
         g += '</g>';
-        // Augen / Cockpit
-        if (r) g += '<rect x="96" y="76" width="48" height="14" rx="7" fill="#0b0e1a"/><circle cx="110" cy="83" r="4" fill="var(--rc)" class="glow"/><circle cx="130" cy="83" r="4" fill="var(--rc)"/>';
-        return '<svg class="mech" id="mech-svg" viewBox="0 0 240 220" role="img" aria-label="Dein Mech">' + g + '</svg>';
+        if (r) g += '<rect x="96" y="76" width="48" height="14" fill="#0b0e18"/><rect x="104" y="79" width="9" height="8" fill="#4ff0ff" opacity="' + pulse + '"/><rect x="127" y="79" width="9" height="8" fill="#4ff0ff" opacity="' + pulse + '"/>';
+        return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 220" width="240" height="220" shape-rendering="crispEdges">' + g + '</svg>';
     }
+    /* Pixel-Raster: SVG in kleiner Auflösung auf ein Canvas malen, das grob hochskaliert wird */
+    const PX_W = 150, PX_H = 138;
+    let mechCanvas = null, runUntil = 0, painting = false;
+    function paintMech() {
+        if (!mechCanvas || painting || document.hidden) return;
+        painting = true;
+        const t = performance.now() / 1000, run = performance.now() < runUntil;
+        const img = new Image();
+        img.onload = () => { const c = mechCanvas.getContext('2d'); c.imageSmoothingEnabled = false; c.clearRect(0, 0, PX_W, PX_H); c.drawImage(img, 0, 0, PX_W, PX_H); painting = false; };
+        img.onerror = () => { painting = false; };
+        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(drawMech(t, run));
+    }
+    setInterval(paintMech, 110);
 
     /* ── Tutorial ── */
     function tutorialStep() {
@@ -203,7 +249,7 @@ XIRU.ready(function () {
         antrieb: ['3/7', 'Jetzt der Antrieb', 'Ohne Antrieb kein Vorwärtskommen. Bau und montiere das Paddelrad unter „Antrieb".', ''],
         kern: ['4/7', 'Energie!', 'Ein Mech braucht einen Energiekern. Die Autobatterie unter „Energiekern" reicht für den Anfang.', ''],
         test: ['5/7', 'Testlauf', 'Alles drin? Dann wirf den Motor an! Drück links auf <b>▶ Testlauf</b>.', ''],
-        repair: ['6/7', 'Autsch – das Paddelrad', 'Siehst du den Rauch? Teile nutzen sich ab – besonders auf Expeditionen. Unter 40 % arbeiten sie nur halb so gut, bei 0 % fallen sie aus. Reparieren kostet normalerweise Schrott, diese erste Reparatur geht aufs Haus.', '<button class="btn btn--primary" id="t-repair">🔧 Gratis reparieren</button>'],
+        repair: ['6/7', 'Autsch – das Paddelrad', 'Siehst du den Rauch? Teile nutzen sich ab – besonders auf Expeditionen. Unter 40 % arbeiten sie nur halb so gut, bei 0 % fallen sie aus. Zum Reparieren musst du die losen Kabel wieder richtig verbinden. Normalerweise kostet das Schrott – diese erste Reparatur geht aufs Haus.', '<button class="btn btn--primary" id="t-repair">🔧 Gratis reparieren</button>'],
         reise: ['7/7', 'Leinen los!', 'Dein Mech ist bereit. Wechsle zu <b>🧭 Expeditionen</b> und fahr zum Werkzeugkasten oder ins Studio. Danach wartet die ganze Welt – sobald dein Mech stark genug ist.', '<button class="btn btn--primary" id="t-go">🧭 Zu den Expeditionen</button>'],
         fertig: ['✓', 'Geschafft!', 'Deine erste Insel ist erreicht. Ab jetzt verdienst du Bauteile mit Leveln, Realitätskristallen, entdeckten Orten und gespielten Spielen. Schrott bekommst du für jede XP. Viel Spass beim Basteln!', '<button class="btn btn--primary" id="t-done">Los geht\'s</button>']
     };
@@ -219,9 +265,46 @@ XIRU.ready(function () {
         if (step === 'test') $('#testrun').classList.add('pulse-hint');
         const on = (id, fn) => { const b = $('#' + id); if (b) b.addEventListener('click', fn); };
         on('t-open', () => { M.state().tutorial = 1; XIRU.persist(); XIRU.toast('Startpaket geöffnet', 'Schrottrahmen, Paddelrad und Autobatterie liegen im Lager.', { icon: '📦' }); render(); });
-        on('t-repair', () => { const ant = M.installed('antrieb'); if (ant) M.state().cond[ant.id] = 100; M.state().trep = 1; XIRU.persist(); XIRU.egg('m-reparatur'); render(); });
+        on('t-repair', () => cableGame(3, () => { const ant = M.installed('antrieb'); if (ant) M.state().cond[ant.id] = 100; M.state().trep = 1; XIRU.persist(); XIRU.egg('m-reparatur'); render(); }));
         on('t-go', () => showTab('reisen'));
         on('t-done', () => { M.state().tutorial = 2; XIRU.persist(); XIRU.egg('m-tutorial'); XIRU.confetti(); render(); });
+    }
+
+    /* ── Minispiel: Kabel verbinden (ziehe jedes Kabel zur Buchse gleicher Farbe) ── */
+    function cableGame(n, onWin) {
+        const COLS = ['#ef4444', '#3b82f6', '#facc15', '#22c55e', '#f472b6', '#4ff0ff'].slice(0, n);
+        const order = COLS.map((c, i) => i).sort(() => Math.random() - .5);
+        const H = 30 + n * 46, NS = 'http://www.w3.org/2000/svg';
+        const m = XIRU.modal('<h2>Kabelsalat!</h2><p class="muted small">Zieh jedes Kabel links zur Buchse mit der gleichen Farbe rechts.</p>' +
+            '<svg class="wires" id="wires" viewBox="0 0 300 ' + H + '"></svg><p class="small mt-2 holo" id="w-msg">0/' + n + ' verbunden</p><div class="row"><button class="btn btn--ghost btn--sm" data-close>Abbrechen</button></div>');
+        const svg = m.el.querySelector('#wires');
+        const el = (t, a) => { const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); svg.appendChild(e); return e; };
+        const y = i => 30 + i * 46;
+        el('rect', { x: 0, y: 0, width: 300, height: H, fill: '#0b0e18' });
+        COLS.forEach((c, i) => {
+            el('rect', { x: 8, y: y(i) - 8, width: 34, height: 16, fill: c, class: 'plug', 'data-c': i });
+            el('rect', { x: 252, y: y(order.indexOf(i)) - 10, width: 40, height: 20, fill: '#1f2338', stroke: c, 'stroke-width': 4, class: 'sock', 'data-c': i });
+        });
+        let drag = null, line = null, done = 0;
+        const pt = e => { const r = svg.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * 300, y: (e.clientY - r.top) / r.height * H }; };
+        svg.addEventListener('pointerdown', e => {
+            const p = e.target.closest('.plug'); if (!p || p.classList.contains('is-done')) return;
+            drag = +p.dataset.c; svg.setPointerCapture(e.pointerId);
+            line = el('line', { x1: 42, y1: y(drag), x2: 42, y2: y(drag), stroke: COLS[drag], 'stroke-width': 8, 'stroke-linecap': 'square' });
+        });
+        svg.addEventListener('pointermove', e => { if (drag === null) return; const q = pt(e); line.setAttribute('x2', q.x); line.setAttribute('y2', q.y); });
+        svg.addEventListener('pointerup', e => {
+            if (drag === null) return;
+            const q = pt(e), target = order.indexOf(drag), ok = q.x > 240 && Math.abs(q.y - y(target)) < 20;
+            if (ok) {
+                line.setAttribute('x2', 252); line.setAttribute('y2', y(target));
+                svg.querySelectorAll('[data-c="' + drag + '"]').forEach(x => x.classList.add('is-done'));
+                done++; XIRU.beep(660 + done * 80, .06);
+                m.el.querySelector('#w-msg').textContent = done + '/' + n + ' verbunden';
+                if (done === n) { XIRU.beep(1046, .12); m.el.querySelector('#w-msg').textContent = '⚡ Strom fliesst!'; setTimeout(() => { m.close(); onWin(); }, 600); }
+            } else { line.remove(); XIRU.beep(160, .12, 'sawtooth'); }
+            drag = null; line = null;
+        });
     }
 
     /* ── Werkstatt ── */
@@ -252,7 +335,12 @@ XIRU.ready(function () {
         const b = e.target.closest('button'); if (!b) return;
         if (b.dataset.build && M.build(b.dataset.build)) { XIRU.beep(440, .08); XIRU.toast('Gebaut: ' + M.part(b.dataset.build).n, 'Jetzt noch einbauen.', { icon: '🔩' }); }
         if (b.dataset.install && M.install(b.dataset.install)) XIRU.beep(660, .08);
-        if (b.dataset.repair && M.repair(b.dataset.repair)) XIRU.beep(880, .08);
+        if (b.dataset.repair) {
+            const id = b.dataset.repair;
+            if (M.scrap() < M.repairCost(id)) return;
+            cableGame(3 + Math.min(3, Math.floor((100 - M.cond(id)) / 34)), () => { if (M.repair(id)) { XIRU.toast('Repariert: ' + M.part(id).n, 'Alle Kabel sitzen.', { icon: '🔧' }); render(); } });
+            return;
+        }
         if (b.dataset.uninstall) M.uninstall(b.dataset.uninstall);
         render();
     });
@@ -262,11 +350,12 @@ XIRU.ready(function () {
         $('#stats').innerHTML = ['R', 'E', 'S', 'P'].map(k => '<div><b>' + st[k] + '</b><span>' + STAT[k] + '</span></div>').join('');
         $('#scrap').textContent = XIRU.fmt(M.scrap());
         $('#ready').textContent = M.ready() ? '✓ Einsatzbereit' : 'Noch nicht einsatzbereit: Rahmen, Antrieb und Energiekern nötig.';
-        $('#mech').innerHTML = drawMech();
+        if (!mechCanvas) { $('#mech').innerHTML = '<canvas width="' + PX_W + '" height="' + PX_H + '" role="img" aria-label="Dein Mech"></canvas>'; mechCanvas = $('#mech canvas'); }
+        paintMech();
     }
     $('#testrun').addEventListener('click', () => {
         if (!M.ready()) { XIRU.toast('Der Motor stottert …', 'Rahmen, Antrieb und Energiekern müssen eingebaut sein.', { icon: '⚠', type: 'error' }); return; }
-        const svg = $('#mech-svg'); svg.classList.add('running');
+        runUntil = performance.now() + 1800;
         [220, 260, 300, 340].forEach((f, i) => setTimeout(() => XIRU.beep(f, .12, 'sawtooth', .04), i * 120));
         setTimeout(() => {
             const m = M.state();

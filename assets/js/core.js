@@ -41,18 +41,58 @@
     }
     X.path = currentPath();
 
-    /* ── Speicher (localStorage, abgesichert) ───────────────────────────── */
+    /* ── Speicher mit Einwilligung ──────────────────────────────────────────
+       Ohne Einwilligung („Nur notwendige" oder noch nicht entschieden) landet
+       alles im sessionStorage und ist nach dem Schliessen des Browsers weg.
+       Mit „Alles erlauben" dauerhaft im localStorage.
+       Einzig die Einwilligung selbst wird immer dauerhaft gespeichert.          */
+    const CONSENT_KEY = 'xiru:consent';
+    const SESSION_ONLY = ['xiru:session', 'xiru:start'];   // rohe Sitzungswerte, nie verschieben
+    let consent = null;
+    try { consent = JSON.parse(localStorage.getItem(CONSENT_KEY)); } catch (e) { consent = null; }
+    let backend = null;
+    function pickBackend() {
+        try { backend = consent && consent.all ? localStorage : sessionStorage; backend.getItem('xiru:probe'); }
+        catch (e) { backend = null; }
+    }
+    pickBackend();
     const mem = {};
     X.store = {
         get(key, def) {
-            try { const v = localStorage.getItem(key); return v === null ? def : JSON.parse(v); }
+            try { const v = backend.getItem(key); return v === null ? def : JSON.parse(v); }
             catch (e) { return key in mem ? mem[key] : def; }
         },
         set(key, val) {
-            try { localStorage.setItem(key, JSON.stringify(val)); }
+            try { backend.setItem(key, JSON.stringify(val)); }
             catch (e) { mem[key] = val; }
         },
-        remove(key) { try { localStorage.removeItem(key); } catch (e) { delete mem[key]; } }
+        remove(key) { try { backend.removeItem(key); } catch (e) { delete mem[key]; } },
+        keys(prefix) {
+            try { return Object.keys(backend).filter(k => k.startsWith(prefix || 'xiru:') && k !== CONSENT_KEY && !SESSION_ONLY.includes(k)); }
+            catch (e) { return Object.keys(mem).filter(k => k.startsWith(prefix || 'xiru:')); }
+        },
+        persistent: () => backend === (function () { try { return localStorage; } catch (e) { return null; } })()
+    };
+    function moveData(from, to) {
+        try {
+            Object.keys(from).filter(k => k.startsWith('xiru:') && k !== CONSENT_KEY && !SESSION_ONLY.includes(k)).forEach(k => {
+                if (to.getItem(k) === null) to.setItem(k, from.getItem(k));   // vorhandene Daten im Ziel gewinnen
+                from.removeItem(k);
+            });
+        } catch (e) { /* Speicher gesperrt – dann bleibt es, wie es ist */ }
+    }
+    X.consent = {
+        get: () => consent,
+        legacyData() { try { return Object.keys(localStorage).filter(k => k.startsWith('xiru:') && k !== CONSENT_KEY).length; } catch (e) { return 0; } },
+        set(all) {
+            const before = backend;
+            consent = { v: 1, all: !!all, at: Date.now() };
+            try { localStorage.setItem(CONSENT_KEY, JSON.stringify(consent)); } catch (e) { }
+            pickBackend();
+            if (before && backend && before !== backend) moveData(before, backend);
+            emit('consent', consent);
+        },
+        open() { showConsent(true); }
     };
     function sessionGet(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } }
     function sessionSet(k, v) { try { v === null ? sessionStorage.removeItem(k) : sessionStorage.setItem(k, v); } catch (e) { } }
@@ -89,8 +129,9 @@
     /* ── Konto & Profil ─────────────────────────────────────────────────── */
     const GUEST = '~gast';
     const SESSION_KEY = 'xiru:session';
+    const REMEMBER_KEY = 'xiru:remember';
     function readSession() {
-        return sessionGet(SESSION_KEY) || X.store.get(SESSION_KEY, null);
+        return sessionGet(SESSION_KEY) || X.store.get(REMEMBER_KEY, null);
     }
     X.user = readSession();
     const accounts = X.store.get('xiru:accounts', {});
@@ -157,14 +198,14 @@
         },
         _start(name, remember) {
             sessionSet(SESSION_KEY, name);
-            if (remember) X.store.set(SESSION_KEY, name); else X.store.remove(SESSION_KEY);
+            if (remember) X.store.set(REMEMBER_KEY, name); else X.store.remove(REMEMBER_KEY);
             X.user = name;
             P = loadProfile(name);
             emit('login', name);
         },
         logout() {
             sessionSet(SESSION_KEY, null);
-            X.store.remove(SESSION_KEY);
+            X.store.remove(REMEMBER_KEY);
             X.user = null;
             P = loadProfile(null);
             emit('logout');
@@ -190,7 +231,7 @@
             X.store.set('xiru:accounts', all);
             X.store.remove(profileKey(X.user));
             X.store.remove('xiru:keys:' + key);
-            try { Object.keys(localStorage).filter(k => k.startsWith('xiru:save:' + key + ':')).forEach(k => localStorage.removeItem(k)); } catch (e) { }
+            X.store.keys('xiru:save:' + key + ':').forEach(k => X.store.remove(k));
             this.logout();
         }
     };
@@ -520,6 +561,7 @@
     const pendingToasts = [];
     X.toast = function (title, text, opts) {
         opts = opts || {};
+        if (document.documentElement.hasAttribute('data-bare')) return null;   // leere Seiten bleiben still
         const stack = toastStack();
         if (!stack) { pendingToasts.push([title, text, opts]); return; }
         const t = document.createElement('div');
@@ -1025,6 +1067,31 @@
         };
     }
 
+    /* ── Einwilligungs-Banner ───────────────────────────────────────────── */
+    function showConsent(force) {
+        if (!document.body || document.querySelector('.consent')) return;
+        if (!force && consent) return;
+        const legacy = !consent && X.consent.legacyData();
+        const box = document.createElement('section');
+        box.className = 'consent'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-label', 'Speicher-Einwilligung');
+        box.innerHTML = '<div class="consent__icon">🍪</div><div class="consent__body"><h2>Krümel im Browser?</h2>' +
+            '<p>Diese Website merkt sich deinen Fortschritt, dein lokales Konto und deine Einstellungen in deinem Browser (localStorage, künftig evtl. kleine Cookies). ' +
+            'Keine Tracker, keine Werbung – nichts verlässt dein Gerät.</p>' +
+            '<p class="small"><strong>Alles erlauben:</strong> dein Fortschritt bleibt dauerhaft gespeichert. <strong>Nur notwendige:</strong> alles funktioniert, wird aber beim Schliessen des Browsers vergessen.</p>' +
+            (legacy ? '<p class="small text-warning">Du hast bereits gespeicherten Fortschritt. Mit „Nur notwendige" wird er nur noch bis zum Schliessen des Browsers behalten.</p>' : '') +
+            '<div class="consent__actions"><button class="btn" type="button" data-consent="all">Alles erlauben</button>' +
+            '<button class="btn" type="button" data-consent="min">Nur notwendige</button>' +
+            '<a class="small" href="' + X.url('datenschutz.html') + '">Mehr erfahren</a></div></div>';
+        document.body.appendChild(box);
+        box.addEventListener('click', e => {
+            const b = e.target.closest('[data-consent]'); if (!b) return;
+            X.consent.set(b.dataset.consent === 'all');
+            box.classList.add('is-leaving'); setTimeout(() => box.remove(), 300);
+            if (b.dataset.consent === 'all') X.toast('Danke!', 'Dein Fortschritt wird ab jetzt dauerhaft gespeichert.', { icon: '🍪' });
+            if (force) setTimeout(() => location.reload(), 350);
+        });
+    }
+
     /* ── Start ──────────────────────────────────────────────────────────── */
     // Design sofort setzen (kein Aufblitzen)
     applySettings();
@@ -1041,6 +1108,13 @@
 
     function boot() {
         const body = document.body;
+        if (document.documentElement.hasAttribute('data-bare')) {   // leere, eigenständige Seiten (z. B. Why)
+            const safe0 = fn => { try { fn(); } catch (e) { console.error('[XIRU]', e); } };
+            safe0(initEggSpots); safe0(trackVisit);
+            booted = true;
+            readyQueue.splice(0).forEach(fn => { if (!X.locked) safe0(fn); });
+            return;
+        }
         body.classList.add('page-enter');
 
         // Kopf
@@ -1089,6 +1163,7 @@
         safe(initReveal);
         safe(initTilt);
         safe(initCounters);
+        safe(() => showConsent(false));
         X.$$('table[data-sortable]').forEach(t => safe(() => X.sortable(t)));
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);

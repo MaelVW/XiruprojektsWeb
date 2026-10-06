@@ -173,7 +173,15 @@ Seiten mit `skill: 'xy'` in `site.js` zeigen automatisch einen Sperrbildschirm,
 solange der Skill fehlt (`XIRU.ready` läuft dann nicht). Seiten mit `hidden: true` erscheinen
 erst nach dem ersten Besuch in Navigation, Suche und Weltkarte.
 
+## Bereichs-Designs & leere Seiten
+
+- Bereiche dürfen ein eigenes Design haben: Klasse auf `<body>` (z. B. `theme-werft`), die die Farb-Variablen überschreibt.
+- `<html data-bare>`: Seite ohne Kopf, Fuss, Banner und Toasts (für leere/unheimliche Seiten wie `Why.html`), zählt aber als Ort.
+
 ## Daten & Datenschutz
+
+- Speichern nur über `XIRU.store` / `XIRU.save` / `XIRU.load` – **nie direkt `localStorage`**: Ohne Einwilligung (Banner)
+  landet alles im sessionStorage. `XIRU.store.keys(prefix)` listet Einträge, `XIRU.consent.get()/open()` für die Einwilligung.
 
 - Alles liegt im `localStorage` des Browsers. **Keine** Formulare an fremde Server,
   keine Tracker, keine externen Schriftarten oder CDNs.

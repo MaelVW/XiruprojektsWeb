@@ -36,6 +36,27 @@ Arbeitsliste für alle weiteren Sitzungen (auch automatische Nachtschichten).
 - [ ] Testreste suchen und löschen (z. B. temporäre Kopien wie `*-test.html`, Debug-Hooks `window.__debug…`).
 - [ ] `grep -ri "diskette" --include=*.html --include=*.js` durchgehen: wo „Diskette" ein **Sammelobjekt** meint → Kristall.
 
+## A2 · Eigene Designs pro Bereich (Wunsch von Mael, direkt nach A)
+
+Jeder Bereich bekommt ein eigenes Design über eine Body-Klasse, die die Farb-Variablen auf `body` überschreibt
+(Vorbild: `body.theme-werft` in `konto/skilltree.html`). Gemeinsame Bereichs-Designs gehören in
+`assets/css/themes/<bereich>.css` und werden auf allen Seiten des Bereichs eingebunden. KI-Labor und Zentrum („Entdecken") bleiben wie sie sind.
+
+- [ ] **Spielhalle = 80er-Arcade-Halle** (`theme-arcade`, alle `arcade/*.html`): fast schwarzer Raum, Arcade-Teppichmuster (CSS),
+      Neonschilder mit Flackern (Text-Shadow-Glow in Pink/Cyan/Gelb), **Logo und „Spielhalle"-Schriftzug wie aus Neonröhren**
+      (auf Arcade-Seiten `.brand` mit Neon-Glow), Spiele stehen in Automaten-Gehäusen (Stage mit Gehäuserahmen + Marquee oben).
+      Lesbarkeit und Kontraste prüfen.
+- [ ] **Hardware = im Inneren eines Cyber-Anime-Computers** (`theme-hardware`, alle `hardware/**`; die Datenblätter erzeugt
+      `tools/build_hardware.py` → Vorlage `HEAD` dort anpassen und neu generieren): dunkles Mainboard mit leuchtenden Leiterbahnen
+      (Cyan/Magenta), Hologramm-Fenster (Glas, Scanlines, Eck-Klammern), fliessende Datenströme, Reiter/Tabs wie Bauteile auf der Platine
+      (Chips mit Pins). Animationen dezent, `prefers-reduced-motion` beachten.
+- [ ] **Studio = Aufnahme- bzw. Mix-Studio** (`theme-studio`, alle `studio/*.html`): Schaumstoff-Akustikwände (CSS-Muster), warmes Licht,
+      an der Seite hängende Kopfhörer nur als Schatten/Silhouetten (SVG, unscharf), Mischpult-Optik mit Schiebereglern.
+      **Downloads: Man zieht den Datenträger (Diskette/CD) in ein Laufwerk** (Drag & Drop mit Laufwerk-Animation und Geräusch),
+      Klick/Enter auf „Einlegen" als barrierefreie Alternative. Externe Links (GitHub) danach normal öffnen.
+- [ ] Werft: weitere kleine Reparatur-Minispiele neben „Kabel verbinden" (z. B. Schrauben in Reihenfolge festziehen, Lötpunkte treffen),
+      zufällig gewählt. `cableGame()` in `konto/skilltree.html` als Vorbild.
+
 ## B · Spielhalle (fehlende Spiele, Muster: `arcade/snake.html` + `arcade/js/snake.js`)
 
 - [ ] `memory` – Paare mit Tech-Motiven (Diskette, CD, HDD, RAM, CPU, GPU …), 3 Grössen, 3D-Flip, 2-Spieler-Modus.
@@ -107,6 +128,15 @@ Arbeitsliste für alle weiteren Sitzungen (auch automatische Nachtschichten).
 - [ ] Neue Inseln im Nebel (Platzhalter `#unknown` in `weltkarte.html`) – **erst nach Maels Vorgaben**.
 - [ ] Mech-Grafik: Animation beim Expeditionsstart auf der Weltkarte.
 
+## J · Sicherheit (in der **letzten Nachtschicht** zuerst!)
+
+- [ ] Gesamte Website auf Code-Injection prüfen und beheben: jede Stelle mit `innerHTML`/`insertAdjacentHTML`, in die
+      Nutzereingaben, URL-Parameter (`location.search`, `location.hash`), importierte JSON-Dateien (Profil-Import),
+      localStorage-Inhalte (Gästebuch, Notizen, Namen, Spielstände), KI-Antworten (`ai.js`, Textabenteuer, Taverne) oder
+      Dateinamen gelangen → immer `XIRU.esc()` bzw. `textContent`. Markdown-Parser in Notizen: nur sichere Tags, Links nur `http(s):`.
+      Keine `eval`/`new Function`/`setTimeout(String)`. Weiterleitungen nur auf eigene Seiten (vgl. `konto/login.html` `weiter=`).
+      Profil-Import: Typen prüfen, Grössen begrenzen. Ergebnis als kurzer Bericht in die Notizen.
+
 ## I · Qualität zum Schluss
 
 - [ ] `python tools/check_site.py` ohne Meldungen (ausser bewusst manuellen Kristallen).
@@ -115,6 +145,11 @@ Arbeitsliste für alle weiteren Sitzungen (auch automatische Nachtschichten).
 ---
 
 ## Notizen der letzten Sitzung
+
+- 2026-10-06 (spät): Cookie-/Speicher-Banner eingebaut (`X.consent`, ohne Einwilligung nur sessionStorage; Einstellungen + Datenschutz angepasst).
+  `Why.html` + `why/neugier|testen|unbekannt.html` im Liminal-Stil (`assets/css/liminal.css`, `assets/js/liminal.js`, `<html data-bare>` = ohne Kopf/Fuss, ohne Toasts).
+  **Den Horror-Teil hinter Why baut Mael selbst – dort nichts erweitern.** Werft: Pixel-Design (`theme-werft`), Mech wird als Pixel-Raster gezeichnet,
+  Reparatur per Kabel-Minispiel; Bug „kreisende Schraube" (falscher Drehpunkt der Schiffsschraube) behoben.
 
 - 2026-10-06: Skilltree → **Werft** umgebaut (`konto/skilltree.html`, Mech-Logik `XIRU.mech` in `core.js`,
   Daten `XIRU.mechSlots/mechParts/islandReq` in `site.js`). Alte Skills = „Module" (API `hasSkill` unverändert).

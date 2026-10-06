@@ -626,3 +626,18 @@ html.no-anim [data-reveal] { opacity: 1; transform: none; }
 .crystal-glow::before { content: ""; position: absolute; inset: -30%; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--cg, var(--rc)) 45%, transparent), transparent 70%); animation: pulseGlow 3s ease-in-out infinite; }
 .crystal-glow > * { position: relative; }
 @keyframes pulseGlow { 0%, 100% { opacity: .5; transform: scale(.9); } 50% { opacity: 1; transform: scale(1.1); } }
+
+/* ── 11 · Einwilligungs-Banner ──────────────────────────────────────────── */
+.consent {
+    position: fixed; left: 1rem; bottom: 1rem; z-index: 9985; max-width: 560px; width: calc(100% - 2rem);
+    display: grid; grid-template-columns: auto 1fr; gap: 1rem; align-items: start;
+    background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius);
+    padding: 1.15rem 1.25rem; box-shadow: var(--shadow); animation: popIn .4s var(--ease) both;
+}
+.consent.is-leaving { animation: toastOut .3s ease-in forwards; }
+.consent__icon { font-size: 2rem; animation: wiggle 3s ease-in-out infinite; }
+.consent h2 { font-size: 1.1rem; margin-bottom: .4rem; }
+.consent p { font-size: .9rem; color: var(--text-muted); margin-bottom: .5rem; }
+.consent__actions { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-top: .4rem; }
+.consent__actions .btn { flex: 1 1 140px; }
+@media (max-width: 560px) { .consent { grid-template-columns: 1fr; } .consent__icon { display: none; } }

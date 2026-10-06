@@ -153,7 +153,7 @@ XIRU.ready(function () {
     // Export / Import
     function saveKeys() {
         const prefix = 'xiru:save:' + (XIRU.user ? XIRU.user.toLowerCase() : '~gast') + ':', out = {};
-        try { Object.keys(localStorage).filter(k => k.startsWith(prefix)).forEach(k => { out[k.slice(prefix.length)] = JSON.parse(localStorage.getItem(k)); }); } catch (e) { }
+        XIRU.store.keys(prefix).forEach(k => { out[k.slice(prefix.length)] = XIRU.store.get(k); });
         return out;
     }
     $('#export').addEventListener('click', () => {

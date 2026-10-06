@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schiebepuzzle · Xiruprojekts</title>
+    <meta name="description" content="Das 15er-Puzzle in drei Grössen – mit Zahlen oder als generiertes Bild, Zug- und Zeitzähler.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="css/schiebepuzzle.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/arcade.js"></script>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">▶ Spielhalle · Puzzle</span>
+        <h1>Schiebepuzzle</h1>
+        <p class="lead">Ein Feld ist frei – schieb die Kacheln so lange herum, bis alles wieder in Reihe und Ordnung ist. Jede Mischung ist garantiert lösbar. (Fast jede. Frag Sam Loyd.)</p>
+    </header>
+
+    <div class="game">
+        <div>
+            <div class="game__hud" id="hud">
+                <div><span>Grösse</span><b id="h-size">4 × 4</b></div>
+                <div><span>Züge</span><b id="h-moves">0</b></div>
+                <div><span>Zeit</span><b id="h-time">0:00</b></div>
+                <div><span>Richtig</span><b id="h-ok">0</b></div>
+            </div>
+            <div class="game__stage sp-stage" id="stage">
+                <div class="sp" id="board" role="grid" aria-label="Schiebepuzzle"></div>
+                <div class="game__overlay" id="ov" hidden></div>
+            </div>
+            <div class="touch-pad">
+                <div class="dpad">
+                    <button data-key="ArrowUp" aria-label="Kachel nach oben">▲</button>
+                    <button data-key="ArrowLeft" aria-label="Kachel nach links">◀</button>
+                    <button data-key="ArrowDown" aria-label="Kachel nach unten">▼</button>
+                    <button data-key="ArrowRight" aria-label="Kachel nach rechts">▶</button>
+                </div>
+            </div>
+            <div class="row mt-1 sp-tools">
+                <button class="btn btn--sm btn--primary" type="button" id="btn-new">🔀 Neu mischen <kbd>N</kbd></button>
+                <button class="btn btn--sm" type="button" id="btn-peek">👁 Vorlage</button>
+            </div>
+        </div>
+        <aside class="game__side">
+            <div class="card">
+                <h3>Steuerung</h3>
+                <ul class="keys-help">
+                    <li><b>Klick</b> auf eine Kachel in der Zeile oder Spalte der Lücke schiebt sie – auch mehrere auf einmal</li>
+                    <li><kbd>←</kbd><kbd>↑</kbd><kbd>→</kbd><kbd>↓</kbd> oder <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> – Kachel in diese Richtung in die Lücke schieben</li>
+                    <li><kbd>N</kbd> – neu mischen</li>
+                    <li>Auf dem Handy: Kachel antippen oder wischen</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Grösse &amp; Modus</h3>
+                <div class="row" id="sizes">
+                    <button class="chip" data-size="3">3 × 3</button>
+                    <button class="chip is-active" data-size="4">4 × 4</button>
+                    <button class="chip" data-size="5">5 × 5</button>
+                </div>
+                <div class="row mt-1" id="modes">
+                    <button class="chip is-active" data-mode="zahlen">Zahlen</button>
+                    <button class="chip" data-mode="bild">Bild</button>
+                    <button class="chip" data-mode="loyd" title="Das berühmte 1000-Dollar-Rätsel von 1880">14-15?</button>
+                </div>
+                <p class="small muted mt-1" id="mode-desc"></p>
+            </div>
+            <div class="card">
+                <h3>Rekord</h3>
+                <p class="stat__value" id="best">–</p>
+                <p class="small muted mb-1">Punkte: 1000 / 3000 / 6000 je Grösse, minus 2 pro Sekunde und 1 pro Zug.</p>
+                <ul class="sp-records small" id="records"></ul>
+            </div>
+        </aside>
+    </div>
+</main>
+<script src="js/schiebepuzzle.js"></script>
+</body>
+</html>

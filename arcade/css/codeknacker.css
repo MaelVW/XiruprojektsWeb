@@ -1,0 +1,85 @@
+/* Codeknacker (Mastermind) */
+.ck-stage { touch-action: manipulation; place-items: stretch; padding: clamp(.6rem, 2.5vw, 1.25rem); }
+.ck {
+    /* Spielfarben: feste Farbtöne, damit man sie in jedem Design unterscheiden kann – plus Ziffer */
+    --k1: #ef4444; --k2: #f97316; --k3: #facc15; --k4: #22c55e;
+    --k5: #06b6d4; --k6: #3b82f6; --k7: #a855f7; --k8: #ec4899;
+    --peg-black: #111318; --peg-white: #f4f5f8;
+    --peg: clamp(26px, 7.2vw, 38px);
+    width: 100%; max-width: 520px; margin: 0 auto;
+    display: flex; flex-direction: column; gap: .5rem;
+}
+.ck.is-profi { --peg: clamp(23px, 6.2vw, 36px); }
+
+/* Löcher und Stifte */
+.ck-peg {
+    --pc: var(--surface-3);
+    width: var(--peg); height: var(--peg); border-radius: 50%; flex-shrink: 0;
+    display: grid; place-items: center; padding: 0;
+    border: 0; font: 800 calc(var(--peg) * .38) / 1 var(--font); color: transparent;
+    background: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--bg) 70%, transparent) 0 28%, var(--surface-3) 32%);
+    box-shadow: inset 0 2px 4px color-mix(in srgb, var(--bg) 70%, transparent);
+}
+.ck-peg[data-k] {
+    background: radial-gradient(circle at 34% 30%, color-mix(in srgb, var(--pc) 55%, var(--peg-white)) 0 10%, var(--pc) 48%, color-mix(in srgb, var(--pc) 70%, var(--peg-black)) 100%);
+    box-shadow: 0 2px 5px -1px color-mix(in srgb, var(--bg) 80%, transparent);
+    color: color-mix(in srgb, var(--pc) 25%, var(--peg-black));
+}
+.ck-peg[data-k="1"] { --pc: var(--k1); } .ck-peg[data-k="2"] { --pc: var(--k2); }
+.ck-peg[data-k="3"] { --pc: var(--k3); } .ck-peg[data-k="4"] { --pc: var(--k4); }
+.ck-peg[data-k="5"] { --pc: var(--k5); } .ck-peg[data-k="6"] { --pc: var(--k6); }
+.ck-peg[data-k="7"] { --pc: var(--k7); } .ck-peg[data-k="8"] { --pc: var(--k8); }
+.ck-peg.is-pop { animation: popIn .25s var(--ease) both; }
+
+/* Geheimcode */
+.ck-secret {
+    display: flex; gap: .45rem; justify-content: center; align-items: center;
+    padding: .6rem; border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--rc) 8%, var(--surface)); border: 1px solid var(--border);
+    perspective: 400px;
+}
+.ck-secret .ck-peg.is-hidden { background: var(--surface-3); color: var(--text-faint); box-shadow: inset 0 0 0 2px var(--border-strong); }
+.ck-secret .ck-peg.is-reveal { animation: ckReveal .55s var(--ease) both; animation-delay: var(--d, 0s); }
+@keyframes ckReveal { from { transform: rotateY(90deg); } to { transform: none; } }
+.ck-secret__lock { font-size: 1.1rem; margin-right: .2rem; }
+
+/* Reihen */
+.ck-rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .3rem; }
+.ck-row {
+    display: grid; grid-template-columns: 1.8rem auto 1fr; align-items: center; gap: .6rem;
+    margin: 0; padding: .3rem .55rem; border-radius: var(--radius-sm); border: 1px solid transparent;
+    transition: background .2s, border-color .2s;
+}
+.ck-row__n { font-size: .75rem; font-weight: 700; color: var(--text-faint); text-align: right; font-variant-numeric: tabular-nums; }
+.ck-row__pegs { display: flex; gap: .4rem; }
+.ck-row.is-current { background: var(--surface); border-color: color-mix(in srgb, var(--rc) 55%, var(--border)); box-shadow: var(--glow); }
+.ck-row.is-current .ck-row__n { color: var(--rc); }
+.ck-row.is-future { opacity: .45; }
+.ck-row.is-shake { animation: shake .35s linear 1; }
+.ck-row.is-current .ck-peg { cursor: pointer; }
+.ck-row.is-current .ck-peg.is-cursor { outline: 2px solid var(--rc); outline-offset: 2px; }
+.ck-row.is-current .ck-peg:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+
+/* Rückmeldung */
+.ck-fb { display: grid; grid-template-columns: repeat(3, 11px); gap: 3px; justify-self: end; }
+.ck.is-normal .ck-fb { grid-template-columns: repeat(2, 11px); }
+.ck-fb i {
+    width: 11px; height: 11px; border-radius: 50%;
+    background: color-mix(in srgb, var(--bg) 60%, var(--surface-3));
+    box-shadow: inset 0 1px 2px color-mix(in srgb, var(--bg) 80%, transparent);
+}
+.ck-fb i.is-black, .ck-fb-demo.is-black { background: var(--peg-black); box-shadow: 0 0 0 1.5px var(--text-muted); }
+.ck-fb i.is-white, .ck-fb-demo.is-white { background: var(--peg-white); box-shadow: 0 0 0 1.5px var(--text-faint); }
+.ck-fb i.is-new { animation: popIn .3s var(--ease) both; animation-delay: var(--d, 0s); }
+.ck-fb-demo { display: inline-block; width: 11px; height: 11px; border-radius: 50%; vertical-align: -1px; margin: 0 .2rem; }
+.ck-legend { text-align: center; }
+
+/* Bedienung */
+.ck-controls { display: flex; flex-direction: column; gap: .55rem; padding-top: .35rem; border-top: 1px solid var(--border); }
+.ck-palette { display: flex; flex-wrap: wrap; gap: .45rem; justify-content: center; }
+.ck-palette .ck-peg { --peg: clamp(34px, 9vw, 44px); cursor: pointer; transition: transform .12s; }
+.ck-palette .ck-peg:hover { transform: translateY(-2px) scale(1.06); }
+.ck-palette .ck-peg:active { transform: scale(.94); }
+.ck-palette .ck-peg:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+.ck-actions { display: flex; gap: .5rem; justify-content: center; }
+.ck-actions .btn { min-width: 7.5rem; }

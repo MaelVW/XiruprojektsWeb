@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Datenschutz · Xiruprojekts</title>
+    <meta name="description" content="Welche Daten diese Website speichert – und warum sie deinen Browser nicht verlassen.">
+    <link rel="stylesheet" href="assets/css/main.css">
+    <script src="assets/js/site.js"></script>
+    <script src="assets/js/core.js"></script>
+    <style>
+        .legal h2 { font-size: 1.2rem; margin-top: 2rem; color: var(--rc); }
+        .legal p, .legal li { color: var(--text-muted); }
+        .legal strong { color: var(--text); }
+        .crumbs { cursor: pointer; user-select: none; letter-spacing: .3em; opacity: .55; transition: opacity .3s; }
+        .crumbs:hover { opacity: 1; }
+        .tldr { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); margin-bottom: 2rem; }
+        .tldr .card { text-align: center; }
+        .tldr b { font-size: 1.8rem; display: block; }
+    </style>
+</head>
+<body>
+<main class="content content--narrow legal">
+    <header class="page-head">
+        <span class="eyebrow">◆ Zentrum</span>
+        <h1>Datenschutz</h1>
+        <p class="lead">Kurz gesagt: Diese Website hat keinen Server, der deine Daten sammelt. Alles, was du hier tust, bleibt in deinem Browser.</p>
+        <p class="small faint">Stand: Oktober 2026</p>
+    </header>
+
+    <div class="tldr">
+        <div class="card card--flat"><b>0</b><span class="small muted">Tracker</span></div>
+        <div class="card card--flat"><b>0</b><span class="small muted">Cookies</span></div>
+        <div class="card card--flat"><b>0</b><span class="small muted">Server-Datenbanken</span></div>
+        <div class="card card--flat"><b>100 %</b><span class="small muted">in deinem Browser</span></div>
+    </div>
+
+    <h2>1. Wer ist verantwortlich?</h2>
+    <p>Diese Website wird von <strong>Xiruprojekts</strong> betrieben, einem privaten Hobby-Projekt von zwei Freunden in der Schweiz.
+        Kontaktangaben ergänzen wir hier, sobald die Website öffentlich online geht.</p>
+
+    <h2>2. Was wird gespeichert – und wo?</h2>
+    <p>Alle Daten liegen ausschliesslich im <strong>localStorage</strong> deines Browsers, also auf deinem eigenen Gerät. Dazu gehören:</p>
+    <ul>
+        <li><strong>Lokale Konten:</strong> Name und ein Passwort-Hash (PBKDF2 mit Salt). Das Passwort selbst wird nie gespeichert.</li>
+        <li><strong>Fortschritt:</strong> XP, besuchte Seiten, Realitätskristalle, Skills, Spielrekorde und Spielstände.</li>
+        <li><strong>Einstellungen:</strong> Design, Animationen, Töne.</li>
+        <li><strong>Notizen und Mixer-Voreinstellungen,</strong> die du selbst anlegst.</li>
+        <li><strong>API-Schlüssel,</strong> falls du im KI-Labor eigene Schlüssel einträgst (siehe Punkt 4).</li>
+    </ul>
+    <p>Wir können diese Daten nicht sehen. Wenn du die Browserdaten löschst, sind sie weg – darum gibt es im <a href="konto/profil.html">Profil</a> einen Export.</p>
+
+    <h2>3. Cookies <span class="crumbs" data-egg="p-krumen" title="Krümel">🍪 · · ·</span></h2>
+    <p>Diese Website setzt keine Cookies und benutzt keine Analyse- oder Werbedienste. Es gibt auch keine eingebetteten Inhalte von Dritten
+        wie Videos, Schriftarten oder Social-Media-Knöpfe, die beim Laden Daten übertragen würden.</p>
+
+    <h2>4. KI-Labor und externe Dienste</h2>
+    <p>Das KI-Labor funktioniert ohne Internetverbindung mit eingebauten Generatoren. Nur wenn du <strong>selbst</strong> einen KI-Dienst aktivierst
+        (z. B. mit einem eigenen Hugging-Face-Schlüssel oder dem optionalen Dienst Pollinations), wird der Text, den du eingibst, an diesen Anbieter gesendet,
+        damit er eine Antwort erzeugen kann. Dafür gelten die Datenschutzbestimmungen des jeweiligen Anbieters.</p>
+    <ul>
+        <li>Gib keine persönlichen oder vertraulichen Informationen in KI-Felder ein.</li>
+        <li>API-Schlüssel liegen unverschlüsselt im localStorage – verwende sie nur auf deinen eigenen Geräten. Sie sind nicht im Spielstand-Export enthalten.</li>
+    </ul>
+
+    <h2>5. Hosting</h2>
+    <p>Wenn diese Website auf einem Webserver bereitgestellt wird, kann der Hosting-Anbieter technisch notwendige Zugriffsprotokolle führen
+        (z. B. IP-Adresse, Zeitpunkt, aufgerufene Seite). Wir werten solche Protokolle nicht aus.</p>
+
+    <h2>6. Links zu anderen Websites</h2>
+    <p>Einige Seiten verlinken auf externe Websites (z. B. GitHub oder Anbieter von KI-Diensten). Erst wenn du auf so einen Link klickst,
+        gelten dort die Regeln des jeweiligen Betreibers.</p>
+
+    <h2>7. Deine Rechte</h2>
+    <p>Da wir keine Daten von dir speichern, gibt es bei uns nichts einzusehen oder zu löschen. Du hast jederzeit die volle Kontrolle:
+        In den <a href="konto/einstellungen.html">Einstellungen</a> kannst du deinen Fortschritt zurücksetzen oder alle Daten dieser Website aus deinem Browser löschen.</p>
+</main>
+</body>
+</html>

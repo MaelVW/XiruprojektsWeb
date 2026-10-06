@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Downloads · Xiruprojekts</title>
+    <meta name="description" content="Software und Spiele von Xiruprojekts zum Herunterladen.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <style>
+        .dl-grid { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); }
+        .dl { display: flex; flex-direction: column; gap: .75rem; }
+        .dl__head { display: flex; align-items: center; gap: .9rem; }
+        .dl__icon { width: 52px; height: 52px; border-radius: 14px; display: grid; place-items: center; font-size: 1.6rem; background: color-mix(in srgb, var(--rc) 16%, transparent); }
+        .dl__name { font-weight: 800; font-size: 1.15rem; }
+        .dl__desc { color: var(--text-muted); font-size: .92rem; flex: 1; }
+        .dl__foot { display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap; border-top: 1px dashed var(--border); padding-top: .75rem; }
+        .dl__meta { font-size: .8rem; color: var(--text-muted); display: flex; gap: .6rem; flex-wrap: wrap; }
+        .nothing { margin-top: 3rem; text-align: center; font-family: var(--mono); font-size: .78rem; color: var(--text-faint); }
+        .nothing button { background: none; border: 0; color: inherit; font: inherit; cursor: pointer; text-decoration: underline dotted; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">⬇ Studio</span>
+        <h1>Downloads</h1>
+        <p class="lead">Alles, was Xiruprojekts bisher gebaut hat. Kostenlos, ohne Anmeldung, ohne Haken.
+            Die Nutzung erfolgt auf eigene Verantwortung – siehe <a href="../nutzungsbedingungen.html">Nutzungsbedingungen</a>.</p>
+    </header>
+    <div class="row mb-3" id="filter" role="group" aria-label="Filter">
+        <button class="chip is-active" data-f="">Alle</button><button class="chip" data-f="Werkzeug">Werkzeuge</button><button class="chip" data-f="Spiel">Spiele</button><button class="chip" data-f="Web">Web</button>
+    </div>
+    <div class="dl-grid" id="list"></div>
+    <p class="nothing">C:\XIRU\DOWNLOADS&gt; dir /a · 1 versteckte Datei · <button type="button" id="nothing">nichts.zip</button> · 0 Bytes</p>
+</main>
+<script>
+XIRU.ready(function () {
+    /* ── Hier neue Projekte eintragen (Anleitung: docs/DOWNLOADS.md) ─────────
+       datei:  ZIP im Ordner /downloads/ (relativ) ODER volle URL (z. B. GitHub-Release)
+       status: 'stabil' | 'beta' | 'alpha' | 'bald'                              */
+    const PROJEKTE = [
+        { name: 'Floppy Hub', icon: '💾', art: 'Werkzeug', version: 'aktuell auf GitHub', status: 'stabil', seite: 'floppy-hub.html',
+          beschreibung: 'Aus Disketten wird eine physische Spielebibliothek: Diskette einlegen, Spiel startet. Mit Retro-Menü und Diskettenbespieler.',
+          datei: 'https://github.com/MaelVW/Floppy/releases/latest', groesse: 'Setup (Windows)' },
+        { name: 'PIXMAG', icon: '🧙', art: 'Spiel', version: 'Alpha 1.2', status: 'alpha', seite: 'pixmag.html',
+          beschreibung: 'Düsteres Mittelalter-Dungeon-RPG: ein verbannter Magier, ein mysteriöses Buch und über hundert Zauber-Kombinationen.',
+          datei: '', groesse: 'Python' },
+        { name: 'PIXMAG Mini', icon: '🗡', art: 'Spiel', version: 'im Browser', status: 'stabil', seite: '../arcade/dungeon.html',
+          beschreibung: 'Der kleine Bruder von PIXMAG – direkt hier in der Spielhalle spielbar, ganz ohne Download.',
+          datei: '../arcade/dungeon.html', groesse: '0 KB Download', online: true },
+        { name: 'Xiruprojekts-Website', icon: '🌐', art: 'Web', version: 'du bist mittendrin', status: 'beta', seite: 'xiruweb.html',
+          beschreibung: 'Diese Website: Hardware-Archiv, Spielhalle, KI-Labor, Mixer, Werkzeuge – und viele Geheimnisse.',
+          datei: 'xiruweb.html', groesse: 'HTML/CSS/JS', online: true }
+    ];
+    const BADGE = { stabil: 'badge--success', beta: 'badge--warning', alpha: 'badge--danger', bald: '' };
+    let filter = '';
+    function render() {
+        XIRU.$('#list').innerHTML = PROJEKTE.filter(p => !filter || p.art === filter).map((p, i) => {
+            const ext = /^https?:/.test(p.datei);
+            const href = !p.datei ? '' : (ext || p.online ? p.datei : '../downloads/' + p.datei);
+            const btn = !p.datei ? '<span class="btn btn--sm" aria-disabled="true">Bald verfügbar</span>'
+                : '<a class="btn btn--primary btn--sm" href="' + XIRU.esc(href) + '"' + (ext ? ' target="_blank" rel="noopener"' : p.online ? '' : ' download') + '>' +
+                  (p.online ? '▶ Öffnen' : ext ? '↗ Zum Download' : '⬇ Herunterladen') + '</a>';
+            return '<article class="card dl" data-reveal style="--d:' + (i * .06) + 's"><div class="dl__head"><span class="dl__icon">' + p.icon + '</span>' +
+                '<div><div class="dl__name">' + XIRU.esc(p.name) + '</div><span class="badge ' + (BADGE[p.status] || '') + '">' + XIRU.esc(p.status) + '</span> <span class="badge">' + XIRU.esc(p.art) + '</span></div></div>' +
+                '<p class="dl__desc mb-0">' + XIRU.esc(p.beschreibung) + '</p>' +
+                '<div class="dl__foot"><div class="dl__meta"><span>' + XIRU.esc(p.version) + '</span><span>' + XIRU.esc(p.groesse) + '</span></div>' +
+                '<div class="row">' + (p.seite ? '<a class="btn btn--ghost btn--sm" href="' + XIRU.esc(p.seite) + '">Mehr</a>' : '') + btn + '</div></div></article>';
+        }).join('');
+        XIRU.initReveal();
+    }
+    XIRU.$('#filter').addEventListener('click', e => { const b = e.target.closest('[data-f]'); if (!b) return; filter = b.dataset.f; XIRU.$$('#filter .chip').forEach(c => c.classList.toggle('is-active', c === b)); render(); });
+    XIRU.$('#nothing').addEventListener('click', () => {
+        XIRU.egg('p-studio');
+        XIRU.toast('nichts.zip', 'Entpacke 0 Dateien … fertig. Es war wirklich nichts drin.', { icon: '🗜' });
+    });
+    render();
+});
+</script>
+</body>
+</html>

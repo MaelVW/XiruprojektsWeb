@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PIXMAG Mini · Xiruprojekts</title>
+    <meta name="description" content="PIXMAG Mini – ein rundenbasierter Roguelike-Dungeon-Crawler mit Zauber-Kombinationen, inspiriert von unserem Spiel PIXMAG.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="css/dungeon.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/arcade.js"></script>
+</head>
+<body>
+<main class="content content--wide dgn">
+    <header class="page-head">
+        <span class="eyebrow">▶ Spielhalle · Abenteuer</span>
+        <h1>PIXMAG Mini</h1>
+        <p class="lead">Du bist ein verbannter Magier. In den Katakomben unter der Stadt findest du ein mysteriöses Buch, das zwei Elemente zu einem neuen Zauber verbindet. Jede Etage ist neu gewürfelt – und wer fällt, bleibt gefallen.</p>
+    </header>
+
+    <div class="game">
+        <div class="dgn-main">
+            <div class="dgn-hud" id="hud"></div>
+            <div class="game__stage" id="stage" tabindex="0" aria-label="Spielfeld von PIXMAG Mini">
+                <canvas id="cv"></canvas>
+                <div class="dgn-panel" id="panel" hidden></div>
+                <div class="game__overlay dgn-ov" id="ov"></div>
+            </div>
+            <div class="dgn-tip" id="tip" aria-live="polite"></div>
+            <div class="dgn-spells" id="spells" aria-label="Zauberleiste"></div>
+            <div class="dgn-actions" id="actions">
+                <button class="btn btn--sm" data-cmd="inv" title="Rucksack (I)">🎒 Rucksack <kbd>I</kbd></button>
+                <button class="btn btn--sm" data-cmd="book" title="Das Mysteriöse Buch (B)">📖 Buch <kbd>B</kbd></button>
+                <button class="btn btn--sm" data-cmd="explore" title="Automatisch erkunden (X)">🧭 Erkunden <kbd>X</kbd></button>
+                <button class="btn btn--sm" data-cmd="rest" title="Rasten, bis du erholt bist (R)">💤 Rasten <kbd>R</kbd></button>
+                <button class="btn btn--sm" data-cmd="wait" title="Eine Runde warten (Leertaste)">⏳ Warten</button>
+                <button class="btn btn--sm" data-cmd="stairs" title="Treppe hinab (Enter)">⬇ Treppe <kbd>↵</kbd></button>
+                <button class="btn btn--sm" data-cmd="map" title="Grosse Karte (M)">🗺 Karte <kbd>M</kbd></button>
+                <button class="btn btn--sm btn--ghost" data-cmd="help" title="Hilfe (H)">? Hilfe</button>
+            </div>
+            <div class="touch-pad dgn-touch">
+                <div class="dgn-pad" id="pad">
+                    <button data-dir="-1,-1" aria-label="Nach links oben">↖</button>
+                    <button data-dir="0,-1" aria-label="Nach oben">▲</button>
+                    <button data-dir="1,-1" aria-label="Nach rechts oben">↗</button>
+                    <button data-dir="-1,0" aria-label="Nach links">◀</button>
+                    <button data-dir="0,0" aria-label="Warten">⏳</button>
+                    <button data-dir="1,0" aria-label="Nach rechts">▶</button>
+                    <button data-dir="-1,1" aria-label="Nach links unten">↙</button>
+                    <button data-dir="0,1" aria-label="Nach unten">▼</button>
+                    <button data-dir="1,1" aria-label="Nach rechts unten">↘</button>
+                </div>
+            </div>
+            <div class="dgn-bottom">
+                <div class="dgn-log" id="log" aria-live="polite" aria-label="Nachrichtenprotokoll"></div>
+                <div class="dgn-mini">
+                    <canvas id="mini" aria-label="Minikarte"></canvas>
+                    <div class="small faint" id="mini-label"></div>
+                </div>
+            </div>
+        </div>
+
+        <aside class="game__side">
+            <div class="card card--accent">
+                <h3>Neuer Lauf</h3>
+                <div class="row" id="classes" role="group" aria-label="Klasse wählen"></div>
+                <p class="small muted mt-1" id="class-desc"></p>
+                <div class="stack dgn-menu" id="menu-buttons"></div>
+                <p class="small faint mt-1" id="menu-hint"></p>
+            </div>
+            <div class="card">
+                <h3>Steuerung</h3>
+                <ul class="keys-help">
+                    <li><kbd>←</kbd><kbd>↑</kbd><kbd>→</kbd><kbd>↓</kbd> / <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> – gehen, angreifen durch Hineinlaufen</li>
+                    <li><kbd>Q</kbd><kbd>E</kbd><kbd>Y</kbd><kbd>C</kbd> oder Ziffernblock – schräg</li>
+                    <li><kbd>Leertaste</kbd> / <kbd>.</kbd> – warten · <kbd>Enter</kbd> – Treppe</li>
+                    <li><kbd>1</kbd>–<kbd>6</kbd> – Zauber, dann Ziel wählen (<kbd>Tab</kbd>, Pfeile, Maus) und <kbd>Enter</kbd></li>
+                    <li><kbd>I</kbd> Rucksack · <kbd>B</kbd> Buch · <kbd>X</kbd> erkunden · <kbd>R</kbd> rasten · <kbd>M</kbd> Karte</li>
+                    <li>Maus/Touch: Feld antippen = hingehen, Gegner antippen = angreifen</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Das Buch</h3>
+                <div id="book-side"></div>
+            </div>
+            <div class="card">
+                <h3>Rekord</h3>
+                <div id="record"></div>
+            </div>
+        </aside>
+    </div>
+</main>
+<script src="js/dungeon/data.js"></script>
+<script src="js/dungeon/sprites.js"></script>
+<script src="js/dungeon/world.js"></script>
+<script src="js/dungeon/game.js"></script>
+<script src="js/dungeon.js"></script>
+</body>
+</html>

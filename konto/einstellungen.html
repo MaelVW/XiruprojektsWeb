@@ -45,7 +45,7 @@
             <h2>Erlebnis</h2>
             <div class="toggle-row"><div><strong>Animationen</strong><div class="small muted">Partikel, Einblendungen, Effekte. Aus = ruhiger und sparsamer.</div></div>
                 <label class="switch"><input type="checkbox" data-set="anim" aria-label="Animationen"><span></span></label></div>
-            <div class="toggle-row"><div><strong>Töne</strong><div class="small muted">Kleine Pieps-Geräusche bei Disketten, Level-ups und in Spielen.</div></div>
+            <div class="toggle-row"><div><strong>Töne</strong><div class="small muted">Kleine Pieps-Geräusche bei Kristallen, Level-ups und in Spielen.</div></div>
                 <label class="switch"><input type="checkbox" data-set="sound" aria-label="Töne"><span></span></label></div>
             <div class="toggle-row"><div><strong>Entdeckungs-Hinweise</strong><div class="small muted">Kurze Meldung, wenn du einen neuen Ort entdeckst.</div></div>
                 <label class="switch"><input type="checkbox" data-set="visitToasts" aria-label="Entdeckungs-Hinweise"><span></span></label></div>
@@ -120,7 +120,7 @@ XIRU.ready(function () {
     } catch (e) { $('#usage').textContent = 'Der Browser erlaubt hier keinen Zugriff auf den Speicher.'; }
 
     $('#reset-progress').addEventListener('click', () => {
-        const m = XIRU.modal('<h2>Fortschritt zurücksetzen?</h2><p class="muted">XP, Entdeckungen, Disketten, Skills und Rekorde von <strong>' + XIRU.esc(XIRU.user || 'Gast') + '</strong> werden gelöscht. Das Konto selbst bleibt bestehen.</p>' +
+        const m = XIRU.modal('<h2>Fortschritt zurücksetzen?</h2><p class="muted">XP, Entdeckungen, Kristalle, Skills und Rekorde von <strong>' + XIRU.esc(XIRU.user || 'Gast') + '</strong> werden gelöscht. Das Konto selbst bleibt bestehen.</p>' +
             '<div class="row mt-2"><button class="btn btn--danger" id="ok">Zurücksetzen</button><button class="btn" data-close>Abbrechen</button></div>');
         m.el.querySelector('#ok').addEventListener('click', () => {
             ['skills', 'eggs', 'visited', 'days', 'scores', 'rewards', 'data'].forEach(k => { P[k] = {}; });

@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="de" data-page="404.html">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verirrt · Xiruprojekts</title>
+    <meta name="description" content="Diese Seite gibt es nicht. Oder doch?">
+    <meta name="robots" content="noindex">
+    <link rel="stylesheet" href="/assets/css/main.css">
+    <script src="/assets/js/site.js"></script>
+    <script src="/assets/js/core.js"></script>
+    <style>
+        .lost { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 2.5rem; align-items: center; margin-bottom: 3rem; }
+        @media (max-width: 860px) { .lost { grid-template-columns: 1fr; gap: 1.5rem; } }
+
+        /* Bühne mit Diskette und Laufwerk */
+        .lost__stage { position: relative; display: grid; justify-items: center; padding: 1rem 0 0; min-height: 360px; }
+        .f404 { width: min(250px, 62vw); height: auto; animation: f404Float 3.4s ease-in-out infinite; transform-origin: 50% 80%; filter: drop-shadow(0 18px 24px rgba(0,0,0,.45)); position: relative; z-index: 2; cursor: pointer; }
+        .f404.is-reading { animation: f404Read 1.6s var(--ease) both; }
+        .f404.is-shy { animation: f404Shake .5s linear 2; }
+        @keyframes f404Float { 0%, 100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-14px) rotate(3deg); } }
+        @keyframes f404Read { 0% { transform: translateY(0); } 35% { transform: translateY(120px) scaleY(.92); } 55% { transform: translateY(120px) scaleY(.92); } 70% { transform: translateY(-30px) rotate(-8deg); } 85% { transform: translateY(6px) rotate(4deg); } 100% { transform: none; } }
+        @keyframes f404Shake { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-9deg); } 75% { transform: rotate(9deg); } }
+        .f404 .shutter { animation: shutter 5s ease-in-out infinite; }
+        @keyframes shutter { 0%, 70%, 100% { transform: translateX(0); } 78%, 92% { transform: translateX(-34px); } }
+        .f404 .eye { animation: eyeLook 6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+        @keyframes eyeLook { 0%, 40% { transform: translateX(0); } 45%, 60% { transform: translateX(-4px); } 65%, 80% { transform: translateX(4px); } 85%, 100% { transform: translateX(0); } }
+        .f404 .lid { animation: blinkLid 4.2s infinite; transform-box: fill-box; transform-origin: top; transform: scaleY(0); }
+        @keyframes blinkLid { 0%, 94%, 100% { transform: scaleY(0); } 96% { transform: scaleY(1); } }
+        .f404 .drop { animation: drop 2.8s ease-in infinite; }
+        @keyframes drop { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: 1; } 80% { transform: translateY(26px); opacity: 1; } 100% { transform: translateY(32px); opacity: 0; } }
+
+        .drive {
+            position: relative; z-index: 3; margin-top: -26px; width: min(320px, 80vw); height: 74px;
+            background: linear-gradient(#d9d4c4, #b8b19c); border-radius: 8px;
+            box-shadow: inset 0 2px 0 rgba(255,255,255,.6), inset 0 -3px 0 rgba(0,0,0,.18), 0 16px 30px -12px rgba(0,0,0,.6);
+            display: flex; align-items: center; gap: 14px; padding: 0 18px;
+        }
+        .drive__slot { flex: 1; height: 12px; background: #1b1a17; border-radius: 3px; box-shadow: inset 0 3px 4px rgba(0,0,0,.8); position: relative; }
+        .drive__slot::after { content: ""; position: absolute; left: 8%; right: 8%; top: 3px; height: 2px; background: #3a372f; }
+        .drive__led { width: 12px; height: 8px; border-radius: 2px; background: #3b2a12; box-shadow: inset 0 1px 1px rgba(0,0,0,.6); }
+        .drive__led.is-on { background: #ffb02e; box-shadow: 0 0 10px 2px rgba(255,176,46,.7); }
+        .drive__led.is-bad { background: #ff4d4d; box-shadow: 0 0 10px 2px rgba(255,77,77,.7); animation: blink .35s step-end infinite; }
+        .drive__btn { width: 26px; height: 14px; border-radius: 3px; background: linear-gradient(#ece7d8, #c9c2ab); border: 1px solid #9e977f; cursor: pointer; }
+        .drive__btn:active { transform: translateY(1px); }
+        .drive__label { position: absolute; left: 18px; bottom: 6px; font: 700 9px/1 var(--mono); color: #6f6855; letter-spacing: .12em; }
+
+        .bubble {
+            position: absolute; top: 0; right: 4%; z-index: 4; max-width: 210px;
+            background: var(--surface); border: 1px solid var(--border-strong); border-radius: 14px; padding: .55rem .8rem;
+            font-size: .85rem; box-shadow: var(--shadow); animation: popIn .35s var(--ease) both;
+        }
+        .bubble::after { content: ""; position: absolute; left: 22px; bottom: -8px; width: 14px; height: 14px; background: var(--surface); border-right: 1px solid var(--border-strong); border-bottom: 1px solid var(--border-strong); transform: rotate(45deg); }
+
+        /* DOS-Kasten */
+        .dos {
+            background: #0a0a0a; color: #d7d7d7; border-radius: var(--radius-sm); border: 1px solid #2a2a2a;
+            font: 500 .95rem/1.55 var(--mono); padding: 1rem 1.15rem; margin: 1rem 0 1.25rem; min-height: 8.5em;
+            box-shadow: inset 0 0 40px rgba(0,0,0,.6), 0 10px 30px -14px rgba(0,0,0,.7);
+            overflow-wrap: anywhere; white-space: pre-wrap;
+        }
+        .dos .y { color: #ffd166; } .dos .r { color: #ff7b7b; } .dos .g { color: #7dff9a; }
+        .dos .cur { display: inline-block; width: .6em; height: 1.05em; background: #d7d7d7; vertical-align: -.15em; animation: blink 1s step-end infinite; }
+        .dos-btns .btn { font-family: var(--mono); }
+        .dos-btns .btn u { text-decoration-thickness: 2px; text-underline-offset: 3px; }
+
+        .moved { margin-bottom: 1.5rem; }
+
+        /* Vorschläge */
+        .suggest .tile__icon { font-size: 1.1rem; }
+        .suggest .tile__meta code { font-size: .72rem; }
+        .score-bar { height: 4px; border-radius: 99px; background: var(--surface-3); overflow: hidden; }
+        .score-bar i { display: block; height: 100%; width: var(--s); background: linear-gradient(90deg, var(--tc, var(--rc)), var(--accent-2)); }
+
+        /* Spurkarte */
+        .sectors-card { position: relative; overflow: hidden; margin-top: 2.5rem; }
+        .sectors { display: grid; grid-template-columns: repeat(24, minmax(0, 1fr)); gap: 3px; margin: 1rem 0 .5rem; }
+        @media (max-width: 640px) { .sectors { grid-template-columns: repeat(12, minmax(0, 1fr)); } }
+        .sec { aspect-ratio: 1; border-radius: 2px; background: color-mix(in srgb, var(--success) 22%, var(--surface-2)); transition: background .3s, transform .2s; border: 0; padding: 0; cursor: default; }
+        .sec.is-scan { background: color-mix(in srgb, var(--accent) 75%, white); transform: scale(1.15); }
+        .sec.is-bad { background: var(--danger); animation: blink .9s step-end infinite; cursor: pointer; }
+        .sec.is-empty { background: var(--surface-3); }
+        .sec-legend { display: flex; flex-wrap: wrap; gap: .3rem 1.2rem; font-size: .8rem; color: var(--text-muted); }
+        .sec-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: .35rem; vertical-align: -1px; }
+
+        /* Die kleine Katze */
+        .kitty {
+            position: absolute; right: -60px; bottom: 6px; width: 34px; height: 34px; border: 0; background: none; padding: 0;
+            cursor: pointer; opacity: .55; transition: right 3.2s steps(16), opacity .3s; z-index: 2;
+        }
+        .kitty.is-here { right: 14px; }
+        .kitty:hover, .kitty:focus-visible { opacity: 1; }
+        .kitty svg { width: 100%; height: 100%; overflow: visible; }
+        .kitty .tail { transform-origin: 6px 30px; animation: tail 1.6s ease-in-out infinite; }
+        @keyframes tail { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-18deg); } }
+        .kitty.is-walking svg { animation: catBob .2s steps(2) infinite; }
+        @keyframes catBob { 50% { transform: translateY(-2px); } }
+        .kitty.is-leaving { right: calc(100% + 60px); transition: right 1.4s ease-in; }
+        .kitty.is-leaving svg { transform: scaleX(-1); }
+        .kitty__say { position: absolute; bottom: 100%; right: 0; font: 700 .7rem var(--mono); color: var(--text-muted); opacity: 0; transition: opacity .2s; white-space: nowrap; pointer-events: none; }
+        .kitty:hover .kitty__say, .kitty:focus-visible .kitty__say { opacity: 1; }
+
+        .lost-links { margin-top: 2rem; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <section class="lost">
+        <div class="lost__stage" aria-hidden="true">
+            <div class="bubble" id="bubble" hidden></div>
+            <svg class="f404" id="disk" viewBox="0 0 200 200">
+                <defs>
+                    <linearGradient id="g404body" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4b5fb3"/><stop offset="1" stop-color="#26306b"/></linearGradient>
+                    <linearGradient id="g404metal" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eef1f8"/><stop offset="1" stop-color="#9aa3bd"/></linearGradient>
+                </defs>
+                <path d="M16 10h144l28 28v150H16z" fill="url(#g404body)" stroke="#1b2250" stroke-width="2"/>
+                <g class="shutter">
+                    <rect x="54" y="10" width="92" height="58" rx="3" fill="url(#g404metal)"/>
+                    <rect x="112" y="18" width="18" height="42" rx="2" fill="#1b2250"/>
+                </g>
+                <rect x="36" y="96" width="128" height="84" rx="6" fill="#f6f2e4"/>
+                <rect x="36" y="96" width="128" height="14" rx="6" fill="#ff6b6b"/>
+                <text x="100" y="107" text-anchor="middle" font-family="Consolas, monospace" font-size="10" font-weight="700" fill="#fff">SEKTOR 404</text>
+                <g>
+                    <ellipse class="eye" cx="78" cy="136" rx="7" ry="9" fill="#1a1a2e"/>
+                    <ellipse class="eye" cx="122" cy="136" rx="7" ry="9" fill="#1a1a2e"/>
+                    <circle cx="80" cy="133" r="2.2" fill="#fff"/><circle cx="124" cy="133" r="2.2" fill="#fff"/>
+                    <rect class="lid" x="69" y="126" width="18" height="20" fill="#f6f2e4"/>
+                    <rect class="lid" x="113" y="126" width="18" height="20" fill="#f6f2e4"/>
+                    <path d="M70 123 l14 4 M130 123 l-14 4" stroke="#1a1a2e" stroke-width="2.5" stroke-linecap="round"/>
+                    <path d="M84 164 q16 -12 32 0" stroke="#1a1a2e" stroke-width="3" fill="none" stroke-linecap="round"/>
+                    <path class="drop" d="M146 120 q5 8 0 11 q-5 -3 0 -11z" fill="#7cc7ff"/>
+                </g>
+                <rect x="24" y="172" width="8" height="8" fill="#1b2250"/>
+            </svg>
+            <div class="drive">
+                <span class="drive__led" id="led"></span>
+                <span class="drive__slot"></span>
+                <button class="drive__btn" type="button" id="eject" tabindex="-1" title="Auswerfen"></button>
+                <span class="drive__label">XIRU · 3½" · 1.44 MB</span>
+            </div>
+        </div>
+
+        <div class="lost__text">
+            <span class="eyebrow">⚠ Fehler 404 · Sektor nicht gefunden</span>
+            <h1>Hier ist nichts. Nicht mal Staub.</h1>
+            <p class="lead">Die Adresse, die du aufgerufen hast, liegt auf keinem Sektor dieser Website. Vielleicht verschoben, vielleicht vertippt – oder sie hat nie existiert.</p>
+            <div class="dos" id="dos" role="log" aria-live="polite"></div>
+            <div class="row dos-btns">
+                <a class="btn btn--primary" href="/index.html" id="btn-abort"><u>A</u>bbrechen</a>
+                <button class="btn" type="button" id="btn-retry"><u>W</u>iederholen</button>
+                <button class="btn btn--ghost" type="button" id="btn-ignore"><u>I</u>gnorieren</button>
+            </div>
+        </div>
+    </section>
+
+    <div id="moved"></div>
+
+    <section class="suggest" aria-labelledby="sg-title">
+        <h2 id="sg-title">Meintest du vielleicht …</h2>
+        <p class="muted" id="sg-lead">Die Diskette hat ihr Inhaltsverzeichnis durchwühlt.</p>
+        <div class="grid" id="sg"></div>
+    </section>
+
+    <section class="card sectors-card" aria-labelledby="sec-title">
+        <h2 id="sec-title" style="font-size:1.2rem">Spurkarte von Laufwerk A:</h2>
+        <p class="small muted mb-0">Jedes Kästchen ist ein Sektor dieser Website. Einer davon ist kaputt – genau der, den du gesucht hast.</p>
+        <div class="sectors" id="sectors"></div>
+        <div class="sec-legend">
+            <span><i style="background:color-mix(in srgb, var(--success) 22%, var(--surface-2))"></i>gelesen</span>
+            <span><i style="background:var(--surface-3)"></i>leer</span>
+            <span><i style="background:var(--danger)"></i>Sektor <span id="badname">404</span></span>
+        </div>
+        <button class="kitty" id="kitty" type="button" aria-label="Eine kleine Katze. Sie scheint den Weg zu kennen." title="Eine kleine Katze">
+            <span class="kitty__say">miau?</span>
+            <svg viewBox="0 0 36 36" aria-hidden="true">
+                <path class="tail" d="M8 30 C0 28 0 18 6 16" stroke="#e8a35c" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+                <ellipse cx="18" cy="27" rx="11" ry="8" fill="#e8a35c"/>
+                <circle cx="25" cy="15" r="7.5" fill="#e8a35c"/>
+                <path d="M19.5 10 L20.5 3 L25 8.5 Z M26 8.2 L30.5 3 L31.5 10.5 Z" fill="#e8a35c"/>
+                <path d="M21 9 L21.4 5.5 L23.5 8.3 Z M27.5 8 L29.8 5.4 L30.2 9.2 Z" fill="#f7c9a0"/>
+                <circle cx="22.6" cy="14.5" r="1.3" fill="#1a1a2e"/><circle cx="27.6" cy="14.5" r="1.3" fill="#1a1a2e"/>
+                <path d="M24.4 17 l.7 .7 .7 -.7" stroke="#1a1a2e" stroke-width=".8" fill="none"/>
+                <path d="M12 23 q2 -3 4 0 M15 26 q2 -3 4 0" stroke="#c97f3b" stroke-width="1.2" fill="none"/>
+            </svg>
+        </button>
+    </section>
+
+    <div class="row lost-links">
+        <a class="btn" href="/weltkarte.html">🗺 Weltkarte</a>
+        <a class="btn" href="/suche.html" id="search-link">⌕ Website durchsuchen</a>
+        <a class="btn btn--ghost" href="/hilfe.html">Hilfe &amp; FAQ</a>
+    </div>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU;
+    X.egg('b-404');
+
+    /* ── Aufgerufene Adresse ──────────────────────────────────────────── */
+    let raw = location.pathname || '/';
+    try { raw = decodeURIComponent(raw); } catch (e) { /* bleibt roh */ }
+    if (raw === '/404.html') raw = '/irgendwo/im/nirgendwo.html';
+    const shown = raw.length > 70 ? raw.slice(0, 67) + '…' : raw;
+
+    /* ── Ähnlichkeitssuche ────────────────────────────────────────────── */
+    const norm = s => String(s || '').toLowerCase()
+        .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
+        .replace(/\.(html?|php|aspx?|jsp)$/g, '');
+    const STOP = new Set(['html', 'htm', 'www', 'index', 'de', 'the', 'und', 'der', 'die', 'das', 'seite', 'page']);
+    const words = s => norm(s).split(/[^a-z0-9]+/).filter(w => w.length >= 2 && !STOP.has(w));
+    // Editierdistanz mit Vertauschungen (Damerau, „optimal string alignment")
+    function lev(a, b) {
+        const m = a.length, n = b.length;
+        if (!m) return n; if (!n) return m;
+        const d = Array.from({ length: m + 1 }, (_, i) => { const r = new Array(n + 1).fill(0); r[0] = i; return r; });
+        for (let j = 0; j <= n; j++) d[0][j] = j;
+        for (let i = 1; i <= m; i++) for (let j = 1; j <= n; j++) {
+            const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+            d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost);
+            if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1);
+        }
+        return d[m][n];
+    }
+    function sim(a, b) {
+        if (!a || !b) return 0;
+        if (a === b) return 1;
+        const short = Math.min(a.length, b.length), long = Math.max(a.length, b.length);
+        if (short >= 3 && (a.includes(b) || b.includes(a))) return .55 + .4 * short / long;
+        return 1 - lev(a, b) / long;
+    }
+    const reqWords = words(raw);
+    const segs = raw.split('/').filter(Boolean);
+    const base = norm(segs[segs.length - 1] || '').replace(/[^a-z0-9]/g, '');
+    // Der Dateiname zählt; Ordner nur, wenn sonst nichts da ist
+    const baseWords = words(segs[segs.length - 1] || '');
+    const keyWords = baseWords.length ? baseWords : reqWords;
+    const keyJoined = keyWords.join('');
+    const dir = segs.length > 1 ? norm(segs[0]) : '';
+
+    const candidates = X.pages.filter(p => !p.hidden && p.p !== '404.html');
+    const scored = candidates.map(p => {
+        const pw = words(p.p).concat(words(p.t));
+        const slug = norm(p.p.split('/').pop()).replace(/[^a-z0-9]/g, '');
+        let s1 = 0;
+        if (keyWords.length) {
+            s1 = keyWords.reduce((sum, w) => {
+                const best = Math.max(0, ...pw.map(x => sim(w, x)));
+                return sum + (best >= .62 ? best : 0);
+            }, 0) / keyWords.length;
+        }
+        const s2 = keyJoined ? Math.max(sim(keyJoined, slug), sim(keyJoined, norm(p.t).replace(/[^a-z0-9]/g, ''))) : 0;
+        // Ordner-Treffer (z. B. /arcade/...) geben einen kleinen Schub
+        const bonus = dir && p.p.startsWith(dir + '/') ? .1 : 0;
+        return { p, s: Math.min(1, Math.max(s1, s2) + bonus) };
+    }).filter(x => x.s >= .6).sort((a, b) => b.s - a.s).slice(0, 4);
+
+    /* Umgezogene Seiten der alten Website */
+    const LEGACY = {
+        ueberuns: ['ueber-uns.html', 'Die alte „Über uns"-Seite ist umgezogen.'],
+        nutzerbedingungen: ['nutzungsbedingungen.html', 'Die Nutzerbedingungen heissen jetzt Nutzungsbedingungen. Gleicher Inhalt, mehr Buchstaben.'],
+        download: ['studio/index.html', 'Downloads wohnen jetzt im Studio.'],
+        betatesting: ['studio/beta.html', 'Das Beta-Testing ist ins Studio gezogen.'],
+        formular: ['studio/beta.html', 'Das alte Formular gibt es nicht mehr – das Beta-Programm schon.'],
+        checkout: ['studio/index.html', 'Eine Kasse gab es nie wirklich. Alles hier ist gratis.'],
+        main: ['index.html', 'Die alte Hauptseite ist jetzt die Startseite.'],
+        home: ['index.html', 'Zuhause ist da, wo die Startseite ist.'],
+        start: ['index.html', 'Hier geht es zum Start.'],
+        impressum: ['ueber-uns.html', 'Wer wir sind, steht auf „Über uns".'],
+        kontakt: ['ueber-uns.html', 'Wie du uns erreichst, steht auf „Über uns".'],
+        spiele: ['arcade/index.html', 'Die Spiele stehen in der Spielhalle.'],
+        games: ['arcade/index.html', 'Die Spiele stehen in der Spielhalle.'],
+        login: ['konto/login.html', 'Anmelden geht im Heimathafen.'],
+        anmelden: ['konto/login.html', 'Anmelden geht im Heimathafen.']
+    };
+    const REMARKS = [
+        [/wp-?admin|wordpress|wp-login/, 'Hier läuft kein WordPress. Hier läuft nicht mal ein Server, der sich für dich interessiert.'],
+        [/admin|root|sudo/, 'Admin-Bereich? Netter Versuch. Diese Website hat keinen Admin – nur zwei Freunde und viel Kaffee.'],
+        [/passw|password|login\.php/, 'Passwörter liegen hier nicht herum. Versprochen.'],
+        [/geheim|secret|versteckt/, 'Geheim? Gute Spur! Aber geheime Orte findet man nicht durch Raten von Adressen. Meistens.'],
+        [/katze|cat|miau/, 'Katzen? Hm. Halt die Augen offen …'],
+        [/diskette|floppy/, 'Disketten gibt es hier viele. Nur nicht an dieser Adresse.'],
+        [/kristall|crystal/, 'Realitätskristalle verstecken sich in alter Technik – nicht in kaputten Adressen.'],
+        [/\.(exe|zip|rar|msi)$/, 'Downloads gibt es nur im Studio. Und die sind echt.']
+    ];
+
+    const legacy = LEGACY[base];
+    const moved = X.$('#moved');
+    if (legacy) {
+        moved.innerHTML = '<div class="callout moved"><strong>📦 Umgezogen!</strong> ' + X.esc(legacy[1]) +
+            ' <a href="' + X.url(legacy[0]) + '">Zur neuen Adresse →</a></div>';
+    } else {
+        const rem = REMARKS.find(r => r[0].test(norm(raw)));
+        if (rem) moved.innerHTML = '<div class="callout callout--warning moved">' + X.esc(rem[1]) + '</div>';
+    }
+
+    const ICON = { zentrum: '◆', hardware: '▣', arcade: '▶', ki: '✦', mixer: '≋', werkzeuge: '⚒', studio: '⬇', konto: '⚓' };
+    const fallback = ['index.html', 'weltkarte.html', 'arcade/index.html', 'suche.html']
+        .map(p => X.pageFor(p)).filter(Boolean).map(p => ({ p, s: 0 }));
+    const list = scored.length ? scored : fallback;
+    if (!scored.length) {
+        X.$('#sg-title').textContent = 'Kein ähnlicher Sektor gefunden';
+        X.$('#sg-lead').textContent = reqWords.length
+            ? 'Zu „' + reqWords.join(' ') + '" passt nichts. Diese Orte sind aber immer einen Besuch wert:'
+            : 'Diese Orte sind immer einen Besuch wert:';
+    }
+    X.$('#sg').innerHTML = list.map(({ p, s }) => {
+        const reg = X.region(p.r) || {};
+        const locked = !X.isUnlocked(p);
+        return '<a class="tile' + (locked ? ' is-locked' : '') + '" href="' + X.url(p.p) + '" style="--tc:' + (reg.color || 'var(--rc)') + '">' +
+            '<span class="tile__icon">' + (ICON[p.r] || '◆') + '</span>' +
+            '<span class="tile__title">' + (locked ? '🔒 ' : '') + X.esc(p.t) + '</span>' +
+            '<span class="tile__desc">' + X.esc(p.d || '') + '</span>' +
+            (s ? '<span class="score-bar" title="Ähnlichkeit ' + Math.round(s * 100) + ' %"><i style="--s:' + Math.round(s * 100) + '%"></i></span>' : '') +
+            '<span class="tile__meta"><code>/' + X.esc(p.p) + '</code>' + (s ? ' · ' + Math.round(s * 100) + ' % ähnlich' : '') + '</span></a>';
+    }).join('');
+
+    /* ── DOS-Meldung tippen ───────────────────────────────────────────── */
+    const dos = X.$('#dos');
+    const track = (Array.from(raw).reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % 80);
+    const lines = [
+        ['', 'A:\\> lade ' + shown],
+        ['', 'Lese Spur ' + track + ', Sektor 404 …'],
+        ['r', 'Sektor nicht gefunden beim Lesen von Laufwerk A:'],
+        ['y', '(A)bbrechen, (W)iederholen, (I)gnorieren?']
+    ];
+    let typing = null;
+    function typeLines(arr, keep) {
+        clearTimeout(typing);
+        if (!keep) dos.innerHTML = '';
+        const calm = X.setting('anim') === false;
+        let li = 0, ci = 0, span = null;
+        const cur = document.createElement('span'); cur.className = 'cur';
+        (function step() {
+            if (li >= arr.length) { dos.appendChild(cur); return; }
+            if (!span) { span = document.createElement('span'); if (arr[li][0]) span.className = arr[li][0]; dos.appendChild(span); }
+            const text = arr[li][1];
+            if (calm) ci = text.length; else ci = Math.min(text.length, ci + 2);
+            span.textContent = text.slice(0, ci);
+            dos.appendChild(cur);
+            if (ci >= text.length) { dos.insertBefore(document.createTextNode('\n'), cur); li++; ci = 0; span = null; typing = setTimeout(step, calm ? 0 : 260); }
+            else typing = setTimeout(step, 18);
+        })();
+    }
+    typeLines(lines);
+
+    /* ── Laufwerk, Ton, Sprechblase ───────────────────────────────────── */
+    const disk = X.$('#disk'), led = X.$('#led'), bubble = X.$('#bubble');
+    const sound = () => X.setting('sound') !== false;
+    function seek(times) {
+        if (!sound()) return;
+        const ctx = X.audio(); if (!ctx) return;
+        for (let i = 0; i < times; i++) {
+            const t = ctx.currentTime + i * .09;
+            const len = Math.floor(ctx.sampleRate * .03), buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0);
+            for (let k = 0; k < len; k++) d[k] = (Math.random() * 2 - 1) * Math.pow(1 - k / len, 3);
+            const src = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+            src.buffer = buf; f.type = 'bandpass'; f.frequency.value = 1800 + (i % 3) * 400; f.Q.value = 2;
+            g.gain.value = .25; src.connect(f).connect(g).connect(ctx.destination); src.start(t);
+        }
+    }
+    let bubbleT;
+    function say(text, ms) {
+        bubble.textContent = text; bubble.hidden = false;
+        bubble.style.animation = 'none'; void bubble.offsetWidth; bubble.style.animation = '';
+        clearTimeout(bubbleT); bubbleT = setTimeout(() => { bubble.hidden = true; }, ms || 3200);
+    }
+
+    const RETRY = [
+        ['Lese Sektor 404 … nicht gefunden.', 'Hm. Nochmal?'],
+        ['Puste auf die Kontakte … (hat früher immer geholfen)', 'Fffffff…'],
+        ['Klopfe vorsichtig aufs Laufwerk …', 'Aua.'],
+        ['Versuche es mit mehr Gefühl …', 'Ich gebe mein Bestes!'],
+        ['Frage die CD-ROM nebenan um Hilfe … sie dreht sich weg.', 'Unhöflich.'],
+        ['Suche in Spur 0 bis 79 … Spur 80 gibt es nicht.', 'Ich bin müde.'],
+        ['Die Diskette braucht eine Pause. Schau dir doch einen der Vorschläge unten an.', 'Zzz…']
+    ];
+    let retries = 0, busy = false;
+    X.$('#btn-retry').addEventListener('click', () => {
+        if (busy) return;
+        busy = true;
+        const r = RETRY[Math.min(retries, RETRY.length - 1)];
+        retries++;
+        disk.classList.remove('is-shy'); disk.classList.add('is-reading');
+        led.className = 'drive__led is-on';
+        seek(6);
+        typeLines([['', 'A:\\> wiederholen (' + retries + ')'], ['', r[0]]], true);
+        setTimeout(() => {
+            led.className = 'drive__led is-bad';
+            disk.classList.remove('is-reading');
+            typeLines([['r', 'Sektor nicht gefunden.'], ['y', '(A)bbrechen, (W)iederholen, (I)gnorieren?']], true);
+            say(r[1]);
+            if (dos.childNodes.length > 60) typeLines(lines);
+            setTimeout(() => { led.className = 'drive__led'; busy = false; }, 900);
+        }, 1650);
+    });
+
+    const IGNORE = [
+        'Ignoriert. Die Seite existiert trotzdem nicht.',
+        'Du kannst mich ignorieren, aber nicht die Physik.',
+        'Okay, okay. Ich tue so, als wäre nichts.',
+        'Weiterhin: nichts.'
+    ];
+    let ign = 0;
+    X.$('#btn-ignore').addEventListener('click', () => {
+        const msg = IGNORE[ign++ % IGNORE.length];
+        typeLines([['', 'A:\\> ignorieren'], ['g', msg]], true);
+        disk.classList.add('is-shy'); setTimeout(() => disk.classList.remove('is-shy'), 1100);
+        say('🙈');
+    });
+    X.$('#eject').addEventListener('click', () => { seek(2); say('Hey! Ich bin doch gar nicht drin.'); });
+    let pokes = 0;
+    disk.addEventListener('click', () => {
+        pokes++;
+        const t = ['Hallo! Ich bin Sektor 404.', 'Ich habe deine Seite gesucht. Ehrlich.', 'Nicht kitzeln!', 'Weisst du, wer hier herumschleicht? Etwas mit Schnurrhaaren …', 'Ich bin nur 1,44 MB gross. Hab Geduld mit mir.'];
+        say(t[(pokes - 1) % t.length]);
+        X.beep(330 + pokes * 40, .06, 'triangle');
+    });
+
+    /* ── Spurkarte ────────────────────────────────────────────────────── */
+    const secEl = X.$('#sectors');
+    const N = 96;
+    const bad = (track * 7 + raw.length) % N;
+    X.$('#badname').textContent = '404 (Spur ' + track + ')';
+    const visited = X.profile().visited;
+    let html = '';
+    for (let i = 0; i < N; i++) {
+        const empty = i % 11 === 5 || i % 17 === 3;
+        html += '<button type="button" class="sec' + (i === bad ? ' is-bad' : empty ? ' is-empty' : '') + '" data-i="' + i + '" tabindex="' + (i === bad ? 0 : -1) + '" title="' +
+            (i === bad ? 'Sektor 404: unlesbar' : empty ? 'Sektor ' + i + ': leer' : 'Sektor ' + i + ': ok') + '"></button>';
+    }
+    secEl.innerHTML = html;
+    const cells = X.$$('.sec', secEl);
+    let scan = 0;
+    if (X.setting('anim') !== false) setInterval(() => {
+        cells[scan].classList.remove('is-scan');
+        scan = (scan + 1) % N;
+        if (scan !== bad) cells[scan].classList.add('is-scan');
+    }, 120);
+    cells[bad].addEventListener('click', () => {
+        typeLines([['', 'A:\\> chkdsk a: /sektor ' + bad], ['r', 'Sektor 404: unlesbar. Hier hätte deine Seite liegen sollen.'], ['', 'Gefundene Dinge: 0 Seiten, 0 Bytes, 1 Katzenhaar.']], true);
+        say('Katzenhaar? Komisch.');
+    });
+
+    /* ── Die Katze ────────────────────────────────────────────────────── */
+    const kitty = X.$('#kitty');
+    function meow() {
+        if (!sound()) return;
+        const ctx = X.audio(); if (!ctx) return;
+        const t = ctx.currentTime, o = ctx.createOscillator(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(620, t); o.frequency.linearRampToValueAtTime(900, t + .12); o.frequency.exponentialRampToValueAtTime(520, t + .45);
+        f.type = 'bandpass'; f.Q.value = 5; f.frequency.setValueAtTime(900, t); f.frequency.linearRampToValueAtTime(1700, t + .15); f.frequency.linearRampToValueAtTime(800, t + .45);
+        g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.18, t + .04); g.gain.setValueAtTime(.18, t + .3); g.gain.exponentialRampToValueAtTime(.001, t + .5);
+        o.connect(f).connect(g).connect(ctx.destination); o.start(t); o.stop(t + .55);
+    }
+    // Die Katze schleicht sich nach ein paar Sekunden herein
+    setTimeout(() => {
+        kitty.classList.add('is-walking', 'is-here');
+        setTimeout(() => kitty.classList.remove('is-walking'), 3300);
+    }, 4500);
+    kitty.addEventListener('click', () => {
+        meow();
+        kitty.classList.add('is-walking', 'is-leaving');
+        say('Miau! (Folge mir!)', 1500);
+        setTimeout(() => { location.href = X.url('geheim/katzen.html'); }, 1300);
+    });
+
+    // Suche mit Stichwort vorbelegen (falls die Suche das unterstützt)
+    if (reqWords.length) X.$('#search-link').href = X.url('suche.html') + '?q=' + encodeURIComponent(reqWords.join(' '));
+});
+</script>
+</body>
+</html>

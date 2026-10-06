@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zufallsentscheider · Xiruprojekts</title>
+    <meta name="description" content="Würfel mit 2W6+3-Notation, Münzwurf in 3D, Glücksrad „Wer zahlt?“, Teams auslosen, Zufallszahlen und Listen mischen – fair dank Kryptozufall.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="css/werkzeuge.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <style>
+        /* Würfel */
+        .zf-tray { min-height: 150px; display: flex; flex-wrap: wrap; gap: .8rem; align-items: center; justify-content: center; padding: 1.25rem;
+            background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--rc) 10%, var(--bg-2)), var(--bg-2)); border: 1px solid var(--border); border-radius: var(--radius); }
+        .die { --dc: var(--surface-3); width: 62px; height: 62px; display: grid; place-items: center; position: relative;
+            font: 800 1.35rem var(--mono); color: var(--text); background: linear-gradient(145deg, color-mix(in srgb, var(--dc) 75%, #fff 8%), var(--dc));
+            border-radius: 14px; box-shadow: inset 0 -4px 0 rgba(0,0,0,.25), 0 6px 14px -6px rgba(0,0,0,.6); }
+        .die small { position: absolute; bottom: 3px; right: 6px; font-size: .55rem; color: var(--text-faint); font-weight: 700; }
+        .die--d4 { clip-path: polygon(50% 2%, 98% 96%, 2% 96%); border-radius: 0; padding-top: 18px; }
+        .die--d8 { clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); border-radius: 0; }
+        .die--d10, .die--d100 { clip-path: polygon(50% 0, 100% 42%, 50% 100%, 0 42%); border-radius: 0; padding-bottom: 8px; }
+        .die--d12 { clip-path: polygon(50% 0, 98% 36%, 80% 96%, 20% 96%, 2% 36%); border-radius: 0; padding-top: 6px; }
+        .die--d20 { clip-path: polygon(50% 0, 94% 25%, 94% 75%, 50% 100%, 6% 75%, 6% 25%); border-radius: 0; }
+        .die--d4 small, .die--d8 small, .die--d10 small, .die--d12 small, .die--d20 small, .die--d100 small { display: none; }
+        .die--d6 { background: linear-gradient(145deg, #fdfdfd, #d9dce8); }
+        .die--d6 .pips { display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr); width: 70%; height: 70%; }
+        .die--d6 .pips i { width: 11px; height: 11px; border-radius: 50%; background: #1b1f33; place-self: center; visibility: hidden; }
+        .die--d6.is-max .pips i { background: #0f7a3a; }
+        .die--d6.is-min .pips i { background: #b91c1c; }
+        .die.is-max:not(.die--d6) { --dc: color-mix(in srgb, var(--success) 55%, var(--surface-3)); }
+        .die.is-min:not(.die--d6) { --dc: color-mix(in srgb, var(--danger) 55%, var(--surface-3)); }
+        .die.is-rolling { animation: dieRoll .7s cubic-bezier(.2,.8,.3,1.2) both; animation-delay: var(--dl, 0s); }
+        @keyframes dieRoll { 0% { transform: translate(var(--tx, -40px), -40px) rotate(-260deg) scale(.5); opacity: 0; } 60% { transform: translate(0, 3px) rotate(18deg) scale(1.05); opacity: 1; } 100% { transform: none; } }
+        .zf-num { font: 700 1.15rem var(--mono); padding: .25rem .55rem; border-radius: 8px; background: var(--surface-3); }
+        .zf-total { text-align: center; margin-top: 1rem; }
+        .zf-total .wz-big { font-size: clamp(2.4rem, 8vw, 3.6rem); }
+        .zf-crit { font-weight: 800; letter-spacing: .04em; }
+        .zf-hist { list-style: none; padding: 0; margin: 0; display: grid; gap: .3rem; font-size: .9rem; max-height: 320px; overflow-y: auto; }
+        .zf-hist li { display: flex; justify-content: space-between; gap: .75rem; padding: .35rem .6rem; border-radius: 6px; background: var(--surface-2); margin: 0; animation: wzIn .3s var(--ease) both; }
+        .zf-hist li b { font-family: var(--mono); }
+        .zf-hist li span { color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        /* Münze */
+        .zf-coin-stage { perspective: 900px; height: 250px; display: grid; place-items: center; }
+        .zf-toss { width: 170px; height: 170px; }
+        .zf-toss.is-tossing { animation: toss 1.5s cubic-bezier(.3,.55,.4,1); }
+        @keyframes toss { 0% { transform: translateY(0) scale(1); } 45% { transform: translateY(-80px) scale(1.18); } 100% { transform: translateY(0) scale(1); } }
+        .zf-coin { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 1.5s cubic-bezier(.25,.65,.25,1); transform: rotateX(var(--rot, 0deg)); }
+        .zf-coin__face { position: absolute; inset: 0; border-radius: 50%; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+            display: grid; place-content: center; text-align: center; gap: .1rem; color: #3b2a00;
+            background: radial-gradient(circle at 32% 28%, rgba(255,255,255,.65), transparent 38%), radial-gradient(circle, #f8d55a 0 58%, #d9a520 59% 64%, #f1c443 65% 100%);
+            border: 5px solid #b8860b; box-shadow: inset 0 0 0 3px rgba(255,255,255,.25), 0 10px 25px -10px rgba(0,0,0,.7); }
+        .zf-coin__face b { font: 900 3.4rem/1 Georgia, serif; }
+        .zf-coin__face span { font: 800 .8rem var(--font); letter-spacing: .25em; }
+        .zf-coin__face--zahl { transform: rotateX(180deg); }
+        .zf-coin-res { text-align: center; font-size: 1.4rem; font-weight: 800; min-height: 2.2rem; }
+        .zf-seq { font-family: var(--mono); letter-spacing: .15em; overflow-wrap: anywhere; }
+        /* Glücksrad */
+        .zf-wheel-wrap { position: relative; width: 100%; max-width: 440px; margin: 0 auto; aspect-ratio: 1; }
+        .zf-wheel-wrap canvas { width: 100%; height: 100%; cursor: pointer; border-radius: 50%; }
+        .zf-wheel-wrap canvas:focus-visible { outline: 3px solid var(--rc); outline-offset: 4px; }
+        .zf-pointer { position: absolute; left: 50%; top: -6px; width: 30px; height: 38px; transform: translateX(-50%); transform-origin: 50% 20%; z-index: 2;
+            background: var(--text); clip-path: polygon(0 0, 100% 0, 50% 100%); filter: drop-shadow(0 3px 3px rgba(0,0,0,.5)); }
+        .zf-pointer.is-tick { animation: tick .12s ease-out; }
+        @keyframes tick { 50% { transform: translateX(-50%) rotate(-16deg); } }
+        .zf-hub { position: absolute; left: 50%; top: 50%; width: 18%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%;
+            background: var(--surface); border: 4px solid var(--border-strong); display: grid; place-items: center; font-size: 1.4rem; pointer-events: none; }
+        .zf-winner { text-align: center; min-height: 3.6rem; margin-top: 1rem; }
+        .zf-winner strong { font-size: clamp(1.4rem, 4vw, 2rem); display: block; }
+        .zf-names { display: flex; flex-wrap: wrap; gap: .4rem; min-height: 2rem; margin: .75rem 0; }
+        .zf-name { display: inline-flex; align-items: center; gap: .2rem; padding: .2rem .25rem .2rem .7rem; border-radius: 99px; background: var(--surface-3); border: 1px solid var(--border); font-weight: 600; font-size: .9rem; animation: wzPop .3s var(--ease); }
+        .zf-name i { width: 10px; height: 10px; border-radius: 50%; background: var(--nc); margin-right: .25rem; }
+        .zf-name button { border: 0; background: none; color: var(--text-faint); cursor: pointer; width: 1.6rem; height: 1.6rem; border-radius: 50%; font-size: .9rem; }
+        .zf-name button:hover, .zf-name button:focus-visible { background: var(--surface-2); color: var(--danger); }
+        /* Teams */
+        .zf-teams { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); }
+        .zf-team { border-top: 4px solid var(--tc, var(--rc)); animation: wzPop .4s var(--ease) both; animation-delay: var(--dl, 0s); }
+        .zf-team h3 { font-size: 1rem; }
+        .zf-team ol { margin: 0; }
+        /* Zahl */
+        .zf-randout { min-height: 5rem; display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; justify-content: center; }
+        .zf-randout .wz-big { font-size: clamp(2.6rem, 9vw, 4.2rem); }
+        .zf-ball { width: 3rem; height: 3rem; border-radius: 50%; display: grid; place-items: center; font: 800 1.1rem var(--mono); background: var(--surface-3); border: 2px solid var(--border-strong); animation: wzPop .35s var(--ease) both; animation-delay: var(--dl, 0s); }
+        .zf-ball.is-lucky { background: color-mix(in srgb, var(--warning) 30%, var(--surface-3)); border-color: var(--warning); }
+        .zf-mixout { counter-reset: none; margin: 0; padding-left: 2rem; }
+        .zf-mixout li { animation: wzIn .3s var(--ease) both; animation-delay: var(--dl, 0s); }
+        .zf-mixout li.is-pick { color: var(--rc); font-weight: 800; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">⚒ Werkzeugkasten</span>
+        <h1>Zufallsentscheider</h1>
+        <p class="lead">Wer zahlt die Pizza? Wer spielt in welchem Team? Welches Spiel heute Abend? Lass den Zufall entscheiden – fair, weil jede Zahl aus dem Kryptozufall deines Browsers kommt.</p>
+    </header>
+
+    <div class="tabs wz-tabs" id="tabs">
+        <button data-tab="wuerfel"><span aria-hidden="true">🎲</span> Würfel</button>
+        <button data-tab="muenze"><span aria-hidden="true">🪙</span> Münze</button>
+        <button data-tab="rad"><span aria-hidden="true">🎡</span> Wer zahlt?</button>
+        <button data-tab="teams"><span aria-hidden="true">⚔</span> Teams</button>
+        <button data-tab="zahl"><span aria-hidden="true">#</span> Zufallszahl</button>
+        <button data-tab="mischen"><span aria-hidden="true">⇄</span> Liste mischen</button>
+    </div>
+
+    <!-- ── Würfel ──────────────────────────────────────────────────── -->
+    <section id="tab-wuerfel" class="wz-panel">
+        <div class="wz-split">
+            <div class="card">
+                <div class="field">
+                    <label for="dice-in">Würfel-Notation</label>
+                    <div class="wz-inline">
+                        <input id="dice-in" type="text" value="2W6" autocomplete="off" spellcheck="false" aria-describedby="dice-help">
+                        <button class="btn btn--primary" type="button" id="dice-roll">🎲 Würfeln</button>
+                    </div>
+                    <small id="dice-help">z. B. <code>W20</code>, <code>2W6+3</code>, <code>3d8-1</code>, <code>1W20+1W4</code>, <code>W%</code> (= W100). W und d gehen beide.</small>
+                    <p class="form-msg is-error" id="dice-err" aria-live="polite"></p>
+                </div>
+                <div class="wz-chips mb-2" id="dice-chips"></div>
+                <div class="zf-tray" id="tray" aria-hidden="true"></div>
+                <div class="zf-total" aria-live="polite">
+                    <div class="wz-big" id="dice-total">–</div>
+                    <div class="small muted" id="dice-detail">Drück auf „Würfeln“ oder <kbd>Enter</kbd>.</div>
+                </div>
+            </div>
+            <aside class="card">
+                <div class="wz-head"><h3>Verlauf</h3><span class="spacer"></span><button class="btn btn--sm btn--ghost" type="button" id="dice-clear">Leeren</button></div>
+                <ul class="zf-hist" id="dice-hist"><li><span>Noch nichts gewürfelt.</span></li></ul>
+                <p class="wz-keys"><span><kbd>Enter</kbd> im Feld würfelt</span><span><kbd>W</kbd> nochmal</span></p>
+            </aside>
+        </div>
+    </section>
+
+    <!-- ── Münze ───────────────────────────────────────────────────── -->
+    <section id="tab-muenze" class="wz-panel" hidden>
+        <div class="wz-split">
+            <div class="card">
+                <div class="zf-coin-stage">
+                    <div class="zf-toss" id="toss">
+                        <div class="zf-coin" id="coin" role="img" aria-label="Münze">
+                            <div class="zf-coin__face zf-coin__face--kopf"><b>♛</b><span>KOPF</span></div>
+                            <div class="zf-coin__face zf-coin__face--zahl"><b>5</b><span>ZAHL</span></div>
+                        </div>
+                    </div>
+                </div>
+                <p class="zf-coin-res" id="coin-res" aria-live="polite">Bereit.</p>
+                <div class="row" style="justify-content:center">
+                    <button class="btn btn--primary btn--lg" type="button" id="coin-flip">Münze werfen</button>
+                    <button class="btn" type="button" id="coin-ten">10× auf einmal</button>
+                </div>
+                <p class="center mt-2 zf-seq small muted" id="coin-seq"></p>
+            </div>
+            <aside class="card">
+                <div class="wz-head"><h3>Statistik</h3><span class="spacer"></span><button class="btn btn--sm btn--ghost" type="button" id="coin-reset">Zurücksetzen</button></div>
+                <div class="wz-stats" id="coin-stats"></div>
+                <p class="hint mt-2">Bei einer fairen Münze pendelt sich das Verhältnis nach vielen Würfen bei 50 : 50 ein. Serien von fünf gleichen Seiten sind aber völlig normal.</p>
+            </aside>
+        </div>
+    </section>
+
+    <!-- ── Glücksrad ───────────────────────────────────────────────── -->
+    <section id="tab-rad" class="wz-panel" hidden>
+        <div class="grid-2">
+            <div class="card">
+                <div class="zf-wheel-wrap">
+                    <div class="zf-pointer" id="pointer" aria-hidden="true"></div>
+                    <canvas id="wheel" tabindex="0" role="button" aria-label="Glücksrad drehen"></canvas>
+                    <div class="zf-hub" aria-hidden="true">💸</div>
+                </div>
+                <div class="zf-winner" id="winner" aria-live="polite"><span class="muted">Wer zahlt heute? Klick aufs Rad.</span></div>
+                <div class="row" style="justify-content:center">
+                    <button class="btn btn--primary btn--lg" type="button" id="spin">🎡 Drehen</button>
+                </div>
+                <label class="check mt-2" style="justify-content:center"><input type="checkbox" id="rm-winner"> Gezogene Person danach von der Liste nehmen</label>
+            </div>
+            <div class="card" id="names-card">
+                <h3>Namensliste</h3>
+                <p class="small muted">Gilt für das Glücksrad und die Teams. Wird lokal in deinem Browser gespeichert.</p>
+                <form class="wz-inline" id="name-form" autocomplete="off">
+                    <input class="input" id="name-in" type="text" maxlength="30" placeholder="Name hinzufügen" aria-label="Name hinzufügen">
+                    <button class="btn" type="submit">+ Dazu</button>
+                </form>
+                <div class="zf-names" id="names" aria-live="polite"></div>
+                <div class="row">
+                    <button class="btn btn--sm" type="button" id="names-paste">Mehrere einfügen</button>
+                    <button class="btn btn--sm btn--ghost" type="button" id="names-clear">Liste leeren</button>
+                </div>
+                <hr style="margin:1.25rem 0">
+                <h4 class="mb-1">Gespeicherte Listen</h4>
+                <div class="wz-inline">
+                    <select class="select" id="lists" aria-label="Gespeicherte Liste wählen"></select>
+                    <button class="btn btn--sm" type="button" id="list-load">Laden</button>
+                    <button class="btn btn--sm btn--ghost" type="button" id="list-del" aria-label="Gewählte Liste löschen">🗑</button>
+                </div>
+                <form class="wz-inline mt-1" id="list-save-form" autocomplete="off">
+                    <input class="input" id="list-name" type="text" maxlength="30" placeholder="z. B. Gaming-Runde" aria-label="Name für die aktuelle Liste">
+                    <button class="btn btn--sm" type="submit">Speichern</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── Teams ───────────────────────────────────────────────────── -->
+    <section id="tab-teams" class="wz-panel" hidden>
+        <div class="card">
+            <div class="row">
+                <div class="field mb-0">
+                    <label for="team-mode">Aufteilen nach</label>
+                    <select id="team-mode"><option value="count">Anzahl Teams</option><option value="size">Personen pro Team</option></select>
+                </div>
+                <div class="field mb-0" style="width:7rem">
+                    <label for="team-n" id="team-n-label">Anzahl</label>
+                    <input id="team-n" type="number" min="1" max="20" value="2">
+                </div>
+                <div class="spacer"></div>
+                <button class="btn btn--primary" type="button" id="team-go">⚔ Teams auslosen</button>
+                <button class="btn" type="button" id="team-copy">📋 Kopieren</button>
+            </div>
+            <p class="small muted mt-2" id="team-info"></p>
+        </div>
+        <div class="zf-teams mt-3" id="teams"></div>
+    </section>
+
+    <!-- ── Zufallszahl ─────────────────────────────────────────────── -->
+    <section id="tab-zahl" class="wz-panel" hidden>
+        <div class="wz-split">
+            <div class="card">
+                <div class="row">
+                    <div class="field mb-0" style="flex:1;min-width:7rem"><label for="r-min">Von</label><input id="r-min" type="number" value="1"></div>
+                    <div class="field mb-0" style="flex:1;min-width:7rem"><label for="r-max">Bis</label><input id="r-max" type="number" value="100"></div>
+                    <div class="field mb-0" style="width:7rem"><label for="r-count">Anzahl</label><input id="r-count" type="number" min="1" max="100" value="1"></div>
+                </div>
+                <div class="row mt-2">
+                    <label class="check"><input type="checkbox" id="r-unique" checked> Keine Wiederholungen</label>
+                    <label class="check"><input type="checkbox" id="r-sort"> Sortieren</label>
+                </div>
+                <div class="wz-chips mt-2" id="r-chips">
+                    <button type="button" class="chip" data-r="1,6">1–6</button>
+                    <button type="button" class="chip" data-r="1,10">1–10</button>
+                    <button type="button" class="chip" data-r="1,100">1–100</button>
+                    <button type="button" class="chip" data-r="0,1">0 oder 1</button>
+                    <button type="button" class="chip" data-r="1,1000">1–1000</button>
+                    <button type="button" class="chip" data-lotto>Swiss Lotto (6 aus 42 + 1 aus 6)</button>
+                </div>
+                <div class="zf-randout mt-3" id="r-out" aria-live="polite"><span class="muted">–</span></div>
+                <div class="row mt-2" style="justify-content:center">
+                    <button class="btn btn--primary btn--lg" type="button" id="r-go">Ziehen</button>
+                    <button class="btn" type="button" id="r-copy">📋 Kopieren</button>
+                </div>
+                <p class="form-msg is-error center" id="r-err" aria-live="polite"></p>
+            </div>
+            <aside class="card card--flat">
+                <h3>Wirklich zufällig?</h3>
+                <p class="small muted">Alle Zahlen hier kommen aus <code>crypto.getRandomValues</code> – dem gleichen Zufall, mit dem dein Browser Verschlüsselung macht. Wir verwerfen ausserdem Werte, die einen Bereich bevorzugen würden („Modulo-Bias“). Jede Zahl ist also exakt gleich wahrscheinlich.</p>
+            </aside>
+        </div>
+    </section>
+
+    <!-- ── Liste mischen ───────────────────────────────────────────── -->
+    <section id="tab-mischen" class="wz-panel" hidden>
+        <div class="grid-2">
+            <div class="card">
+                <div class="field">
+                    <label for="mix-in">Einträge (einer pro Zeile)</label>
+                    <textarea id="mix-in" rows="10" spellcheck="false" placeholder="Minecraft&#10;Rocket League&#10;Mario Kart&#10;Among Us"></textarea>
+                    <small id="mix-count"></small>
+                </div>
+                <div class="row">
+                    <button class="btn btn--primary" type="button" id="mix-go">⇄ Mischen</button>
+                    <button class="btn" type="button" id="mix-pick">☝ Einen ziehen</button>
+                    <button class="btn btn--ghost btn--sm" type="button" id="mix-names">Namensliste übernehmen</button>
+                </div>
+            </div>
+            <div class="card">
+                <div class="wz-head"><h3>Ergebnis</h3><span class="spacer"></span><button class="btn btn--sm" type="button" id="mix-copy">📋 Kopieren</button></div>
+                <div id="mix-out" aria-live="polite"><p class="muted">Noch nicht gemischt.</p></div>
+            </div>
+        </div>
+    </section>
+</main>
+<script src="js/wz.js"></script>
+<script src="js/zufall.js"></script>
+</body>
+</html>

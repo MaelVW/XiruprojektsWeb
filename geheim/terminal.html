@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Floppy-Terminal · Xiruprojekts</title>
+    <meta name="description" content="A:\> _ – ein Retro-Terminal mit Diskette, Befehlen und Geheimnissen.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <style>
+        html.tm-on main { max-width: 1080px; }
+        .tm .page-head { margin-bottom: 1.25rem; }
+        .crt {
+            --ph: #39ff6a; --ph-rgb: 57, 255, 106;
+            position: relative; padding: clamp(10px, 2.4vw, 26px) clamp(10px, 2.4vw, 26px) 12px;
+            border-radius: 26px; background: linear-gradient(160deg, #d8d1bc, #a8a089 70%, #918a73);
+            box-shadow: inset 0 3px 0 rgba(255,255,255,.55), inset 0 -6px 0 rgba(0,0,0,.18), 0 30px 60px -24px rgba(0,0,0,.8);
+        }
+        .crt__glass { position: relative; border-radius: 18px / 26px; overflow: hidden; background: #020a05; box-shadow: 0 0 0 6px #3a372e, 0 0 0 8px #6b6553; }
+        .crt__screen {
+            position: relative; height: min(66vh, 600px); min-height: 340px; overflow-y: auto; overscroll-behavior: contain;
+            padding: 18px 22px 26px; color: var(--ph); cursor: text;
+            font: 500 15px/1.45 var(--mono);
+            background: radial-gradient(ellipse at 50% 45%, rgba(var(--ph-rgb), .07), transparent 70%), #020a05;
+            text-shadow: 0 0 3px rgba(var(--ph-rgb), .75), 0 0 12px rgba(var(--ph-rgb), .28);
+            scrollbar-width: thin; scrollbar-color: rgba(var(--ph-rgb), .35) transparent;
+        }
+        @media (max-width: 600px) { .crt__screen { font-size: 12.5px; padding: 12px 12px 22px; height: 62vh; } }
+        .crt__fx { position: absolute; inset: 0; pointer-events: none; z-index: 2;
+            background: repeating-linear-gradient(to bottom, rgba(0,0,0,.22) 0 1px, transparent 1px 3px),
+                        radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.65) 100%);
+            animation: crtFlick 5s steps(40) infinite; }
+        @keyframes crtFlick { 0%, 100% { opacity: .92; } 47% { opacity: 1; } 49% { opacity: .82; } 51% { opacity: 1; } }
+        .crt.is-off .crt__screen { animation: powerOff .6s var(--ease) forwards; }
+        @keyframes powerOff { 60% { transform: scaleY(.01); filter: brightness(3); } 100% { transform: scale(0, .01); filter: brightness(0); } }
+        .crt.is-shake { animation: shake .4s linear 3; }
+
+        .out > div { white-space: pre-wrap; overflow-wrap: anywhere; min-height: 1.45em; }
+        .out .dim { opacity: .62; }
+        .out .br { font-weight: 800; text-shadow: 0 0 4px rgba(var(--ph-rgb), 1), 0 0 18px rgba(var(--ph-rgb), .6); }
+        .out .inv { background: var(--ph); color: #020a05; text-shadow: none; display: inline; padding: 0 .3em; }
+        .out .cmd::before { content: attr(data-p); opacity: .8; }
+        .crt__line { position: relative; white-space: pre-wrap; overflow-wrap: anywhere; }
+        .crt__line[hidden] { display: none; }
+        .crt__cur { background: var(--ph); color: #020a05; text-shadow: none; animation: blink 1.05s step-end infinite; }
+        .crt__in { position: absolute; inset: 0; width: 100%; opacity: 0; font-size: 16px; border: 0; padding: 0; background: transparent; color: transparent; caret-color: transparent; }
+
+        .crt__bezel { display: flex; align-items: center; gap: .9rem; padding: 10px 6px 0; color: #5b5545; font: 700 .72rem/1 var(--mono); letter-spacing: .14em; }
+        .crt__brand { flex: 1; }
+        .crt__led { width: 9px; height: 9px; border-radius: 50%; background: #2a3a22; box-shadow: inset 0 1px 2px rgba(0,0,0,.6); }
+        .crt__led.is-on { background: #46ff7a; box-shadow: 0 0 8px #46ff7a; }
+        .crt__led.is-busy { background: #ffb02e; box-shadow: 0 0 8px #ffb02e; animation: blink .2s step-end infinite; }
+        .crt__knob { width: 18px; height: 18px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #efe9d8, #8f8872); box-shadow: 0 1px 2px rgba(0,0,0,.4); border: 0; cursor: pointer; }
+        .crt__knob:active { transform: rotate(40deg); }
+
+        .tm__keys { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: 1rem; }
+        .tm__keys button { font-family: var(--mono); }
+        .tm__hint { margin-top: 1rem; font-size: .85rem; color: var(--text-faint); }
+    </style>
+</head>
+<body>
+<main class="content">
+<div class="tm">
+    <header class="page-head">
+        <span class="eyebrow">? · Floppy-Terminal</span>
+        <h1>A:\&gt; _</h1>
+        <p class="lead">Das Terminal unseres Launchers „Floppy Hub" – ausgegraben, abgestaubt und an die Website angeschlossen. Klick in den Bildschirm und tippe <code>hilfe</code>.</p>
+    </header>
+
+    <div class="crt" id="crt">
+        <div class="crt__glass">
+            <div class="crt__screen" id="screen">
+                <div class="out" id="out" role="log" aria-live="polite"></div>
+                <div class="crt__line" id="line"><span id="prompt">A:\&gt;</span><span id="pre"></span><span class="crt__cur" id="cur"> </span><span id="post"></span><input class="crt__in" id="in" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="send" aria-label="Befehl eingeben"></div>
+            </div>
+            <div class="crt__fx" aria-hidden="true"></div>
+        </div>
+        <div class="crt__bezel">
+            <span class="crt__led is-on" id="led-power" title="Strom"></span>
+            <span class="crt__led" id="led-disk" title="Laufwerk A:"></span>
+            <span class="crt__brand">XIRU·VISION 14" · FLOPPY HUB</span>
+            <button class="crt__knob" type="button" id="knob" title="Farbe" aria-label="Phosphorfarbe wechseln"></button>
+        </div>
+    </div>
+
+    <div class="tm__keys" aria-label="Schnelltasten">
+        <button class="btn btn--sm" type="button" data-k="Tab">Tab</button>
+        <button class="btn btn--sm" type="button" data-k="ArrowUp">↑</button>
+        <button class="btn btn--sm" type="button" data-k="ArrowDown">↓</button>
+        <button class="btn btn--sm" type="button" data-cmd="hilfe">hilfe</button>
+        <button class="btn btn--sm" type="button" data-cmd="dir">dir</button>
+        <button class="btn btn--sm" type="button" data-cmd="cls">cls</button>
+        <button class="btn btn--sm btn--primary" type="button" data-k="Enter">⏎ Enter</button>
+    </div>
+    <p class="tm__hint">Tastatur: <kbd>Tab</kbd> ergänzt, <kbd>↑</kbd> <kbd>↓</kbd> blättern im Verlauf, <kbd>Strg</kbd>+<kbd>L</kbd> leert den Bildschirm, <kbd>Esc</kbd> löscht die Zeile.</p>
+</div>
+</main>
+<script>
+XIRU.ready(function () {
+    'use strict';
+    const X = XIRU;
+    X.typedEggs = false;
+    document.documentElement.classList.add('tm-on');
+
+    const $ = s => X.$(s);
+    const crt = $('#crt'), screen = $('#screen'), out = $('#out'), line = $('#line'), inp = $('#in');
+    const promptEl = $('#prompt'), pre = $('#pre'), cur = $('#cur'), post = $('#post');
+    const ledDisk = $('#led-disk');
+    const P = () => X.profile();
+    const name = () => X.user || 'Gast';
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
+    const norm = s => String(s || '').toLowerCase().replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss');
+    const sound = () => X.setting('sound') !== false;
+
+    const store = X.load('terminal', {}) || {};
+    let hist = Array.isArray(store.hist) ? store.hist.slice(-40) : [];
+    let hIdx = hist.length, draft = '';
+    let busy = false, mode = null, skip = false;
+    let cwd = [];
+
+    /* ── Ausgabe ──────────────────────────────────────────────────────── */
+    function print(text, cls) {
+        String(text == null ? '' : text).split('\n').forEach(t => {
+            const d = document.createElement('div');
+            if (cls) d.className = cls;
+            d.textContent = t;
+            out.appendChild(d);
+        });
+        while (out.children.length > 500) out.firstChild.remove();
+        screen.scrollTop = screen.scrollHeight;
+    }
+    function printParts(parts) {
+        const d = document.createElement('div');
+        parts.forEach(([t, c]) => { const s = document.createElement('span'); if (c) s.className = c; s.textContent = t; d.appendChild(s); });
+        out.appendChild(d); screen.scrollTop = screen.scrollHeight;
+        return d;
+    }
+    async function slow(lines, ms) {
+        for (const l of [].concat(lines)) {
+            if (Array.isArray(l)) print(l[0], l[1]); else print(l);
+            if (!skip) await sleep(ms == null ? 90 : ms);
+        }
+    }
+    function setBusy(b) {
+        busy = b; line.hidden = b; skip = false;
+        ledDisk.className = 'crt__led' + (b ? ' is-busy' : '');
+        if (!b) { render(); screen.scrollTop = screen.scrollHeight; }
+    }
+    function promptText() { return mode ? mode.prompt : 'A:\\' + cwd.join('\\') + '>'; }
+    function render() {
+        promptEl.textContent = promptText();
+        const v = inp.value, p = Math.min(inp.selectionStart == null ? v.length : inp.selectionStart, v.length);
+        pre.textContent = v.slice(0, p);
+        cur.textContent = v[p] || ' ';
+        post.textContent = v.slice(p + 1);
+    }
+    function save() { X.save('terminal', { hist: hist.slice(-40), farbe: store.farbe || 'gruen' }); }
+
+    /* ── Klänge ───────────────────────────────────────────────────────── */
+    function seek(n) {
+        if (!sound()) return;
+        const ctx = X.audio(); if (!ctx) return;
+        for (let i = 0; i < n; i++) {
+            const t = ctx.currentTime + i * .07, len = Math.floor(ctx.sampleRate * .025);
+            const buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0);
+            for (let k = 0; k < len; k++) d[k] = (Math.random() * 2 - 1) * Math.pow(1 - k / len, 3);
+            const s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+            s.buffer = buf; f.type = 'bandpass'; f.frequency.value = 1500 + (i % 4) * 350; f.Q.value = 1.6; g.gain.value = .22;
+            s.connect(f).connect(g).connect(ctx.destination); s.start(t);
+        }
+    }
+    function tick() { if (sound()) X.beep(1900, .012, 'square', .012); }
+
+    /* ── Phosphorfarben ───────────────────────────────────────────────── */
+    const COLORS = {
+        gruen: ['#39ff6a', '57, 255, 106'], bernstein: ['#ffb000', '255, 176, 0'], weiss: ['#e6eeff', '230, 238, 255'],
+        blau: ['#59c7ff', '89, 199, 255'], rosa: ['#ff6ad5', '255, 106, 213'], kristall: ['#c4b5fd', '196, 181, 253']
+    };
+    function setColor(c) {
+        if (!COLORS[c]) return false;
+        crt.style.setProperty('--ph', COLORS[c][0]); crt.style.setProperty('--ph-rgb', COLORS[c][1]);
+        store.farbe = c; save(); return true;
+    }
+    setColor(store.farbe && COLORS[store.farbe] ? store.farbe : 'gruen');
+
+    /* ── Virtuelles Dateisystem A:\ ───────────────────────────────────── */
+    const games = X.pages.filter(p => p.game && (!p.hidden || X.isVisited(p.p))).map(p => {
+        const id = p.p.replace(/^arcade\/|\.html$/g, '');
+        return { id, page: p, file: id.replace(/[^a-z0-9]/gi, '').toUpperCase().slice(0, 8) + '.EXE' };
+    });
+    const pagesTotal = X.pages.length;
+    const F = (t, extra) => Object.assign({ t }, extra || {});
+    const D = (d, extra) => Object.assign({ d }, extra || {});
+
+    const ART_DISK = String.raw`     ___________________________
+    |  _______________________  |
+    | |                       | |
+    | |   F L O P P Y         | |
+    | |   T E R M I N A L     | |
+    | |   o  o      1.44 MB   | |
+    | |_______________________| |
+    |   ___________________  [] |
+    |__|___________________|____|`;
+    const ART_CRYSTAL = String.raw`          /\
+         /  \        SEKTOR 0 · SPUR 0 · KOPF 0
+        / /\ \
+       / /  \ \      Hier hat sich etwas verfangen.
+       \ \  / /      Kein Bit. Kein Byte.
+        \ \/ /       Ein Splitter der Xiru-Welt.
+         \  /
+          \/`;
+    const ART_CAT = String.raw`   /\_/\
+  ( o.o )   miau.
+   > ^ <`;
+    const ART_COFFEE = String.raw`      ( (
+       ) )
+    ........
+    |      |]
+    \      /
+     '----'`;
+
+    const FS = D({
+        'LIESMICH.TXT': F(`FLOPPY-TERMINAL  ·  Version 6.22-XIRU
+=======================================
+Hallo! Du bist im Floppy-Terminal gelandet –
+dem Kommandozeilen-Zwilling unseres Launchers
+„Floppy Hub". Hier ist alles wie früher:
+grüne Buchstaben, Befehle tippen, nichts klicken.
+
+Erste Schritte:
+  hilfe        zeigt alle Befehle
+  dir          zeigt, was auf der Diskette liegt
+  type DATEI   zeigt den Inhalt einer Datei
+  cd ORDNER    wechselt den Ordner
+
+Tipp: Tab ergänzt Namen, ↑ und ↓ blättern
+durch frühere Befehle.
+
+Falls du dich fragst, was diese leuchtenden
+Dinger im Speicher sind: type SYSTEM\\KRISTALL.LOG
+
+  – Mael & Luka`),
+        'AUTOEXEC.BAT': F(String.raw`@ECHO OFF
+REM Wird beim Start ausgeführt. Meistens.
+PROMPT $P$G
+SET KAFFEE=STARK
+SET LAUNE=GUT
+LH FLOPPYHB.COM /LEISE
+LH KATZE.SYS /SCHNURREN
+IF EXIST A:\SEKTOR0.SYS ECHO Da leuchtet etwas in Sektor 0 ...
+REM SEKTOR0.SYS ist versteckt. "dir" zeigt es nicht. Absichtlich.
+REM Hier stand mal ein Passwort. Wir sind ja nicht doof.`),
+        'CONFIG.SYS': F(`FILES=40
+BUFFERS=20
+DEVICE=HIMEM.SYS
+DEVICE=CDROM.SYS /D:XIRUCD01
+DEVICE=KAFFEE.SYS /TASSEN:UNENDLICH
+DEVICE=KRISTALL.SYS /LEUCHTEN:LEISE
+DOS=HIGH,UMB
+LASTDRIVE=Z
+REM 640 KB sollten für jeden reichen. (Sollten.)`),
+        'TODO.TXT': F(`TODO (Mael)
+[x] Website bauen
+[x] Website nochmal bauen
+[ ] Website ein drittes Mal bauen, aber diesmal richtig
+[x] Disketten-Launcher (Floppy Hub)
+[ ] PIXMAG fertig machen (Ebene 37 von 100 …)
+[ ] Luka fragen, wo die ZIP-Datei ist
+[ ] Den Keller aufräumen     <- NIEMALS
+[x] Katzen füttern (alle zwölf)
+[ ] Herausfinden, warum im Keller das Licht nicht geht
+[ ] Herausfinden, warum der Serverraum nach Kaffee riecht`),
+        'REZEPT.TXT': F(`FONDUE NACH ART DES HAUSES
+---------------------------
+400 g Gruyère, 400 g Vacherin, 1 Knoblauchzehe,
+3 dl Weisswein, 1 TL Maizena, 1 Gläschen Kirsch,
+viel Brot, noch mehr Geduld.
+
+Regel 1: Wer sein Brot im Caquelon verliert,
+         zahlt die nächste Runde.
+Regel 2: Wer sein Brot zweimal verliert,
+         formatiert die nächste Diskette.
+Regel 3: Tastaturen von der Käsezone fernhalten.`),
+        'NICHTS.ZIP': F('PK♥♦\n\n(Die Datei ist leer. Wie versprochen.)'),
+        'SEKTOR0.SYS': F(ART_CRYSTAL, { hidden: true, egg: 'h-terminal-versteckt' }),
+        'HIGHSCORE.DAT': F(() => {
+            const sc = Object.entries(P().scores || {}).filter(([, s]) => s && s.best != null);
+            if (!sc.length) return 'HIGHSCORE.DAT – noch leer.\nSpiel etwas in der Spielhalle, dann steht hier mehr.\n(Tipp: starte snake)';
+            return 'SPIEL            BESTWERT   PARTIEN\n' + '-'.repeat(36) + '\n' + sc.sort((a, b) => b[1].plays - a[1].plays).slice(0, 12)
+                .map(([id, s]) => id.slice(0, 15).padEnd(16) + String(s.best).padStart(9) + String(s.plays).padStart(10)).join('\n');
+        }),
+        'SPIELE': D(Object.fromEntries(games.map(g => [g.file, F(() => 'MZ☺☻ ▒▓█ ÿÿ ' + g.id.toUpperCase() + ' ░▒ ☺ (binärer Kauderwelsch)\n\nStarte es lieber: starte ' + g.id, { game: g })]))),
+        'BRIEFE': D({
+            'MAEL.TXT': F(`Hoi!
+
+Ich bin Mael, einer der zwei Köpfe hinter Xiruprojekts.
+Diese Website ist unser grösstes Projekt – grösser als
+der Floppy Hub, grösser als jede ZIP-Datei von Luka.
+
+Wenn du das hier liest, hast du dir einen Skill im
+Techniker-Ast verdient. Respekt. Die meisten klicken
+nur auf bunte Knöpfe. Du tippst. Das mag ich.
+
+Schau dich ruhig weiter um. Die Website ist eine
+offene Welt, und nicht alles steht in der Navigation.
+
+– Mael`),
+            'LUKA.TXT': F(`Salü,
+
+Luka hier. Ich bin der mit den ZIP-Dateien.
+Ja, ich weiss. NICHTS.ZIP ist leer. Das ist Kunst.
+
+Kleiner Tipp unter uns: Im Keller liegt mehr
+herum, als man denkt. Nimm eine Taschenlampe mit.
+Und wenn du eine Tür findest, auf der alles
+verkehrt herum steht – geh einfach durch.
+
+– Luka`),
+            'AN_DICH.TXT': F(() => {
+                const li = X.levelInfo();
+                return `Liebe*r ${name()},
+
+du bist jetzt Level ${li.level} und hast ${X.fmt(P().xp)} XP gesammelt.
+Du hast ${X.eggCount()} Realitätskristalle gefunden und
+${Object.keys(P().visited).length} von ${pagesTotal} Orten entdeckt.
+
+Danke, dass du hier bist. Ehrlich.
+
+– das Floppy-Terminal (ja, ich kann schreiben)`;
+            })
+        }),
+        'PIXMAG': D({
+            'GILDE.TXT': F(`VERBANNUNGSBESCHEID
+====================
+Hiermit wird der Lehrling, dessen Namen wir
+nicht mehr aussprechen, aus der Gilde verbannt.
+
+Grund: Unerlaubtes Kombinieren von Zaubern in der
+       Bibliothek (Schaden: drei Regale, ein Teppich,
+       die Augenbrauen des Bibliothekars).
+
+Der Verbannte darf die Stadt nur noch über den
+Dungeon unter dem Kolosseum betreten.
+
+Gez. Der Erzmagier (in Vertretung)
+PS: Der Erzmagier wohnt jetzt ganz oben im Turm.
+    Er empfängt nur noch Gäste, die ihn verdienen.`),
+            'BUCH.TXT': F(`SEITE AUS EINEM MYSTERIÖSEN BUCH
+(gefunden auf Ebene 1 von 100)
+
+  FEUER  + WASSER = DAMPF
+  ERDE   + WASSER = SCHLAMM
+  LUFT   + FEUER  = BLITZ
+  ...    + ...    = (die Seite ist hier verkohlt)
+
+„Wer die Zauber verbindet, verbindet die Welten."`),
+            'RUNEN.TXT': F(`Notiz zu den Runen
+-------------------
+In einer Kammer tief im Magier-Ast stehen Tafeln
+mit fremden Zeichen. Ein Wort davon ist wichtig:
+das Wort, mit dem jeder Magier beginnt.
+
+Wer es kennt, sollte es dem Erzmagier sagen.`)
+        }),
+        'ORTE': D({
+            'KELLER.LNK': F('Verknüpfung -> geheim/keller.html\n\nUnter der Website gibt es einen Keller.\nTippe: gehe keller', { go: 'geheim/keller.html' }),
+            'LEUCHTTU.TXT': F('Ein Licht im Sternenmeer.\nWer den Code der Alten kennt, wird hingeführt:\n  ↑ ↑ ↓ ↓ ← → ← → B A\n(Ausserhalb dieses Terminals tippen.)'),
+            'KATZEN.TXT': F('Verirrte finden manchmal Katzen.\nVerirr dich mal so richtig – auf eine Seite,\ndie es gar nicht gibt. Und dann schau genau hin.'),
+            'ARCHIV.TXT': F('1999 war alles besser. Oder wenigstens bunter.\nZeitreisende kennen den Weg ins Archiv.\nIm Keller steht ein Karton mit der Aufschrift „WEBSITE 1999".'),
+            'SERVER.TXT': F('SERVERRAUM – BITTE NICHTS ANFASSEN.\nZutritt nur für Systemarchitekten.\nWer drin ist: Den roten Knopf NICHT drücken. Wirklich nicht.\n(Er ist sehr verlockend.)'),
+            'LEERE.TXT': F('\n\n\n                                        .\n\n\n(Diese Datei ist fast leer. Wie der Ort, den sie beschreibt.\n Weltenwanderer finden dorthin.)'),
+            'SCHREIN.TXT': F('Fünfzig Kristalle, ein Licht.\nIn einer Höhle steht ein Schrein für Sammler.'),
+            'TURM.TXT': F('Ganz oben wohnt jemand. Er mag Rätsel, Tee\nund Leute, die die Treppe nicht scheuen.'),
+            'ENDE.TXT': F('Gibt es ein Ende?\nNur wer alle vier Äste des Skilltrees meistert,\nwird es erfahren.\n\n(Und wer rückwärts liest, kommt vielleicht schneller hin.)')
+        }),
+        'SYSTEM': D({
+            'KRISTALL.LOG': F(() => `KRISTALL.LOG – Sensorprotokoll
+[1999-12-31 23:59:59] Sektor 0: Fremdkörper erkannt.
+                      Kristallin. Leuchtet. 0 Bytes.
+[2000-01-01 00:00:00] Y2K überstanden. Fremdkörper noch da.
+[2026-03-14 02:13:07] Weitere Splitter gemeldet:
+                      - CD-ROM im Keller (zerkratzt)
+                      - RAM-Riegel im Serverraum (warm)
+                      - Festplatte, Baujahr 1998 (klackert)
+[2026-03-14 02:14:55] Theorie (Luka): Das sind Splitter der
+                      Xiru-Welt. REALITÄTSKRISTALLE. Sie
+                      verfangen sich in alter Technik, weil dort
+                      die Wände zwischen den Welten dünn sind.
+[2026-03-14 02:15:03] Theorie (Mael): Das ist Staub.
+[2026-03-14 02:15:41] Update: Es ist kein Staub.
+[heute]               Gespeicherte Kristalle bei ${name()}: ${X.eggCount()}`),
+            'XP.DAT': F(() => { const li = X.levelInfo(); return 'XP gesamt: ' + X.fmt(P().xp) + '\nLevel:     ' + li.level + '\nNächstes:  ' + li.into + ' / ' + li.need + ' XP'; }),
+            'SKILLS.DAT': F(() => {
+                const learned = (X.skills || []).filter(s => X.hasSkill(s.id));
+                return 'GELERNTE SKILLS (' + learned.length + '/' + X.skills.length + ')\n' + (learned.length ? learned.map(s => ' [' + s.id + '] ' + s.n).join('\n') : ' – keine –');
+            }),
+            'KATZE.SYS': F('Gerätetreiber für Katzen\nVersion 9 (Leben)\nStatus: schnurrt\nStandort der Katzen: unbekannt. Irgendwo hinter einem Fehler.'),
+            'HIMEM.SYS': F('▒▒▒ Speicherverwalter ▒▒▒\nVerwaltet hohen Speicher. Und hohe Erwartungen.')
+        })
+    });
+    const DATES = {};
+    function fileDate(nm) {
+        if (DATES[nm]) return DATES[nm];
+        const h = Array.from(nm).reduce((a, c) => (a * 33 + c.charCodeAt(0)) >>> 0, 5381);
+        const y = ['98', '99', '99', '26'][h % 4], m = String(1 + h % 12).padStart(2, '0'), d = String(1 + (h >> 4) % 28).padStart(2, '0');
+        const t = String((h >> 7) % 24).padStart(2, '0') + ':' + String((h >> 11) % 60).padStart(2, '0');
+        return (DATES[nm] = d + '.' + m + '.' + y + '  ' + t);
+    }
+    const content = f => typeof f.t === 'function' ? f.t() : f.t;
+    const sizeOf = f => f.d ? 0 : new TextEncoder().encode(content(f)).length;
+    function dirAt(pathArr) {
+        let n = FS;
+        for (const seg of pathArr) { n = n.d[seg]; if (!n || !n.d) return null; }
+        return n;
+    }
+    function findChild(dir, nm) {
+        const k = Object.keys(dir.d).find(x => x.toLowerCase() === String(nm).toLowerCase());
+        return k ? { key: k, node: dir.d[k] } : null;
+    }
+    function resolve(path) {
+        // liefert { parent, key, node, pathArr }
+        let p = String(path || '').replace(/\//g, '\\').replace(/^a:/i, '');
+        let arr = p.startsWith('\\') ? [] : cwd.slice();
+        const segs = p.split('\\').filter(Boolean);
+        let node = dirAt(arr), key = null, parent = null;
+        if (!segs.length) return { node, pathArr: arr, key: null };
+        for (let i = 0; i < segs.length; i++) {
+            const s = segs[i];
+            if (s === '.') continue;
+            if (s === '..') { arr.pop(); node = dirAt(arr); continue; }
+            if (!node || !node.d) return null;
+            const c = findChild(node, s);
+            if (!c) return null;
+            parent = node; key = c.key; node = c.node;
+            if (node.d) arr.push(c.key); else if (i < segs.length - 1) return null;
+        }
+        return { node, key, parent, pathArr: arr };
+    }
+
+    /* ── Befehle ──────────────────────────────────────────────────────── */
+    const C = {};
+    const HELP = [
+        ['hilfe [befehl]', 'diese Hilfe oder Details zu einem Befehl'],
+        ['dir, ls', 'Inhalt des Ordners anzeigen'],
+        ['cd ORDNER', 'Ordner wechseln (cd .. / cd \\)'],
+        ['type DATEI', 'Datei anzeigen (auch: cat)'],
+        ['tree', 'Ordnerbaum zeichnen'],
+        ['cls', 'Bildschirm leeren'],
+        ['datum', 'Datum und Uhrzeit'],
+        ['whoami', 'Wer bist du?'],
+        ['status', 'dein Fortschritt'],
+        ['kristalle', 'deine Realitätskristalle (auch: disketten)'],
+        ['starte SPIEL', 'Spiel aus der Spielhalle laden'],
+        ['gehe ORT', 'zu einem Ort der Website gehen'],
+        ['farbe [NAME]', 'Phosphorfarbe wechseln'],
+        ['matrix', '…'],
+        ['format a:', 'Diskette formatieren (ganz sicher?)'],
+        ['sudo …', 'mehr Rechte verlangen'],
+        ['exit', 'Terminal verlassen']
+    ];
+    const DETAIL = {
+        dir: 'dir [ORDNER] [/a]\n  Zeigt Dateien und Ordner.\n  /a   zeigt auch versteckte Dateien (pssst …)\n  ls -a funktioniert auch, wir sind ja nicht so.',
+        cd: 'cd ORDNER   wechselt in einen Ordner\ncd ..       eine Ebene nach oben\ncd \\        zurück zur Wurzel A:\\',
+        type: 'type DATEI   zeigt eine Textdatei an.\n  Pfade gehen auch: type PIXMAG\\BUCH.TXT',
+        starte: 'starte SPIEL   lädt ein Spiel aus der Spielhalle.\n  Ohne Namen: Liste aller Spiele.\n  Beispiel: starte snake',
+        gehe: 'gehe ORT   bringt dich an einen Ort der Website.\n  Beispiele: gehe weltkarte · gehe skilltree · gehe keller\n  Geheime Orte musst du erst selbst gefunden haben.',
+        farbe: 'farbe [NAME]   wechselt die Phosphorfarbe.\n  ' + Object.keys(COLORS).join(' · ') + '\n  Ohne Namen: nächste Farbe.',
+        kristalle: 'kristalle          Übersicht deiner Realitätskristalle\nkristalle hinweis  flüstert dir ein Gerücht zu',
+        format: 'format a:   formatiert die Diskette in Laufwerk A:.\n  Achtung: Das ist sehr, sehr dramatisch.',
+        sudo: 'sudo BEFEHL   führt einen Befehl als Administrator aus.\n  Theoretisch.'
+    };
+
+    C.hilfe = args => {
+        if (args[0]) {
+            const k = alias[args[0].toLowerCase()] || args[0].toLowerCase();
+            print(DETAIL[k] || (C[k] ? 'Zu „' + args[0] + '" gibt es keine Details. Probier es einfach aus.' : 'Unbekannter Befehl: ' + args[0]));
+            return;
+        }
+        print('BEFEHLE', 'br');
+        HELP.forEach(([c, d]) => print('  ' + c.padEnd(16) + d));
+        print('');
+        print('Es gibt noch mehr Befehle. Manche verraten sich nicht.', 'dim');
+    };
+    C.help = args => { print('help? Wir sprechen hier Deutsch. Aber gut:', 'dim'); C.hilfe(args); };
+
+    C.dir = args => {
+        const all = args.some(a => /^[-/]a$/i.test(a));
+        const target = args.find(a => !/^[-/]/.test(a));
+        const r = target ? resolve(target) : { node: dirAt(cwd), pathArr: cwd };
+        if (!r || !r.node) return print('Pfad nicht gefunden.');
+        if (!r.node.d) return print(r.key.padEnd(14) + String(sizeOf(r.node)).padStart(8) + ' Bytes');
+        const entries = Object.entries(r.node.d).filter(([, n]) => all || !n.hidden);
+        print(' Datenträger in Laufwerk A: ist XIRU-1.44', 'dim');
+        print(' Verzeichnis von A:\\' + r.pathArr.join('\\'), 'dim');
+        print('');
+        let files = 0, dirs = 0, bytes = 0;
+        if (r.pathArr.length) { print('.            <DIR>        ' + fileDate('.')); print('..           <DIR>        ' + fileDate('..')); }
+        entries.sort((a, b) => (b[1].d ? 1 : 0) - (a[1].d ? 1 : 0) || a[0].localeCompare(b[0])).forEach(([nm, n]) => {
+            const dot = nm.lastIndexOf('.');
+            const b = (dot > 0 ? nm.slice(0, dot) : nm).padEnd(8).slice(0, 8), e = (dot > 0 ? nm.slice(dot + 1) : '').padEnd(3);
+            if (n.d) { dirs++; print(b + ' ' + e + ' <DIR>        ' + fileDate(nm)); }
+            else {
+                files++; const s = sizeOf(n); bytes += s;
+                print(b + ' ' + e + String(X.fmt(s)).padStart(10) + '   ' + fileDate(nm) + (n.hidden ? '  [versteckt]' : ''), n.hidden ? 'br' : '');
+            }
+        });
+        print('     ' + files + ' Datei(en)   ' + X.fmt(bytes).padStart(9) + ' Bytes');
+        print('     ' + dirs + ' Verzeichnis(se)  ' + X.fmt(Math.max(0, 1457664 - bytes * 9)) + ' Bytes frei');
+        if (all && !r.pathArr.length) print('     … und ein Fremdkörper, der nicht in Bytes zu messen ist.', 'dim');
+    };
+    C.ls = args => {
+        if (!args.some(a => /^-a$/i.test(a)) && Math.random() < .5) print('ls? Wir sind hier bei DOS. Na gut, ausnahmsweise.', 'dim');
+        C.dir(args);
+    };
+    C.cd = args => {
+        if (!args[0]) return print('A:\\' + cwd.join('\\'));
+        const r = resolve(args[0]);
+        if (!r || !r.node) return print('Ungültiges Verzeichnis.');
+        if (!r.node.d) return print(r.key + ' ist eine Datei. Versuch: type ' + r.key);
+        cwd = r.pathArr;
+        if (cwd[0] === 'ORTE' && !C._orteSeen) { C._orteSeen = true; print('Hier riecht es nach Abenteuer.', 'dim'); }
+    };
+    C.type = args => {
+        if (!args[0]) return print('Welche Datei? Beispiel: type LIESMICH.TXT');
+        const r = resolve(args.join(' '));
+        if (!r || !r.node) return print('Datei nicht gefunden: ' + args.join(' '));
+        if (r.node.d) return print(r.key + ' ist ein Ordner. Versuch: cd ' + r.key);
+        seek(2);
+        print(content(r.node));
+        if (r.node.egg) {
+            print('');
+            print('*** Der Splitter löst sich aus Sektor 0 … ***', 'br');
+            X.egg(r.node.egg);
+        }
+        if (r.node.go) print('\n(Tippe „gehe ' + r.node.go.replace(/^geheim\/|\.html$/g, '') + '", um hinzugehen.)', 'dim');
+    };
+    C.tree = () => {
+        print('A:\\');
+        (function walk(node, prefix) {
+            const ent = Object.entries(node.d).filter(([, n]) => !n.hidden);
+            ent.forEach(([nm, n], i) => {
+                const last = i === ent.length - 1;
+                if (n.d) { print(prefix + (last ? '└── ' : '├── ') + nm); walk(n, prefix + (last ? '    ' : '│   ')); }
+            });
+        })(FS, '');
+        print('(Nur Ordner. Dateien zeigt dir „dir".)', 'dim');
+    };
+    C.cls = () => { out.innerHTML = ''; };
+    C.datum = () => {
+        const d = new Date();
+        print('Heute ist ' + d.toLocaleDateString('de-CH', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + ', ' + d.toLocaleTimeString('de-CH') + ' Uhr.');
+        if (d.getMonth() === 9 && d.getDate() === 5) print('🎂 Heute hat die Website Geburtstag!', 'br');
+        else if (d.getHours() < 5) print('Es ist mitten in der Nacht. Solltest du nicht schlafen?', 'dim');
+        else if (d.getHours() === 13 && d.getMinutes() === 37) print('13:37. Wie elitär.', 'br');
+    };
+    const RANKS = ['Diskettenlehrling', 'Bit-Schubser', 'Byte-Bändiger', 'Sektor-Späher', 'Spurenleser', 'Kommandozeilen-Kenner', 'Floppy-Flüsterer', 'Terminal-Titan', 'Kristall-Hüter', 'Legende von Laufwerk A:'];
+    C.whoami = () => {
+        const li = X.levelInfo();
+        print(name() + '  ·  Level ' + li.level + '  ·  ' + li.into + '/' + li.need + ' XP bis zum nächsten Level');
+        print('Rang: ' + RANKS[Math.min(RANKS.length - 1, Math.floor((li.level - 1) / 2))], 'dim');
+    };
+    function bar(v, max, w) { const n = Math.round((max ? v / max : 0) * (w || 24)); return '[' + '█'.repeat(n) + '░'.repeat((w || 24) - n) + ']'; }
+    C.status = () => {
+        const li = X.levelInfo(), sp = X.skillPoints();
+        const visited = Object.keys(P().visited).filter(p => X.pageFor(p)).length;
+        const skills = X.skills.filter(s => X.hasSkill(s.id)).length;
+        print('STATUS VON ' + name().toUpperCase(), 'br');
+        print('  Level        ' + li.level + '   ' + bar(li.into, li.need, 20) + ' ' + li.pct + ' %');
+        print('  XP gesamt    ' + X.fmt(P().xp));
+        print('  Skillpunkte  ' + sp.free + ' frei (' + sp.spent + ' ausgegeben)');
+        print('  Skills       ' + skills + '/' + X.skills.length + '  ' + bar(skills, X.skills.length, 20));
+        print('  Kristalle    ' + X.eggCount() + '/' + X.eggs.length + '  ' + bar(X.eggCount(), X.eggs.length, 20));
+        print('  Orte         ' + visited + '/' + pagesTotal + '  ' + bar(visited, pagesTotal, 20));
+        print('  Besuchstage  ' + Object.keys(P().days).length);
+    };
+    C.kristalle = args => {
+        if (args[0] && /^(hinweis|tipp|geruecht|gerücht)$/i.test(args[0])) {
+            const open = X.eggs.filter(e => !X.hasEgg(e.id) && e.h && e.r < 4);
+            if (!open.length) return print('Keine Gerüchte mehr. Du hast (fast) alles gefunden.');
+            const e = X.pick(open);
+            print('Ein Gerücht geht um …', 'dim');
+            print('  „' + e.h + '"' + (e.pg ? '  (Ort: ' + ((X.pageFor(e.pg) && !X.pageFor(e.pg).hidden) || X.isVisited(e.pg) ? X.pageFor(e.pg).t : '???') + ')' : ''));
+            return;
+        }
+        const n = X.eggCount(), all = X.eggs.length;
+        print('REALITÄTSKRISTALLE: ' + n + ' von ' + all, 'br');
+        print('  ' + bar(n, all, 30));
+        const by = [0, 0, 0, 0, 0], tot = [0, 0, 0, 0, 0];
+        X.eggs.forEach(e => { tot[e.r]++; if (X.hasEgg(e.id)) by[e.r]++; });
+        for (let r = 1; r <= 4; r++) print('  ' + (X.rarity ? X.rarity[r] : 'Stufe ' + r).padEnd(14) + String(by[r]).padStart(3) + ' / ' + tot[r]);
+        const recent = Object.entries(P().eggs).filter(([id]) => X.eggInfo(id)).sort((a, b) => b[1] - a[1]).slice(0, 5);
+        if (recent.length) {
+            print(''); print('Zuletzt gefunden:', 'dim');
+            recent.forEach(([id, t]) => print('  ◆ ' + X.eggInfo(id).n.padEnd(26) + new Date(t).toLocaleDateString('de-CH')));
+        }
+        const here = X.eggs.filter(e => e.pg === 'geheim/terminal.html');
+        if (here.length) print('\nIn diesem Terminal: ' + here.filter(e => X.hasEgg(e.id)).length + '/' + here.length + '.  Tippe „kristalle hinweis" für ein Gerücht.', 'dim');
+    };
+    C.disketten = args => {
+        print('Disketten? Die sammelt man nicht mehr. In den Disketten haben sich', 'dim');
+        print('Realitätskristalle verfangen – und die zählen jetzt:', 'dim');
+        C.kristalle(args);
+    };
+
+    function matchPage(list, q, keyFn) {
+        const nq = norm(q).replace(/[^a-z0-9]/g, '');
+        if (!nq) return null;
+        let best = null, bs = 0;
+        list.forEach(item => keyFn(item).forEach(k => {
+            const nk = norm(k).replace(/[^a-z0-9]/g, '');
+            let s = nk === nq ? 1 : nk.startsWith(nq) ? .9 : nk.includes(nq) ? .75 : 0;
+            if (s > bs) { bs = s; best = item; }
+        }));
+        return bs >= .75 ? best : null;
+    }
+    function launch(g) {
+        if (!X.isUnlocked(g.page)) {
+            const s = X.skillInfo(g.page.skill);
+            print('ZUGRIFF VERWEIGERT: ' + g.page.t + ' braucht den Skill „' + (s ? s.n : g.page.skill) + '".');
+            return;
+        }
+        setBusy(true);
+        (async () => {
+            print('Lade ' + g.file + ' …'); seek(5);
+            await sleep(350); print(bar(1, 1, 24) + ' 100 %'); await sleep(350);
+            location.href = X.url(g.page.p);
+        })();
+    }
+    C.starte = args => {
+        if (!args[0]) {
+            print('SPIELE IN DER SPIELHALLE', 'br');
+            games.forEach(g => print('  ' + g.id.padEnd(16) + g.page.t + (X.isUnlocked(g.page) ? '' : '  [gesperrt]') + (X.best(g.id) != null ? '  ★ ' + X.best(g.id) : '')));
+            print('\nBeispiel: starte snake', 'dim');
+            return;
+        }
+        const g = matchPage(games, args.join(' '), g => [g.id, g.page.t, g.file]);
+        if (!g) return print('Kein Spiel namens „' + args.join(' ') + '" gefunden. Tippe „starte" für eine Liste.');
+        launch(g);
+    };
+    const PLACES = {
+        start: 'index.html', startseite: 'index.html', home: 'index.html', weltkarte: 'weltkarte.html', karte: 'weltkarte.html',
+        suche: 'suche.html', hilfe: 'hilfe.html', faq: 'hilfe.html', ueberuns: 'ueber-uns.html', profil: 'konto/profil.html',
+        skilltree: 'konto/skilltree.html', skills: 'konto/skilltree.html', sammlung: 'konto/sammlung.html', rekorde: 'konto/erfolge.html',
+        einstellungen: 'konto/einstellungen.html', spielhalle: 'arcade/index.html', arcade: 'arcade/index.html', hardware: 'hardware/index.html',
+        ki: 'ki/index.html', kilabor: 'ki/index.html', mixer: 'mixer/index.html', werkzeuge: 'werkzeuge/index.html', studio: 'studio/index.html',
+        downloads: 'studio/index.html', floppyhub: 'studio/floppy-hub.html', pixmag: 'studio/pixmag.html',
+        keller: 'geheim/keller.html', archiv: 'geheim/archiv-1999.html', leuchtturm: 'geheim/leuchtturm.html', serverraum: 'geheim/serverraum.html',
+        server: 'geheim/serverraum.html', leere: 'geheim/void.html', void: 'geheim/void.html', runen: 'geheim/runen.html', runenkammer: 'geheim/runen.html',
+        turm: 'geheim/turm.html', magierturm: 'geheim/turm.html', ruhmeshalle: 'geheim/ruhmeshalle.html', ruhm: 'geheim/ruhmeshalle.html',
+        schrein: 'geheim/kristallschrein.html', kristallschrein: 'geheim/kristallschrein.html', katzen: 'geheim/katzen.html',
+        katzenzimmer: 'geheim/katzen.html', rueckwaerts: 'geheim/rueckwaerts.html', ende: 'geheim/ende.html', terminal: 'geheim/terminal.html'
+    };
+    C.gehe = args => {
+        if (!args[0]) return print('Wohin? Beispiel: gehe weltkarte  (hilfe gehe)');
+        const q = norm(args.join('')).replace(/[^a-z0-9]/g, '');
+        let page = PLACES[q] ? X.pageFor(PLACES[q]) : null;
+        if (!page) page = matchPage(X.pages.filter(p => !p.hidden || X.isVisited(p.p)), args.join(' '), p => [p.t, p.p.split('/').pop().replace('.html', '')]);
+        if (!page) return print('Ort unbekannt: ' + args.join(' ') + '. Vielleicht liegt er im Nebel.');
+        if (page.p === 'geheim/terminal.html') return print('Du bist schon hier. Schau mal auf den Bildschirm.');
+        if (page.hidden && !X.isVisited(page.p) && page.p !== 'geheim/keller.html') {
+            const e = X.eggs.find(x => x.pg === page.p && x.id.startsWith('o-'));
+            print('ZUGRIFF VERWEIGERT: Dieser Ort liegt im Nebel.');
+            if (e) print('Gerücht: „' + e.h + '"', 'dim');
+            return;
+        }
+        setBusy(true);
+        (async () => { print('Verbinde mit ' + page.t + ' …'); seek(3); await sleep(600); location.href = X.url(page.p); })();
+    };
+    C.farbe = args => {
+        const names = Object.keys(COLORS);
+        if (args[0] && /^(liste|list)$/i.test(args[0])) return print('Farben: ' + names.join(' · '));
+        const c = args[0] ? norm(args[0]).replace('grün', 'gruen') : names[(names.indexOf(store.farbe) + 1) % names.length];
+        if (!setColor(c)) return print('Diese Farbe kennt der Bildschirm nicht. Farben: ' + names.join(' · '));
+        print('Phosphor: ' + c + '.' + (c === 'kristall' ? ' Ooh, schimmernd.' : ''));
+    };
+    C.matrix = () => {
+        print('Wach auf, ' + name() + ' …', 'br');
+        print('Folge dem weissen Kaninchen. 🐇', 'dim');
+        X.fx('matrix');
+    };
+    C.sudo = async (args, raw) => {
+        const rest = raw.replace(/^\s*sudo\s*/i, '').trim().toLowerCase();
+        if (!rest) return print('Verwendung: sudo BEFEHL\nSchöner Versuch. Auf einer Diskette gibt es kein sudo.');
+        if (/make me a sandwich|mach mir ein (sandwich|brot)/.test(rest)) return print('Okay. 🥪');
+        if (/rm\s+-rf|format|del /.test(rest)) return print('Nein. NEIN. Fass die Diskette nicht an.');
+        if (rest === '!!') return print('Das hättest du gern.');
+        setBusy(true);
+        const ln = printParts([['[sudo] Passwort für ' + name() + ': ', '']]);
+        for (let i = 0; i < 8; i++) { ln.appendChild(document.createTextNode('•')); tick(); await sleep(skip ? 0 : 110); }
+        await sleep(400);
+        print('Falsch. (Es gibt kein Passwort. Es gibt nicht mal einen Admin.)');
+        print('Dieser Vorfall wird gemeldet. An die Katzen im Katzenzimmer.', 'dim');
+        setBusy(false);
+    };
+    C.format = async args => {
+        const drive = (args[0] || '').toLowerCase();
+        if (!drive) return print('Welches Laufwerk? Beispiel: format a:');
+        if (drive.startsWith('c')) return print('Laufwerk C: gibt es hier nicht. Und selbst wenn: Nein.');
+        if (drive.startsWith('d')) return print('In Laufwerk D: liegt eine CD-ROM. CDs formatiert man nicht, man zerkratzt sie.');
+        if (!drive.startsWith('a')) return print('Laufwerk ' + args[0] + ' nicht gefunden.');
+        print('');
+        print('WARNUNG: ALLE DATEN AUF DER DISKETTE IN LAUFWERK A:', 'br');
+        print('GEHEN VERLOREN!', 'br');
+        ask('Formatierung durchführen (J/N)? ', async a => {
+            if (!/^(j|ja|y|yes)$/i.test(a)) { print('Weise Entscheidung. Die Diskette atmet auf.'); return; }
+            setBusy(true);
+            crt.classList.add('is-shake'); setTimeout(() => crt.classList.remove('is-shake'), 1300);
+            print('Formatiere 1,44 MB …');
+            const ln = printParts([['', '']]);
+            for (let t = 0; t <= 79; t += 3) {
+                const pct = Math.min(99, Math.round(t / 79 * 100));
+                ln.textContent = 'Spur ' + String(t).padStart(2, '0') + '  ' + bar(pct, 100, 24) + ' ' + pct + ' %';
+                if (t % 9 === 0) seek(2);
+                await sleep(skip ? 0 : 75);
+                if (t === 45) { print('Die Diskette fragt: „Bist du sicher?"', 'dim'); await sleep(skip ? 0 : 900); }
+                if (t === 66) { print('Die Diskette fragt: „So richtig sicher?"', 'dim'); await sleep(skip ? 0 : 900); }
+            }
+            await sleep(500);
+            print('');
+            print('FEHLER: Die Diskette weigert sich, formatiert zu werden.', 'br');
+            await slow(['Sie sagt, sie hänge an ihren Daten. Und an dir.', 'Formatierung abgebrochen. 0 Bytes verloren.', 'Ein Realitätskristall ist vor Schreck aus Spur 79 gefallen.'], 450);
+            X.egg('h-terminal-format');
+            setBusy(false);
+        });
+    };
+    C.exit = async () => {
+        setBusy(true);
+        print('');
+        printParts([[' bis zur nächsten diskette. ', 'inv']]);
+        await sleep(900);
+        crt.classList.add('is-off');
+        await sleep(700);
+        location.href = X.url('index.html');
+    };
+    C.ver = () => print('FloppyDOS 6.22-XIRU (Build 31.12.1999) · Kristallkern 2026\n(c) Xiruprojekts. Kaum Rechte vorbehalten.');
+    C.echo = (args, raw) => print(raw.replace(/^\s*echo\s?/i, '') || 'ECHO ist eingeschaltet.');
+    C.mem = () => {
+        let ls = 0;
+        try { Object.keys(localStorage).filter(k => k.startsWith('xiru:')).forEach(k => { ls += (localStorage.getItem(k) || '').length * 2; }); } catch (e) { }
+        print('Speichertyp          Gesamt       Frei');
+        print('-'.repeat(40));
+        print('Konventionell        640 KB      28 KB');
+        print('Erweitert (XMS)       16 MB     3,2 MB');
+        print('CD-ROM-Puffer        256 KB    256 KB');
+        print('localStorage (xiru)' + (X.fmt(ls / 1024, 1) + ' KB').padStart(11) + '          ?');
+        print('Kristallspeicher' + (X.eggCount() + ' Stk.').padStart(14) + '   unendlich');
+        print('\n640 KB sollten für jeden reichen.', 'dim');
+    };
+    C.beep = () => {
+        print('♪ ♫ ♪');
+        if (!sound()) return print('(Der Ton ist in den Einstellungen ausgeschaltet.)', 'dim');
+        [523, 659, 784, 1046, 784, 1046].forEach((f, i) => setTimeout(() => X.beep(f, .09, 'square', .04), i * 110));
+    };
+    C.ping = async args => {
+        const host = args[0] || 'xiruprojekts';
+        setBusy(true);
+        print('Ping wird ausgeführt für ' + host + ' mit 32 Bytes Daten:');
+        const h = norm(host);
+        for (let i = 0; i < 4; i++) {
+            await sleep(skip ? 0 : 380);
+            if (/katze|cat/.test(h)) print('Miau von ' + host + ': Schnurr=32 Zeit=1ms Leben=9');
+            else if (/leuchtturm/.test(h)) print('Antwort vom Leuchtturm: Licht=an Zeit=' + (i * 4 + 4) + 's Drehung=360°');
+            else if (/leere|void|nichts/.test(h)) print('…');
+            else print('Antwort von ' + host + ': Bytes=32 Zeit=' + (1 + i % 2) + 'ms TTL=64');
+        }
+        setBusy(false);
+    };
+    C.zahlenraten = () => {
+        const target = X.rand(1, 100); let tries = 0;
+        print('ZAHLENRATEN – Ich denke an eine Zahl von 1 bis 100.', 'br');
+        print('Du hast 7 Versuche. („abbruch" beendet das Spiel.)', 'dim');
+        const turn = a => {
+            if (/^(abbruch|exit|q)$/i.test(a)) { print('Spiel abgebrochen. Die Zahl war ' + target + '.'); return; }
+            const n = parseInt(a, 10);
+            if (!(n >= 1 && n <= 100)) { print('Bitte eine Zahl von 1 bis 100.'); return ask('Zahl? ', turn); }
+            tries++;
+            if (n === target) {
+                print('RICHTIG! ' + target + ' nach ' + tries + ' Versuch' + (tries > 1 ? 'en' : '') + '.', 'br');
+                [523, 659, 784].forEach((f, i) => setTimeout(() => X.beep(f, .08, 'square', .04), i * 90));
+                X.egg('h-terminal-raten');
+                return;
+            }
+            if (tries >= 7) { print('Leider verloren. Es war die ' + target + '. Tippe „zahlenraten" für eine Revanche.'); return; }
+            print(n < target ? 'Höher! ↑' : 'Tiefer! ↓', 'dim');
+            ask('Zahl? (' + (7 - tries) + ' übrig) ', turn);
+        };
+        ask('Zahl? ', turn);
+    };
+    C.neustart = async () => { out.innerHTML = ''; cwd = []; await boot(true); };
+    C.sag = (args, raw) => {
+        const t = raw.replace(/^\s*sag\s*/i, '').trim() || 'Hallo!';
+        const w = Math.min(36, Math.max(6, t.length));
+        const lines = []; let s = t;
+        while (s.length) { lines.push(s.slice(0, w)); s = s.slice(w); }
+        print(' ' + '_'.repeat(w + 2));
+        lines.forEach(l => print('< ' + l.padEnd(w) + ' >'));
+        print(' ' + '-'.repeat(w + 2));
+        print(String.raw`    \    ______
+     \  |[_]  |
+        | .--.|
+        |_|__||`);
+    };
+    C.kaffee = async () => {
+        setBusy(true);
+        print(ART_COFFEE);
+        const ln = printParts([['', '']]);
+        for (let p = 0; p <= 100; p += 10) { ln.textContent = 'Kaffee wird gebrüht … ' + bar(p, 100, 20) + ' ' + p + ' %'; await sleep(skip ? 0 : 90); }
+        print('☕ Fertig. Vorsicht, heiss.');
+        setBusy(false);
+    };
+    C.defrag = async () => {
+        setBusy(true);
+        const N = 40; const blocks = Array.from({ length: N }, () => X.pick(['█', '▓', '░', '░', '▒']));
+        print('DEFRAG – Laufwerk A: wird aufgeräumt');
+        const ln = printParts([['', '']]);
+        for (let step = 0; step < 34; step++) {
+            const i = X.rand(0, N - 2);
+            const order = { '█': 0, '▓': 1, '▒': 2, '░': 3 };
+            for (let j = 0; j < N - 1; j++) if (order[blocks[j]] > order[blocks[j + 1]]) { [blocks[j], blocks[j + 1]] = [blocks[j + 1], blocks[j]]; if (j > i) break; }
+            ln.textContent = blocks.join('');
+            if (step % 4 === 0) seek(1);
+            await sleep(skip ? 0 : 70);
+        }
+        blocks.sort((a, b) => '█▓▒░'.indexOf(a) - '█▓▒░'.indexOf(b)); ln.textContent = blocks.join('');
+        print('Fertig. Die Bits liegen jetzt ordentlich nebeneinander.');
+        print('Die Katze ist trotzdem unzufrieden.', 'dim');
+        setBusy(false);
+    };
+    C.hack = async () => {
+        setBusy(true);
+        const hex = () => Array.from({ length: 8 }, () => X.rand(0, 255).toString(16).padStart(2, '0')).join(' ');
+        for (let i = 0; i < 12; i++) { print('0x' + (4096 + i * 16).toString(16) + '  ' + hex() + '  ' + hex(), 'dim'); await sleep(skip ? 0 : 70); }
+        print('ZUGRIFF GEWÄHRT', 'br');
+        print('… auf deine eigene Website. Glückwunsch, du hast dich selbst gehackt.');
+        setBusy(false);
+    };
+    const SPRUECHE = [
+        'Es gibt 10 Arten von Menschen: die, die Binär verstehen, und die anderen.',
+        'Ein Backup am Tag hält den Datenverlust fern.',
+        'Wer Disketten beschriftet, findet sie wieder.',
+        'Im Zweifel: aus- und wieder einschalten.',
+        'Die Katze sitzt immer auf der wichtigsten Diskette.',
+        'Jedes Feuer beginnt mit einem Funken.',
+        'Wer rückwärts liest, sieht manchmal mehr.',
+        'Ein Leuchtturm braucht keine Hilfe, um gesehen zu werden.',
+        'Kristalle wachsen in alter Technik wie Moos auf Steinen.'
+    ];
+    C.spruch = () => print('„' + X.pick(SPRUECHE) + '"');
+    C.wetter = () => print('Wetter in Laufwerk A: 21 °C, leicht staubig, Aussicht auf Bits.\nMorgen: vereinzelt Kristallschauer.');
+    C.eject = () => { seek(3); print('CD-Fach öffnet sich … *bzzzt* … Kaffeetassenhalter ausgefahren. ☕'); };
+    C.startx = () => print('Windows wird gestartet …\nBitte Diskette 2 von 13 einlegen.\n(Wir haben nur eine.)');
+    C.xyzzy = () => print('Nichts passiert.');
+    C.wopr = () => print('„Ein seltsames Spiel. Der einzige gewinnende Zug ist, nicht zu spielen.\n Wie wär\'s mit einer schönen Partie Schach?"', 'br');
+    C['42'] = () => print('Die Antwort auf die Frage nach dem Leben, dem Universum und dem ganzen Rest.');
+    C.hallo = () => print('HALLO, ' + name().toUpperCase() + '. SCHÖN, DASS DU DA BIST.', 'br');
+    C.konami = () => print('↑ ↑ ↓ ↓ ← → ← → B A … 30 Extraleben gewährt. (Nicht wirklich.)\nProbier den Code lieber ausserhalb dieses Terminals.');
+    C.rosebud = () => print('Falsche Ära – das war eine andere Diskette.');
+    C.fsociety = () => print('Kontrolle ist eine Illusion.', 'dim');
+    C.katze = () => { print(ART_CAT); print('Die Katzen wohnen woanders. Verirr dich, um sie zu finden.', 'dim'); };
+    C.floppy = () => print(ART_DISK);
+    C.pixmag = () => { print('PIXMAG – ein verbannter Magier, ein mysteriöses Buch, 100 Ebenen.'); print('Lies PIXMAG\\GILDE.TXT oder tippe „starte dungeon".', 'dim'); };
+    C.xiru = () => print(String.raw` __  __ ___ ____  _   _
+ \ \/ /|_ _|  _ \| | | |
+  \  /  | || |_) | | | |
+  /  \  | ||  _ <| |_| |
+ /_/\_\|___|_| \_\\___/   projekts`);
+    C.vim = () => { print('Du bist jetzt in Vim gefangen.', 'br'); print('… war nur Spass. :q!', 'dim'); };
+    C.rm = () => print('rm? Wir sind hier bei DOS. Und nein.');
+    C.del = () => print('Nein. NEIN. Fass die Diskette nicht an.');
+
+    const alias = {
+        '?': 'hilfe', ls: 'ls', chdir: 'cd', cat: 'type', more: 'type', clear: 'cls', date: 'datum', time: 'datum', zeit: 'datum',
+        werbinich: 'whoami', start: 'starte', run: 'starte', spiel: 'starte', goto: 'gehe', geh: 'gehe', color: 'farbe',
+        quit: 'exit', ende: 'exit', logout: 'exit', version: 'ver', raten: 'zahlenraten', reboot: 'neustart', restart: 'neustart',
+        say: 'sag', coffee: 'kaffee', fortune: 'spruch', joshua: 'wopr', hi: 'hallo', hello: 'hallo', gruezi: 'hallo', 'grüezi': 'hallo',
+        motherlode: 'rosebud', mrrobot: 'fsociety', miau: 'katze', meow: 'katze', vi: 'vim', ':q': 'vim', ':q!': 'vim', erase: 'del',
+        cdrom: 'eject', win: 'startx', windows: 'startx', crystals: 'kristalle', kristall: 'kristalle', 'cd..': 'cd..'
+    };
+    C['cd..'] = () => C.cd(['..']);
+    C['cd\\'] = () => C.cd(['\\']);
+    const PUBLIC = ['hilfe', 'dir', 'ls', 'cd', 'type', 'cat', 'tree', 'cls', 'datum', 'whoami', 'status', 'kristalle', 'disketten', 'starte', 'gehe', 'farbe', 'matrix', 'format', 'sudo', 'exit'];
+
+    /* ── Ausführen ────────────────────────────────────────────────────── */
+    function ask(promptStr, handler) { mode = { prompt: promptStr, handler }; render(); }
+    async function run(rawLine) {
+        const raw = rawLine.replace(/\s+$/, '');
+        const d = document.createElement('div');
+        d.className = 'cmd'; d.setAttribute('data-p', promptText()); d.textContent = raw;
+        out.appendChild(d);
+        if (mode) { const m = mode; mode = null; render(); await m.handler(raw.trim()); screen.scrollTop = screen.scrollHeight; return; }
+        if (!raw.trim()) { screen.scrollTop = screen.scrollHeight; return; }
+        hist = hist.filter(h => h !== raw); hist.push(raw); hIdx = hist.length; save();
+        const parts = raw.trim().split(/\s+/);
+        let cmd = parts[0].toLowerCase();
+        let args = parts.slice(1);
+        // "cd\" und "cd.." ohne Leerzeichen
+        if (/^cd[\\.]/.test(cmd)) { args = [cmd.slice(2)].concat(args); cmd = 'cd'; }
+        if (cmd === 'a:' || cmd === 'a:\\') { cwd = []; screen.scrollTop = screen.scrollHeight; return; }
+        if (/^[c-z]:$/.test(cmd)) { print(cmd.toUpperCase() === 'D:' ? 'Laufwerk D: (CD-ROM): Kein Datenträger. Nur eine Kaffeetasse.' : 'Laufwerk ' + cmd.toUpperCase() + ' existiert nicht. Hier gibt es nur A:.'); return; }
+        const key = C[cmd] ? cmd : alias[cmd];
+        if (key && C[key]) {
+            try { await C[key](args, raw); } catch (e) { console.error(e); print('Allgemeiner Fehler beim Lesen von Laufwerk A:'); setBusy(false); }
+            screen.scrollTop = screen.scrollHeight;
+            return;
+        }
+        // Programm im aktuellen Ordner?
+        const dir = dirAt(cwd);
+        const exe = dir && (findChild(dir, cmd) || findChild(dir, cmd + '.exe'));
+        if (exe && exe.node.game) return launch(exe.node.game);
+        if (exe && !exe.node.d) return print(exe.key + ' ist kein Programm. Versuch: type ' + exe.key);
+        const g = cwd[0] === 'SPIELE' ? matchPage(games, cmd, x => [x.id]) : null;
+        if (g) return launch(g);
+        print('Befehl oder Dateiname nicht gefunden: ' + parts[0]);
+        const close = PUBLIC.map(c => [c, similar(cmd, c)]).sort((a, b) => b[1] - a[1])[0];
+        if (close && close[1] >= .6) print('Meintest du „' + close[0] + '"?', 'dim');
+    }
+    function similar(a, b) {
+        const m = a.length, n = b.length; if (!m || !n) return 0;
+        let prev = Array.from({ length: n + 1 }, (_, i) => i);
+        for (let i = 1; i <= m; i++) {
+            const curr = [i];
+            for (let j = 1; j <= n; j++) curr[j] = Math.min(prev[j] + 1, curr[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+            prev = curr;
+        }
+        return 1 - prev[n] / Math.max(m, n);
+    }
+
+    /* ── Tab-Vervollständigung ────────────────────────────────────────── */
+    function complete() {
+        const v = inp.value;
+        const m = v.match(/^(\s*)(\S*)$/);
+        let opts = [], prefix = '', partial = '';
+        if (m && !mode) {
+            partial = m[2].toLowerCase(); prefix = m[1];
+            opts = PUBLIC.concat(['ver', 'echo', 'mem', 'ping', 'neustart']).filter(c => c.startsWith(partial));
+            opts = opts.map(o => o + ' ');
+        } else {
+            const mm = v.match(/^(\s*\S+\s+(?:.*\s)?)(\S*)$/);
+            if (!mm) return;
+            prefix = mm[1]; partial = mm[2];
+            const cmd = v.trim().split(/\s+/)[0].toLowerCase();
+            const k = alias[cmd] || cmd;
+            if (k === 'starte') opts = games.map(g => g.id).filter(x => x.startsWith(partial.toLowerCase()));
+            else if (k === 'gehe') opts = Object.keys(PLACES).filter(x => x.startsWith(norm(partial)));
+            else if (k === 'farbe') opts = Object.keys(COLORS).filter(x => x.startsWith(norm(partial)));
+            else {
+                const sl = partial.replace(/\//g, '\\').lastIndexOf('\\');
+                const dirPart = sl >= 0 ? partial.slice(0, sl + 1) : '';
+                const filePart = (sl >= 0 ? partial.slice(sl + 1) : partial).toLowerCase();
+                const r = dirPart ? resolve(dirPart) : { node: dirAt(cwd) };
+                if (r && r.node && r.node.d) opts = Object.entries(r.node.d).filter(([nm, n]) => !n.hidden && nm.toLowerCase().startsWith(filePart)).map(([nm, n]) => dirPart + nm + (n.d ? '\\' : ''));
+            }
+        }
+        if (!opts.length) { tick(); return; }
+        if (opts.length === 1) { inp.value = prefix + opts[0]; }
+        else {
+            let common = opts[0];
+            opts.forEach(o => { while (!o.toLowerCase().startsWith(common.toLowerCase())) common = common.slice(0, -1); });
+            if (common.length > partial.length) inp.value = prefix + common;
+            else {
+                const d = document.createElement('div'); d.className = 'cmd'; d.setAttribute('data-p', promptText()); d.textContent = v; out.appendChild(d);
+                print(opts.map(o => o.trim()).join('   '), 'dim');
+            }
+        }
+        inp.setSelectionRange(inp.value.length, inp.value.length);
+        render(); screen.scrollTop = screen.scrollHeight;
+    }
+
+    /* ── Eingabe ──────────────────────────────────────────────────────── */
+    function handleKey(k, e) {
+        if (busy) { if (k === 'Enter' || k === ' ' || k === 'Escape') skip = true; if (e) e.preventDefault(); return; }
+        if (k === 'Enter') {
+            if (e) e.preventDefault();
+            const v = inp.value; inp.value = ''; draft = ''; render();
+            run(v);
+        } else if (k === 'ArrowUp' && !mode) {
+            if (e) e.preventDefault();
+            if (hIdx === hist.length) draft = inp.value;
+            if (hIdx > 0) { hIdx--; inp.value = hist[hIdx]; }
+            inp.setSelectionRange(inp.value.length, inp.value.length);
+        } else if (k === 'ArrowDown' && !mode) {
+            if (e) e.preventDefault();
+            if (hIdx < hist.length) { hIdx++; inp.value = hIdx === hist.length ? draft : hist[hIdx]; }
+            inp.setSelectionRange(inp.value.length, inp.value.length);
+        } else if (k === 'Tab') {
+            if (e) e.preventDefault();
+            complete();
+        } else if (k === 'Escape') {
+            inp.value = ''; if (mode && mode.handler) { const m = mode; mode = null; m.handler('abbruch'); }
+        }
+        requestAnimationFrame(render);
+    }
+    inp.addEventListener('keydown', e => {
+        if (e.ctrlKey && (e.key === 'l' || e.key === 'L')) { e.preventDefault(); C.cls(); return; }
+        if (e.ctrlKey && (e.key === 'c' || e.key === 'C') && !inp.value.slice(inp.selectionStart, inp.selectionEnd)) {
+            e.preventDefault(); print(promptText() + inp.value + '^C'); inp.value = ''; mode = null; render(); return;
+        }
+        if (!busy && inp.value.length < 200) tick();
+        handleKey(e.key, ['Enter', 'ArrowUp', 'ArrowDown', 'Tab', 'Escape'].includes(e.key) || busy ? e : null);
+    });
+    inp.addEventListener('input', render);
+    document.addEventListener('selectionchange', () => { if (document.activeElement === inp) render(); });
+    screen.addEventListener('click', () => {
+        const sel = window.getSelection && String(window.getSelection());
+        if (!sel) inp.focus({ preventScroll: true });
+    });
+    document.addEventListener('keydown', e => {
+        if (busy && document.activeElement !== inp && (e.key === 'Enter' || e.key === ' ')) skip = true;
+    });
+    X.$$('.tm__keys button').forEach(b => b.addEventListener('click', () => {
+        const k = b.getAttribute('data-k'), cmd = b.getAttribute('data-cmd');
+        if (cmd) { if (!busy) { inp.value = ''; run(cmd); } }
+        else handleKey(k, null);
+        if (matchMedia('(pointer: fine)').matches) inp.focus({ preventScroll: true });
+        render();
+    }));
+    $('#knob').addEventListener('click', () => { if (!busy) { run('farbe'); } });
+
+    /* ── Kaltstart ────────────────────────────────────────────────────── */
+    async function boot(fast) {
+        setBusy(true);
+        const steps = [
+            'FLOPPY HUB  -  kaltstart',
+            '  bios . . . . . . . . . . . . . . . ok',
+            '  speicher . . . . . . . . . . . . . 640 KB ok',
+            '  laufwerk A: . . . . . . . . . . .  diskette erkannt',
+            '  laufwerk D: (cd-rom) . . . . . . . leer (kaffeetasse?)',
+            '  festplatte C: . . . . . . . . . .  *klack* *klack* ok',
+            '  bibliothek . . . . . . . . . . . . ' + pagesTotal + ' seiten',
+            '  kristallsensor . . . . . . . . . . ' + X.eggCount() + ' kristalle gespeichert',
+            '  hub bereit.'
+        ];
+        for (const s of steps) { print(s, 'dim'); if (!skip && !fast) { await sleep(110); seek(1); } }
+        if (!skip && !fast) await sleep(250);
+        print('');
+        print(ART_DISK, 'br');
+        print('');
+        print('Willkommen, ' + name() + '. Tippe „hilfe" für eine Liste der Befehle.');
+        print('');
+        setBusy(false);
+        if (matchMedia('(pointer: fine)').matches) inp.focus({ preventScroll: true });
+    }
+    render();
+    boot(X.setting('anim') === false);
+});
+</script>
+</body>
+</html>

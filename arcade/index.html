@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spielhalle · Xiruprojekts</title>
+    <meta name="description" content="Über dreissig Minispiele – vom Klassiker bis zum Roguelike-Dungeon.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <style>
+        .marquee { position: relative; border-radius: var(--radius); overflow: hidden; padding: 2.5rem 2rem; margin-bottom: 2rem;
+            background: radial-gradient(circle at 20% 0%, color-mix(in srgb, var(--rc) 30%, transparent), transparent 55%), radial-gradient(circle at 90% 100%, color-mix(in srgb, var(--accent-2) 30%, transparent), transparent 55%), var(--surface);
+            border: 1px solid var(--border); display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2rem; align-items: center; }
+        @media (max-width: 760px) { .marquee { grid-template-columns: 1fr; } }
+        .marquee h1 { font-size: clamp(2.2rem, 6vw, 3.6rem); margin: 0; text-shadow: 0 0 24px color-mix(in srgb, var(--rc) 60%, transparent); }
+        .bulbs { position: absolute; inset: 6px; border-radius: calc(var(--radius) - 4px); pointer-events: none;
+            background-image: radial-gradient(circle, #facc15 2px, transparent 3px); background-size: 22px 22px; mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; padding: 6px; opacity: .55; animation: bulbs 1.2s steps(2) infinite; }
+        @keyframes bulbs { 50% { background-position: 11px 0; } }
+        .coin { text-align: center; font-family: var(--mono); }
+        .coin__label { font-size: .9rem; letter-spacing: .3em; animation: blink 1.2s step-end infinite; color: var(--warning); }
+        .coin__n { font-size: 3rem; font-weight: 900; line-height: 1; }
+        .toolbar { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; margin-bottom: 1.5rem; }
+        .game-tile .tile__icon { font-size: 1.6rem; }
+        .game-tile .best { margin-left: auto; font-weight: 800; color: var(--text); }
+        .featured { display: grid; grid-template-columns: auto 1fr auto; gap: 1.25rem; align-items: center; margin-bottom: 2rem; }
+        .featured__icon { font-size: 3rem; }
+        @media (max-width: 640px) { .featured { grid-template-columns: 1fr; text-align: center; } }
+    </style>
+</head>
+<body>
+<main class="content">
+    <section class="marquee">
+        <div class="bulbs" aria-hidden="true"></div>
+        <div>
+            <span class="eyebrow">▶ Spielhalle</span>
+            <h1>Spielhalle</h1>
+            <p class="lead mt-1">Klassiker, Puzzles, Brettspiele, ein Idle-Spiel und ein ganzer Dungeon. Manche Automaten stehen noch hinter einem Vorhang –
+                den lüftest du im Skilltree.</p>
+        </div>
+        <div class="coin"><div class="coin__label">INSERT COIN</div><div class="coin__n" id="plays">0</div><div class="small muted">Runden gespielt</div></div>
+    </section>
+
+    <section class="card card--accent featured" data-reveal>
+        <div class="featured__icon">🧙</div>
+        <div><h2 class="mb-0">PIXMAG Mini</h2><p class="muted mb-0">Unser Vorzeigespiel: ein Roguelike-Dungeon mit Zauber-Kombinationen. Feuer + Eis = ?</p></div>
+        <a class="btn btn--primary btn--lg" href="dungeon.html">Spielen</a>
+    </section>
+
+    <div class="toolbar">
+        <input class="input" type="search" id="q" placeholder="Spiel suchen …" style="max-width:260px" aria-label="Spiel suchen">
+        <div class="row" id="cats"></div>
+        <span class="spacer"></span>
+        <select class="select" id="sort" style="width:auto" aria-label="Sortierung">
+            <option value="name">A–Z</option><option value="recent">Zuletzt gespielt</option><option value="plays">Meistgespielt</option><option value="cat">Nach Art</option>
+        </select>
+        <button class="btn" id="random" type="button">🎲 Zufallsspiel</button>
+    </div>
+    <div class="grid" id="games"></div>
+</main>
+<script>
+XIRU.ready(function () {
+    const P = XIRU.profile();
+    const ICONS = {
+        dungeon: '🧙', snake: '🐍', bloecke: '🧱', ziegel: '🏓', 'floppy-flug': '💾', pong: '🏸', stapel: '🗼', 2048: '🔢', minen: '💣', sudoku: '9️⃣',
+        nonogramm: '🖼', lichter: '💡', schiebepuzzle: '🧩', kisten: '📦', labyrinth: '🌀', rohre: '🚰', tictactoe: '❌', 'vier-gewinnt': '🔴', codeknacker: '🔐',
+        memory: '🃏', woertle: '🔤', galgen: '🪢', tippen: '⌨', reaktion: '⚡', farbfolge: '🎨', klicker: '🏭', invaders: '👾', frosch: '🐸', asteroiden: '☄',
+        'tower-defense': '🏰', reversi: '⚫', 'hardware-quiz': '❓', 'pc-bauer': '🛠', gluecksrad: '🎡', mitternacht: '🌙'
+    };
+    const games = XIRU.pages.filter(p => p.game && (!p.hidden || P.visited[p.p])).map(p => {
+        const id = p.p.replace(/^arcade\/|\.html$/g, '');
+        const s = P.scores[id] || {};
+        return { p, id, plays: s.plays || 0, at: s.at || 0, best: s.best };
+    });
+    XIRU.$('#plays').textContent = XIRU.fmt(Object.values(P.scores).reduce((a, s) => a + (s.plays || 0), 0));
+    const cats = Array.from(new Set(games.map(g => g.p.game)));
+    let cat = '', q = '';
+    XIRU.$('#cats').innerHTML = '<button class="chip is-active" data-c="">Alle</button>' + cats.map(c => '<button class="chip" data-c="' + c + '">' + c + '</button>').join('');
+
+    function render() {
+        const sort = XIRU.$('#sort').value;
+        const list = games.filter(g => (!cat || g.p.game === cat) && (!q || (g.p.t + ' ' + g.p.d).toLowerCase().includes(q)));
+        list.sort((a, b) => sort === 'recent' ? b.at - a.at : sort === 'plays' ? b.plays - a.plays : sort === 'cat' ? a.p.game.localeCompare(b.p.game) || a.p.t.localeCompare(b.p.t) : a.p.t.localeCompare(b.p.t));
+        XIRU.$('#games').innerHTML = list.map((g, i) => {
+            const locked = !XIRU.isUnlocked(g.p), s = locked && XIRU.skillInfo(g.p.skill);
+            const isNew = !P.visited[g.p.p] && !locked;
+            return '<a class="tile game-tile' + (locked ? ' is-locked' : '') + (isNew ? ' is-new' : '') + '" href="' + XIRU.url(g.p.p) + '" data-reveal style="--d:' + (Math.min(i, 12) * .03) + 's">' +
+                '<span class="tile__icon">' + (locked ? '🔒' : (ICONS[g.id] || '▶')) + '</span>' +
+                '<span class="tile__title">' + XIRU.esc(g.p.t) + '</span><span class="tile__desc">' + XIRU.esc(locked ? 'Benötigt Skill „' + s.n + '"' : g.p.d) + '</span>' +
+                '<span class="tile__meta"><span class="badge">' + XIRU.esc(g.p.game) + '</span>' + (g.plays ? '<span>' + g.plays + '× gespielt</span>' : '') +
+                (g.best != null ? '<span class="best">★ ' + XIRU.fmt(g.best) + '</span>' : '') + '</span></a>';
+        }).join('') || '<div class="empty"><div class="empty__icon">🕹</div><p>Kein Spiel gefunden.</p></div>';
+        XIRU.initReveal();
+    }
+    XIRU.$('#cats').addEventListener('click', e => { const b = e.target.closest('[data-c]'); if (!b) return; cat = b.dataset.c; XIRU.$$('#cats .chip').forEach(c => c.classList.toggle('is-active', c === b)); render(); });
+    XIRU.$('#q').addEventListener('input', e => { q = e.target.value.trim().toLowerCase(); render(); });
+    XIRU.$('#sort').addEventListener('change', render);
+    XIRU.$('#random').addEventListener('click', () => { const open = games.filter(g => XIRU.isUnlocked(g.p)); location.href = XIRU.url(XIRU.pick(open).p.p); });
+    render();
+});
+</script>
+</body>
+</html>

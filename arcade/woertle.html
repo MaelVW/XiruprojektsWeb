@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wörtle · Xiruprojekts</title>
+    <meta name="description" content="Wörtle: Errate das deutsche Wort mit fünf Buchstaben in sechs Versuchen. Jeden Tag ein neues Wort – oder endlos.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="css/woertle.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/arcade.js"></script>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">▶ Spielhalle · Wort</span>
+        <h1>Wörtle</h1>
+        <p class="lead">Errate das Wort mit fünf Buchstaben in höchstens sechs Versuchen. Grün heisst: richtiger Buchstabe am richtigen Ort. Gelb: kommt vor, aber woanders. Grau: gar nicht drin. Ä, Ö und Ü zählen als eigene Buchstaben.</p>
+    </header>
+
+    <div class="game">
+        <div>
+            <div class="game__hud" id="hud"></div>
+            <div class="game__stage wt-stage" id="stage">
+                <div class="wt-msg" id="msg" aria-live="assertive"></div>
+                <div class="wt-board" id="board" aria-label="Spielfeld"></div>
+            </div>
+            <div class="wt-kbd" id="kbd" aria-label="Bildschirmtastatur"></div>
+            <div class="row mt-2 wt-actions">
+                <button class="btn btn--sm" type="button" id="btn-stats">📊 Statistik</button>
+                <button class="btn btn--sm" type="button" id="btn-share" hidden>📋 Ergebnis teilen</button>
+                <button class="btn btn--sm btn--primary" type="button" id="btn-next" hidden>Nächstes Wort →</button>
+            </div>
+        </div>
+        <aside class="game__side">
+            <div class="card">
+                <h3>Steuerung</h3>
+                <ul class="keys-help">
+                    <li>Einfach lostippen – auch <kbd>Ä</kbd> <kbd>Ö</kbd> <kbd>Ü</kbd></li>
+                    <li><kbd>Enter</kbd> – Wort prüfen</li>
+                    <li><kbd>Backspace</kbd> – Buchstabe löschen</li>
+                    <li>Auf dem Handy: die Tastatur unter dem Spielfeld</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Modus</h3>
+                <div class="row" id="modes">
+                    <button class="chip is-active" type="button" data-mode="taeglich">Wort des Tages</button>
+                    <button class="chip" type="button" data-mode="endlos">Endlos</button>
+                </div>
+                <p class="small muted mt-2" id="mode-desc"></p>
+            </div>
+            <div class="card">
+                <h3>Rekord</h3>
+                <p class="stat__value" id="best">–</p>
+                <p class="small muted">Längste Siegesserie. Ein verlorenes Wort setzt die Serie zurück.</p>
+            </div>
+            <div class="card card--flat">
+                <h3>Beispiel</h3>
+                <div class="wt-example" aria-hidden="true">
+                    <span class="wt-tile is-correct">K</span><span class="wt-tile">A</span><span class="wt-tile is-present">T</span><span class="wt-tile">Z</span><span class="wt-tile is-absent">E</span>
+                </div>
+                <p class="small muted mt-1">K steht richtig, T kommt woanders vor, E gar nicht.</p>
+            </div>
+        </aside>
+    </div>
+</main>
+<script src="js/woertle.js"></script>
+</body>
+</html>

@@ -17,9 +17,23 @@
         @keyframes gradMove { to { background-position: 300% 0; } }
         .hero .lead { font-size: clamp(1.05rem, 2vw, 1.3rem); margin-top: 1rem; }
         .hero__cta { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 2rem; }
-        .hero__disk { position: absolute; right: 4%; top: 50%; width: min(34vw, 380px); transform: translateY(-50%) rotate(-12deg); filter: drop-shadow(0 30px 60px rgba(0,0,0,.45)); animation: heroFloat 7s ease-in-out infinite; }
-        @keyframes heroFloat { 0%, 100% { transform: translateY(-50%) rotate(-12deg); } 50% { transform: translateY(-54%) rotate(-8deg); } }
-        @media (max-width: 860px) { .hero__disk { opacity: .18; right: -10%; width: 70vw; } }
+        .hero__rig { position: absolute; right: 2%; top: 50%; width: min(40vw, 440px); transform: translateY(-50%); overflow: visible; animation: heroFloat 8s ease-in-out infinite; filter: drop-shadow(0 30px 50px rgba(0,0,0,.35)); }
+        @keyframes heroFloat { 0%, 100% { transform: translateY(-50%); } 50% { transform: translateY(-53%); } }
+        @media (max-width: 860px) { .hero__rig { opacity: .22; right: -14%; width: 80vw; } }
+        .rig-edge { fill: none; stroke: var(--rc); stroke-width: 1; opacity: .28; stroke-dasharray: 1; stroke-dashoffset: 1; animation: rigDraw 1.6s var(--ease) forwards; }
+        .rig-edge.outer { stroke-width: 2; opacity: .85; }
+        .rig-flow { fill: none; stroke: #fff; stroke-width: 2.2; stroke-linecap: round; stroke-dasharray: .05 .95; animation: rigFlow 2.6s linear infinite; filter: drop-shadow(0 0 4px var(--rc)); }
+        .rig-node { fill: var(--bg); stroke: var(--rc); stroke-width: 1.4; }
+        .rig-part { opacity: 0; animation: rigPop .7s var(--ease) forwards; }
+        .rig-core { animation: pulse 2.2s infinite; --pc: var(--rc); }
+        .rig-spin { animation: rigSpin 1.2s linear infinite; }
+        .rig-bit { font: 700 11px var(--mono); fill: var(--rc); opacity: 0; animation: rigBit 5s linear infinite; }
+        html.no-anim .rig-part { opacity: 1; } html.no-anim .rig-edge { stroke-dashoffset: 0; } html.no-anim .rig-flow, html.no-anim .rig-bit { display: none; }
+        @keyframes rigDraw { to { stroke-dashoffset: 0; } }
+        @keyframes rigFlow { to { stroke-dashoffset: -1; } }
+        @keyframes rigPop { from { opacity: 0; transform: translateY(-14px); } to { opacity: 1; transform: none; } }
+        @keyframes rigSpin { to { stroke-dashoffset: -40; } }
+        @keyframes rigBit { 0% { opacity: 0; transform: translateY(0); } 15% { opacity: .9; } 100% { opacity: 0; transform: translateY(-70px); } }
         .pixel { position: absolute; width: 5px; height: 5px; background: var(--accent-2); left: 61%; top: 22%; opacity: .55; cursor: default; border-radius: 1px; }
         .ticker { margin: 0 -1.25rem 2.5rem; }
         .region-tile { --tc: var(--rcol); }
@@ -45,15 +59,7 @@
     <section class="hero">
         <canvas id="net" aria-hidden="true"></canvas>
         <span class="pixel" data-egg="p-hero-pixel" title=""></span>
-        <svg class="hero__disk" viewBox="0 0 200 200" aria-hidden="true">
-            <defs><linearGradient id="dg" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="var(--rc)"/><stop offset="1" stop-color="var(--accent-2)"/></linearGradient></defs>
-            <path d="M14 10 h150 l26 26 v154 h-176 z" fill="url(#dg)"/>
-            <rect x="52" y="10" width="92" height="62" rx="4" fill="var(--surface-3)"/>
-            <rect x="112" y="18" width="20" height="46" rx="2" fill="url(#dg)"/>
-            <rect x="34" y="102" width="132" height="88" rx="6" fill="var(--surface)"/>
-            <path d="M48 124 h104 M48 142 h80 M48 160 h96" stroke="var(--border-strong)" stroke-width="4" stroke-linecap="round"/>
-            <text x="100" y="182" text-anchor="middle" font-family="monospace" font-size="11" fill="var(--text-faint)">XIRU · HD 1.44</text>
-        </svg>
+        <svg class="hero__rig" id="rig" viewBox="0 0 400 430" aria-hidden="true"></svg>
         <div class="hero__inner">
             <span class="eyebrow">◆ Willkommen bei Xiruprojekts</span>
             <h1><span id="tw">Eine Website</span><br><span class="grad">zum Verlaufen.</span></h1>
@@ -81,7 +87,7 @@
             <p class="muted" id="progress-text"></p>
             <div class="grid grid--sm mt-2">
                 <div class="stat"><span class="stat__value" id="s-pages">0</span><span class="stat__label">Orte entdeckt</span></div>
-                <div class="stat"><span class="stat__value" id="s-eggs">0</span><span class="stat__label">Disketten</span></div>
+                <div class="stat"><span class="stat__value" id="s-eggs">0</span><span class="stat__label">Realitätskristalle</span></div>
                 <div class="stat"><span class="stat__value" id="s-xp">0</span><span class="stat__label">XP</span></div>
             </div>
             <p class="mt-2 mb-0" id="suggest"></p>
@@ -163,10 +169,100 @@ XIRU.ready(function () {
         })();
     })();
 
+    /* ── Das Gerüst: alte und neue Technik in einem leuchtenden Rahmen ── */
+    (function () {
+        const svg = XIRU.$('#rig'), NS = 'http://www.w3.org/2000/svg';
+        const S = 64, CX = 200, CY = 230;
+        const iso = (x, y, z) => [CX + (x - y) * .866 * S, CY + (x + y) * .5 * S - z * S];
+        const P = (...pts) => pts.map(p => iso.apply(null, p).map(v => v.toFixed(1)).join(',')).join(' ');
+        const el = (tag, a, parent) => { const n = document.createElementNS(NS, tag); for (const k in a) n.setAttribute(k, a[k]); (parent || svg).appendChild(n); return n; };
+        const grp = delay => el('g', { class: 'rig-part', style: 'animation-delay:' + delay + 's' });
+        const isoEllipse = (x, y, z, r, a, parent) => { const c = iso(x, y, z); return el('ellipse', Object.assign({ cx: c[0], cy: c[1], rx: 1.2247 * r * S, ry: .7071 * r * S }, a), parent); };
+        const seg = (a, b) => 'M' + iso.apply(null, a) + ' L' + iso.apply(null, b);
+
+        // Gerüst: 3×3×3 Knoten, Kanten zu jedem Nachbarn
+        const V = [-1, 0, 1], edges = [];
+        V.forEach(x => V.forEach(y => V.forEach(z => {
+            if (x < 1) edges.push([[x, y, z], [x + 1, y, z]]);
+            if (y < 1) edges.push([[x, y, z], [x, y + 1, z]]);
+            if (z < 1) edges.push([[x, y, z], [x, y, z + 1]]);
+        })));
+        const isOuter = (a, b) => [0, 1, 2].filter(i => a[i] === b[i] && Math.abs(a[i]) === 1).length >= 2;
+        edges.forEach((e, i) => el('path', { d: seg(e[0], e[1]), pathLength: 1, class: 'rig-edge' + (isOuter(e[0], e[1]) ? ' outer' : ''), style: 'animation-delay:' + (i * .012) + 's' }));
+        // Datenpakete auf einigen Aussenkanten
+        [[[-1, 1, -1], [1, 1, -1]], [[1, -1, 1], [1, 1, 1]], [[1, 1, -1], [1, 1, 1]], [[-1, -1, 1], [-1, 1, 1]], [[-1, 1, 1], [-1, 1, -1]]].forEach((e, i) => {
+            el('path', { d: seg(e[0], e[1]), pathLength: 1, class: 'rig-flow', style: 'animation-delay:' + (i * .5) + 's;animation-duration:' + (2.2 + i * .4) + 's' });
+        });
+        V.forEach(x => V.forEach(y => V.forEach(z => {
+            if ([x, y, z].filter(v => Math.abs(v) === 1).length >= 2) { const c = iso(x, y, z); el('circle', { cx: c[0], cy: c[1], r: 3.2, class: 'rig-node' }); }
+        })));
+
+        // Prozessor oben in der Mitte
+        let g = grp(1.1);
+        el('polygon', { points: P([-.5, -.5, 1], [.5, -.5, 1], [.5, .5, 1], [-.5, .5, 1]), fill: 'var(--surface-3)', stroke: 'var(--rc)', 'stroke-width': 1.5 }, g);
+        for (let i = -.35; i <= .36; i += .175) {
+            el('path', { d: seg([i, -.5, 1], [i, -.62, 1]) + ' ' + seg([i, .5, 1], [i, .62, 1]) + ' ' + seg([-.5, i, 1], [-.62, i, 1]) + ' ' + seg([.5, i, 1], [.62, i, 1]), stroke: '#facc15', 'stroke-width': 1.4 }, g);
+        }
+        el('polygon', { points: P([-.22, -.22, 1], [.22, -.22, 1], [.22, .22, 1], [-.22, .22, 1]), fill: 'var(--rc)', class: 'rig-core' }, g);
+
+        // CDs schweben über und neben dem Gerüst
+        const cd = (x, y, z, r, d, hue) => {
+            const g2 = grp(d);
+            isoEllipse(x, y, z, r, { fill: '#d6dcf5', stroke: 'var(--rc)', 'stroke-width': 1 }, g2);
+            isoEllipse(x, y, z, r * .78, { fill: 'none', stroke: hue, 'stroke-width': 3, 'stroke-dasharray': '22 18', class: 'rig-spin', opacity: .75 }, g2);
+            isoEllipse(x, y, z, r * .55, { fill: 'none', stroke: '#60a5fa', 'stroke-width': 2, 'stroke-dasharray': '10 30', class: 'rig-spin', opacity: .6, style: 'animation-duration:.8s' }, g2);
+            isoEllipse(x, y, z, r * .2, { fill: 'var(--bg)' }, g2);
+        };
+        cd(.95, -.95, 1.55, .5, 1.4, '#f472b6');
+        cd(-1.55, .25, -.55, .38, 1.9, '#a78bfa');
+
+        // Festplatten: flache Box mit drehender Scheibe und Lesearm
+        const hdd = (x0, y0, z0, w, d, h, delay) => {
+            const g3 = grp(delay);
+            el('polygon', { points: P([x0 + w, y0, z0], [x0 + w, y0 + d, z0], [x0 + w, y0 + d, z0 + h], [x0 + w, y0, z0 + h]), fill: '#334155' }, g3);
+            el('polygon', { points: P([x0, y0 + d, z0], [x0 + w, y0 + d, z0], [x0 + w, y0 + d, z0 + h], [x0, y0 + d, z0 + h]), fill: '#1e293b' }, g3);
+            el('polygon', { points: P([x0, y0, z0 + h], [x0 + w, y0, z0 + h], [x0 + w, y0 + d, z0 + h], [x0, y0 + d, z0 + h]), fill: '#64748b', stroke: 'var(--rc)', 'stroke-width': 1 }, g3);
+            const cx = x0 + w * .45, cy = y0 + d * .5, r = Math.min(w, d) * .36;
+            isoEllipse(cx, cy, z0 + h, r, { fill: '#cbd5e1' }, g3);
+            isoEllipse(cx, cy, z0 + h, r * .8, { fill: 'none', stroke: '#fff', 'stroke-width': 1.5, 'stroke-dasharray': '6 20', class: 'rig-spin', opacity: .8, style: 'animation-duration:.5s' }, g3);
+            isoEllipse(cx, cy, z0 + h, r * .15, { fill: '#475569' }, g3);
+            const a = iso(x0 + w * .92, y0 + d * .9, z0 + h), b = iso(cx + r * .3, cy + r * .2, z0 + h);
+            const arm = el('line', { x1: a[0], y1: a[1], x2: b[0], y2: b[1], stroke: '#facc15', 'stroke-width': 2.5, 'stroke-linecap': 'round' }, g3);
+            const pv = ' ' + a[0] + ' ' + a[1];
+            el('animateTransform', { attributeName: 'transform', type: 'rotate', values: '0' + pv + ';-14' + pv + ';6' + pv + ';0' + pv, dur: '2.4s', repeatCount: 'indefinite' }, arm);
+        };
+        hdd(.15, .2, -1, .75, .62, .14, 1.6);
+        hdd(-1, .42, 1, .52, .5, .1, 2.0);
+
+        // Diskette auf der rechten Seitenwand (Ebene x = 1)
+        g = grp(1.3);
+        const fl = (y, z) => [1, y, z];
+        el('polygon', { points: P(fl(-.75, -.75), fl(.05, -.75), fl(.05, .1), fl(-.65, .1), fl(-.75, 0)), fill: 'var(--accent-2)', stroke: 'var(--bg)', 'stroke-width': 1 }, g);
+        el('polygon', { points: P(fl(-.55, .1), fl(-.15, .1), fl(-.15, -.18), fl(-.55, -.18)), fill: '#cbd5e1' }, g);
+        el('polygon', { points: P(fl(-.25, .06), fl(-.18, .06), fl(-.18, -.13), fl(-.25, -.13)), fill: 'var(--accent-2)' }, g);
+        el('polygon', { points: P(fl(-.62, -.33), fl(-.08, -.33), fl(-.08, -.68), fl(-.62, -.68)), fill: '#fff', opacity: .9 }, g);
+        el('path', { d: seg(fl(-.55, -.45), fl(-.15, -.45)) + ' ' + seg(fl(-.55, -.55), fl(-.25, -.55)), stroke: '#94a3b8', 'stroke-width': 1.2 }, g);
+
+        // Zwei RAM-Riegel auf der linken Seitenwand (Ebene y = 1)
+        [[.42, .18, 1.5], [-.12, -.36, 1.7]].forEach(([zt, zb, d]) => {
+            const g4 = grp(d), r = (x, z) => [x, 1, z];
+            el('polygon', { points: P(r(-.85, zt), r(.55, zt), r(.55, zb), r(-.85, zb)), fill: '#15803d', stroke: '#052e16', 'stroke-width': 1 }, g4);
+            for (let x = -.75; x < .45; x += .2) el('polygon', { points: P(r(x, zt - .05), r(x + .13, zt - .05), r(x + .13, zb + .07), r(x, zb + .07)), fill: '#0f172a' }, g4);
+            el('path', { d: seg(r(-.82, zb + .02), r(.52, zb + .02)), stroke: '#facc15', 'stroke-width': 2, 'stroke-dasharray': '2 2' }, g4);
+        });
+
+        // Aufsteigende Bits
+        for (let i = 0; i < 9; i++) {
+            const b = iso(XIRU.rand(-10, 10) / 10, XIRU.rand(-10, 10) / 10, 1.1);
+            const t = el('text', { x: b[0], y: b[1], class: 'rig-bit', style: 'animation-delay:' + (i * .55) + 's' });
+            t.textContent = XIRU.pick(['0', '1', '01', '10', 'A:\\', '◆']);
+        }
+    })();
+
     /* ── Schreibmaschine ── */
     (function () {
         const el = XIRU.$('#tw');
-        const words = ['Eine Website', 'Ein Archiv', 'Eine Spielhalle', 'Ein KI-Labor', 'Ein Diskettenregal', 'Eine offene Welt'];
+        const words = ['Eine Website', 'Ein Archiv', 'Eine Spielhalle', 'Ein KI-Labor', 'Ein Technikmuseum', 'Eine offene Welt'];
         if (XIRU.setting('anim') === false) return;
         el.classList.add('typewriter');
         let w = 0, i = words[0].length, del = true;
@@ -184,7 +280,7 @@ XIRU.ready(function () {
     /* ── Laufschrift ── */
     const facts = [
         '<b>Wusstest du?</b> Eine Diskette fasst 1,44 MB – formatiert bleiben 1’457’664 Bytes.',
-        '<b>Tipp:</b> Disketten verstecken sich überall. Wirklich überall.',
+        '<b>Tipp:</b> Realitätskristalle verstecken sich überall. Wirklich überall.',
         '<b>Neu im Archiv:</b> ' + XIRU.pages.filter(p => p.hw).length + ' Hardware-Datenblätter.',
         '<b>Spielhalle:</b> ' + XIRU.pages.filter(p => p.game).length + ' Spiele warten auf deinen Highscore.',
         '<b>Gerücht:</b> Unter der Website soll es einen Keller geben.',
@@ -207,7 +303,7 @@ XIRU.ready(function () {
     XIRU.$('#progress-text').textContent = XIRU.user
         ? 'Noch ' + (li.need - li.into) + ' XP bis Level ' + (li.level + 1) + '. ' + (XIRU.skillPoints().free ? 'Du hast ' + XIRU.skillPoints().free + ' freie Skillpunkte!' : '')
         : 'Du spielst als Gast. Dein Fortschritt wird gespeichert – mit einem (lokalen) Konto kannst du ihn im Skilltree einsetzen.';
-    if (XIRU.user) { const a = XIRU.$('#cta-account'); a.textContent = '✦ Zum Skilltree'; a.href = 'konto/skilltree.html'; }
+    { const a = XIRU.$('#cta-account'); a.textContent = '⚙ Zur Werft'; a.href = 'konto/skilltree.html'; }
     const unseen = pages.filter(p => !P.visited[p.p] && XIRU.isUnlocked(p));
     if (unseen.length) {
         const s = XIRU.pick(unseen.filter(p => !p.hw).length ? unseen.filter(p => !p.hw) : unseen);
@@ -222,10 +318,11 @@ XIRU.ready(function () {
     XIRU.$('#regions').innerHTML = XIRU.regions.filter(r => r.id !== 'geheim' && r.id !== 'zentrum').map((r, i) => {
         const rp = pages.filter(p => p.r === r.id), seen = rp.filter(p => P.visited[p.p]).length;
         const idx = XIRU.pages.find(p => p.r === r.id && /index\.html$/.test(p.p)) || rp[0];
+        if (!XIRU.mech.discovered(r.id)) return '<a class="tile region-tile is-locked" href="' + XIRU.url('konto/skilltree.html#reisen') + '" data-reveal style="--rcol:' + r.color + '"><span class="tile__icon">🌫</span><span class="tile__title">' + XIRU.esc(r.name) + '</span><span class="tile__desc">' + XIRU.esc(r.desc) + '</span><span class="tile__meta">Expedition nötig · ' + XIRU.esc(XIRU.mech.islandReqText(r.id)) + '</span></a>';
         return '<a class="tile region-tile" href="' + XIRU.url(idx.p) + '" data-reveal style="--rcol:' + r.color + ';--d:' + (i * .05) + 's">' +
             '<span class="tile__icon">' + r.icon + '</span><span class="tile__title">' + XIRU.esc(r.name) + '</span>' +
             '<span class="tile__desc">' + XIRU.esc(r.desc) + '</span>' +
-            '<span class="tile__meta">' + seen + ' / ' + rp.length + ' Orte entdeckt</span>' +
+            '<span class="tile__meta">' + (XIRU.mech.discovered(r.id) ? seen + ' / ' + rp.length + ' Orte entdeckt' : '🌫 Expedition nötig · ' + XIRU.esc(XIRU.mech.islandReqText(r.id))) + '</span>' +
             '<div class="bar"><div class="bar__fill" style="--v:' + Math.round(seen / Math.max(1, rp.length) * 100) + '%"></div></div></a>';
     }).join('');
 

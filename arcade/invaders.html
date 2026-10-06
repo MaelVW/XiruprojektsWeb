@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invasoren · Xiruprojekts</title>
+    <meta name="description" content="Invasoren – halte die anrückenden Wellen auf, verschanz dich hinter Bunkern und hol das Daten-UFO vom Himmel.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/arcade.js"></script>
+    <style>
+        #cv { width: min(100%, calc((100vh - 170px) * 0.857)); }
+        .points-list { list-style: none; display: grid; gap: .35rem; font-size: .85rem; color: var(--text-muted); }
+        .points-list b { color: var(--text); font-variant-numeric: tabular-nums; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">▶ Spielhalle · Action</span>
+        <h1>Invasoren</h1>
+        <p class="lead">Sie kommen in Reihen, sie kommen im Takt – und je weniger es sind, desto schneller werden sie. Verschanz dich hinter den Bunkern, solange sie halten, und hol das Daten-UFO vom Himmel, wenn es vorbeischwebt.</p>
+    </header>
+
+    <div class="game">
+        <div>
+            <div class="game__hud" id="hud"></div>
+            <div class="game__stage" id="stage">
+                <canvas id="cv"></canvas>
+                <div class="game__overlay" id="ov"></div>
+            </div>
+            <div class="touch-pad">
+                <button data-key="ArrowLeft" aria-label="Links">◀</button>
+                <button data-key=" " aria-label="Feuer">●</button>
+                <button data-key="ArrowRight" aria-label="Rechts">▶</button>
+                <button data-key="p" aria-label="Pause">⏸</button>
+            </div>
+        </div>
+        <aside class="game__side">
+            <div class="card">
+                <h3>Steuerung</h3>
+                <ul class="keys-help">
+                    <li><kbd>←</kbd> <kbd>→</kbd> oder <kbd>A</kbd> <kbd>D</kbd> – Kanone bewegen</li>
+                    <li><kbd>Leertaste</kbd>, <kbd>↑</kbd> oder <kbd>W</kbd> – feuern (gedrückt halten für Dauerfeuer)</li>
+                    <li>Maus: Kanone folgt, Klick feuert · Touch: tippen = hinfahren und feuern</li>
+                    <li><kbd>P</kbd> / <kbd>Esc</kbd> – Pause</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Punkte</h3>
+                <ul class="points-list">
+                    <li><b>30</b> · oberste Reihe</li>
+                    <li><b>20</b> · mittlere Reihen</li>
+                    <li><b>10</b> · untere Reihen</li>
+                    <li><b>?</b> · Daten-UFO – manche sagen, man könne es zählen …</li>
+                    <li>Alle 1’500 Punkte ein Extraleben.</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Modus</h3>
+                <div class="row" id="modes">
+                    <button class="chip is-active" data-mode="normal">Normal</button>
+                    <button class="chip" data-mode="schwer">Schwer</button>
+                </div>
+                <p class="small muted mt-2" id="mode-desc">Der Klassiker im Originaltempo.</p>
+            </div>
+            <div class="card">
+                <h3>Rekord</h3>
+                <p class="stat__value" id="best">–</p>
+            </div>
+        </aside>
+    </div>
+</main>
+<script src="js/invaders.js"></script>
+</body>
+</html>

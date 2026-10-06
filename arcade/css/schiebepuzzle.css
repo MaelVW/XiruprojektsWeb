@@ -1,0 +1,57 @@
+/* Schiebepuzzle */
+.sp-stage { padding: clamp(10px, 3vw, 24px); }
+.sp {
+    --n: 4; --gap: clamp(4px, 1.2vw, 8px);
+    container-type: inline-size;
+    position: relative; width: min(100%, 480px); aspect-ratio: 1;
+    padding: var(--gap); border-radius: 14px;
+    background: color-mix(in srgb, var(--border) 70%, var(--bg-2));
+    box-shadow: inset 0 2px 10px rgba(0, 0, 0, .3);
+}
+.sp__inner { position: absolute; inset: var(--gap); }
+.sp-t {
+    position: absolute; left: 0; top: 0;
+    width: calc((100% - (var(--n) - 1) * var(--gap)) / var(--n));
+    height: calc((100% - (var(--n) - 1) * var(--gap)) / var(--n));
+    transform: translate(calc(var(--x) * (100% + var(--gap))), calc(var(--y) * (100% + var(--gap))));
+    transition: transform .12s ease-out;
+    border: 0; padding: 0; border-radius: 9px; cursor: pointer;
+    display: grid; place-items: center;
+    font: 800 calc(46cqw / var(--n)) / 1 var(--font); font-variant-numeric: tabular-nums;
+    color: var(--text);
+    background: linear-gradient(160deg, color-mix(in srgb, var(--rc) 22%, var(--surface-3)), var(--surface-2));
+    box-shadow: inset 0 -4px 0 rgba(0, 0, 0, .28), inset 0 2px 0 color-mix(in srgb, var(--text) 10%, transparent);
+    touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+}
+.sp-t:hover { filter: brightness(1.12); }
+.sp-t.ok { background: linear-gradient(160deg, var(--rc), color-mix(in srgb, var(--rc) 70%, var(--accent-2))); color: var(--accent-ink); }
+.sp-t.ok::after { content: ""; position: absolute; right: 8%; bottom: 8%; width: 9%; height: 9%; border-radius: 50%; background: currentColor; opacity: .5; }
+.sp.is-bild .sp-t { background-image: var(--img); background-size: calc(var(--n) * 100% + (var(--n) - 1) * var(--gap)) auto; color: #fff; text-shadow: 0 1px 3px rgba(0, 0, 0, .8); }
+.sp.is-bild .sp-t span { position: absolute; left: 7%; top: 6%; font-size: max(11px, calc(20cqw / var(--n))); opacity: .85; }
+.sp.is-bild .sp-t.ok::after { display: none; }
+.sp.is-bild .sp-t.ok { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--rc) 60%, transparent); }
+.sp.no-nums .sp-t span { display: none; }
+.sp-peek { position: absolute; inset: var(--gap); border-radius: 9px; background-size: cover; z-index: 4; animation: fadeIn .2s both; pointer-events: none; }
+.sp-peek.is-nums { display: grid; grid-template-columns: repeat(var(--n), 1fr); gap: var(--gap); background: none; }
+.sp-peek.is-nums i { display: grid; place-items: center; border-radius: 9px; background: var(--surface-3); font: 800 calc(40cqw / var(--n)) / 1 var(--font); font-style: normal; color: var(--text-muted); }
+.sp.is-won .sp-t { animation: spWin .6s ease-out var(--d, 0s) both; }
+@keyframes spWin { 40% { filter: brightness(1.6); } }
+.sp-full { position: absolute; inset: var(--gap); border-radius: 10px; background-size: cover; opacity: 0; transition: opacity .8s .4s; z-index: 3; pointer-events: none; }
+.sp.is-won .sp-full { opacity: 1; }
+.sp-tools { justify-content: center; }
+.sp-tools kbd { font-size: .7em; color: inherit; }
+.sp-records { list-style: none; padding: 0; margin: 0; }
+.sp-records li { display: flex; justify-content: space-between; gap: .5rem; padding: .2rem 0; border-top: 1px solid var(--border); color: var(--text-muted); }
+.sp-records b { color: var(--text); font-variant-numeric: tabular-nums; }
+
+/* Ergebnis-Band unten – das fertige Bild bleibt sichtbar */
+.game__overlay.sp-lite {
+    inset: auto 0 0 0; flex-direction: row; flex-wrap: wrap; gap: .4rem 1rem; padding: .75rem 1rem;
+    background: color-mix(in srgb, var(--bg) 90%, transparent); border-top: 1px solid var(--border-strong);
+    animation: spBand .35s var(--ease) both;
+}
+.game__overlay.sp-lite > div:first-child { font-size: 1.8rem !important; line-height: 1; }
+.game__overlay.sp-lite h2 { font-size: 1.25rem; }
+.game__overlay.sp-lite p { flex: 1 1 14rem; text-align: left; font-size: .9rem; }
+.game__overlay.sp-lite .btn--lg { padding: .55rem 1.1rem; font-size: .95rem; }
+@keyframes spBand { from { transform: translateY(100%); } to { transform: none; } }

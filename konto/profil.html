@@ -42,7 +42,7 @@
 
     <div class="grid grid--sm mb-3">
         <div class="card card--flat stat"><span class="stat__value" id="st-pages">0</span><span class="stat__label">Orte entdeckt</span></div>
-        <div class="card card--flat stat"><span class="stat__value" id="st-eggs">0</span><span class="stat__label">Disketten</span></div>
+        <div class="card card--flat stat"><span class="stat__value" id="st-eggs">0</span><span class="stat__label">Kristalle</span></div>
         <div class="card card--flat stat"><span class="stat__value" id="st-games">0</span><span class="stat__label">Spiele gespielt</span></div>
         <div class="card card--flat stat"><span class="stat__value" id="st-days">0</span><span class="stat__label">Besuchstage</span></div>
         <div class="card card--flat stat"><span class="stat__value" id="st-skills">0</span><span class="stat__label">Skills</span></div>
@@ -107,7 +107,7 @@ XIRU.ready(function () {
         }
     })();
 
-    const titles = [[1, 'Neuling'], [3, 'Pfadfinder:in'], [5, 'Abenteurer:in'], [8, 'Kartograph:in'], [12, 'Disketten-Jäger:in'], [16, 'Veteran:in'], [20, 'Legende'], [30, 'Mythos']];
+    const titles = [[1, 'Neuling'], [3, 'Pfadfinder:in'], [5, 'Abenteurer:in'], [8, 'Kartograph:in'], [12, 'Kristalljäger:in'], [16, 'Veteran:in'], [20, 'Legende'], [30, 'Mythos']];
     $('#name').textContent = name;
     $('#lvl').textContent = 'Level ' + li.level;
     $('#title').textContent = titles.filter(t => li.level >= t[0]).pop()[1];
@@ -144,9 +144,9 @@ XIRU.ready(function () {
     }
     $('#heat').innerHTML = days.join('');
 
-    // Feed: zuletzt entdeckte Orte und Disketten
+    // Feed: zuletzt entdeckte Orte und Kristalle
     const events = visited.map(p => ({ t: P.visited[p], html: '🧭 <a href="' + XIRU.url(p) + '">' + XIRU.esc(XIRU.pageFor(p).t) + '</a>' }))
-        .concat(Object.keys(P.eggs).filter(id => XIRU.eggInfo(id)).map(id => ({ t: P.eggs[id], html: '💾 Diskette „' + XIRU.esc(XIRU.eggInfo(id).n) + '"' })))
+        .concat(Object.keys(P.eggs).filter(id => XIRU.eggInfo(id)).map(id => ({ t: P.eggs[id], html: '◆ Kristall „' + XIRU.esc(XIRU.eggInfo(id).n) + '"' })))
         .sort((a, b) => b.t - a.t).slice(0, 10);
     $('#feed').innerHTML = events.map(e => '<li>' + e.html + '<time>' + new Date(e.t).toLocaleString('de-CH', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + '</time></li>').join('') || '<li class="muted">Noch nichts – leg los!</li>';
 

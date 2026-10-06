@@ -3,141 +3,354 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Skilltree · Xiruprojekts</title>
-    <meta name="description" content="Verteile Skillpunkte und schalte neue Orte, Spiele und Designs frei.">
+    <title>Werft · Xiruprojekts</title>
+    <meta name="description" content="Bau deinen Erkundungs-Mech, repariere ihn und brich zu neuen Inseln auf.">
     <link rel="stylesheet" href="../assets/css/main.css">
     <script src="../assets/js/site.js"></script>
     <script src="../assets/js/core.js"></script>
     <style>
-        .st-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1.5rem; align-items: center; }
-        @media (max-width: 700px) { .st-head { grid-template-columns: 1fr; } }
-        .points { text-align: center; padding: 1rem 1.5rem; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--border); }
-        .points b { font-size: 2.6rem; line-height: 1; display: block; color: var(--rc); font-variant-numeric: tabular-nums; }
-        .root { display: flex; justify-content: center; margin: 1rem 0 .5rem; }
-        .root__node { width: 84px; height: 84px; border-radius: 50%; display: grid; place-items: center; font-size: 2rem; cursor: pointer; user-select: none;
-            background: radial-gradient(circle at 35% 30%, var(--surface-3), var(--surface)); border: 2px solid var(--rc); box-shadow: 0 0 30px -6px var(--rc); animation: float 5s ease-in-out infinite; }
+        .yard { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 1.25rem; align-items: start; }
+        @media (max-width: 920px) { .yard { grid-template-columns: 1fr; } }
+        .bay { position: relative; background: radial-gradient(ellipse at 50% 85%, color-mix(in srgb, var(--rc) 18%, transparent), transparent 60%), repeating-linear-gradient(90deg, transparent 0 39px, color-mix(in srgb, var(--border) 60%, transparent) 39px 40px), var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; }
+        .bay svg { width: 100%; height: auto; display: block; overflow: visible; }
+        .bay__floor { position: absolute; left: 8%; right: 8%; bottom: 18px; height: 10px; border-radius: 50%; background: rgba(0,0,0,.35); filter: blur(6px); }
+        .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: .5rem; margin-top: .75rem; }
+        .stats div { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: .5rem .6rem; text-align: center; }
+        .stats b { display: block; font-size: 1.4rem; font-variant-numeric: tabular-nums; }
+        .stats span { font-size: .7rem; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); }
+        .scrap { display: flex; align-items: center; gap: .6rem; font-weight: 800; font-size: 1.2rem; }
+        .slot-card { border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); margin-bottom: .75rem; }
+        .slot-card > summary { list-style: none; cursor: pointer; padding: .75rem 1rem; display: flex; gap: .75rem; align-items: center; }
+        .slot-card > summary::-webkit-details-marker { display: none; }
+        .slot-card[open] > summary { border-bottom: 1px solid var(--border); }
+        .slot-card__icon { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: var(--surface-3); }
+        .part { display: grid; grid-template-columns: 1fr auto; gap: .35rem 1rem; padding: .7rem 1rem; border-bottom: 1px dashed var(--border); align-items: center; }
+        .part:last-child { border-bottom: 0; }
+        .part.is-locked { opacity: .55; }
+        .part__name { font-weight: 700; }
+        .part__stats { display: flex; gap: .35rem; flex-wrap: wrap; font-size: .75rem; }
+        .part__d { grid-column: 1 / -1; font-size: .82rem; color: var(--text-muted); }
+        .cond { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr auto; gap: .6rem; align-items: center; font-size: .78rem; }
+        .cond .bar { height: 6px; }
+        .cond.low .bar__fill { background: var(--warning); } .cond.dead .bar__fill { background: var(--danger); }
+        .isles { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); }
+        .isle { border-left: 4px solid var(--ic); }
+        .isle.is-done { opacity: .75; }
+        .guide { display: grid; grid-template-columns: auto 1fr; gap: 1rem; align-items: start; border: 2px solid var(--warning); background: color-mix(in srgb, var(--warning) 8%, var(--surface)); }
+        .guide__bot { font-size: 2.6rem; animation: float 3s ease-in-out infinite; }
+        .guide__step { font-size: .75rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--warning); }
+        .pulse-hint { animation: pulse 1.4s infinite; --pc: var(--warning); border-radius: 10px; }
+        /* Mech-Animationen */
+        .mech .spin { animation: spin 1.6s linear infinite; transform-box: fill-box; transform-origin: center; }
+        .mech.running .body { animation: shake .25s linear infinite; }
+        .mech.running .spin { animation-duration: .25s; }
+        .mech .glow { animation: pulse 2s infinite; --pc: var(--rc); }
+        .mech .smoke { animation: smoke 2.2s ease-out infinite; opacity: 0; }
+        .mech .flame { animation: flame .18s steps(2) infinite; transform-box: fill-box; transform-origin: top; }
+        .mech .dish { animation: dish 4s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: bottom center; }
+        @keyframes smoke { 0% { opacity: .7; transform: translateY(0) scale(.6); } 100% { opacity: 0; transform: translateY(-40px) scale(1.6); } }
+        @keyframes flame { 50% { transform: scaleY(1.35); } }
+        @keyframes dish { from { transform: rotate(-18deg); } to { transform: rotate(18deg); } }
+        .travel { height: 70px; position: relative; border-radius: 10px; overflow: hidden; background: repeating-linear-gradient(90deg, color-mix(in srgb, #38bdf8 20%, transparent) 0 20px, transparent 20px 40px), var(--bg-2); margin: 1rem 0; }
+        .travel__mech { position: absolute; left: 0; top: 14px; font-size: 2.2rem; animation: travel 2.2s ease-in-out forwards; }
+        .travel__isle { position: absolute; right: 10px; top: 10px; font-size: 2.4rem; }
+        @keyframes travel { to { left: calc(100% - 100px); } }
+        /* Module (frühere Skills) */
         .branches { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); }
-        .branch { --bc: var(--rc); position: relative; padding: 1.25rem 1rem 1rem; border-top: 3px solid var(--bc); }
-        .branch h2 { font-size: 1.15rem; margin: 0; color: var(--bc); }
-        .branch__prog { font-size: .8rem; color: var(--text-muted); }
-        .tree { position: relative; height: 360px; margin-top: .5rem; }
+        .branch { --bc: var(--rc); border-top: 3px solid var(--bc); }
+        .branch h3 { color: var(--bc); margin: 0; }
+        .tree { position: relative; height: 340px; margin-top: .5rem; }
         .tree svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
         .tree line { stroke: var(--border-strong); stroke-width: 3; stroke-linecap: round; }
-        .tree line.on { stroke: var(--bc); stroke-dasharray: 200; stroke-dashoffset: 200; animation: drawLine 1s var(--ease) forwards; filter: drop-shadow(0 0 4px var(--bc)); }
-        .node { position: absolute; transform: translate(-50%, -50%); width: 64px; height: 64px; border-radius: 18px; display: grid; place-items: center;
-            background: var(--surface-2); border: 2px solid var(--border-strong); color: var(--text-faint); font-weight: 800; font-size: .7rem; text-align: center;
-            cursor: pointer; transition: transform .2s var(--ease), border-color .2s, background .2s; padding: .25rem; line-height: 1.1; }
-        .node:hover, .node:focus-visible { transform: translate(-50%, -50%) scale(1.08); }
+        .tree line.on { stroke: var(--bc); filter: drop-shadow(0 0 4px var(--bc)); }
+        .node { position: absolute; transform: translate(-50%, -50%); width: 64px; height: 64px; border-radius: 18px; display: grid; place-items: center; background: var(--surface-2); border: 2px solid var(--border-strong); color: var(--text-faint); font-weight: 800; font-size: .68rem; text-align: center; cursor: pointer; padding: .25rem; line-height: 1.1; }
         .node__cost { position: absolute; top: -9px; right: -9px; width: 22px; height: 22px; border-radius: 50%; background: var(--surface-3); border: 1px solid var(--border-strong); font-size: .72rem; display: grid; place-items: center; color: var(--text); }
         .node.is-learned { background: color-mix(in srgb, var(--bc) 22%, var(--surface)); border-color: var(--bc); color: var(--text); box-shadow: 0 0 18px -4px var(--bc); }
-        .node.is-learned .node__cost { background: var(--bc); color: var(--accent-ink); border-color: transparent; }
         .node.is-available { border-color: var(--bc); color: var(--text); --pc: var(--bc); animation: pulse 1.8s infinite; }
         .node.is-blocked { opacity: .5; }
-        .node.is-cap { width: 76px; height: 76px; border-radius: 50%; }
-        .node.just { animation: popIn .5s var(--ease); }
-        .detail { position: sticky; bottom: 1rem; margin-top: 1.5rem; z-index: 5; }
-        .detail .card { box-shadow: var(--shadow); border-color: var(--border-strong); }
-        .unlocks a { font-weight: 700; }
+        .root-egg { cursor: pointer; font-size: 1.6rem; }
     </style>
 </head>
 <body>
-<main class="content">
-    <header class="st-head page-head">
+<main class="content content--wide">
+    <header class="page-head row" style="align-items:flex-end">
         <div>
-            <span class="eyebrow">⚓ Heimathafen</span>
-            <h1>Skilltree</h1>
-            <p class="lead" id="lead">Jedes Level bringt einen Skillpunkt. Manche Disketten (Meilensteine) geben einen zusätzlichen.</p>
+            <span class="eyebrow">⚓ Heimathafen · Werft</span>
+            <h1 class="mb-0">Die Werft</h1>
+            <p class="lead">Die Inseln der Xiru-Welt liegen hinter Nebel und Wasser. Bau dir einen Erkundungs-Mech aus alter Technik,
+                halte ihn in Schuss und brich zu neuen Ufern auf. Bauteile verdienst du dir mit Leveln, Realitätskristallen und Entdeckungen.</p>
         </div>
-        <div class="points"><b id="pts">0</b><span class="small muted">freie Punkte</span><div class="small faint mt-1" id="pts-sub"></div></div>
+        <span class="spacer"></span>
+        <div class="card card--flat scrap" title="1 Schrott pro 4 XP"><span class="root-egg" data-egg="p-wurzel" data-egg-clicks="10">🔩</span><span id="scrap">0</span><span class="small muted">Schrott</span></div>
     </header>
 
-    <div class="root"><div class="root__node" data-egg="p-wurzel" data-egg-clicks="10" title="Erwachen – die Wurzel von allem">🌱</div></div>
-    <div class="branches" id="branches"></div>
-    <div class="detail" id="detail" hidden></div>
-    <div class="row mt-4">
-        <button class="btn btn--ghost btn--sm" id="reset" type="button">🧪 Vergessenstrank (alle Skills zurücksetzen)</button>
-        <a class="btn btn--ghost btn--sm" href="../hilfe.html#skills">Wie funktioniert das?</a>
+    <section class="card guide mb-3" id="guide" hidden></section>
+
+    <div class="tabs" role="tablist">
+        <button role="tab" aria-selected="true" data-tab="mech">⚙ Mech</button>
+        <button role="tab" aria-selected="false" data-tab="reisen">🧭 Expeditionen</button>
+        <button role="tab" aria-selected="false" data-tab="module">✦ Module</button>
     </div>
+
+    <section data-panel="mech">
+        <div class="yard">
+            <div>
+                <div class="bay"><div class="bay__floor"></div><div id="mech"></div></div>
+                <div class="stats" id="stats"></div>
+                <div class="row mt-2"><button class="btn" id="testrun" type="button">▶ Testlauf</button><span class="small muted" id="ready"></span></div>
+            </div>
+            <div id="slots"></div>
+        </div>
+    </section>
+
+    <section data-panel="reisen" hidden>
+        <p class="muted">Jede Expedition schaltet eine Insel dauerhaft frei – und beansprucht den Mech. Gute Panzerung verringert den Schaden.
+            Bereits erreichte Inseln bleiben erreichbar, auch wenn später etwas kaputtgeht.</p>
+        <div class="isles" id="isles"></div>
+    </section>
+
+    <section data-panel="module" hidden>
+        <p class="muted" id="mod-lead">Module sind Spezialeinbauten für deinen Mech. Jedes Level bringt einen Modulpunkt, Kernkristalle einen zusätzlichen. Module brauchen ein (lokales) Konto.</p>
+        <div class="row mb-2"><span class="badge badge--accent" id="mod-pts"></span><span class="spacer"></span><button class="btn btn--ghost btn--sm" id="reset" type="button">🧪 Module ausbauen (Vergessenstrank)</button></div>
+        <div class="branches" id="branches"></div>
+        <div class="card mt-3" id="mod-detail" hidden></div>
+    </section>
 </main>
 <script>
 XIRU.ready(function () {
-    const $ = XIRU.$;
-    // Positionen im Ast (Prozent): 1 oben, 2/3 Mitte, 5/4 darunter, 6 Abschluss
-    const POS = { 1: [50, 10], 2: [24, 36], 3: [76, 36], 5: [24, 63], 4: [76, 63], 6: [50, 90] };
-    let selected = null;
+    const $ = XIRU.$, M = XIRU.mech;
+    const STAT = { R: 'Reichweite', E: 'Energie', S: 'Sensor', P: 'Panzerung' };
+    const ISLE_ICON = { werkzeuge: '⚒', studio: '⬇', arcade: '▶', hardware: '▣', mixer: '≋', ki: '✦' };
 
-    function unlocksOf(id) {
-        const pages = XIRU.pages.filter(p => p.skill === id);
-        const themes = (XIRU.themes || []).filter(t => t.skill === id);
-        return { pages, themes };
+    /* ── Mech zeichnen: jedes Bauteil hat seine eigene Grafik ── */
+    function smoke(x, y) { return '<g class="smoke"><circle cx="' + x + '" cy="' + y + '" r="7" fill="#64748b"/></g><g class="smoke" style="animation-delay:1.1s"><circle cx="' + (x + 6) + '" cy="' + y + '" r="5" fill="#94a3b8"/></g>'; }
+    function drawMech() {
+        const ins = sl => M.installed(sl), cond = sl => { const p = ins(sl); return p ? M.cond(p.id) : 100; };
+        const st = M.stats();
+        let g = '';
+        // Antrieb
+        const a = ins('antrieb');
+        if (!a) g += '<rect x="80" y="160" width="80" height="34" rx="8" fill="none" stroke="var(--border-strong)" stroke-dasharray="5 4"/><text x="120" y="182" text-anchor="middle" font-size="10" fill="var(--text-faint)">Antrieb</text>';
+        else if (a.id === 'a-paddel') g += '<g class="spin"><circle cx="120" cy="176" r="22" fill="#78350f" stroke="#a16207" stroke-width="3"/>' + [0, 45, 90, 135].map(r => '<rect x="117" y="152" width="6" height="48" fill="#a16207" transform="rotate(' + r + ' 120 176)"/>').join('') + '<circle cx="120" cy="176" r="5" fill="#facc15"/></g>';
+        else if (a.id === 'a-raupe') g += '<rect x="58" y="160" width="124" height="34" rx="17" fill="#1f2937" stroke="#4b5563" stroke-width="3"/>' + [76, 102, 128, 154].map(x => '<g class="spin"><circle cx="' + x + '" cy="177" r="10" fill="#6b7280"/><rect x="' + (x - 1.5) + '" y="168" width="3" height="18" fill="#374151"/></g>').join('');
+        else if (a.id === 'a-schraube') g += '<ellipse cx="70" cy="182" rx="26" ry="9" fill="#ef4444"/><ellipse cx="170" cy="182" rx="26" ry="9" fill="#ef4444"/><rect x="40" y="162" width="160" height="6" fill="#9ca3af"/><g class="spin" style="transform-origin:28px 150px"><ellipse cx="28" cy="140" rx="5" ry="14" fill="#cbd5e1"/><ellipse cx="28" cy="160" rx="5" ry="14" fill="#94a3b8"/></g>';
+        else if (a.id === 'a-duesen') g += '<path d="M78 158h22l-4 22h-14z M140 158h22l-4 22h-14z" fill="#475569"/><path class="flame" d="M82 180h14l-7 22z M144 180h14l-7 22z" fill="#f97316"/><path class="flame" d="M85 180h8l-4 12z M147 180h8l-4 12z" fill="#fde047"/>';
+        else if (a.id === 'a-beine') g += '<path d="M90 156 L72 182 L86 206 M150 156 L168 182 L154 206" stroke="#64748b" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="72" cy="182" r="7" fill="var(--rc)"/><circle cx="168" cy="182" r="7" fill="var(--rc)"/><rect x="70" y="204" width="34" height="8" rx="3" fill="#334155"/><rect x="138" y="204" width="34" height="8" rx="3" fill="#334155"/>';
+        if (a && cond('antrieb') < 40) g += smoke(110, 160);
+        // Rahmen
+        const r = ins('rahmen');
+        let body;
+        if (!r) body = '<rect x="62" y="70" width="116" height="90" rx="10" fill="none" stroke="var(--border-strong)" stroke-dasharray="6 5"/><text x="120" y="118" text-anchor="middle" font-size="11" fill="var(--text-faint)">Rahmen fehlt</text>';
+        else if (r.id === 'r-schrott') body = '<rect x="62" y="70" width="116" height="90" rx="4" fill="#7c4a2d" stroke="#3f2a1d" stroke-width="3"/><rect x="70" y="128" width="30" height="22" fill="#9a6b45"/><path d="M150 76l10 14" stroke="#3f2a1d" stroke-width="2"/>' + [[68, 76], [172, 76], [68, 154], [172, 154]].map(c => '<circle cx="' + c[0] + '" cy="' + c[1] + '" r="2.5" fill="#d6a76b"/>').join('');
+        else if (r.id === 'r-alu') body = '<rect x="60" y="68" width="120" height="92" rx="18" fill="#9ca3af" stroke="#e5e7eb" stroke-width="2"/><rect x="68" y="74" width="104" height="14" rx="7" fill="#e5e7eb" opacity=".6"/>';
+        else if (r.id === 'r-titan') body = '<path d="M74 66h92l16 24v52l-16 20H74l-16-20V90z" fill="#475569" stroke="#94a3b8" stroke-width="2"/><path d="M66 110h108" stroke="#facc15" stroke-width="3" stroke-dasharray="8 6"/>';
+        else body = '<path d="M120 58l60 30v54l-60 30-60-30V88z" fill="var(--accent-2)" fill-opacity=".55" stroke="var(--accent-2)" stroke-width="2"/><path d="M120 58v114M60 88l120 54M180 88L60 142" stroke="#fff" stroke-opacity=".35"/>';
+        // Panzerung
+        const pz = ins('panzer');
+        if (pz && r) {
+            const col = pz.id === 'p-blech' ? '#9ca3af' : pz.id === 'p-ram' ? '#15803d' : '#111827';
+            body += '<rect x="52" y="80" width="12" height="70" rx="3" fill="' + col + '"/><rect x="176" y="80" width="12" height="70" rx="3" fill="' + col + '"/>' +
+                (pz.id === 'p-ram' ? [86, 100, 114, 128].map(y => '<rect x="54" y="' + y + '" width="8" height="5" fill="#0f172a"/><rect x="178" y="' + y + '" width="8" height="5" fill="#0f172a"/>').join('') : '') +
+                (pz.id === 'p-tower' ? '<circle cx="58" cy="88" r="2.5" fill="#22c55e" class="glow"/><circle cx="182" cy="88" r="2.5" fill="#22c55e"/>' : '');
+        }
+        // Energiekern im Inneren
+        const k = ins('kern');
+        if (k && r) {
+            if (k.id === 'k-batterie') body += '<rect x="103" y="98" width="34" height="24" rx="3" fill="#1f2937" stroke="#facc15" stroke-width="2"/><rect x="108" y="94" width="6" height="4" fill="#ef4444"/><rect x="126" y="94" width="6" height="4" fill="#1f2937" stroke="#9ca3af"/><text x="120" y="115" text-anchor="middle" font-size="9" fill="#facc15">12V</text>';
+            else if (k.id === 'k-diskette') body += '<g class="glow"><rect x="104" y="94" width="32" height="32" rx="2" fill="var(--accent-2)"/><rect x="112" y="94" width="16" height="10" fill="#cbd5e1"/><rect x="109" y="112" width="22" height="12" fill="#fff"/></g>';
+            else if (k.id === 'k-cd') body += '<g class="spin"><circle cx="120" cy="110" r="18" fill="#d6dcf5" stroke="var(--rc)"/><path d="M120 95a15 15 0 0 1 15 15" stroke="#f472b6" stroke-width="3" fill="none"/><circle cx="120" cy="110" r="4" fill="var(--bg)"/></g>';
+            else body += '<g class="glow">' + XIRU.crystalSVG(4, 30).replace('<svg ', '<svg x="105" y="90" ') + '</g>';
+        }
+        if (r && cond('rahmen') < 40) body += '<path d="M90 74l8 18-6 10 10 16" stroke="#111" stroke-width="2" fill="none"/>' + smoke(150, 70);
+        g += '<g class="body">' + body;
+        // Sensor oben
+        const s = ins('sensor');
+        if (!s) g += '<rect x="100" y="30" width="40" height="30" rx="6" fill="none" stroke="var(--border-strong)" stroke-dasharray="4 4"/>';
+        else if (s.id === 's-antenne') g += '<path d="M120 70 V30 M120 30 l-12 -10 M120 30 l12 -10" stroke="#cbd5e1" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="120" cy="28" r="3" fill="#ef4444" class="glow"/>';
+        else if (s.id === 's-radar') g += '<rect x="117" y="44" width="6" height="26" fill="#64748b"/><g class="dish"><path d="M96 30 Q120 62 144 30 Z" fill="#cbd5e1" stroke="#94a3b8"/><line x1="120" y1="44" x2="120" y2="26" stroke="#94a3b8" stroke-width="2"/></g>';
+        else if (s.id === 's-hdd') g += '<rect x="117" y="50" width="6" height="20" fill="#64748b"/><g class="spin"><ellipse cx="120" cy="40" rx="22" ry="10" fill="#cbd5e1" stroke="#64748b"/><circle cx="120" cy="40" r="3" fill="#475569"/></g><line x1="138" y1="34" x2="124" y2="40" stroke="#facc15" stroke-width="3"/>';
+        else g += '<path d="M120 18 L140 64 H100 Z" fill="var(--rc)" fill-opacity=".5" stroke="var(--rc)" class="glow"/><path d="M120 18 V64" stroke="#fff" stroke-opacity=".5"/>';
+        // Werkzeugarm rechts
+        const w = ins('arm');
+        if (w) {
+            g += '<path d="M178 100 L206 92 L218 120" stroke="#64748b" stroke-width="9" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="206" cy="92" r="6" fill="var(--rc)"/>';
+            if (w.id === 'w-schluessel') g += '<path d="M218 120 l0 18 M210 140 a8 8 0 1 0 16 0" stroke="#cbd5e1" stroke-width="5" fill="none"/>';
+            else if (w.id === 'w-greifer') g += '<path d="M218 120 l-8 18 M218 120 l8 18" stroke="#cbd5e1" stroke-width="5" stroke-linecap="round"/>';
+            else g += '<path class="spin" d="M211 120 h14 l-7 26 z" fill="#facc15"/>';
+        }
+        g += '</g>';
+        // Augen / Cockpit
+        if (r) g += '<rect x="96" y="76" width="48" height="14" rx="7" fill="#0b0e1a"/><circle cx="110" cy="83" r="4" fill="var(--rc)" class="glow"/><circle cx="130" cy="83" r="4" fill="var(--rc)"/>';
+        return '<svg class="mech" id="mech-svg" viewBox="0 0 240 220" role="img" aria-label="Dein Mech">' + g + '</svg>';
     }
-    function state(s) {
+
+    /* ── Tutorial ── */
+    function tutorialStep() {
+        const m = M.state();
+        if (m.tutorial >= 2) return null;
+        if (m.tutorial === 0) return 'intro';
+        if (!M.installed('rahmen')) return 'rahmen';
+        if (!M.installed('antrieb')) return 'antrieb';
+        if (!M.installed('kern')) return 'kern';
+        if (!m.testrun) return 'test';
+        if (Object.keys(m.islands).length) return 'fertig';
+        if (!m.trep) return 'repair';
+        return 'reise';
+    }
+    const STEPS = {
+        intro: ['1/7', 'Willkommen in der Werft!', 'Ich bin Schraube, die Werftmeisterin. Die Inseln dieser Welt erreichst du nur mit einem Mech. Hier ist dein Startpaket: ein Schrottrahmen, ein Paddelrad und eine Autobatterie. Nicht schön, aber es schwimmt.', '<button class="btn btn--primary" id="t-open">📦 Startpaket öffnen</button>'],
+        rahmen: ['2/7', 'Zuerst der Rahmen', 'Öffne rechts „Rahmen", klicke beim Schrottrahmen auf <b>Bauen</b> und danach auf <b>Einbauen</b>. Der Rahmen hält alles zusammen.', ''],
+        antrieb: ['3/7', 'Jetzt der Antrieb', 'Ohne Antrieb kein Vorwärtskommen. Bau und montiere das Paddelrad unter „Antrieb".', ''],
+        kern: ['4/7', 'Energie!', 'Ein Mech braucht einen Energiekern. Die Autobatterie unter „Energiekern" reicht für den Anfang.', ''],
+        test: ['5/7', 'Testlauf', 'Alles drin? Dann wirf den Motor an! Drück links auf <b>▶ Testlauf</b>.', ''],
+        repair: ['6/7', 'Autsch – das Paddelrad', 'Siehst du den Rauch? Teile nutzen sich ab – besonders auf Expeditionen. Unter 40 % arbeiten sie nur halb so gut, bei 0 % fallen sie aus. Reparieren kostet normalerweise Schrott, diese erste Reparatur geht aufs Haus.', '<button class="btn btn--primary" id="t-repair">🔧 Gratis reparieren</button>'],
+        reise: ['7/7', 'Leinen los!', 'Dein Mech ist bereit. Wechsle zu <b>🧭 Expeditionen</b> und fahr zum Werkzeugkasten oder ins Studio. Danach wartet die ganze Welt – sobald dein Mech stark genug ist.', '<button class="btn btn--primary" id="t-go">🧭 Zu den Expeditionen</button>'],
+        fertig: ['✓', 'Geschafft!', 'Deine erste Insel ist erreicht. Ab jetzt verdienst du Bauteile mit Leveln, Realitätskristallen, entdeckten Orten und gespielten Spielen. Schrott bekommst du für jede XP. Viel Spass beim Basteln!', '<button class="btn btn--primary" id="t-done">Los geht\'s</button>']
+    };
+    function renderGuide() {
+        const step = tutorialStep(), box = $('#guide');
+        XIRU.$$('.pulse-hint').forEach(e => e.classList.remove('pulse-hint'));
+        if (!step) { box.hidden = true; return; }
+        const t = STEPS[step];
+        box.hidden = false;
+        box.innerHTML = '<div class="guide__bot">🤖</div><div><div class="guide__step">Tutorial ' + t[0] + '</div><h3 class="mb-1">' + t[1] + '</h3><p class="mb-2">' + t[2] + '</p><div class="row">' + t[3] + '</div></div>';
+        const hint = { rahmen: 'rahmen', antrieb: 'antrieb', kern: 'kern' }[step];
+        if (hint) { const d = $('details[data-slot="' + hint + '"]'); if (d) { d.open = true; d.classList.add('pulse-hint'); } }
+        if (step === 'test') $('#testrun').classList.add('pulse-hint');
+        const on = (id, fn) => { const b = $('#' + id); if (b) b.addEventListener('click', fn); };
+        on('t-open', () => { M.state().tutorial = 1; XIRU.persist(); XIRU.toast('Startpaket geöffnet', 'Schrottrahmen, Paddelrad und Autobatterie liegen im Lager.', { icon: '📦' }); render(); });
+        on('t-repair', () => { const ant = M.installed('antrieb'); if (ant) M.state().cond[ant.id] = 100; M.state().trep = 1; XIRU.persist(); XIRU.egg('m-reparatur'); render(); });
+        on('t-go', () => showTab('reisen'));
+        on('t-done', () => { M.state().tutorial = 2; XIRU.persist(); XIRU.egg('m-tutorial'); XIRU.confetti(); render(); });
+    }
+
+    /* ── Werkstatt ── */
+    const statChips = s => Object.keys(s || {}).map(k => '<span class="badge' + (s[k] < 0 ? ' badge--danger' : ' badge--accent') + '">' + (s[k] > 0 ? '+' : '') + s[k] + ' ' + STAT[k] + '</span>').join('');
+    function renderSlots() {
+        const openSlots = XIRU.$$('#slots details[open]').map(d => d.dataset.slot);
+        $('#slots').innerHTML = XIRU.mechSlots.map(sl => {
+            const cur = M.installed(sl.id);
+            const parts = XIRU.mechParts.filter(p => p.slot === sl.id);
+            return '<details class="slot-card" data-slot="' + sl.id + '"' + (openSlots.includes(sl.id) ? ' open' : '') + '><summary><span class="slot-card__icon">' + sl.icon + '</span><div><strong>' + sl.n + '</strong>' +
+                '<div class="small muted">' + (cur ? XIRU.esc(cur.n) + ' · ' + M.cond(cur.id) + ' %' : 'leer') + '</div></div><span class="spacer"></span><span class="badge">' + parts.filter(p => M.isBuilt(p.id)).length + '/' + parts.length + '</span></summary>' +
+                parts.map(p => {
+                    const built = M.isBuilt(p.id), avail = M.available(p), on = cur && cur.id === p.id, c = M.cond(p.id);
+                    let act;
+                    if (on) act = '<span class="badge badge--success">eingebaut</span>';
+                    else if (built) act = '<button class="btn btn--sm btn--primary" data-install="' + p.id + '">Einbauen</button>';
+                    else if (avail) act = '<button class="btn btn--sm" data-build="' + p.id + '"' + (M.scrap() < p.cost ? ' disabled' : '') + '>Bauen · ' + p.cost + ' 🔩</button>';
+                    else act = '<span class="small faint">🔒 ' + XIRU.esc(M.reqText(p)) + '</span>';
+                    const repCost = built ? M.repairCost(p.id) : 0;
+                    return '<div class="part' + (!avail && !built ? ' is-locked' : '') + '"><div><div class="part__name">' + XIRU.esc(p.n) + ' <span class="faint small">Stufe ' + p.t + '</span></div><div class="part__stats">' + statChips(p.s) + (p.rep ? '<span class="badge badge--success">−' + Math.round(p.rep * 100) + ' % Reparatur</span>' : '') + '</div></div>' +
+                        '<div>' + act + '</div><div class="part__d">' + XIRU.esc(p.d) + '</div>' +
+                        (built ? '<div class="cond' + (c <= 0 ? ' dead' : c < 40 ? ' low' : '') + '"><div class="bar"><div class="bar__fill" style="--v:' + c + '%"></div></div><span>' + (c <= 0 ? 'defekt' : c + ' %') +
+                            (c < 100 ? ' <button class="btn btn--sm btn--ghost" data-repair="' + p.id + '"' + (M.scrap() < repCost ? ' disabled' : '') + '>🔧 ' + repCost + ' 🔩</button>' : '') + '</span></div>' : '') + '</div>';
+                }).join('') + (cur ? '<div class="part"><span class="small muted">Platz leeren</span><button class="btn btn--sm btn--ghost" data-uninstall="' + sl.id + '">Ausbauen</button></div>' : '') + '</details>';
+        }).join('');
+    }
+    $('#slots').addEventListener('click', e => {
+        const b = e.target.closest('button'); if (!b) return;
+        if (b.dataset.build && M.build(b.dataset.build)) { XIRU.beep(440, .08); XIRU.toast('Gebaut: ' + M.part(b.dataset.build).n, 'Jetzt noch einbauen.', { icon: '🔩' }); }
+        if (b.dataset.install && M.install(b.dataset.install)) XIRU.beep(660, .08);
+        if (b.dataset.repair && M.repair(b.dataset.repair)) XIRU.beep(880, .08);
+        if (b.dataset.uninstall) M.uninstall(b.dataset.uninstall);
+        render();
+    });
+
+    function renderStats() {
+        const st = M.stats();
+        $('#stats').innerHTML = ['R', 'E', 'S', 'P'].map(k => '<div><b>' + st[k] + '</b><span>' + STAT[k] + '</span></div>').join('');
+        $('#scrap').textContent = XIRU.fmt(M.scrap());
+        $('#ready').textContent = M.ready() ? '✓ Einsatzbereit' : 'Noch nicht einsatzbereit: Rahmen, Antrieb und Energiekern nötig.';
+        $('#mech').innerHTML = drawMech();
+    }
+    $('#testrun').addEventListener('click', () => {
+        if (!M.ready()) { XIRU.toast('Der Motor stottert …', 'Rahmen, Antrieb und Energiekern müssen eingebaut sein.', { icon: '⚠', type: 'error' }); return; }
+        const svg = $('#mech-svg'); svg.classList.add('running');
+        [220, 260, 300, 340].forEach((f, i) => setTimeout(() => XIRU.beep(f, .12, 'sawtooth', .04), i * 120));
+        setTimeout(() => {
+            const m = M.state();
+            if (!m.testrun) {
+                m.testrun = 1; XIRU.persist();
+                const a = M.installed('antrieb'); if (a) M.damage(a.id, 45);
+                XIRU.toast('Knirsch!', 'Das ' + (a ? a.n : 'Teil') + ' hat etwas abbekommen.', { icon: '💥' });
+            }
+            render();
+        }, 1800);
+    });
+
+    /* ── Expeditionen ── */
+    function renderIsles() {
+        $('#isles').innerHTML = XIRU.regions.filter(r => XIRU.islandReq[r.id]).map(r => {
+            const done = M.discovered(r.id), can = M.canReach(r.id), miss = M.missing(r.id);
+            return '<div class="card isle' + (done ? ' is-done' : '') + '" style="--ic:' + r.color + '"><div class="row"><h3 class="mb-0">' + (ISLE_ICON[r.id] || r.icon) + ' ' + XIRU.esc(r.name) + '</h3><span class="spacer"></span>' +
+                (done ? '<span class="badge badge--success">erreicht</span>' : '') + '</div><p class="small muted mt-1">' + XIRU.esc(r.desc) + '</p>' +
+                '<p class="small">Benötigt: <strong>' + XIRU.esc(M.islandReqText(r.id)) + '</strong></p>' +
+                (done ? '<a class="btn btn--sm" href="' + XIRU.url((XIRU.pages.find(p => p.r === r.id && /index\.html$/.test(p.p)) || {}).p || 'weltkarte.html') + '">Hinfahren →</a>'
+                    : can ? '<button class="btn btn--primary btn--sm" data-go="' + r.id + '">🧭 Expedition starten</button>'
+                        : '<p class="small faint mb-0">Es fehlt: ' + XIRU.esc(miss.join(' · ')) + '</p>') + '</div>';
+        }).join('');
+    }
+    $('#isles').addEventListener('click', e => {
+        const b = e.target.closest('[data-go]'); if (!b) return;
+        const reg = XIRU.region(b.dataset.go);
+        const modal = XIRU.modal('<h2>Unterwegs nach ' + XIRU.esc(reg.name) + ' …</h2><div class="travel"><span class="travel__mech">🤖</span><span class="travel__isle">' + (ISLE_ICON[reg.id] || '🏝') + '</span></div><p class="muted" id="tv-msg">Der Mech kämpft sich durch die Wellen.</p>');
+        [196, 247, 294].forEach((f, i) => setTimeout(() => XIRU.beep(f, .15, 'triangle', .05), 300 + i * 500));
+        setTimeout(() => {
+            const report = M.expedition(reg.id) || [];
+            modal.el.querySelector('#tv-msg').innerHTML = '<strong class="text-success">Angekommen!</strong> ' + XIRU.esc(reg.name) + ' ist jetzt erreichbar.<br>' +
+                (report.length ? 'Schäden: ' + report.map(x => XIRU.esc(x.part.n) + ' −' + x.dmg + ' %').join(', ') : 'Kein Kratzer – die Panzerung hat gehalten!') +
+                '<div class="row mt-2"><button class="btn btn--primary" data-close>Weiter</button></div>';
+            render();
+        }, 2400);
+    });
+
+    /* ── Module (die früheren Skills) ── */
+    const POS = { 1: [50, 10], 2: [24, 36], 3: [76, 36], 5: [24, 63], 4: [76, 63], 6: [50, 90] };
+    function sState(s) {
         if (XIRU.hasSkill(s.id)) return 'learned';
         if (XIRU.user && s.req.every(r => XIRU.hasSkill(r)) && XIRU.skillPoints().free >= s.c) return 'available';
-        if (s.req.every(r => XIRU.hasSkill(r))) return 'open';
-        return 'blocked';
+        return s.req.every(r => XIRU.hasSkill(r)) ? 'open' : 'blocked';
     }
-    function render(just) {
-        const pts = XIRU.user ? XIRU.skillPoints() : { free: 0, total: 0, spent: 0 };
-        $('#pts').textContent = pts.free;
-        $('#pts-sub').textContent = XIRU.user ? pts.spent + ' von ' + pts.total + ' verteilt' : 'nur mit Konto';
-        if (!XIRU.user) $('#lead').innerHTML = 'Du bist als Gast unterwegs. <a href="login.html?weiter=konto%2Fskilltree.html">Erstelle ein lokales Konto</a>, um Skills zu lernen – dein bisheriger Fortschritt wird übernommen.';
+    function renderModules() {
+        const pts = XIRU.user ? XIRU.skillPoints() : null;
+        $('#mod-pts').textContent = pts ? pts.free + ' freie Modulpunkte (' + pts.spent + '/' + pts.total + ' verbaut)' : 'Module brauchen ein lokales Konto';
         $('#branches').innerHTML = XIRU.branches.map(b => {
             const skills = XIRU.skills.filter(s => s.b === b.id);
-            const learned = skills.filter(s => XIRU.hasSkill(s.id)).length;
-            const lines = skills.flatMap(s => s.req.map(r => {
-                const a = POS[r.slice(1)], c = POS[s.id.slice(1)];
-                const on = XIRU.hasSkill(s.id) && XIRU.hasSkill(r);
-                return '<line x1="' + a[0] + '%" y1="' + a[1] + '%" x2="' + c[0] + '%" y2="' + c[1] + '%"' + (on ? ' class="on"' : '') + '/>';
-            })).join('');
-            const nodes = skills.map(s => {
-                const p = POS[s.id.slice(1)], st = state(s);
-                return '<button class="node is-' + st + (s.id.endsWith('6') ? ' is-cap' : '') + (just === s.id ? ' just' : '') + '" type="button" data-s="' + s.id + '" style="left:' + p[0] + '%;top:' + p[1] + '%" aria-label="' + XIRU.esc(s.n) + '">' +
-                    '<span class="node__cost">' + (st === 'learned' ? '✓' : s.c) + '</span>' + XIRU.esc(s.n) + '</button>';
-            }).join('');
-            return '<section class="card branch" style="--bc:' + b.color + '"><div class="row"><h2>' + XIRU.esc(b.name) + '</h2><span class="spacer"></span><span class="branch__prog">' + learned + '/6</span></div>' +
-                '<p class="small muted mb-0">' + XIRU.esc(b.desc) + '</p><div class="tree"><svg>' + lines + '</svg>' + nodes + '</div></section>';
+            const lines = skills.flatMap(s => s.req.map(r => { const a = POS[r.slice(1)], c = POS[s.id.slice(1)]; return '<line x1="' + a[0] + '%" y1="' + a[1] + '%" x2="' + c[0] + '%" y2="' + c[1] + '%"' + (XIRU.hasSkill(s.id) ? ' class="on"' : '') + '/>'; })).join('');
+            const nodes = skills.map(s => { const p = POS[s.id.slice(1)], st = sState(s); return '<button class="node is-' + st + '" type="button" data-s="' + s.id + '" style="left:' + p[0] + '%;top:' + p[1] + '%"><span class="node__cost">' + (st === 'learned' ? '✓' : s.c) + '</span>' + XIRU.esc(s.n) + '</button>'; }).join('');
+            return '<section class="card branch" style="--bc:' + b.color + '"><h3>' + XIRU.esc(b.name) + '-Modul</h3><p class="small muted mb-0">' + XIRU.esc(b.desc) + '</p><div class="tree"><svg>' + lines + '</svg>' + nodes + '</div></section>';
         }).join('');
-        if (selected) showDetail(selected);
     }
-
-    function showDetail(id) {
-        selected = id;
-        const s = XIRU.skillInfo(id), b = XIRU.branches.find(x => x.id === s.b), st = state(s), u = unlocksOf(id);
-        const reqNames = s.req.map(r => XIRU.skillInfo(r)).map(r => (XIRU.hasSkill(r.id) ? '✓ ' : '✕ ') + r.n).join(', ');
-        let action = '';
-        if (!XIRU.user) action = '<a class="btn btn--primary" href="login.html?weiter=konto%2Fskilltree.html">Anmelden, um zu lernen</a>';
-        else if (st === 'learned') action = '<span class="badge badge--success">Gelernt</span>';
-        else if (st === 'available') action = '<button class="btn btn--primary" id="learn" type="button">Lernen für ' + s.c + ' Punkt' + (s.c > 1 ? 'e' : '') + '</button>';
-        else if (st === 'open') action = '<span class="badge badge--warning">Zu wenig Punkte (' + XIRU.skillPoints().free + '/' + s.c + ')</span>';
-        else action = '<span class="badge">Erst Voraussetzungen lernen</span>';
-        const unlock = u.pages.map(p => (XIRU.hasSkill(id) ? '<a href="' + XIRU.url(p.p) + '">' + XIRU.esc(p.t) + ' betreten →</a>' : (p.hidden ? '??? (ein geheimer Ort)' : XIRU.esc(p.t))))
-            .concat(u.themes.map(t => 'Design „' + XIRU.esc(t.n) + '"' + (XIRU.hasSkill(id) ? ' – <a href="einstellungen.html">anwenden</a>' : ''))).join(' · ');
-        $('#detail').hidden = false;
-        $('#detail').innerHTML = '<div class="card" style="border-top:3px solid ' + b.color + '"><div class="row"><h3 class="mb-0">' + XIRU.esc(s.n) +
-            '</h3><span class="badge" style="color:' + b.color + '">' + XIRU.esc(b.name) + '</span><span class="spacer"></span><button class="btn btn--ghost btn--sm" id="close" type="button" aria-label="Schliessen">✕</button></div>' +
-            '<p class="mt-1">' + XIRU.esc(s.d) + '</p>' +
-            (s.req.length ? '<p class="small muted">Voraussetzung: ' + XIRU.esc(reqNames) + '</p>' : '') +
-            (unlock ? '<p class="small unlocks">Öffnet: ' + unlock + '</p>' : '') +
-            '<div class="row">' + action + '</div></div>';
-        $('#close').addEventListener('click', () => { selected = null; $('#detail').hidden = true; });
-        const lb = $('#learn');
-        if (lb) lb.addEventListener('click', () => { if (XIRU.learn(id)) { XIRU.confetti(80); render(id); } });
-    }
-
-    $('#branches').addEventListener('click', e => { const n = e.target.closest('[data-s]'); if (n) showDetail(n.dataset.s); });
+    $('#branches').addEventListener('click', e => {
+        const n = e.target.closest('[data-s]'); if (!n) return;
+        const s = XIRU.skillInfo(n.dataset.s), st = sState(s), box = $('#mod-detail');
+        const opens = XIRU.pages.filter(p => p.skill === s.id).map(p => XIRU.hasSkill(s.id) ? '<a href="' + XIRU.url(p.p) + '">' + XIRU.esc(p.t) + ' →</a>' : (p.hidden ? '??? (geheim)' : XIRU.esc(p.t)))
+            .concat(XIRU.themes.filter(t => t.skill === s.id).map(t => 'Design „' + XIRU.esc(t.n) + '"')).join(' · ');
+        box.hidden = false;
+        box.innerHTML = '<div class="row"><h3 class="mb-0">' + XIRU.esc(s.n) + '</h3><span class="spacer"></span>' +
+            (!XIRU.user ? '<a class="btn btn--primary btn--sm" href="login.html?weiter=konto%2Fskilltree.html">Anmelden</a>' : st === 'learned' ? '<span class="badge badge--success">eingebaut</span>' : st === 'available' ? '<button class="btn btn--primary btn--sm" id="learn">Einbauen · ' + s.c + ' Punkt' + (s.c > 1 ? 'e' : '') + '</button>' : '<span class="badge">' + (st === 'open' ? 'zu wenig Punkte' : 'Voraussetzungen fehlen') + '</span>') +
+            '</div><p class="mt-1 mb-1">' + XIRU.esc(s.d) + '</p>' + (s.req.length ? '<p class="small muted mb-1">Braucht: ' + s.req.map(r => XIRU.skillInfo(r).n).join(', ') + '</p>' : '') + (opens ? '<p class="small mb-0">Öffnet: ' + opens + '</p>' : '');
+        const lb = $('#learn'); if (lb) lb.addEventListener('click', () => { if (XIRU.learn(s.id)) { XIRU.confetti(60); renderModules(); box.hidden = true; } });
+    });
     $('#reset').addEventListener('click', () => {
         if (!XIRU.user) return;
-        const m = XIRU.modal('<h2>Vergessenstrank trinken?</h2><p class="muted">Alle gelernten Skills werden vergessen und du bekommst die Punkte zurück. Freigeschaltete Orte bleiben entdeckt, sind aber wieder versiegelt.</p>' +
-            '<div class="row mt-2"><button class="btn btn--danger" id="do-reset">Trinken</button><button class="btn" data-close>Lieber nicht</button></div>');
-        m.el.querySelector('#do-reset').addEventListener('click', () => {
-            XIRU.profile().skills = {}; XIRU.persist(); m.close();
-            XIRU.toast('Gluck, gluck …', 'Du fühlst dich seltsam leer. Alle Punkte sind zurück.', { icon: '🧪' });
-            render();
-        });
+        const m = XIRU.modal('<h2>Alle Module ausbauen?</h2><p class="muted">Du bekommst alle Modulpunkte zurück. Freigeschaltete Orte sind danach wieder versiegelt.</p><div class="row"><button class="btn btn--danger" id="ok">Ausbauen</button><button class="btn" data-close>Abbrechen</button></div>');
+        m.el.querySelector('#ok').addEventListener('click', () => { XIRU.profile().skills = {}; XIRU.persist(); m.close(); renderModules(); });
     });
+
+    /* ── Reiter & Start ── */
+    function showTab(t) {
+        XIRU.$$('[data-tab]').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === t));
+        XIRU.$$('[data-panel]').forEach(p => { p.hidden = p.dataset.panel !== t; });
+        history.replaceState(null, '', '#' + t);
+    }
+    XIRU.$$('[data-tab]').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
+    function render() { renderStats(); renderSlots(); renderIsles(); renderModules(); renderGuide(); }
     XIRU.on('egg', () => render());
     render();
+    const h = location.hash.slice(1);
+    if (['mech', 'reisen', 'module'].includes(h)) showTab(h);
 });
 </script>
 </body>

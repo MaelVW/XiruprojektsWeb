@@ -18,7 +18,7 @@ XIRU.ready(function () {
         updateHud();
     }
     function placeFood() {
-        do { food = { x: XIRU.rand(0, COLS - 1), y: XIRU.rand(0, ROWS - 1), gold: Math.random() < .08 }; }
+        do { food = { x: XIRU.rand(0, COLS - 1), y: XIRU.rand(0, ROWS - 1), gold: Math.random() < .08, kind: XIRU.pick(['disk', 'cd', 'ram']) }; }
         while (snake.some(s => s.x === food.x && s.y === food.y));
     }
     function updateHud() {
@@ -65,12 +65,29 @@ XIRU.ready(function () {
         for (let i = 1; i < COLS; i++) { ctx.beginPath(); ctx.moveTo(i * CELL + .5, 0); ctx.lineTo(i * CELL + .5, H); ctx.stroke(); }
         for (let i = 1; i < ROWS; i++) { ctx.beginPath(); ctx.moveTo(0, i * CELL + .5); ctx.lineTo(W, i * CELL + .5); ctx.stroke(); }
         ctx.globalAlpha = 1;
-        // Diskette als Futter
+        // Futter: Diskette, CD oder RAM-Riegel – selten ein Realitätskristall
         const fx = food.x * CELL, fy = food.y * CELL, pulse = 1 + Math.sin(performance.now() / 150) * .06;
         ctx.save(); ctx.translate(fx + CELL / 2, fy + CELL / 2); ctx.scale(pulse, pulse);
-        ctx.fillStyle = food.gold ? '#facc15' : '#60a5fa'; ctx.fillRect(-7, -7, 14, 14);
-        ctx.fillStyle = '#e8ebf7'; ctx.fillRect(-4, -7, 8, 5);
-        ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(-5, 1, 10, 5);
+        if (food.gold) {
+            ctx.rotate(Math.sin(performance.now() / 400) * .15);
+            ctx.fillStyle = '#facc15'; ctx.beginPath();
+            ctx.moveTo(0, -9); ctx.lineTo(6, -3); ctx.lineTo(4, 6); ctx.lineTo(0, 9); ctx.lineTo(-4, 6); ctx.lineTo(-6, -3); ctx.closePath(); ctx.fill();
+            ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.beginPath(); ctx.moveTo(0, -9); ctx.lineTo(2, -3); ctx.lineTo(0, 8); ctx.lineTo(-2, -3); ctx.closePath(); ctx.fill();
+        } else if (food.kind === 'cd') {
+            ctx.rotate(performance.now() / 300);
+            ctx.fillStyle = '#cbd5e1'; ctx.beginPath(); ctx.arc(0, 0, 7.5, 0, 7); ctx.fill();
+            ctx.strokeStyle = '#f472b6'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(0, 0, 5, 0, 1.6); ctx.stroke();
+            ctx.strokeStyle = '#60a5fa'; ctx.beginPath(); ctx.arc(0, 0, 5, 3.1, 4.7); ctx.stroke();
+            ctx.fillStyle = G.css('--bg-2'); ctx.beginPath(); ctx.arc(0, 0, 2, 0, 7); ctx.fill();
+        } else if (food.kind === 'ram') {
+            ctx.fillStyle = '#16a34a'; ctx.fillRect(-8, -4, 16, 8);
+            ctx.fillStyle = '#0f172a'; for (let i = -6; i <= 3; i += 3) ctx.fillRect(i, -2.5, 2.2, 3.5);
+            ctx.fillStyle = '#facc15'; for (let i = -7; i <= 6; i += 2) ctx.fillRect(i, 3, 1, 1.5);
+        } else {
+            ctx.fillStyle = '#60a5fa'; ctx.fillRect(-7, -7, 14, 14);
+            ctx.fillStyle = '#e8ebf7'; ctx.fillRect(-4, -7, 8, 5);
+            ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(-5, 1, 10, 5);
+        }
         ctx.restore();
         // Schlange
         snake.forEach((s, i) => {
@@ -104,5 +121,5 @@ XIRU.ready(function () {
     });
 
     reset(); draw();
-    ov.show({ icon: '🐍', title: 'Snake', text: 'Sammle Disketten. Goldene zählen fünffach.', button: 'Spielen', onClick: start });
+    ov.show({ icon: '🐍', title: 'Snake', text: 'Friss Datenträger aller Epochen. Ein goldener Realitätskristall zählt fünffach.', button: 'Spielen', onClick: start });
 });

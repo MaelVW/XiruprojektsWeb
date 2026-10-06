@@ -2,7 +2,7 @@
    Xiruprojekts – Seitenregister
    --------------------------------------------------------------------------
    Eine Datei, die alles beschreibt, was es auf der Website gibt:
-   Regionen, Seiten, Skills und Disketten (Easter Eggs).
+   Regionen, Seiten, Skills und Realitätskristalle (Easter Eggs).
    Navigation, Weltkarte, Suche, Fortschritt und Sperren lesen von hier.
 
    Neue Seite?  -> Eintrag in XIRU.pages ergänzen (siehe docs/NEUE-SEITE.md)
@@ -33,7 +33,7 @@ XIRU.pages = [
     { p: 'index.html',               t: 'Startseite',          r: 'zentrum', d: 'Willkommen bei Xiruprojekts.', nav: true },
     { p: 'weltkarte.html',           t: 'Weltkarte',           r: 'zentrum', d: 'Alle Regionen und was du schon entdeckt hast.', nav: true },
     { p: 'suche.html',               t: 'Suche',               r: 'zentrum', d: 'Durchsuche die ganze Website.', nav: true },
-    { p: 'hilfe.html',               t: 'Hilfe & FAQ',         r: 'zentrum', d: 'Wie XP, Skills und Disketten funktionieren.', nav: true },
+    { p: 'hilfe.html',               t: 'Hilfe & FAQ',         r: 'zentrum', d: 'Wie XP, Skills und Realitätskristalle funktionieren.', nav: true },
     { p: 'ueber-uns.html',           t: 'Über uns',            r: 'zentrum', d: 'Zwei Freunde, ein Hobby-Gamestudio.', nav: true },
     { p: 'datenschutz.html',         t: 'Datenschutz',         r: 'zentrum', d: 'Was gespeichert wird (Spoiler: nur bei dir).' },
     { p: 'nutzungsbedingungen.html', t: 'Nutzungsbedingungen', r: 'zentrum', d: 'Die Regeln dieser Website.' },
@@ -42,8 +42,8 @@ XIRU.pages = [
     // Konto
     { p: 'konto/login.html',         t: 'Anmelden',            r: 'konto', d: 'Lokales Konto erstellen oder anmelden.', nav: true },
     { p: 'konto/profil.html',        t: 'Profil',              r: 'konto', d: 'Level, XP und Fortschritt.', nav: true },
-    { p: 'konto/skilltree.html',     t: 'Skilltree',           r: 'konto', d: 'Skillpunkte verteilen und Neues freischalten.', nav: true },
-    { p: 'konto/sammlung.html',      t: 'Disketten-Sammlung',  r: 'konto', d: 'Alle gefundenen Easter Eggs.', nav: true },
+    { p: 'konto/skilltree.html',     t: 'Werft',               r: 'konto', d: 'Mech bauen, reparieren und zu neuen Inseln aufbrechen.', nav: true },
+    { p: 'konto/sammlung.html',      t: 'Kristallsammlung',    r: 'konto', d: 'Alle gefundenen Realitätskristalle.', nav: true },
     { p: 'konto/erfolge.html',       t: 'Rekorde',             r: 'konto', d: 'Deine Bestwerte in der Spielhalle.', nav: true },
     { p: 'konto/einstellungen.html', t: 'Einstellungen',       r: 'konto', d: 'Design, Animationen, Ton und Daten.', nav: true },
     { p: 'konto/dienste.html',       t: 'Dienste & Schlüssel', r: 'konto', d: 'API-Schlüssel für Hugging Face und Co. verwalten.', nav: true },
@@ -232,7 +232,7 @@ XIRU.pages = [
     { p: 'geheim/runen.html',            t: 'Runenkammer',       r: 'geheim', d: 'Uralte Zeichen warten auf einen Leser.', hidden: true, skill: 'm5' },
     { p: 'geheim/turm.html',             t: 'Der Magierturm',    r: 'geheim', d: 'Ganz oben wohnt jemand.', hidden: true, skill: 'm6' },
     { p: 'geheim/ruhmeshalle.html',      t: 'Ruhmeshalle',       r: 'geheim', d: 'Für die Legenden der Spielhalle.', hidden: true, skill: 's6' },
-    { p: 'geheim/diskettenschrein.html', t: 'Diskettenschrein',  r: 'geheim', d: 'Ein Altar für Sammler.', hidden: true },
+    { p: 'geheim/kristallschrein.html',  t: 'Kristallschrein',   r: 'geheim', d: 'Ein Altar für Sammler.', hidden: true },
     { p: 'geheim/katzen.html',           t: 'Katzenzimmer',      r: 'geheim', d: 'Miau.', hidden: true },
     { p: 'geheim/rueckwaerts.html',      t: 'sträwkcüR',         r: 'geheim', d: '.tlerhekmu tsi seilA', hidden: true },
     { p: 'geheim/ende.html',             t: 'Das Ende?',         r: 'geheim', d: 'Nur wer alles gemeistert hat.', hidden: true }
@@ -250,7 +250,7 @@ XIRU.branches = [
 
 XIRU.skills = [
     { id: 'e1', b: 'e', n: 'Kompass',          c: 1, req: [],           d: 'Die Weltkarte zeigt, wie viele Orte pro Region noch unentdeckt sind.' },
-    { id: 'e2', b: 'e', n: 'Spürnase',         c: 1, req: ['e1'],       d: 'Unten auf jeder Seite siehst du, ob hier noch Disketten versteckt sind.' },
+    { id: 'e2', b: 'e', n: 'Spürnase',         c: 1, req: ['e1'],       d: 'Unten auf jeder Seite siehst du, ob hier noch Realitätskristalle versteckt sind.' },
     { id: 'e3', b: 'e', n: 'Kartograph',       c: 2, req: ['e1'],       d: 'Versteckte Orte erscheinen als „???" auf der Weltkarte – mit Hinweis.' },
     { id: 'e4', b: 'e', n: 'Schlüsselmeister', c: 2, req: ['e3'],       d: 'Im Fussbereich jeder Seite erscheint eine kleine Tür.' },
     { id: 'e5', b: 'e', n: 'Zeitreisender',    c: 2, req: ['e2'],       d: 'Öffnet das Archiv 1999 und das Design „Klassik".' },
@@ -278,6 +278,57 @@ XIRU.skills = [
     { id: 'm6', b: 'm', n: 'Erzmagier',        c: 3, req: ['m4', 'm5'], d: 'Öffnet den Magierturm und das Design „PIXMAG".' }
 ];
 
+/* ── Werft: der Erkundungs-Mech ───────────────────────────────────────────
+   Bauteile schaltet man über Level, Realitätskristalle, entdeckte Orte und
+   gespielte Spiele frei. Gebaut werden sie mit Schrott (1 Schrott pro 4 XP).
+   Werte: R Reichweite · E Energie · S Sensor · P Panzerung
+   rep: Rabatt auf Reparaturen (Werkzeugarm)
+   ------------------------------------------------------------------------- */
+XIRU.mechSlots = [
+    { id: 'rahmen',  n: 'Rahmen',      icon: '▣' },
+    { id: 'antrieb', n: 'Antrieb',     icon: '⚙' },
+    { id: 'kern',    n: 'Energiekern', icon: '◆' },
+    { id: 'sensor',  n: 'Sensor',      icon: '📡' },
+    { id: 'arm',     n: 'Werkzeugarm', icon: '🔧' },
+    { id: 'panzer',  n: 'Panzerung',   icon: '🛡' }
+];
+XIRU.mechParts = [
+    { id: 'r-schrott',   slot: 'rahmen',  t: 1, n: 'Schrottrahmen',        s: { P: 1 },                 req: {},                    cost: 0,   d: 'Zusammengeschweisst aus alten PC-Gehäusen. Hält. Meistens.' },
+    { id: 'r-alu',       slot: 'rahmen',  t: 2, n: 'Aluminiumrahmen',      s: { P: 1, R: 1 },           req: { level: 3 },          cost: 40,  d: 'Leichter, also kommt der Antrieb weiter.' },
+    { id: 'r-titan',     slot: 'rahmen',  t: 3, n: 'Titanrahmen',          s: { P: 2, R: 1, E: 1 },     req: { level: 7 },          cost: 120, d: 'Mit Kabelkanälen für zusätzliche Energie.' },
+    { id: 'r-kristall',  slot: 'rahmen',  t: 4, n: 'Kristallgerüst',       s: { P: 3, R: 2, E: 2, S: 1 }, req: { eggs: 30 },        cost: 300, d: 'Ein Gerüst aus gewachsenen Realitätskristallen.' },
+    { id: 'a-paddel',    slot: 'antrieb', t: 1, n: 'Paddelrad',            s: { R: 1 },                 req: {},                    cost: 0,   d: 'Ein Lüfterrad mit angeschraubten Schaufeln.' },
+    { id: 'a-raupe',     slot: 'antrieb', t: 2, n: 'Raupenkette',          s: { R: 2, P: 1 },           req: { pages: 15 },         cost: 60,  d: 'Aus Druckerbändern geflochten. Kommt über jeden Strand.' },
+    { id: 'a-schraube',  slot: 'antrieb', t: 3, n: 'Schiffsschraube',      s: { R: 3 },                 req: { level: 5 },          cost: 120, d: 'Gedreht aus drei Festplatten-Scheiben.' },
+    { id: 'a-duesen',    slot: 'antrieb', t: 4, n: 'Kristalldüsen',        s: { R: 4, E: -1 },          req: { eggs: 20 },          cost: 250, d: 'Schnell, aber durstig.' },
+    { id: 'a-beine',     slot: 'antrieb', t: 5, n: 'Mech-Beine',           s: { R: 4, P: 2 },           req: { level: 12 },         cost: 400, d: 'Läuft über Wasser? Nein – durch. Ganz unten.' },
+    { id: 'k-batterie',  slot: 'kern',    t: 1, n: 'Autobatterie',         s: { E: 1 },                 req: {},                    cost: 0,   d: '12 Volt Zuversicht.' },
+    { id: 'k-diskette',  slot: 'kern',    t: 2, n: 'Diskettenreaktor',     s: { E: 2 },                 req: { eggs: 5 },           cost: 50,  d: 'Liefert stabile 1,44 Megawatt.' },
+    { id: 'k-cd',        slot: 'kern',    t: 3, n: 'CD-Dynamo',            s: { E: 3 },                 req: { level: 6 },          cost: 140, d: 'Dreht mit 52-facher Geschwindigkeit.' },
+    { id: 'k-kristall',  slot: 'kern',    t: 4, n: 'Realitätskern',        s: { E: 5, S: 1 },           req: { eggs: 40 },          cost: 350, d: 'Ein Kernkristall, der in alle Richtungen leuchtet.' },
+    { id: 's-antenne',   slot: 'sensor',  t: 1, n: 'Drahtantenne',         s: { S: 1 },                 req: { pages: 8 },          cost: 20,  d: 'Ein gebogener Kleiderbügel. Empfang: ok.' },
+    { id: 's-radar',     slot: 'sensor',  t: 2, n: 'Radarschüssel',        s: { S: 2 },                 req: { level: 4 },          cost: 80,  d: 'Dreht sich. Piept. Findet Dinge.' },
+    { id: 's-hdd',       slot: 'sensor',  t: 3, n: 'Festplatten-Kompass',  s: { S: 3, R: 1 },           req: { eggs: 15 },          cost: 180, d: 'Der Lesekopf zeigt immer zum nächsten Geheimnis.' },
+    { id: 's-prisma',    slot: 'sensor',  t: 4, n: 'Nebelprisma',          s: { S: 4 },                 req: { eggs: 35, level: 10 }, cost: 300, d: 'Bricht den Nebel wie Licht.' },
+    { id: 'w-schluessel', slot: 'arm',    t: 1, n: 'Schraubenschlüssel',   s: {}, rep: .25,             req: { games: 1 },          cost: 30,  d: 'Reparaturen kosten 25 % weniger.' },
+    { id: 'w-greifer',   slot: 'arm',     t: 2, n: 'Greifarm',             s: { P: 1 }, rep: .4,        req: { games: 5 },          cost: 90,  d: 'Hält Teile fest, während man schraubt. −40 % Reparaturkosten.' },
+    { id: 'w-bohrer',    slot: 'arm',     t: 3, n: 'Kristallbohrer',       s: { E: 1, S: 1 }, rep: .5,  req: { level: 9 },          cost: 200, d: 'Bohrt sich durch alles. −50 % Reparaturkosten.' },
+    { id: 'p-blech',     slot: 'panzer',  t: 1, n: 'Blechplatten',         s: { P: 1 },                 req: { level: 2 },          cost: 30,  d: 'Seitenteile alter Gehäuse.' },
+    { id: 'p-ram',       slot: 'panzer',  t: 2, n: 'RAM-Lamellen',         s: { P: 2 },                 req: { pages: 30 },         cost: 110, d: 'Dutzende RAM-Riegel, schuppenartig vernietet.' },
+    { id: 'p-tower',     slot: 'panzer',  t: 3, n: 'Tower-Panzer',         s: { P: 3 },                 req: { level: 10 },         cost: 220, d: 'Aus einem Big-Tower von 2008. Unzerstörbar.' }
+];
+/* Welche Werte braucht der Mech, um eine Insel zum ersten Mal zu erreichen? */
+XIRU.islandReq = {
+    zentrum: null, konto: null,
+    werkzeuge: { R: 1 },
+    studio:    { R: 1 },
+    arcade:    { R: 2 },
+    hardware:  { R: 2, S: 1 },
+    mixer:     { R: 3, E: 2 },
+    ki:        { R: 3, E: 3, S: 2 },
+    geheim:    null   // geheime Orte erreicht man über Geheimnisse, nicht per Expedition
+};
+
 /* ── Designs (Themes) ─────────────────────────────────────────────────── */
 XIRU.themes = [
     { id: 'nacht',   n: 'Nacht',            d: 'Standard, dunkel.' },
@@ -289,13 +340,13 @@ XIRU.themes = [
     { id: 'pixmag',  n: 'PIXMAG',           d: 'Düster wie ein Dungeon.', skill: 'm6' }
 ];
 
-/* ── Disketten (Easter Eggs) ──────────────────────────────────────────────
+/* ── Realitätskristalle (Easter Eggs) ──────────────────────────────────────────────
    id   eindeutig        n  Name           h  Hinweis (sichtbar, solange nicht gefunden)
    x    XP               r  Seltenheit 1–4 (4 = Meilenstein, gibt +1 Skillpunkt)
    w    getipptes Wort (irgendwo auf der Seite, nicht in Eingabefeldern)
    m    Nachricht beim Finden          pg Seite, auf der es versteckt ist (für „Spürnase")
    fx   Effekt, den core.js abspielt
-   manual  o-Diskette wird NICHT automatisch beim Besuch vergeben (die Seite ruft XIRU.egg selbst auf)
+   manual  o-Kristall wird NICHT automatisch beim Besuch vergeben (die Seite ruft XIRU.egg selbst auf)
    ------------------------------------------------------------------------- */
 XIRU.eggs = [
     // ── Getippte Wörter ──
@@ -335,11 +386,11 @@ XIRU.eggs = [
     { id: 'w-rgb',       w: 'rgb',         n: 'Leuchtfeuer',        h: 'Mehr Licht = mehr Leistung.', x: 15, r: 1, m: '+15 FPS durch RGB.', fx: 'rainbow' },
     { id: 'w-kekse',     w: 'kekse',       n: 'Keksmonster',        h: 'Jede Website will sie.', x: 20, r: 1, m: 'Wir haben keine Cookies. Nur Krümel im localStorage. 🍪' },
     { id: 'w-418',       w: '418',         n: 'Teekanne',           h: 'Ein HTTP-Statuscode für Teekannen.', x: 30, r: 2, m: '418: Ich bin eine Teekanne. Kaffee gibt es woanders.' },
-    { id: 'w-404',       w: '404',         n: 'Nicht gefunden',     h: 'Der bekannteste Fehlercode.', x: 15, r: 1, m: 'Easter Egg nicht gefunden. Moment … doch!' },
+    { id: 'w-404',       w: '404',         n: 'Nicht gefunden',     h: 'Der bekannteste Fehlercode.', x: 15, r: 1, m: 'Kristall nicht gefunden. Moment … doch!' },
     { id: 'w-007',       w: '007',         n: 'Geheimagent',        h: 'Geschüttelt, nicht gerührt.', x: 20, r: 1, m: 'Diese Nachricht zerstört sich in 5 Sekunden selbst.' },
     { id: 'w-pi',        w: '3141',        n: 'Kreiszahl',          h: 'Die ersten Ziffern einer berühmten Zahl.', x: 31, r: 2, m: 'π ≈ 3,14159 26535 89793 …' },
     { id: 'w-fibo',      w: '112358',      n: 'Fibonacci',          h: 'Jede Zahl ist die Summe der zwei davor.', x: 35, r: 2, m: '1, 1, 2, 3, 5, 8, 13, 21 …' },
-    { id: 'w-osterei',   w: 'osterei',     n: 'Meta',               h: 'Suche nach dem, wonach du suchst.', x: 40, r: 2, m: 'Du hast ein Osterei gefunden, indem du „Osterei" getippt hast. Sehr meta.' },
+    { id: 'w-osterei',   w: 'osterei',     n: 'Meta',               h: 'Suche nach dem, wonach du suchst.', x: 40, r: 2, m: 'Du hast einen Kristall gefunden, indem du „Osterei" getippt hast. Sehr meta.' },
     { id: 'w-fondue',    w: 'fondue',      n: 'Käsekenner',         h: 'Geschmolzener Käse in einem Topf.', x: 15, r: 1, m: '🧀 Wer sein Brot verliert, muss eine Runde zahlen.' },
     { id: 'w-schoggi',   w: 'schoggi',     n: 'Naschkatze',         h: 'Schweizerdeutsch für etwas Süsses.', x: 15, r: 1, m: '🍫 Mmmh.' },
     { id: 'w-dir',       w: 'dir',         n: 'DOS-Veteran',        h: 'Zeig den Inhalt des Verzeichnisses (DOS).', x: 20, r: 1, m: 'A:\\> 1 Datei(en)  1.457.664 Bytes frei' },
@@ -355,7 +406,7 @@ XIRU.eggs = [
     { id: 'b-logo',      n: 'Logo-Klicker',        h: 'Klicke oft genug auf das Logo.', x: 20, r: 1, m: 'Hör auf, mich zu drücken!' },
     { id: 'b-floppy',    n: 'Phosphorgrün',        h: 'Halte die Taste F gedrückt und klicke auf das Logo.', x: 40, r: 2, m: 'Design „Floppy-Terminal" freigeschaltet.' },
     { id: 'b-nacht',     n: 'Nachteule',           h: 'Besuche die Website zwischen 0 und 4 Uhr.', x: 40, r: 2, m: 'Solltest du nicht schlafen?' },
-    { id: 'b-frueh',     n: 'Frühaufsteher',       h: 'Besuche die Website zwischen 5 und 7 Uhr.', x: 40, r: 2, m: 'Der frühe Vogel fängt die Diskette.' },
+    { id: 'b-frueh',     n: 'Frühaufsteher',       h: 'Besuche die Website zwischen 5 und 7 Uhr.', x: 40, r: 2, m: 'Der frühe Vogel fängt den Kristall.' },
     { id: 'b-1337',      n: 'Exakt 13:37',         h: 'Komm um eine sehr elitäre Uhrzeit vorbei.', x: 60, r: 3, m: 'Perfektes Timing.' },
     { id: 'b-mitternacht', n: 'Geisterstunde',     h: 'Sei genau um Mitternacht hier.', x: 60, r: 3, m: '👻 Buh!' },
     { id: 'b-freitag13', n: 'Unglückstag',         h: 'An einem bestimmten Freitag vorbeischauen.', x: 50, r: 3, m: '🐈‍⬛ Eine schwarze Katze läuft über die Seite.' },
@@ -387,9 +438,9 @@ XIRU.eggs = [
     { id: 'b-seiten50',  n: 'Forscher',            h: 'Entdecke 50 Seiten.', x: 100, r: 4, m: '50 Seiten entdeckt! +1 Skillpunkt' },
     { id: 'b-seiten100', n: 'Pionier',             h: 'Entdecke 100 Seiten.', x: 200, r: 4, m: '100 Seiten entdeckt! +1 Skillpunkt' },
     { id: 'b-seiten-alle', n: 'Allwissend',        h: 'Entdecke wirklich jede Seite.', x: 500, r: 4, m: 'Es gibt nichts mehr zu entdecken. Wirklich nicht. Glaube ich.' },
-    { id: 'b-eier10',    n: 'Sammler',             h: 'Finde 10 Disketten.', x: 50, r: 2, m: '10 Disketten im Regal!' },
-    { id: 'b-eier50',    n: 'Archivar',            h: 'Finde 50 Disketten.', x: 150, r: 4, m: '50 Disketten! Der Schrein ruft dich. +1 Skillpunkt' },
-    { id: 'b-eier100',   n: 'Bibliothekar',        h: 'Finde 100 Disketten.', x: 300, r: 4, m: '100 Disketten! +1 Skillpunkt' },
+    { id: 'b-eier10',    n: 'Sammler',             h: 'Finde 10 Realitätskristalle.', x: 50, r: 2, m: '10 Kristalle funkeln in deiner Sammlung!' },
+    { id: 'b-eier50',    n: 'Archivar',            h: 'Finde 50 Realitätskristalle.', x: 150, r: 4, m: '50 Kristalle! Irgendwo beginnt ein Schrein zu leuchten. +1 Skillpunkt' },
+    { id: 'b-eier100',   n: 'Bibliothekar',        h: 'Finde 100 Realitätskristalle.', x: 300, r: 4, m: '100 Kristalle! Die Realität bekommt Risse. +1 Skillpunkt' },
     { id: 'b-level5',    n: 'Aufsteiger',          h: 'Erreiche Level 5.', x: 50, r: 2, m: 'Level 5!' },
     { id: 'b-level10',   n: 'Veteran',             h: 'Erreiche Level 10.', x: 100, r: 4, m: 'Level 10! +1 Skillpunkt' },
     { id: 'b-level20',   n: 'Legende',             h: 'Erreiche Level 20.', x: 200, r: 4, m: 'Level 20! +1 Skillpunkt' },
@@ -397,7 +448,7 @@ XIRU.eggs = [
     { id: 'b-skill',     n: 'Erste Fähigkeit',     h: 'Lerne deinen ersten Skill.', x: 30, r: 1, m: 'Der Anfang einer langen Reise.' },
     { id: 'b-ast',       n: 'Meister eines Astes', h: 'Lerne alle Skills eines Astes.', x: 150, r: 4, m: 'Ein ganzer Ast gemeistert! +1 Skillpunkt' },
     { id: 'b-export',    n: 'Datensicherung',      h: 'Exportiere deinen Spielstand.', x: 20, r: 1, m: 'Backup gemacht. Vorbildlich!' },
-    { id: 'b-suche-leer', n: 'Nichts gefunden',    h: 'Suche nach etwas, das es nicht gibt.', x: 15, r: 1, m: 'Nichts gefunden – ausser dieser Diskette.' },
+    { id: 'b-suche-leer', n: 'Nichts gefunden',    h: 'Suche nach etwas, das es nicht gibt.', x: 15, r: 1, m: 'Nichts gefunden – ausser diesem Kristall.' },
     { id: 'b-suche-sinn', n: 'Tiefgründig',        h: 'Suche nach dem Sinn des Lebens.', x: 42, r: 2, m: '42.' },
     { id: 'b-404',       n: 'Verlaufen',           h: 'Verirre dich auf eine Seite, die es nicht gibt.', x: 25, r: 1, m: 'Auch Umwege erweitern die Ortskenntnis.' },
 
@@ -429,19 +480,19 @@ XIRU.eggs = [
     { id: 'o-runen',      pg: 'geheim/runen.html',            n: 'Runenkundig',       h: 'Ein Runenleser findet eine Kammer.', x: 70, r: 3, m: 'Die Runen leuchten auf.' },
     { id: 'o-turm',       pg: 'geheim/turm.html',             n: 'Turmbesteigung',    h: 'Ganz oben wohnt ein Erzmagier.', x: 100, r: 3, m: 'Die Aussicht ist fantastisch.' },
     { id: 'o-ruhm',       pg: 'geheim/ruhmeshalle.html',      n: 'Verewigt',          h: 'Legenden werden in einer Halle geehrt.', x: 100, r: 3, m: 'Dein Name glänzt in Gold.' },
-    { id: 'o-schrein',    pg: 'geheim/diskettenschrein.html', manual: true, n: 'Pilgerreise',       h: 'Wer genug Disketten hat, findet einen Schrein.', x: 100, r: 3, m: 'Der Schrein leuchtet für dich.' },
+    { id: 'o-schrein',    pg: 'geheim/kristallschrein.html', manual: true, n: 'Pilgerreise',       h: 'Wer genug Kristalle hat, findet einen Schrein.', x: 100, r: 3, m: 'Der Schrein leuchtet für dich.' },
     { id: 'o-katzen',     pg: 'geheim/katzen.html',           n: 'Katzenzimmer',      h: 'Verirrte finden manchmal Katzen.', x: 50, r: 2, m: 'Du bist umzingelt. Von Katzen.' },
     { id: 'o-rueck',      pg: 'geheim/rueckwaerts.html',      n: 'gnagsgnälkcüR',     h: 'Eine Seite steht spiegelverkehrt.', x: 60, r: 3, m: '.tgiehcsed nehesegfua ednE muz tsah uD' },
     { id: 'o-ende',       pg: 'geheim/ende.html', manual: true, n: 'Das Ende',          h: 'Wer alle Äste meistert, findet das Ende.', x: 500, r: 4, m: 'Das Ende ist erst der Anfang. +1 Skillpunkt' },
     { id: 'o-mitternacht', pg: 'arcade/mitternacht.html',     n: 'Insider',           h: 'Ein Highscore-Jäger kennt ein besonderes Spiel.', x: 60, r: 3, m: 'Willkommen in der Mitternachts-Arcade.' }
 ];
 
-/* ── Disketten aus Spielhalle, KI-Labor, Mixer-Studio und Werkzeugen ──────
+/* ── Kristalle aus Spielhalle, KI-Labor, Mixer-Studio und Werkzeugen ──────
    Ausgelöst im jeweiligen Seitencode mit XIRU.egg('id').
    ------------------------------------------------------------------------- */
 XIRU.eggs.push(
     { id: 'g-snake-30',   pg: 'arcade/snake.html', n: 'Anakonda',      h: 'Werde in Snake 30 Felder lang.', x: 40, r: 2, m: 'Eine stattliche Schlange!' },
-    { id: 'g-snake-gold', pg: 'arcade/snake.html', n: 'Goldader',      h: 'Friss in Snake eine goldene Diskette.', x: 20, r: 1, m: 'Glänzt schön.' },
+    { id: 'g-snake-gold', pg: 'arcade/snake.html', n: 'Goldader',      h: 'Friss in Snake einen goldenen Realitätskristall.', x: 20, r: 1, m: 'Knusprig und funkelnd.' },
     { id: 'g-snake-null', pg: 'arcade/snake.html', n: 'Kurzes Leben',  h: 'Verliere in Snake, ohne etwas gefressen zu haben.', x: 15, r: 1, m: 'Das ging schnell.' },
     { id: 'g-hardware-quiz-gleich', pg: 'arcade/hardware-quiz.html', n: 'Unentschieden', h: 'Erwische in „Höher oder Tiefer" zwei gleiche Werte.', x: 25, r: 2, m: 'Gleich ist auch richtig!' },
     { id: 'g-hardware-quiz-10', pg: 'arcade/hardware-quiz.html', n: 'Datenblatt-Kenner', h: 'Schaffe eine Serie von 10.', x: 40, r: 2, m: 'Du kennst dich aus!' },
@@ -451,6 +502,13 @@ XIRU.eggs.push(
     { id: 'hw-balance', pg: 'hardware/balance.html', n: 'Gleichgewicht', h: 'Finde eine ausgewogene Kombination im Balance-Check.', x: 20, r: 1, m: 'Perfekte Harmonie.' },
     { id: 'hw-zeitkapsel', pg: 'hardware/balance.html', n: 'Zeitkapsel', h: 'Kombiniere den ältesten Prozessor mit der neuesten Grafikkarte.', x: 35, r: 2, m: 'Die 5090 langweilt sich ein bisschen.' },
     { id: 'hw-zeitreise-pc', pg: 'hardware/builds.html', n: 'Museumskurator', h: 'Schau dir den nostalgischsten Beispiel-Build an.', x: 25, r: 1, m: 'Mit Diskettenlaufwerk, selbstverständlich.' },
-    { id: 'hw-gewalt', pg: 'hardware/sockel.html', n: 'Mit Gewalt', h: 'Versuche, einen Oldtimer auf ein modernes Board zu setzen.', x: 20, r: 1, m: 'Mit genug Kraft passt alles. Nicht.' }
+    { id: 'hw-gewalt', pg: 'hardware/sockel.html', n: 'Mit Gewalt', h: 'Versuche, einen Oldtimer auf ein modernes Board zu setzen.', x: 20, r: 1, m: 'Mit genug Kraft passt alles. Nicht.' },
+    { id: 'm-tutorial',    pg: 'konto/skilltree.html', n: 'Stapellauf',      h: 'Bau deinen ersten Mech in der Werft.', x: 50, r: 2, m: 'Er bewegt sich! Mehr oder weniger.' },
+    { id: 'm-erste-reise', pg: 'konto/skilltree.html', n: 'Leinen los',      h: 'Erreiche mit dem Mech eine neue Insel.', x: 30, r: 1, m: 'Land in Sicht!' },
+    { id: 'm-reparatur',   pg: 'konto/skilltree.html', n: 'Schrauberherz',   h: 'Repariere ein beschädigtes Bauteil.', x: 20, r: 1, m: 'Wie neu. Fast.' },
+    { id: 'm-kaputt',      pg: 'konto/skilltree.html', n: 'Totalschaden',    h: 'Fahr ein Bauteil komplett zu Schrott.', x: 25, r: 2, m: 'Das war mal ein Antrieb.' },
+    { id: 'm-vollausbau',  pg: 'konto/skilltree.html', n: 'Vollausstattung', h: 'Belege alle sechs Bauplätze des Mechs.', x: 60, r: 3, m: 'Ein richtiger Mech!' },
+    { id: 'm-beine',       pg: 'konto/skilltree.html', n: 'Mech-Pilot',      h: 'Gib deinem Mech echte Beine.', x: 80, r: 3, m: 'STAMPF. STAMPF. STAMPF.' },
+    { id: 'm-alle-inseln', pg: 'weltkarte.html',       n: 'Kartenmacher',    h: 'Erreiche jede Insel der bekannten Welt.', x: 200, r: 4, m: 'Die bekannte Welt gehört dir. Aber was liegt im Nebel? +1 Skillpunkt' }
     /* EGGS:ENDE */
 );

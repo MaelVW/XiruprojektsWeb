@@ -25,6 +25,12 @@
         .dot.unseen { opacity: .45; }
         .dot.hiddenp { cursor: help; }
         .fog { filter: url(#fog); }
+        .cloud { fill: var(--text-muted); opacity: .3; filter: url(#cloud); animation: drift var(--t, 60s) ease-in-out infinite alternate; transform-box: fill-box; }
+        @keyframes drift { from { transform: translate(0, 0); } to { transform: translate(var(--dx, 40px), var(--dy, 10px)); } }
+        .unknown-land { fill: var(--text-faint); opacity: .12; cursor: help; transition: opacity .4s; }
+        .unknown-land:hover { opacity: .22; }
+        .unknown-label { font: 700 14px var(--font); fill: var(--text-faint); opacity: .55; letter-spacing: .3em; pointer-events: none; }
+        .fog-title { font: 600 13px var(--font); fill: var(--text-faint); letter-spacing: .5em; text-transform: uppercase; opacity: .5; }
         .monster { cursor: pointer; animation: monster 14s ease-in-out infinite; }
         @keyframes monster { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(40px, -8px); } }
         .portal { cursor: pointer; animation: spin 6s linear infinite; transform-box: fill-box; transform-origin: center; }
@@ -47,14 +53,20 @@
     </header>
 
     <div class="map-wrap" id="wrap">
-        <svg id="map" viewBox="0 0 1000 700" role="img" aria-label="Weltkarte der Xiru-Welt">
+        <svg id="map" viewBox="-170 -120 1340 940" role="img" aria-label="Weltkarte der Xiru-Welt">
             <defs>
                 <filter id="fog"><feTurbulence type="fractalNoise" baseFrequency=".02" numOctaves="3" seed="7"/><feDisplacementMap in="SourceGraphic" scale="18"/><feGaussianBlur stdDeviation="3"/></filter>
                 <radialGradient id="glow"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+                <filter id="cloud" x="-50%" y="-50%" width="200%" height="200%"><feTurbulence type="fractalNoise" baseFrequency=".012" numOctaves="4" seed="3" result="n"/>
+                    <feDisplacementMap in="SourceGraphic" in2="n" scale="70"/><feGaussianBlur stdDeviation="18"/></filter>
+                <radialGradient id="vignette" cx="50%" cy="48%" r="62%"><stop offset=".55" stop-color="var(--bg-2)" stop-opacity="0"/><stop offset=".86" stop-color="var(--bg-2)" stop-opacity=".75"/><stop offset="1" stop-color="var(--bg-2)" stop-opacity=".97"/></radialGradient>
             </defs>
             <g id="waves"></g>
             <g id="routes"></g>
             <g id="islands"></g>
+            <g id="unknown"></g>
+            <g id="fog"></g>
+            <rect x="-170" y="-120" width="1340" height="940" fill="url(#vignette)" pointer-events="none"/>
             <g id="extras"></g>
         </svg>
         <div class="tip" id="tip" hidden></div>
@@ -80,9 +92,9 @@ XIRU.ready(function () {
 
     // Wellen
     const waves = XIRU.$('#waves');
-    for (let y = 30; y < 700; y += 48) {
-        let d = 'M-60 ' + y;
-        for (let x = -60; x < 1100; x += 60) d += ' q15 -6 30 0 t30 0';
+    for (let y = -100; y < 820; y += 48) {
+        let d = 'M-230 ' + y;
+        for (let x = -230; x < 1240; x += 60) d += ' q15 -6 30 0 t30 0';
         el('path', { d, class: 'wave', style: 'animation-duration:' + (7 + (y % 5)) + 's;opacity:' + (.4 + (y % 3) * .2) }, waves);
     }
     // Routen vom Zentrum aus
@@ -104,6 +116,7 @@ XIRU.ready(function () {
     XIRU.regions.forEach((reg, ri) => {
         const pages = XIRU.pages.filter(p => p.r === reg.id);
         const isSecret = reg.id === 'geheim';
+        const veiled = !XIRU.mech.discovered(reg.id);   // noch keine Expedition dorthin
         const visibleDots = pages.filter(p => !p.hidden || P.visited[p.p] || karto);
         const n = Math.max(isSecret ? 8 : 4, visibleDots.length);
         const spacing = 8.2, inner = spacing * Math.sqrt(n), R = Math.max(46, inner + 26);
@@ -115,11 +128,12 @@ XIRU.ready(function () {
         let d = 'M' + ((pts[0][0] + pts[N - 1][0]) / 2) + ' ' + ((pts[0][1] + pts[N - 1][1]) / 2);
         pts.forEach((p, i) => { const q = pts[(i + 1) % N]; d += ' Q' + p[0] + ' ' + p[1] + ' ' + (p[0] + q[0]) / 2 + ' ' + (p[1] + q[1]) / 2; });
         el('path', { d, fill: 'color-mix(in srgb, #38bdf8 18%, transparent)', transform: 'translate(0,6) scale(1)', opacity: .6 }, g);
-        const land = el('path', { d, class: 'island__land' + (isSecret && !pages.some(p => P.visited[p.p]) ? ' fog' : ''), fill: 'color-mix(in srgb, ' + reg.color + ' 16%, var(--surface))', stroke: reg.color }, g);
+        const land = el('path', { d, class: 'island__land' + ((isSecret && !pages.some(p => P.visited[p.p])) || veiled ? ' fog' : ''), fill: 'color-mix(in srgb, ' + reg.color + ' 16%, var(--surface))', stroke: reg.color }, g);
         if (isSecret && !pages.some(p => P.visited[p.p])) land.setAttribute('opacity', '.55');
         // Punkte im Sonnenblumen-Muster
         const seenCount = pages.filter(p => P.visited[p.p]).length;
-        visibleDots.forEach((p, i) => {
+        if (veiled) land.setAttribute('opacity', '.5');
+        (veiled ? [] : visibleDots).forEach((p, i) => {
             const a = i * 2.39996, rr = spacing * Math.sqrt(i + .5);
             const x = cx + Math.cos(a) * rr, y = cy + Math.sin(a) * rr * .82 + 6;
             const seen = !!P.visited[p.p], locked = !XIRU.isUnlocked(p), hiddenUnknown = p.hidden && !seen;
@@ -141,12 +155,45 @@ XIRU.ready(function () {
         const t = el('text', { x: cx, y: ly, 'text-anchor': 'middle', class: 'island__label' }, g); t.textContent = reg.icon + ' ' + reg.name;
         const visibleTotal = pages.filter(p => !p.hidden).length;
         const sub = el('text', { x: cx, y: ly + 15, 'text-anchor': 'middle', class: 'island__sub' }, g);
-        sub.textContent = isSecret ? (seenCount ? seenCount + ' Orte gefunden' : 'unerforscht') :
+        sub.textContent = veiled ? '🌫 Expedition nötig' : isSecret ? (seenCount ? seenCount + ' Orte gefunden' : 'unerforscht') :
             seenCount + '/' + visibleTotal + (kompass ? ' · ' + (visibleTotal - pages.filter(p => !p.hidden && P.visited[p.p]).length) + ' unentdeckt' : '');
         const idx = pages.find(p => /index\.html$/.test(p.p));
         land.style.cursor = idx ? 'pointer' : 'default';
-        land.addEventListener('click', () => { if (idx) location.href = XIRU.url(idx.p); });
+        land.addEventListener('click', () => { if (veiled) location.href = XIRU.url('konto/skilltree.html#reisen'); else if (idx) location.href = XIRU.url(idx.p); });
+        if (veiled) {
+            const tipTxt = '<b>' + XIRU.esc(reg.name) + ' liegt im Nebel</b><small>Benötigt: ' + XIRU.esc(XIRU.mech.islandReqText(reg.id)) + ' · Klick: zur Werft</small>';
+            land.addEventListener('pointerenter', e => showTip(e, tipTxt)); land.addEventListener('pointermove', e => showTip(e, tipTxt)); land.addEventListener('pointerleave', hideTip);
+        }
     });
+
+    // Unbekannte Landmassen im Nebel – hier wächst die Welt später weiter
+    const unknown = XIRU.$('#unknown');
+    const SHAPES = [[-70, 40, 95], [1080, 70, 110], [1110, 720, 90], [470, -55, 80], [-90, 430, 85], [760, 770, 75]];
+    SHAPES.forEach(([cx, cy, R], i) => {
+        const rand = rng(4242 + i * 31), pts = [], N = 18;
+        for (let k = 0; k < N; k++) { const a = k / N * Math.PI * 2, rr = R * (0.7 + rand() * .45); pts.push([cx + Math.cos(a) * rr, cy + Math.sin(a) * rr * .75]); }
+        let d = 'M' + ((pts[0][0] + pts[N - 1][0]) / 2) + ' ' + ((pts[0][1] + pts[N - 1][1]) / 2);
+        pts.forEach((p, k) => { const q = pts[(k + 1) % N]; d += ' Q' + p[0] + ' ' + p[1] + ' ' + (p[0] + q[0]) / 2 + ' ' + (p[1] + q[1]) / 2; });
+        const land = el('path', { d, class: 'unknown-land' }, unknown);
+        const lbl = el('text', { x: cx, y: cy + 5, 'text-anchor': 'middle', class: 'unknown-label' }, unknown); lbl.textContent = '???';
+        const msg = XIRU.pick(['Noch im Nebel …', 'Hier entsteht vielleicht bald etwas.', 'Unerforschtes Land.', 'Die Karte ist hier noch leer.', 'Man hört leises Laufwerk-Rattern.']);
+        land.addEventListener('pointerenter', e => showTip(e, '<b>Unbekanntes Land</b><small>' + msg + '</small>'));
+        land.addEventListener('pointerleave', hideTip);
+    });
+    // Nebelbänke rund um die bekannten Inseln
+    const fog = XIRU.$('#fog'), frand = rng(99);
+    for (let i = 0; i < 26; i++) {
+        const a = i / 26 * Math.PI * 2 + frand() * .2;
+        const cx = 500 + Math.cos(a) * (640 + frand() * 90), cy = 350 + Math.sin(a) * (450 + frand() * 70);
+        el('ellipse', { cx, cy, rx: 150 + frand() * 120, ry: 70 + frand() * 60, class: 'cloud',
+            style: '--t:' + (40 + frand() * 50) + 's;--dx:' + ((frand() - .5) * 90) + 'px;--dy:' + ((frand() - .5) * 40) + 'px;animation-delay:-' + (frand() * 40) + 's' }, fog);
+    }
+    // ein paar dünne Schwaden auch zwischen den Inseln
+    for (let i = 0; i < 6; i++) {
+        el('ellipse', { cx: 150 + frand() * 700, cy: 80 + frand() * 560, rx: 90 + frand() * 70, ry: 30 + frand() * 25, class: 'cloud',
+            style: 'opacity:.1;--t:' + (50 + frand() * 40) + 's;--dx:' + ((frand() - .5) * 120) + 'px;--dy:8px' }, fog);
+    }
+    const ft = el('text', { x: 500, y: -78, 'text-anchor': 'middle', class: 'fog-title' }, fog); ft.textContent = 'Unerforschte Gewässer';
 
     // Extras: Seeungeheuer und Portal
     const ex = XIRU.$('#extras');

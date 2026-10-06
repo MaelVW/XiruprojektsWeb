@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Codeknacker · Xiruprojekts</title>
+    <meta name="description" content="Codeknacker: Finde den geheimen Farbcode in höchstens zehn Versuchen. Mit Profimodus für echte Tresorknacker.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="css/codeknacker.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/arcade.js"></script>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">▶ Spielhalle · Brett</span>
+        <h1>Codeknacker</h1>
+        <p class="lead">Irgendwo in diesem Tresor steckt ein Farbcode. Du hast zehn Versuche. Nach jedem Tipp verrät dir das Schloss, wie nah du dran bist – den Rest musst du kombinieren.</p>
+    </header>
+
+    <div class="game">
+        <div>
+            <div class="game__hud" id="hud"></div>
+            <div class="game__stage ck-stage" id="stage">
+                <div class="ck" id="ck">
+                    <div class="ck-secret" id="secret" aria-label="Geheimer Code"></div>
+                    <ol class="ck-rows" id="rows"></ol>
+                    <div class="ck-controls">
+                        <div class="ck-palette" id="palette" aria-label="Farben"></div>
+                        <div class="ck-actions">
+                            <button class="btn btn--sm" type="button" id="btn-del" aria-label="Letzte Farbe löschen">⌫ Löschen</button>
+                            <button class="btn btn--sm btn--primary" type="button" id="btn-check">Prüfen ↵</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="game__overlay" id="ov" hidden></div>
+            </div>
+            <p class="small muted mt-1 ck-legend"><span class="ck-fb-demo is-black"></span> richtige Farbe am richtigen Ort · <span class="ck-fb-demo is-white"></span> richtige Farbe, falscher Ort</p>
+        </div>
+        <aside class="game__side">
+            <div class="card">
+                <h3>Steuerung</h3>
+                <ul class="keys-help">
+                    <li>Farbe antippen – sie landet im markierten Loch</li>
+                    <li>Loch antippen – Farbe entfernen / Loch wählen</li>
+                    <li><kbd>1</kbd> – <kbd>6</kbd> (Profi: <kbd>8</kbd>) – Farbe setzen</li>
+                    <li><kbd>←</kbd> <kbd>→</kbd> – Loch wählen</li>
+                    <li><kbd>Backspace</kbd> – löschen, <kbd>Enter</kbd> – prüfen</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Modus</h3>
+                <div class="row" id="modes">
+                    <button class="chip is-active" type="button" data-mode="normal">Normal</button>
+                    <button class="chip" type="button" data-mode="profi">Profi</button>
+                </div>
+                <p class="small muted mt-2" id="mode-desc"></p>
+                <button class="btn btn--sm mt-2" type="button" id="btn-new">↻ Neuer Code</button>
+            </div>
+            <div class="card">
+                <h3>Rekord</h3>
+                <p class="stat__value" id="best">–</p>
+                <p class="small muted">Punkte pro geknacktem Code: (11 − Versuche) × 10, im Profimodus × 25.</p>
+            </div>
+        </aside>
+    </div>
+</main>
+<script src="js/codeknacker.js"></script>
+</body>
+</html>

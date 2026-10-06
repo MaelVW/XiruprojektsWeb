@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Passwort-Generator · Xiruprojekts</title>
+    <meta name="description" content="Sichere Passwörter und deutsche Passphrasen, lokal mit crypto.getRandomValues erzeugt. Mit Entropie-Anzeige und Passwort-Prüfer – ohne Netzwerk, ohne Speichern.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="css/werkzeuge.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <style>
+        .pw-out {
+            position: relative; min-height: 4.2rem; display: flex; align-items: center;
+            font: 700 clamp(1.15rem, 3.2vw, 1.7rem)/1.35 var(--mono); letter-spacing: .02em;
+            background: var(--bg-2); border: 1px solid var(--border-strong); border-radius: var(--radius);
+            padding: 1rem 1.15rem; overflow-wrap: anywhere; word-break: break-all;
+        }
+        .pw-out.is-hidden .pw-chars { filter: blur(9px); user-select: none; }
+        .pw-chars { transition: filter .2s; }
+        .pw-chars .d { color: var(--accent-2); }
+        .pw-chars .s { color: var(--warning); }
+        .pw-chars .u { color: var(--text); }
+        .pw-chars .l { color: color-mix(in srgb, var(--text) 82%, var(--rc)); }
+        .pw-chars .w2 { color: var(--rc); }
+        .pw-chars .sep { color: var(--text-faint); }
+        .pw-chars span { display: inline; animation: pwIn .28s var(--ease) both; animation-delay: calc(var(--i, 0) * 6ms); }
+        @keyframes pwIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+        .pw-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .9rem; }
+        .pw-meter-row { display: flex; justify-content: space-between; gap: 1rem; font-size: .88rem; margin: 1.1rem 0 .4rem; flex-wrap: wrap; }
+        .pw-meter-row strong { color: var(--mc, var(--text)); }
+        .pw-len { display: grid; grid-template-columns: 1fr 5rem; gap: .75rem; align-items: center; }
+        .pw-len input[type="number"] { text-align: center; }
+        .pw-checks { display: grid; gap: .55rem; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-bottom: 1rem; }
+        @media (max-width: 560px) { .pw-checks { grid-template-columns: 1fr; } }
+        .pw-checks .check code { font-size: .78em; }
+        .pw-sugg { list-style: none; padding: 0; margin: 0; display: grid; gap: .4rem; }
+        .pw-sugg li { display: flex; gap: .5rem; align-items: center; margin: 0; }
+        .pw-sugg code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: .35rem .5rem; }
+        .pw-times { display: grid; gap: .3rem; font-size: .88rem; margin-top: .75rem; }
+        .pw-times div { display: flex; justify-content: space-between; gap: 1rem; }
+        .pw-times span { color: var(--text-muted); }
+        .pw-times b { text-align: right; }
+        .pw-check-input { position: relative; }
+        .pw-check-input input { font-family: var(--mono) !important; padding-right: 7.5rem !important; }
+        .pw-check-input .btn { position: absolute; right: .35rem; top: 50%; transform: translateY(-50%); }
+        .pw-findings { list-style: none; padding: 0; margin: 1rem 0 0; display: grid; gap: .35rem; }
+        .pw-findings li { display: flex; gap: .55rem; align-items: baseline; margin: 0; font-size: .92rem; }
+        .pw-findings li::before { content: attr(data-i); width: 1.2em; flex-shrink: 0; text-align: center; font-weight: 800; }
+        .pw-findings .ok::before { color: var(--success); }
+        .pw-findings .warn::before { color: var(--warning); }
+        .pw-findings .bad::before { color: var(--danger); }
+        .pw-big-bits { font: 800 2rem var(--mono); }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">⚒ Werkzeugkasten</span>
+        <h1>Passwort-Generator</h1>
+        <p class="lead">Starke Passwörter und gut merkbare Passphrasen – erzeugt mit dem Kryptozufall deines Browsers. Darunter kannst du ein Passwort prüfen, ohne dass es je deinen Computer verlässt.</p>
+    </header>
+
+    <div class="wz-split">
+        <div class="stack">
+            <div class="card card--accent">
+                <div class="tabs wz-tabs" id="mode-tabs">
+                    <button data-tab="pw"><span aria-hidden="true">✱</span> Passwort</button>
+                    <button data-tab="pp"><span aria-hidden="true">≡</span> Passphrase</button>
+                </div>
+                <div class="pw-out" id="out" aria-live="polite">
+                    <span class="sr-only" id="out-sr"></span>
+                    <span class="pw-chars" id="chars" aria-hidden="true"></span>
+                </div>
+                <div class="pw-actions">
+                    <button class="btn btn--primary" type="button" id="btn-new">↻ Neu erzeugen</button>
+                    <button class="btn" type="button" id="btn-copy">📋 Kopieren</button>
+                    <button class="btn btn--ghost" type="button" id="btn-hide" aria-pressed="false">👁 Verbergen</button>
+                </div>
+                <div class="pw-meter-row">
+                    <span>Stärke: <strong id="gen-label">–</strong></span>
+                    <span class="muted"><span id="gen-bits">–</span> Bit Entropie</span>
+                </div>
+                <div class="wz-meter" id="gen-meter"><i></i></div>
+                <div class="pw-times" id="gen-times"></div>
+                <p class="wz-keys"><span><kbd>N</kbd> neu</span><span><kbd>K</kbd> kopieren</span><span><kbd>V</kbd> verbergen</span></p>
+            </div>
+
+            <div class="card">
+                <section id="tab-pw" class="wz-panel">
+                    <h3>Passwort-Einstellungen</h3>
+                    <div class="field">
+                        <label for="len">Länge</label>
+                        <div class="pw-len">
+                            <input id="len-range" type="range" min="4" max="128" value="20" aria-label="Länge (Schieberegler)">
+                            <input id="len" type="number" min="4" max="128" value="20" class="input">
+                        </div>
+                    </div>
+                    <div class="pw-checks">
+                        <label class="check"><input type="checkbox" id="g-lower" checked> Kleinbuchstaben <code>a–z</code></label>
+                        <label class="check"><input type="checkbox" id="g-upper" checked> Grossbuchstaben <code>A–Z</code></label>
+                        <label class="check"><input type="checkbox" id="g-digit" checked> Ziffern <code>0–9</code></label>
+                        <label class="check"><input type="checkbox" id="g-symbol" checked> Sonderzeichen <code>!#$%&amp;*+-=?@_~</code></label>
+                        <label class="check"><input type="checkbox" id="g-brackets"> Klammern &amp; Satzzeichen <code>()[]{}&lt;&gt;.,:;/^|</code></label>
+                        <label class="check"><input type="checkbox" id="g-ambig" checked> Ähnliche Zeichen weglassen <code>0 O o 1 l I |</code></label>
+                        <label class="check"><input type="checkbox" id="g-each" checked> Aus jeder Gruppe mindestens eins</label>
+                    </div>
+                    <div class="field mb-0">
+                        <label for="exclude">Diese Zeichen nie verwenden</label>
+                        <input id="exclude" type="text" autocomplete="off" spellcheck="false" placeholder="z. B. &amp;%$ – falls eine Website sie nicht mag">
+                        <small id="pool-info"></small>
+                    </div>
+                </section>
+                <section id="tab-pp" class="wz-panel" hidden>
+                    <h3>Passphrase-Einstellungen</h3>
+                    <div class="field">
+                        <label for="words">Anzahl Wörter</label>
+                        <div class="pw-len">
+                            <input id="words-range" type="range" min="3" max="12" value="5" aria-label="Anzahl Wörter (Schieberegler)">
+                            <input id="words" type="number" min="3" max="12" value="5" class="input">
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label for="sep">Trennzeichen</label>
+                        <select id="sep">
+                            <option value="-">Bindestrich (wort-wort)</option>
+                            <option value=" ">Leerzeichen (wort wort)</option>
+                            <option value=".">Punkt (wort.wort)</option>
+                            <option value="_">Unterstrich (wort_wort)</option>
+                            <option value="#digit">Zufallsziffer (wort7wort)</option>
+                            <option value="">Keins (WortWort)</option>
+                        </select>
+                    </div>
+                    <div class="pw-checks">
+                        <label class="check"><input type="checkbox" id="pp-cap" checked> Wörter gross beginnen</label>
+                        <label class="check"><input type="checkbox" id="pp-num" checked> Zahl (0–99) anhängen</label>
+                        <label class="check"><input type="checkbox" id="pp-sym"> Sonderzeichen anhängen</label>
+                    </div>
+                    <p class="small muted mb-0" id="pp-info"></p>
+                </section>
+            </div>
+        </div>
+
+        <aside class="stack">
+            <div class="callout mt-0">
+                <strong>🔒 Nichts wird gespeichert.</strong>
+                <p class="small mt-1 mb-0">Die Passwörter entstehen mit <code>crypto.getRandomValues</code> direkt in diesem Tab. Sie werden weder gespeichert noch gesendet – auch deine Einstellungen nicht. Schliesst du die Seite, ist alles weg. Kopierte Passwörter bleiben aber in deiner Zwischenablage, bis du etwas anderes kopierst.</p>
+            </div>
+            <div class="card">
+                <div class="wz-head"><h3>Weitere Vorschläge</h3><span class="spacer"></span><button class="btn btn--sm btn--ghost" type="button" id="btn-more" aria-label="Neue Vorschläge">↻</button></div>
+                <ul class="pw-sugg" id="sugg"></ul>
+            </div>
+            <div class="card card--flat">
+                <h3>Faustregeln</h3>
+                <ul class="small muted mb-0">
+                    <li>Für jeden Dienst ein eigenes Passwort – ein Passwort-Manager merkt sie sich.</li>
+                    <li>Ab ca. 80 Bit ist ein Passwort praktisch nicht zu erraten.</li>
+                    <li>Passphrasen sind lang, aber gut zu tippen – ideal fürs Master-Passwort.</li>
+                    <li>Zwei-Faktor-Anmeldung einschalten, wo es geht.</li>
+                </ul>
+            </div>
+        </aside>
+    </div>
+
+    <section class="card mt-4" aria-labelledby="chk-title">
+        <div class="wz-head">
+            <h2 id="chk-title">Passwort prüfen</h2>
+            <span class="spacer"></span>
+            <span class="wz-local">Läuft nur lokal – keine Netzwerkabfrage</span>
+        </div>
+        <div class="grid-2">
+            <div>
+                <div class="field">
+                    <label for="chk">Passwort eintippen</label>
+                    <div class="pw-check-input">
+                        <input id="chk" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Wird nicht gespeichert">
+                        <button class="btn btn--sm btn--ghost" type="button" id="chk-show" aria-pressed="false">Anzeigen</button>
+                    </div>
+                    <small>Tipp: Prüf lieber ein ähnliches Muster statt deines echten Passworts – sicher ist sicher.</small>
+                </div>
+                <div class="pw-meter-row">
+                    <span>Einschätzung: <strong id="chk-label">–</strong></span>
+                    <span class="muted">≈ <span id="chk-bits">0</span> Bit</span>
+                </div>
+                <div class="wz-meter" id="chk-meter"><i></i></div>
+                <div class="pw-times" id="chk-times"></div>
+            </div>
+            <div>
+                <h3>Was uns auffällt</h3>
+                <ul class="pw-findings" id="chk-findings"><li class="ok" data-i="·">Tipp oben etwas ein.</li></ul>
+                <p class="hint mt-2">Die Schätzung sucht nach Mustern, die Angreifer zuerst probieren: häufige Passwörter, Wörter aus Wörterbüchern (auch mit 4 statt a), Tastaturreihen wie „qwertz“, Folgen wie „1234“, Wiederholungen und Jahreszahlen. Sie ist eine grobe Orientierung, keine Garantie.</p>
+            </div>
+        </div>
+    </section>
+</main>
+<script src="js/wz.js"></script>
+<script src="js/wortliste.js"></script>
+<script src="js/passwort.js"></script>
+</body>
+</html>

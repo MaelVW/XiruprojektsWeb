@@ -1,0 +1,105 @@
+/* ==========================================================================
+   Mixer-Studio – gemeinsame Bausteine (nur für mixer/*.html)
+   Farben ausschliesslich über die Variablen aus main.css.
+   ========================================================================== */
+
+/* Ton-aus-Hinweis */
+.mx-sound-off { display: flex; gap: .9rem; align-items: flex-start; }
+.mx-sound-off__icon { font-size: 1.6rem; line-height: 1; }
+.mx-sound-off.is-nudged { animation: shake .45s linear 2; }
+
+/* Bildschirm / Visualisierung */
+.mx-screen {
+    position: relative; overflow: hidden;
+    background: radial-gradient(120% 140% at 50% 0%, color-mix(in srgb, var(--rc) 10%, var(--bg-2)), var(--bg-2) 70%);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    box-shadow: inset 0 0 40px -10px color-mix(in srgb, var(--rc) 25%, transparent);
+}
+.mx-screen canvas { width: 100%; height: 100%; display: block; }
+.mx-screen__label {
+    position: absolute; left: .8rem; top: .55rem; z-index: 2;
+    font: 700 .7rem var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--text-faint);
+    pointer-events: none;
+}
+
+/* Bedienpult */
+.mx-panel { display: grid; gap: 1rem; }
+.mx-ctl { display: flex; flex-direction: column; gap: .3rem; min-width: 0; }
+.mx-ctl__top { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; font-size: .82rem; font-weight: 600; color: var(--text-muted); }
+.mx-ctl__val { font-family: var(--mono); font-size: .78rem; color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.mx-ctl select, .mx-select {
+    font: 500 .9rem var(--font); color: var(--text); background: var(--bg-2);
+    border: 1px solid var(--border-strong); border-radius: var(--radius-sm); padding: .45rem .6rem; width: 100%;
+}
+.mx-ctl select:focus-visible, .mx-select:focus-visible { outline: 2px solid var(--rc); outline-offset: 1px; }
+
+/* Schöne Schieberegler (Fallback: accent-color aus main.css) */
+.mx-range { -webkit-appearance: none; appearance: none; width: 100%; height: 22px; background: transparent; cursor: pointer; touch-action: pan-y; }
+.mx-range:focus { outline: none; }
+.mx-range::-webkit-slider-runnable-track {
+    height: 6px; border-radius: 99px;
+    background: linear-gradient(90deg, var(--rc) 0 var(--p, 50%), var(--surface-3) var(--p, 50%) 100%);
+}
+.mx-range::-moz-range-track { height: 6px; border-radius: 99px; background: var(--surface-3); }
+.mx-range::-moz-range-progress { height: 6px; border-radius: 99px; background: var(--rc); }
+.mx-range::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none; width: 18px; height: 18px; margin-top: -6px; border-radius: 50%;
+    background: var(--text); border: 3px solid var(--rc); box-shadow: 0 2px 8px -2px rgba(0, 0, 0, .5);
+    transition: transform .15s var(--ease);
+}
+.mx-range::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: var(--text); border: 3px solid var(--rc); }
+.mx-range:hover::-webkit-slider-thumb, .mx-range:focus-visible::-webkit-slider-thumb { transform: scale(1.18); }
+.mx-range:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 4px color-mix(in srgb, var(--rc) 35%, transparent); }
+.mx-range:disabled { opacity: .45; cursor: not-allowed; }
+
+/* Grosser Abspielknopf */
+.mx-play {
+    --pc: var(--rc);
+    display: inline-flex; align-items: center; justify-content: center; gap: .6rem;
+    min-width: 150px; height: 52px; padding: 0 1.4rem; border-radius: 99px;
+    background: var(--rc); color: var(--accent-ink); border: 0; cursor: pointer;
+    font: 800 1.02rem var(--font); letter-spacing: .01em;
+    box-shadow: 0 10px 24px -10px var(--rc);
+    transition: transform .12s, box-shadow .2s, background .2s;
+}
+.mx-play:hover { background: color-mix(in srgb, var(--rc) 85%, white); }
+.mx-play:active { transform: scale(.97); }
+.mx-play__icon { font-size: 1.1rem; line-height: 1; }
+.mx-play.is-on { background: var(--surface-2); color: var(--text); border: 1px solid var(--rc); animation: pulse 2s infinite; }
+
+/* Mini-Knöpfe */
+.mx-icon-btn {
+    display: inline-grid; place-items: center; width: 34px; height: 34px; flex-shrink: 0;
+    border-radius: 9px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text-muted);
+    font: 600 .95rem var(--font); cursor: pointer; transition: background .15s, color .15s, border-color .15s;
+}
+.mx-icon-btn:hover { color: var(--text); border-color: var(--border-strong); }
+.mx-icon-btn[aria-pressed="true"] { background: color-mix(in srgb, var(--danger) 18%, var(--surface-2)); color: var(--danger); border-color: color-mix(in srgb, var(--danger) 50%, transparent); }
+
+/* Gespeicherte Einträge */
+.mx-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: .4rem; }
+.mx-list li {
+    display: flex; align-items: center; gap: .5rem; margin: 0;
+    padding: .35rem .4rem .35rem .75rem; border-radius: var(--radius-sm);
+    background: var(--surface-2); border: 1px solid var(--border);
+    animation: popIn .3s var(--ease) both;
+}
+.mx-list li > .mx-list__main { flex: 1; min-width: 0; text-align: left; background: none; border: 0; color: var(--text); font: 600 .92rem var(--font); cursor: pointer; padding: .2rem 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mx-list li > .mx-list__main:hover { color: var(--rc); }
+.mx-list small { color: var(--text-faint); white-space: nowrap; }
+.mx-empty { color: var(--text-faint); font-size: .88rem; padding: .5rem 0; }
+
+/* Eingabezeile mit Knopf */
+.mx-inline { display: flex; gap: .5rem; }
+.mx-inline .input { flex: 1; min-width: 0; padding: .5rem .7rem; font-size: .95rem; }
+
+/* Reiter, die auch auf dem Handy passen */
+.mx-tabs { position: sticky; top: var(--header-h); z-index: 20; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+
+/* Kristall-Hinweis klein */
+.mx-crystals { display: inline-flex; align-items: center; gap: .3rem; }
+.mx-crystals .crystal { width: 14px; height: 18px; animation: none; }
+
+@media (max-width: 560px) {
+    .mx-play { min-width: 0; flex: 1; }
+}

@@ -25,6 +25,7 @@
         .wk-empty[hidden] { display: none; }
         .wk-tips { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); margin-top: 2.5rem; }
         .wk-tips .card h3 { display: flex; gap: .5rem; align-items: center; }
+        .wk-cr .crystal { animation: none; filter: none; }
     </style>
 </head>
 <body>
@@ -69,8 +70,8 @@
             <p class="small muted">Fast jedes Werkzeug hat Tastenkürzel. Sie stehen jeweils klein unter den Knöpfen – zum Beispiel <kbd>Leertaste</kbd> für Start/Pause im Timer.</p>
         </div>
         <div class="card card--flat" data-reveal style="--d:.16s">
-            <h3><span aria-hidden="true">💾</span> Augen offen</h3>
-            <p class="small muted">Auch im Werkzeugkasten liegen Disketten herum. Wer Werkzeuge ungewöhnlich benutzt, findet sie.</p>
+            <h3><span class="crystal-glow" id="tip-crystal" aria-hidden="true"></span> Augen offen</h3>
+            <p class="small muted">Auch im Werkzeugkasten funkeln Realitätskristalle. Wer die Werkzeuge ungewöhnlich benutzt, findet sie.</p>
         </div>
     </section>
 </main>
@@ -98,8 +99,11 @@ XIRU.ready(function () {
     function eggsOn(path) {
         const list = (XIRU.eggs || []).filter(e => e.pg === path);
         const found = list.filter(e => XIRU.hasEgg(e.id)).length;
-        return found ? '<span class="badge badge--warning" title="Gefundene Disketten auf dieser Seite">💾 ' + found + '</span>' : '';
+        return found ? '<span class="badge badge--warning wk-cr" title="Gefundene Realitätskristalle auf dieser Seite">' + XIRU.crystalSVG(2, 10) + found + '</span>' : '';
     }
+
+    const tip = $('#tip-crystal');
+    if (tip) tip.innerHTML = XIRU.crystalSVG(2, 20);
 
     TOOLS.forEach((t, i) => {
         const pg = XIRU.pageFor(t.p) || { t: t.p, d: '' };
@@ -147,7 +151,7 @@ XIRU.ready(function () {
         count.textContent = shown === TOOLS.length ? TOOLS.length + ' Werkzeuge' : shown + ' von ' + TOOLS.length;
         empty.hidden = shown > 0;
         if (!shown) $('#empty-text').textContent = raw ? 'Für „' + raw + '“ haben wir (noch) kein Werkzeug.' : 'In diesem Bereich gibt es nichts.';
-        // Diskette: Wer einen Hammer sucht …
+        // Kristall: Wer einen Hammer sucht …
         clearTimeout(hammerTimer);
         if (/^(hammer|vorschlaghammer)$/.test(norm(raw))) {
             hammerTimer = setTimeout(() => {
@@ -202,7 +206,7 @@ XIRU.ready(function () {
     try { const pre = new URLSearchParams(location.search).get('q'); if (pre) q.value = pre; } catch (e) { }
     apply();
 
-    // Diskette: Alle zehn Werkzeuge ausprobiert
+    // Kristall: Alle zehn Werkzeuge ausprobiert
     if (TOOLS.every(t => XIRU.isVisited(t.p))) XIRU.egg('t-werkzeuge-alle');
 });
 </script>

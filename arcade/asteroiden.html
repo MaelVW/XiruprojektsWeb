@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asteroiden · Xiruprojekts</title>
+    <meta name="description" content="Asteroiden – ein kleines Schiff mit viel Trägheit, ein Himmel voller Gesteinsbrocken und ein Hyperraumsprung für den Notfall.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/arcade.js"></script>
+    <style>
+        #cv { width: min(100%, calc((100vh - 170px) * 1.5)); cursor: crosshair; }
+        .touch-pad { flex-wrap: wrap; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">▶ Spielhalle · Action</span>
+        <h1>Asteroiden</h1>
+        <p class="lead">Dein Schiff gleitet, wohin es will – du gibst nur Schub und Richtung vor. Zerschiess die Brocken, bis nur noch Staub übrig ist, und weich den Festplatten-Drohnen aus, die ab und zu vorbeirauschen.</p>
+    </header>
+
+    <div class="game">
+        <div>
+            <div class="game__hud" id="hud"></div>
+            <div class="game__stage" id="stage">
+                <canvas id="cv"></canvas>
+                <div class="game__overlay" id="ov"></div>
+            </div>
+            <div class="touch-pad">
+                <button data-key="ArrowLeft" aria-label="Links drehen">⟲</button>
+                <button data-key="ArrowRight" aria-label="Rechts drehen">⟳</button>
+                <button data-key="ArrowUp" aria-label="Schub">▲</button>
+                <button data-key=" " aria-label="Feuer">●</button>
+                <button data-key="h" aria-label="Hyperraum">H</button>
+                <button data-key="p" aria-label="Pause">⏸</button>
+            </div>
+        </div>
+        <aside class="game__side">
+            <div class="card">
+                <h3>Steuerung</h3>
+                <ul class="keys-help">
+                    <li><kbd>←</kbd> <kbd>→</kbd> oder <kbd>A</kbd> <kbd>D</kbd> – drehen</li>
+                    <li><kbd>↑</kbd> oder <kbd>W</kbd> – Schub</li>
+                    <li><kbd>Leertaste</kbd> – feuern (halten für Dauerfeuer)</li>
+                    <li><kbd>H</kbd> oder <kbd>↓</kbd> – Hyperraumsprung (riskant!)</li>
+                    <li><kbd>P</kbd> / <kbd>Esc</kbd> – Pause</li>
+                    <li>Maus: Schiff zielt auf den Zeiger, linke Taste feuert, rechte Taste gibt Schub</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Punkte</h3>
+                <ul class="keys-help">
+                    <li>Grosser Brocken 20 · mittlerer 50 · kleiner 100</li>
+                    <li>Festplatten-Drohne 200, die kleine flinke 1’000</li>
+                    <li>Alle 10’000 Punkte ein Extraschiff</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Modus</h3>
+                <div class="row" id="modes">
+                    <button class="chip is-active" data-mode="klassisch">Klassisch</button>
+                    <button class="chip" data-mode="hardcore">Hardcore</button>
+                </div>
+                <p class="small muted mt-2" id="mode-desc">Drei Schiffe, gemütlicher Start.</p>
+            </div>
+            <div class="card">
+                <h3>Rekord</h3>
+                <p class="stat__value" id="best">–</p>
+            </div>
+        </aside>
+    </div>
+</main>
+<script src="js/asteroiden.js"></script>
+</body>
+</html>

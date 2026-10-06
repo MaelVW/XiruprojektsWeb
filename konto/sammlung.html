@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Disketten-Sammlung · Xiruprojekts</title>
-    <meta name="description" content="Alle Easter Eggs, die du gefunden hast – und Hinweise auf die, die noch fehlen.">
+    <title>Kristallsammlung · Xiruprojekts</title>
+    <meta name="description" content="Alle Realitätskristalle, die du gefunden hast – und Hinweise auf die, die noch fehlen.">
     <link rel="stylesheet" href="../assets/css/main.css">
     <script src="../assets/js/site.js"></script>
     <script src="../assets/js/core.js"></script>
@@ -12,12 +12,13 @@
         .shelf { display: grid; gap: .9rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); }
         .egg { display: grid; grid-template-columns: auto 1fr; gap: .85rem; align-items: start; padding: 1rem; border-radius: var(--radius-sm); background: var(--surface); border: 1px solid var(--border); position: relative; }
         .egg.is-found { border-color: color-mix(in srgb, var(--dc) 50%, var(--border)); }
-        .egg.is-found .disk { animation: spinIn .6s var(--ease) both; animation-delay: var(--d, 0s); }
+        .egg.is-found .egg__gem { animation: spinIn .6s var(--ease) both; animation-delay: var(--d, 0s); }
+        .egg__gem { --cg: var(--dc); width: 38px; display: grid; place-items: center; }
+        .egg.is-found { background: linear-gradient(135deg, color-mix(in srgb, var(--dc) 9%, var(--surface)), var(--surface) 60%); }
         .egg.is-new::after { content: "NEU"; position: absolute; top: .5rem; right: .5rem; font-size: .6rem; font-weight: 800; padding: .1rem .4rem; border-radius: 99px; background: var(--warning); color: #241a00; }
         .egg__name { font-weight: 800; font-size: .95rem; }
         .egg__text { font-size: .83rem; color: var(--text-muted); margin-top: .15rem; }
         .egg__meta { font-size: .72rem; color: var(--text-faint); margin-top: .35rem; display: flex; gap: .5rem; flex-wrap: wrap; }
-        .egg .disk { width: 38px; height: 38px; }
         .egg:not(.is-found) .egg__name { color: var(--text-faint); }
         .rar { display: flex; gap: 2px; }
         .rar i { width: 6px; height: 6px; border-radius: 50%; background: var(--surface-3); }
@@ -25,18 +26,23 @@
         .filters { display: flex; flex-wrap: wrap; gap: .4rem; }
         .big-progress { display: grid; grid-template-columns: auto 1fr; gap: 1.25rem; align-items: center; }
         .big-progress b { font-size: 2.6rem; line-height: 1; font-variant-numeric: tabular-nums; }
+        .hero-gems { display: flex; gap: .4rem; align-items: flex-end; }
+        .tiers { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: .6rem; font-size: .82rem; color: var(--text-muted); }
+        .tiers span { display: inline-flex; align-items: center; gap: .35rem; }
+        .tiers svg { width: 14px; height: 18px; animation: none; }
     </style>
 </head>
 <body>
 <main class="content">
     <header class="page-head">
         <span class="eyebrow">⚓ Heimathafen</span>
-        <h1>Disketten-Sammlung</h1>
-        <p class="lead">Jede Diskette ist ein Easter Egg. Manche tippt man, manche findet man auf Seiten, manche gibt es nur zu bestimmten Zeiten. Seltene Disketten verraten ihre Hinweise erst mit dem Skill „Spürnase".</p>
+        <h1>Kristallsammlung</h1>
+        <p class="lead">Wo die Xiru-Welt einen Riss hat, steckt ein Realitätskristall. Manche findest du durch Tippen, manche auf Seiten, manche nur zu bestimmten Zeiten. Seltene Kristalle verraten ihre Hinweise erst mit dem Skill „Spürnase".</p>
+        <div class="tiers" id="tiers"></div>
     </header>
 
     <section class="card big-progress mb-3">
-        <div><b id="count">0</b><div class="small muted">gefunden</div></div>
+        <div class="hero-gems"><span class="crystal-glow" style="--cg:#facc15" id="hero-gem"></span><div><b id="count">0</b><div class="small muted">gefunden</div></div></div>
         <div><div class="bar bar--shine"><div class="bar__fill" id="bar"></div></div>
             <p class="small muted mt-1 mb-0" id="sub"></p></div>
     </section>
@@ -54,7 +60,7 @@ XIRU.ready(function () {
     const P = XIRU.profile();
     const CATS = [
         ['', 'Alle'], ['w', '⌨ Getippt'], ['b', '⏱ Verhalten & Zeit'], ['p', '🔍 Auf Seiten versteckt'], ['o', '🗝 Geheime Orte'],
-        ['g', '▶ Spielhalle'], ['k', '✦ KI-Labor'], ['x', '≋ Mixer'], ['t', '⚒ Werkzeuge']
+        ['m', '⚙ Werft'], ['g', '▶ Spielhalle'], ['k', '✦ KI-Labor'], ['x', '≋ Mixer'], ['t', '⚒ Werkzeuge']
     ];
     const catOf = id => { const p = id.split('-')[0]; return p === 'hw' ? 'p' : p === 'h' ? 'o' : p; };
     let cat = '', st = '';
@@ -62,8 +68,10 @@ XIRU.ready(function () {
     XIRU.$('#count').textContent = found + '/' + total;
     requestAnimationFrame(() => XIRU.$('#bar').style.setProperty('--v', (found / total * 100) + '%'));
     const r4 = XIRU.eggs.filter(e => e.r === 4), r4f = r4.filter(e => P.eggs[e.id]).length;
-    XIRU.$('#sub').innerHTML = r4f + ' von ' + r4.length + ' Meilensteinen (je +1 Skillpunkt). ' +
-        (found >= 50 ? '<a href="../geheim/diskettenschrein.html">Der Diskettenschrein wartet auf dich →</a>' : 'Ab 50 Disketten soll irgendwo ein Schrein leuchten …');
+    XIRU.$('#sub').innerHTML = r4f + ' von ' + r4.length + ' Kernkristallen (je +1 Skillpunkt). ' +
+        (found >= 50 ? '<a href="../geheim/kristallschrein.html">Der Kristallschrein leuchtet für dich →</a>' : 'Ab 50 Kristallen soll irgendwo ein Schrein zu leuchten beginnen …');
+    XIRU.$('#hero-gem').innerHTML = XIRU.crystalSVG(4, 40);
+    XIRU.$('#tiers').innerHTML = [1, 2, 3, 4].map(r => '<span>' + XIRU.crystalSVG(r, 14) + XIRU.rarity[r] + (r === 4 ? ' (+1 Skillpunkt)' : '') + '</span>').join('');
 
     XIRU.$('#cats').innerHTML = CATS.map(c => {
         const n = XIRU.eggs.filter(e => !c[0] || catOf(e.id) === c[0]);
@@ -83,12 +91,12 @@ XIRU.ready(function () {
             const where = e.pg && XIRU.pageFor(e.pg);
             const showWhere = where && (got || sniff) && (!where.hidden || P.visited[e.pg]);
             return '<div class="egg' + (got ? ' is-found' : '') + (got && got > lastSeen && lastSeen ? ' is-new' : '') + '" style="--dc:' + ['', '#60a5fa', '#a78bfa', '#f472b6', '#facc15'][e.r] + ';--d:' + Math.min(i, 20) * .03 + 's">' +
-                '<div class="disk ' + (got ? 'disk--r' + e.r : 'disk--locked') + '"></div><div>' +
+                '<div class="egg__gem' + (got ? ' crystal-glow' : '') + '">' + XIRU.crystalSVG(e.r, 30, !got) + '</div><div>' +
                 '<div class="egg__name">' + (got ? XIRU.esc(e.n) : '???') + '</div><div class="egg__text">' + XIRU.esc(hint || '') + '</div>' +
-                '<div class="egg__meta"><span class="rar" title="Seltenheit ' + e.r + '/4">' + [1, 2, 3, 4].map(n => '<i class="' + (n <= e.r ? 'on' : '') + '"></i>').join('') + '</span>' +
+                '<div class="egg__meta"><span class="rar" title="' + XIRU.rarity[e.r] + '">' + [1, 2, 3, 4].map(n => '<i class="' + (n <= e.r ? 'on' : '') + '"></i>').join('') + '</span>' +
                 '<span>' + e.x + ' XP</span>' + (got ? '<span>' + new Date(got).toLocaleDateString('de-CH') + '</span>' : '') +
                 (showWhere ? '<a href="' + XIRU.url(e.pg) + '">' + XIRU.esc(where.t) + '</a>' : '') + '</div></div></div>';
-        }).join('') || '<div class="empty"><div class="empty__icon">💾</div><p>Hier ist (noch) nichts.</p></div>';
+        }).join('') || '<div class="empty"><div class="empty__icon">◆</div><p>Hier funkelt (noch) nichts.</p></div>';
     }
     render();
     XIRU.save('sammlung-gesehen', Date.now());

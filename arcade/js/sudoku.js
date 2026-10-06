@@ -1,7 +1,7 @@
 /* Sudoku – Generator mit eindeutiger Lösung (Backtracking mit Bitmasken), drei Stufen,
    Notizen, Konflikt-Hervorhebung, Zahlenblock, Tastatur und Hinweise.
    Wertung: Punkte = Grundwert der Stufe − Sekunden − 120 je Hinweis (mind. 10 % des Grundwerts). */
-XIRU.typedEggs = false;   // hier wird viel getippt – Wort-Disketten aus
+XIRU.typedEggs = false;   // hier wird viel getippt – Wort-Kristalle aus
 XIRU.ready(function () {
     const G = XIRU.Game;
     const $ = id => document.getElementById(id);

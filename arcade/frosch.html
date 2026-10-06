@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Froschsprung · Xiruprojekts</title>
+    <meta name="description" content="Froschsprung – über die Strasse, über den Fluss und ab nach Hause, bevor die Zeit abläuft.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/arcade.js"></script>
+    <style>
+        #cv { width: min(100%, calc((100vh - 170px) * 1.015)); }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">▶ Spielhalle · Action</span>
+        <h1>Froschsprung</h1>
+        <p class="lead">Fünf Seerosenbuchten warten am anderen Ufer. Dazwischen: eine vierspurige Strasse voller Raser und ein Fluss, in dem nur Baumstämme und Schildkröten Halt geben. Und die Uhr tickt.</p>
+    </header>
+
+    <div class="game">
+        <div>
+            <div class="game__hud" id="hud"></div>
+            <div class="game__stage" id="stage">
+                <canvas id="cv"></canvas>
+                <div class="game__overlay" id="ov"></div>
+            </div>
+            <div class="touch-pad">
+                <div class="dpad">
+                    <button data-key="ArrowUp" aria-label="Hoch">▲</button>
+                    <button data-key="ArrowLeft" aria-label="Links">◀</button>
+                    <button data-key="ArrowDown" aria-label="Runter">▼</button>
+                    <button data-key="ArrowRight" aria-label="Rechts">▶</button>
+                </div>
+                <button data-key="p" aria-label="Pause">⏸</button>
+            </div>
+        </div>
+        <aside class="game__side">
+            <div class="card">
+                <h3>Steuerung</h3>
+                <ul class="keys-help">
+                    <li><kbd>←</kbd> <kbd>↑</kbd> <kbd>→</kbd> <kbd>↓</kbd> oder <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> – hüpfen</li>
+                    <li>Maus: Klick neben, über oder unter den Frosch – er hüpft dorthin</li>
+                    <li>Touch: wischen oder tippen</li>
+                    <li><kbd>Leertaste</kbd> / <kbd>P</kbd> – Pause</li>
+                    <li>Auf Stämmen und Schildkröten treibst du mit. Vorsicht: Manche Schildkröten tauchen ab!</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Modus</h3>
+                <div class="row" id="modes">
+                    <button class="chip is-active" data-mode="normal">Normal</button>
+                    <button class="chip" data-mode="profi">Profi</button>
+                </div>
+                <p class="small muted mt-2" id="mode-desc">30 Sekunden pro Frosch.</p>
+            </div>
+            <div class="card">
+                <h3>Rekord</h3>
+                <p class="stat__value" id="best">–</p>
+            </div>
+        </aside>
+    </div>
+</main>
+<script src="js/frosch.js"></script>
+</body>
+</html>

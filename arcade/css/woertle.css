@@ -1,0 +1,73 @@
+/* Wörtle */
+.wt-stage { touch-action: manipulation; padding: clamp(.9rem, 3vw, 1.6rem) .75rem; min-height: 0; }
+.wt-board { display: grid; grid-template-rows: repeat(6, auto); gap: 6px; }
+.wt-row { display: grid; grid-template-columns: repeat(5, auto); gap: 6px; }
+.wt-row.is-shake { animation: shake .4s linear 1; }
+.wt-tile {
+    --tc: var(--surface-3);
+    width: clamp(46px, 14vw, 60px); aspect-ratio: 1;
+    display: grid; place-items: center;
+    border: 2px solid var(--border); border-radius: 8px; background: var(--surface);
+    font: 800 clamp(1.4rem, 6vw, 1.9rem) / 1 var(--font); text-transform: uppercase; color: var(--text);
+    user-select: none;
+}
+.wt-tile.is-filled { border-color: var(--border-strong); animation: wtPop .12s ease-out; }
+.wt-tile.is-correct { --tc: var(--success); }
+.wt-tile.is-present { --tc: var(--warning); }
+.wt-tile.is-absent { --tc: var(--surface-3); }
+.wt-tile.is-correct, .wt-tile.is-present, .wt-tile.is-absent { background: var(--tc); border-color: var(--tc); }
+.wt-tile.is-correct, .wt-tile.is-present { color: var(--bg); }
+.wt-tile.is-absent { color: var(--text-muted); }
+.wt-tile.is-flip { animation: wtFlip .5s ease-in-out both; animation-delay: var(--d, 0s); }
+.wt-tile.is-bounce { animation: wtBounce .5s ease both; animation-delay: var(--d, 0s); }
+@keyframes wtPop { 50% { transform: scale(1.1); } }
+@keyframes wtFlip {
+    0% { transform: rotateX(0); background: var(--surface); border-color: var(--border-strong); color: var(--text); }
+    49% { transform: rotateX(90deg); background: var(--surface); border-color: var(--border-strong); color: var(--text); }
+    51% { transform: rotateX(90deg); background: var(--tc); border-color: var(--tc); }
+    100% { transform: rotateX(0); background: var(--tc); border-color: var(--tc); }
+}
+@keyframes wtBounce { 0%, 100% { transform: none; } 40% { transform: translateY(-14px); } 70% { transform: translateY(3px); } }
+
+.wt-msg {
+    position: absolute; top: .6rem; left: 50%; transform: translateX(-50%); z-index: 4;
+    background: var(--text); color: var(--bg); font-weight: 700; font-size: .92rem;
+    padding: .45rem .9rem; border-radius: 8px; box-shadow: var(--shadow);
+    opacity: 0; pointer-events: none; transition: opacity .2s; white-space: nowrap;
+}
+.wt-msg.is-on { opacity: 1; animation: popIn .25s var(--ease) both; }
+
+/* Bildschirmtastatur */
+.wt-kbd { display: flex; flex-direction: column; gap: 6px; margin-top: .9rem; user-select: none; touch-action: manipulation; }
+.wt-kbd__row { display: flex; gap: 5px; justify-content: center; }
+.wt-key {
+    flex: 1 1 0; max-width: 46px; min-width: 0; height: 54px; padding: 0;
+    border: 1px solid var(--border-strong); border-radius: 7px; background: var(--surface-2); color: var(--text);
+    font: 700 clamp(.8rem, 3.4vw, 1.05rem) var(--font); cursor: pointer;
+    transition: background .2s, transform .08s, border-color .2s;
+    -webkit-tap-highlight-color: transparent;
+}
+.wt-key:hover { background: var(--surface-3); }
+.wt-key:active { transform: scale(.94); }
+.wt-key--wide { flex-grow: 1.6; max-width: 76px; font-size: clamp(.7rem, 2.8vw, .9rem); }
+.wt-key.is-correct { background: var(--success); border-color: var(--success); color: var(--bg); }
+.wt-key.is-present { background: var(--warning); border-color: var(--warning); color: var(--bg); }
+.wt-key.is-absent { background: var(--bg-2); border-color: var(--border); color: var(--text-faint); }
+
+.wt-actions { justify-content: center; }
+.wt-example { display: flex; gap: 4px; }
+.wt-example .wt-tile { width: 34px; font-size: 1rem; border-radius: 6px; }
+
+/* Statistik-Fenster */
+.wt-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: .5rem; text-align: center; margin: 1rem 0; }
+.wt-stats .stat__value { font-size: 1.6rem; }
+.wt-stats .stat__label { font-size: .68rem; }
+.wt-dist { display: flex; flex-direction: column; gap: 4px; margin: .5rem 0 1rem; }
+.wt-dist__row { display: grid; grid-template-columns: 1rem 1fr; gap: .5rem; align-items: center; font-weight: 700; font-size: .85rem; }
+.wt-dist__bar {
+    min-width: 1.8rem; width: var(--w); padding: .1rem .5rem; border-radius: 4px; text-align: right;
+    background: var(--surface-3); color: var(--text); animation: wtGrow .6s var(--ease) both;
+}
+.wt-dist__bar.is-now { background: var(--success); color: var(--bg); }
+@keyframes wtGrow { from { width: 1.8rem; } }
+.wt-solution { font-size: 1.3rem; font-weight: 800; letter-spacing: .15em; color: var(--rc); }

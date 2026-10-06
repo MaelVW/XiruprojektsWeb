@@ -1,4 +1,4 @@
-# Neue Seite, neues Spiel, neue Diskette – so geht's
+# Neue Seite, neues Spiel, neuer Realitätskristall – so geht's
 
 Die Website ist **reines HTML/CSS/JavaScript**. Kein Build-Schritt, keine Frameworks, keine CDNs.
 Sie läuft über VS Code „Live Server" oder `python tools/serve.py` (→ http://localhost:5510).
@@ -18,8 +18,8 @@ werkzeuge/  Werkzeugkasten
 studio/     Downloads & Projekte
 geheim/     versteckte Orte
 assets/css/main.css   ein Stylesheet für alles
-assets/js/site.js     REGISTER: Regionen, Seiten, Skills, Designs, Disketten
-assets/js/core.js     Kern: Layout, Konto, XP, Skills, Disketten, Effekte
+assets/js/site.js     REGISTER: Regionen, Seiten, Skills, Designs, Realitätskristalle
+assets/js/core.js     Kern: Layout, Konto, XP, Skills, Kristalle, Effekte
 assets/js/arcade.js   Baukasten für Spiele
 assets/js/ai.js       Hugging-Face- & Co.-Anbindung
 ```
@@ -103,7 +103,9 @@ Im Canvas: `XIRU.Game.css('--rc')` liefert den aktuellen Farbwert.
 XIRU.ready(fn)                 // Seitencode starten
 XIRU.url('arcade/snake.html')  // absoluter Link zur Seite
 XIRU.user                      // Name oder null (Gast)
-XIRU.egg('g-snake-30')         // Diskette freischalten (Toast + XP), true wenn neu
+XIRU.egg('g-snake-30')         // Realitätskristall freischalten (Toast + XP), true wenn neu
+XIRU.crystalSVG(r, 32)         // Kristall-Grafik (r = Seltenheit 1–4), für eigene Anzeigen
+XIRU.logoSVG                   // das Logo (Gerüst aus CD, Diskette und CPU)
 XIRU.hasEgg(id)  XIRU.hasSkill('s4')
 XIRU.addXP(25, 'Grund')
 XIRU.score('snake', 123)                 // Spielergebnis -> { best, isNew, plays }
@@ -115,7 +117,7 @@ XIRU.toast('Titel', 'Text', { icon: '★', type: 'egg' | 'level' | 'error' })
 XIRU.modal('<h2>Hallo</h2><button class="btn" data-close>OK</button>')
 XIRU.beep(440, .1, 'square')   XIRU.confetti()   XIRU.fx('shake')
 XIRU.esc(text)  XIRU.fmt(zahl)  XIRU.rand(1, 6)  XIRU.pick(array)  XIRU.$ / XIRU.$$
-XIRU.typedEggs = false         // auf Seiten mit viel Tastatureingabe: Wort-Disketten aus
+XIRU.typedEggs = false         // auf Seiten mit viel Tastatureingabe: Wort-Kristalle aus
 ```
 
 **Spiel-ID** = Dateiname ohne `.html` (z. B. `arcade/vier-gewinnt.html` → `'vier-gewinnt'`).
@@ -135,14 +137,18 @@ XIRU.ready(function () {
     G.keys.onPress(k => …); G.keys.isDown('ArrowLeft');
     G.bindTouch('.touch-pad'); G.swipe('#stage', dir => …);
     ov.show({ icon: '🐍', title: 'Snake', text: '…', button: 'Spielen', onClick: start });
-    // Spielende: XIRU.score('snake', punkte); Disketten: XIRU.egg('g-snake-30');
+    // Spielende: XIRU.score('snake', punkte); Kristalle: XIRU.egg('g-snake-30');
 });
 ```
 
 Jedes Spiel: spielbar mit Tastatur **und** Maus/Touch, Pause beim Tab-Wechsel,
 Seitenleiste mit Steuerung + Rekord, sinnvolle Schwierigkeit, deutsche Texte.
 
-## Disketten (Easter Eggs)
+## Realitätskristalle (Easter Eggs)
+
+Die Sammel-Belohnungen der Website heissen **Realitätskristalle** (kurz: Kristalle) –
+Splitter (r1), Kristall (r2), Prisma (r3), Kernkristall (r4). Disketten, CDs, Festplatten & Co.
+dürfen als Spielobjekte und Lore vorkommen (Retro trifft Moderne), aber gesammelt werden Kristalle.
 
 Eintrag in `assets/js/site.js` (Block `XIRU.eggs.push(…)` vor `/* EGGS:ENDE */`):
 
@@ -153,9 +159,9 @@ Eintrag in `assets/js/site.js` (Block `XIRU.eggs.push(…)` vor `/* EGGS:ENDE */
 | Feld | Bedeutung |
 |---|---|
 | `id` | eindeutig. Präfixe: `g-` Spiele, `k-` KI-Labor, `x-` Mixer, `t-` Werkzeuge, `h-` geheime Orte, `hw-` Hardware |
-| `pg` | Seite, auf der die Diskette liegt (für den Skill „Spürnase") |
+| `pg` | Seite, auf der der Kristall liegt (für den Skill „Spürnase") |
 | `n` | Name (kurz, witzig) · `h` Hinweis (verrät nicht alles) · `m` Nachricht beim Finden |
-| `x` | XP (10–100) · `r` Seltenheit 1 häufig, 2 selten, 3 sehr selten, 4 Meilenstein (+1 Skillpunkt, sparsam!) |
+| `x` | XP (10–100) · `r` Seltenheit 1 Splitter, 2 Kristall, 3 Prisma, 4 Kernkristall = Meilenstein (+1 Skillpunkt, sparsam!) |
 | `w` | optional: Wort, das man irgendwo tippt · `fx` optional: Effekt (`roll flip mirror rainbow shake glitch disco snow bsod cat floppy matrix gravity confetti sparkle`) |
 
 Auslösen: `XIRU.egg('id')` im Seitencode – oder ohne Code mit einem Element

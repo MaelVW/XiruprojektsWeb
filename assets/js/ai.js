@@ -860,7 +860,7 @@
         'Ein Pixel wandert über den Bildschirm und sucht seinen Platz im Bild. Die Berge leuchten im Abendlicht und der Zug fährt pünktlich wie immer. ' +
         'Ein Magier sammelt Runen und mischt sie zu neuen Zaubern. Im Dungeon flackert eine Fackel und irgendwo klappert ein Skelett. ' +
         'Jede gute Idee beginnt mit einer Tasse Kaffee und endet mit einem Speicherstand. Der Prozessor rechnet schnell und die Grafikkarte träumt von mehr Licht. ' +
-        'Wer genau hinschaut, findet überall versteckte Disketten. Die Zukunft ist ein Level, das noch niemand gespielt hat. ' +
+        'Wer genau hinschaut, findet überall versteckte Realitätskristalle. Jeder Kristall ist ein Splitter der Xiru-Welt und summt leise.Die Zukunft ist ein Level, das noch niemand gespielt hat. ' +
         'Ein guter Plan hat drei Schritte und mindestens einen Umweg. Manchmal ist die beste Antwort eine neue Frage. ' +
         'Die Antwort liegt oft im Detail und das Detail liegt oft im Keller. Ein kleiner Schritt im Code ist ein grosser Sprung für das Spiel. ' +
         'Der Wind über dem See flüstert Geschichten von Helden und Bugs.';
@@ -1281,17 +1281,22 @@
             else el.innerHTML = (opts.md === false ? X.esc(t).replace(/\n/g, '<br>') : AI.md(t)) + (final ? '' : '<span class="ai-caret" aria-hidden="true"></span>');
             if (opts.onRender) opts.onRender(final);
         }
+        // Im Hintergrund-Tab gibt es kein requestAnimationFrame – dann sofort fertig zeichnen
+        const later = fn => document.hidden ? setTimeout(fn, 30) : requestAnimationFrame(fn);
         function tick() {
             raf = 0;
             const back = target.length - shown;
             if (back > 0) {
-                shown = instant ? target.length : Math.min(target.length, shown + Math.max(opts.min || 1, Math.ceil(back / (opts.smooth || 14))));
+                shown = instant || document.hidden ? target.length : Math.min(target.length, shown + Math.max(opts.min || 1, Math.ceil(back / (opts.smooth || 14))));
                 render(false);
             }
-            if (shown < target.length) raf = requestAnimationFrame(tick);
+            if (shown < target.length) raf = later(tick);
             else if (ended) { render(true); resolve(target); }
         }
-        const schedule = () => { if (!raf) raf = requestAnimationFrame(tick); };
+        const schedule = () => { if (!raf) raf = later(tick); };
+        const onVis = () => { if (document.hidden && raf) { cancelAnimationFrame(raf); raf = 0; schedule(); } };
+        document.addEventListener('visibilitychange', onVis);
+        done.then(() => document.removeEventListener('visibilitychange', onVis));
         render(false);
         return {
             el,

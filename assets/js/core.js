@@ -7,7 +7,7 @@
      XIRU.ready(fn)            Seitencode starten (nur wenn die Seite nicht gesperrt ist)
      XIRU.url(pfad)            Link relativ zur Website-Wurzel
      XIRU.user                 angemeldeter Name oder null
-     XIRU.egg(id)              Diskette (Easter Egg) freischalten
+     XIRU.egg(id)              Realitätskristall (Easter Egg) freischalten
      XIRU.addXP(n, grund)      XP vergeben
      XIRU.hasSkill(id)         Skill gelernt?
      XIRU.score(spiel, wert)   Spielergebnis melden -> { best, isNew }
@@ -258,6 +258,120 @@
         return true;
     };
 
+
+    /* ── Werft: Mech, Bauteile, Inseln ──────────────────────────────────── */
+    const partMap = {};
+    (X.mechParts || []).forEach(p => { partMap[p.id] = p; });
+    const FREE_PARTS = ['r-schrott', 'a-paddel', 'k-batterie'];
+    function mechState() {
+        const m = P.data.mech || (P.data.mech = { parts: {}, built: {}, cond: {}, islands: {}, spent: 0, tutorial: 0 });
+        ['parts', 'built', 'cond', 'islands'].forEach(k => { if (!m[k] || typeof m[k] !== 'object') m[k] = {}; });
+        m.spent = +m.spent || 0; m.tutorial = +m.tutorial || 0;
+        return m;
+    }
+    X.mech = {
+        state: mechState,
+        part: id => partMap[id] || null,
+        /* Schrott: 1 pro 4 XP, minus Ausgaben */
+        scrap() { return Math.max(0, Math.floor(P.xp / 4) - mechState().spent); },
+        progress() {
+            return { level: X.levelInfo().level, eggs: X.eggCount(), pages: Object.keys(P.visited).filter(q => pageMap[q]).length, games: Object.keys(P.scores).length };
+        },
+        available(part) {
+            if (FREE_PARTS.includes(part.id)) return mechState().tutorial >= 1;
+            const r = part.req || {}, pr = this.progress();
+            return (!r.level || pr.level >= r.level) && (!r.eggs || pr.eggs >= r.eggs) && (!r.pages || pr.pages >= r.pages) && (!r.games || pr.games >= r.games);
+        },
+        reqText(part) {
+            if (FREE_PARTS.includes(part.id)) return 'Startausrüstung (Tutorial)';
+            const r = part.req || {}, out = [];
+            if (r.level) out.push('Level ' + r.level);
+            if (r.eggs) out.push(r.eggs + ' Realitätskristalle');
+            if (r.pages) out.push(r.pages + ' entdeckte Orte');
+            if (r.games) out.push(r.games + ' verschiedene Spiele gespielt');
+            return out.join(' · ') || 'frei';
+        },
+        isBuilt: id => !!mechState().built[id],
+        cond: id => { const c = mechState().cond[id]; return c == null ? 100 : c; },
+        installed(slot) { const id = mechState().parts[slot]; return id ? partMap[id] : null; },
+        build(id) {
+            const pt = partMap[id], m = mechState();
+            if (!pt || m.built[id] || !this.available(pt) || this.scrap() < pt.cost) return false;
+            m.spent += pt.cost; m.built[id] = Date.now(); m.cond[id] = 100; persist(); emit('mech', 'build');
+            return true;
+        },
+        install(id) {
+            const pt = partMap[id], m = mechState();
+            if (!pt || !m.built[id]) return false;
+            m.parts[pt.slot] = id; persist(); emit('mech', 'install');
+            if (X.mechSlots.every(sl => m.parts[sl.id])) X.egg('m-vollausbau');
+            if (id === 'a-beine') X.egg('m-beine');
+            return true;
+        },
+        uninstall(slot) { const m = mechState(); delete m.parts[slot]; persist(); emit('mech', 'uninstall'); },
+        /* Effektive Werte: unter 40 % Zustand halbiert, bei 0 % fällt das Teil aus */
+        stats() {
+            const out = { R: 0, E: 0, S: 0, P: 0, rep: 0 };
+            X.mechSlots.forEach(sl => {
+                const pt = this.installed(sl.id); if (!pt) return;
+                const c = this.cond(pt.id);
+                Object.keys(pt.s || {}).forEach(k => {
+                    const v = pt.s[k];
+                    out[k] += v < 0 ? v : c <= 0 ? 0 : c < 40 ? Math.floor(v / 2) : v;
+                });
+                if (pt.rep && c > 0) out.rep = pt.rep;
+            });
+            return out;
+        },
+        ready() { return ['rahmen', 'antrieb', 'kern'].every(sl => { const pt = this.installed(sl); return pt && this.cond(pt.id) > 0; }); },
+        repairCost(id) { return Math.ceil((100 - this.cond(id)) * .6 * (1 - this.stats().rep)); },
+        repair(id) {
+            const cost = this.repairCost(id), m = mechState();
+            if (!m.built[id] || cost <= 0 || this.scrap() < cost) return false;
+            m.spent += cost; m.cond[id] = 100; persist(); emit('mech', 'repair');
+            X.egg('m-reparatur');
+            return true;
+        },
+        damage(id, amount) {
+            const m = mechState(); if (!m.built[id]) return 0;
+            const before = this.cond(id);
+            m.cond[id] = Math.max(0, before - Math.round(amount)); persist();
+            if (m.cond[id] === 0) X.egg('m-kaputt');
+            return before - m.cond[id];
+        },
+        req: r => (X.islandReq || {})[r] || null,
+        discovered(r) { return !this.req(r) || !!mechState().islands[r]; },
+        missing(r) {
+            const need = this.req(r) || {}, st = this.stats(), out = [];
+            const names = { R: 'Reichweite', E: 'Energie', S: 'Sensor', P: 'Panzerung' };
+            Object.keys(need).forEach(k => { if (st[k] < need[k]) out.push(names[k] + ' ' + st[k] + '/' + need[k]); });
+            if (!this.ready()) out.unshift('Rahmen, Antrieb und Energiekern müssen eingebaut und intakt sein');
+            return out;
+        },
+        canReach(r) { return this.missing(r).length === 0; },
+        islandReqText(r) {
+            const need = this.req(r); if (!need) return 'frei zugänglich';
+            const names = { R: 'Reichweite', E: 'Energie', S: 'Sensor', P: 'Panzerung' };
+            return Object.keys(need).map(k => names[k] + ' ' + need[k]).join(' · ');
+        },
+        /* Expedition: schaltet eine Insel frei – und beansprucht das Material */
+        expedition(r) {
+            if (this.discovered(r) || !this.canReach(r)) return null;
+            const m = mechState(), st = this.stats(), report = [];
+            ['antrieb', 'rahmen', X.pick(['kern', 'sensor', 'panzer', 'arm'])].forEach(sl => {
+                const pt = this.installed(sl); if (!pt) return;
+                const dmg = this.damage(pt.id, Math.max(0, X.rand(6, 24) - st.P * 3));
+                if (dmg > 0) report.push({ part: pt, dmg });
+            });
+            m.islands[r] = Date.now(); persist();
+            X.addXP(40, 'Expedition');
+            X.egg('m-erste-reise');
+            if (Object.keys(X.islandReq).filter(k => X.islandReq[k]).every(k => m.islands[k])) X.egg('m-alle-inseln');
+            emit('mech', 'expedition');
+            return report;
+        }
+    };
+
     X.addXP = function (n, reason) {
         n = Math.round(n || 0);
         if (!n) return;
@@ -300,22 +414,36 @@
     };
     X.best = game => (P.scores[game] && P.scores[game].best != null) ? P.scores[game].best : null;
 
-    /* ── Disketten (Easter Eggs) ────────────────────────────────────────── */
+    /* ── Realitätskristalle (Easter Eggs) ───────────────────────────────── */
+    X.rarity = ['', 'Splitter', 'Kristall', 'Prisma', 'Kernkristall'];
+    X.rarityColor = ['', '#60a5fa', '#a78bfa', '#f472b6', '#facc15'];
+    let crystalId = 0;
+    /* Facettierter Kristall als SVG. r = Seltenheit 1–4, locked = grau */
+    X.crystalSVG = function (r, size, locked) {
+        const c = locked ? '#5b6383' : (X.rarityColor[r] || X.rarityColor[1]);
+        const id = 'xc' + (++crystalId);
+        return '<svg class="crystal' + (locked ? ' crystal--locked' : '') + '" width="' + (size || 32) + '" height="' + Math.round((size || 32) * 1.25) + '" viewBox="0 0 32 40" aria-hidden="true">' +
+            '<defs><linearGradient id="' + id + '" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset=".35" stop-color="' + c + '"/><stop offset="1" stop-color="' + c + '" stop-opacity=".55"/></linearGradient></defs>' +
+            '<polygon points="16,1 28,12 24,31 16,39 8,31 4,12" fill="url(#' + id + ')" stroke="' + c + '" stroke-width="1"/>' +
+            '<polygon points="16,1 21,13 16,37 11,13" fill="#fff" opacity=".22"/>' +
+            '<path d="M4 12 H28 M11 13 L8 31 M21 13 L24 31 M16 1 L11 13 M16 1 L21 13" stroke="#fff" stroke-opacity=".45" stroke-width=".8" fill="none"/>' +
+            (r >= 3 && !locked ? '<circle cx="22" cy="8" r="1.6" fill="#fff" class="crystal__spark"/>' : '') + '</svg>';
+    };
     X.hasEgg = id => !!P.eggs[id];
     X.eggCount = () => Object.keys(P.eggs).filter(id => eggMap[id]).length;
     X.egg = function (id, silent) {
         const e = eggMap[id];
-        if (!e) { console.warn('[XIRU] Unbekannte Diskette:', id); return false; }
+        if (!e) { console.warn('[XIRU] Unbekannter Realitätskristall:', id); return false; }
         if (P.eggs[id]) return false;
         P.eggs[id] = Date.now();
         if (e.r === 4) P.bonus++;
         persist();
         if (!silent) {
-            X.toast('Diskette gefunden: ' + e.n, e.m || '', { icon: '💾', type: 'egg', time: 6500 });
+            X.toast('Realitätskristall gefunden: ' + e.n, e.m || '', { iconHtml: X.crystalSVG(e.r, 26), type: 'egg', time: 6500 });
             X.beep(523, .07); setTimeout(() => X.beep(784, .07), 80); setTimeout(() => X.beep(1046, .1), 160);
         }
         if (e.fx) X.fx(e.fx);
-        X.addXP(e.x || 20, 'Diskette ' + id);
+        X.addXP(e.x || 20, 'Kristall ' + id);
         const c = X.eggCount();
         if (c >= 10) X.egg('b-eier10');
         if (c >= 50) X.egg('b-eier50');
@@ -329,6 +457,7 @@
     X.isVisited = p => !!P.visited[p];
     X.isUnlocked = function (pg) {
         if (!pg) return true;
+        if (!X.mech.discovered(pg.r)) return false;
         if (pg.skill && !X.hasSkill(pg.skill)) return false;
         return true;
     };
@@ -353,7 +482,7 @@
             X.addXP(xp, 'Neuer Ort');
             if (X.setting('visitToasts')) X.toast('Neuer Ort entdeckt', X.page.t + ' · +' + xp + ' XP', { icon: '🧭', time: 3000 });
         }
-        // Geheime Orte geben ihre Diskette beim ersten Besuch
+        // Geheime Orte geben ihren Kristall beim ersten Besuch
         X.eggs.forEach(e => { if (e.pg === X.path && e.id.startsWith('o-') && !e.manual) X.egg(e.id); });
         const visibleTotal = X.pages.length;
         const count = Object.keys(P.visited).filter(p => pageMap[p]).length;
@@ -395,7 +524,7 @@
         if (!stack) { pendingToasts.push([title, text, opts]); return; }
         const t = document.createElement('div');
         t.className = 'toast' + (opts.type ? ' toast--' + opts.type : '');
-        t.innerHTML = '<div class="toast__icon">' + X.esc(opts.icon || 'ℹ') + '</div><div><div class="toast__title">' + X.esc(title) + '</div>' +
+        t.innerHTML = '<div class="toast__icon">' + (opts.iconHtml || X.esc(opts.icon || 'ℹ')) + '</div><div><div class="toast__title">' + X.esc(title) + '</div>' +
             (text ? '<div class="toast__text">' + (opts.html ? text : X.esc(text)) + '</div>' : '') + '</div>';
         stack.appendChild(t);
         while (stack.children.length > 5) stack.firstChild.remove();
@@ -444,7 +573,7 @@
         })();
     };
 
-    /* ── Effekte für Disketten ──────────────────────────────────────────── */
+    /* ── Effekte für Kristalle ──────────────────────────────────────────── */
     function tempClass(el, cls, ms) { el.classList.add(cls); setTimeout(() => el.classList.remove(cls), ms); }
     X.fx = function (name) {
         if (!document.body) return;
@@ -537,13 +666,44 @@
     };
 
     /* ── Layout: Kopf, Navigation, Fuss ─────────────────────────────────── */
-    const DISK_SVG = '<svg class="brand__disk" viewBox="0 0 32 32" aria-hidden="true"><path d="M4 3h20l5 5v21H4z" fill="var(--rc)"/><rect x="9" y="3" width="13" height="9" rx="1" fill="var(--bg)"/><rect x="17" y="5" width="3" height="5" fill="var(--rc)"/><rect x="8" y="17" width="17" height="10" rx="1.5" fill="var(--bg)" opacity=".85"/><path d="M11 21h11M11 24h7" stroke="var(--rc)" stroke-width="1.4"/></svg>';
-    X.diskSVG = DISK_SVG;
+    /* Logo: ein isometrisches Gerüst – oben eine CD, links eine Diskette, rechts ein Prozessor.
+       Alt trifft neu: Retro-Datenträger in einem leuchtenden Rahmen. */
+    const LOGO_INNER =
+        '<polygon points="24,3 43,14 24,25 5,14" fill="var(--rc)" fill-opacity=".14"/>' +
+        '<polygon points="5,14 24,25 24,45 5,34" fill="var(--accent-2)" fill-opacity=".16"/>' +
+        '<polygon points="24,25 43,14 43,34 24,45" fill="var(--rc)" fill-opacity=".08"/>' +
+        // CD auf der Oberseite
+        '<g transform="matrix(1.9,-1.1,1.9,1.1,5,14)"><circle cx="5" cy="5" r="3.7" fill="#d6dcf5" stroke="var(--rc)" stroke-width=".35"/>' +
+        '<path d="M5 1.6 A3.4 3.4 0 0 1 8.4 5" fill="none" stroke="#f472b6" stroke-width=".5" opacity=".8"/><path d="M1.6 5 A3.4 3.4 0 0 1 5 1.6" fill="none" stroke="#60a5fa" stroke-width=".5" opacity=".8"/>' +
+        '<circle cx="5" cy="5" r="1.2" fill="var(--bg)"/></g>' +
+        // Diskette auf der linken Seite
+        '<g transform="matrix(1.9,1.1,0,2,5,14)"><rect x="1.6" y="1.4" width="6.8" height="7" rx=".4" fill="var(--accent-2)"/>' +
+        '<rect x="3.3" y="1.4" width="3.2" height="2.6" fill="var(--bg)" opacity=".75"/><rect x="2.6" y="5.2" width="4.8" height="2.6" fill="#fff" opacity=".85"/></g>' +
+        // Prozessor auf der rechten Seite
+        '<g transform="matrix(1.9,-1.1,0,2,24,25)"><path d="M2.6 1.2v1M4.2 1.2v1M5.8 1.2v1M7.4 1.2v1M2.6 7.8v1M4.2 7.8v1M5.8 7.8v1M7.4 7.8v1" stroke="var(--rc)" stroke-width=".35"/>' +
+        '<rect x="1.8" y="2.2" width="6.4" height="5.6" rx=".5" fill="var(--surface-3)" stroke="var(--rc)" stroke-width=".35"/><rect x="3.6" y="3.7" width="2.8" height="2.6" fill="var(--rc)"/></g>' +
+        // Gerüst
+        '<path d="M24 3 L43 14 L24 25 L5 14 Z M5 14 V34 L24 45 V25 M43 14 V34 L24 45" fill="none" stroke="var(--rc)" stroke-width="1.3" stroke-linejoin="round"/>' +
+        '<g fill="var(--bg)" stroke="var(--rc)" stroke-width="1.1"><circle cx="24" cy="3" r="1.7"/><circle cx="43" cy="14" r="1.7"/><circle cx="5" cy="14" r="1.7"/><circle cx="24" cy="25" r="1.7"/>' +
+        '<circle cx="5" cy="34" r="1.7"/><circle cx="43" cy="34" r="1.7"/><circle cx="24" cy="45" r="1.7"/></g>';
+    const LOGO_SVG = '<svg class="brand__logo" viewBox="0 0 48 48" aria-hidden="true">' + LOGO_INNER + '</svg>';
+    X.logoSVG = LOGO_SVG;
+    const DISK_SVG = LOGO_SVG;   // ältere Seiten nutzen noch diesen Namen
+    X.diskSVG = LOGO_SVG;
+    // Favicon mit festen Farben (CSS-Variablen gibt es im Tab-Symbol nicht)
+    (function () {
+        const fixed = LOGO_INNER.replace(/var\(--rc\)/g, '#5eead4').replace(/var\(--accent-2\)/g, '#a78bfa')
+            .replace(/var\(--bg\)/g, '#0b0e1a').replace(/var\(--surface-3\)/g, '#232b4f');
+        const link = document.createElement('link');
+        link.rel = 'icon'; link.type = 'image/svg+xml';
+        link.href = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">' + fixed + '</svg>');
+        document.head.appendChild(link);
+    })();
 
     function navLink(p, extra) {
         const locked = !X.isUnlocked(p);
         return '<a href="' + X.url(p.p) + '"' + (locked ? ' class="is-locked"' : '') + '>' +
-            '<span>' + (locked ? '🔒 ' : '') + X.esc(p.t) + '</span>' + (extra ? '<small>' + extra + '</small>' : '') + '</a>';
+            '<span>' + (locked ? (X.mech.discovered(p.r) ? '🔒 ' : '🌫 ') : '') + X.esc(p.t) + '</span>' + (extra ? '<small>' + extra + '</small>' : '') + '</a>';
     }
     function buildNav() {
         const groups = [
@@ -627,8 +787,8 @@
             const here = X.eggs.filter(e => e.pg === X.path);
             if (here.length) {
                 const found = here.filter(e => P.eggs[e.id]).length;
-                html += '💾 Spürnase: ' + found + '/' + here.length + ' Disketten auf dieser Seite';
-            } else html += '💾 Spürnase: Hier riecht es nach nichts.';
+                html += '◆ Spürnase: ' + found + '/' + here.length + ' Realitätskristalle auf dieser Seite';
+            } else html += '◆ Spürnase: Hier funkelt nichts.';
         }
         if (X.hasSkill('e4') || X.hasEgg('w-sesam')) {
             html += ' <a class="footer-door" href="' + X.url('geheim/keller.html') + '" title="Eine kleine Tür …" aria-label="Kellertür"></a>';
@@ -637,7 +797,17 @@
     }
 
     function lockScreenHTML() {
-        const pg = X.page, s = skillMap[pg.skill];
+        const pg = X.page;
+        if (!X.mech.discovered(pg.r)) {
+            const reg = regionMap[pg.r], miss = X.mech.missing(pg.r), can = X.mech.canReach(pg.r);
+            return '<div class="lock-screen"><div class="lock-screen__icon">🌫</div>' +
+                '<h1 style="font-size:1.8rem">' + X.esc(reg.name) + ' liegt im Nebel</h1>' +
+                '<p class="muted">Diese Insel hast du noch nicht erreicht. Bau in der Werft einen Mech, der stark genug ist, und starte eine Expedition.</p>' +
+                '<p>Benötigt: <strong>' + X.esc(X.mech.islandReqText(pg.r)) + '</strong></p>' +
+                (can ? '<p class="text-success">Dein Mech schafft das schon – starte die Expedition!</p>' : '<p class="small muted">Es fehlt: ' + X.esc(miss.join(' · ')) + '</p>') +
+                '<div class="row"><a class="btn btn--primary" href="' + X.url('konto/skilltree.html') + '#reisen">⚙ Zur Werft</a><a class="btn" href="' + X.url('weltkarte.html') + '">Weltkarte</a></div></div>';
+        }
+        const s = skillMap[pg.skill];
         const br = s && X.branches.find(b => b.id === s.b);
         const secret = pg.hidden;
         return '<div class="lock-screen">' +
@@ -738,7 +908,7 @@
         });
     }
 
-    /* ── Verhaltens-Disketten ───────────────────────────────────────────── */
+    /* ── Verhaltens-Kristalle ───────────────────────────────────────────── */
     function initBehaviourEggs() {
         const now = new Date(), h = now.getHours(), m = now.getMinutes(), d = now.getDate(), mo = now.getMonth() + 1;
         if (h < 4) X.egg('b-nacht');
@@ -842,11 +1012,11 @@
             hilfe() {
                 X.egg('b-konsole');
                 console.log('%cBefehle:\n  xiru.status()        – dein Fortschritt\n  xiru.geheimnis(wort) – flüstere der Maschine ein Wort\n\nTipp: Das Wort ist ein Speichermedium mit 1,44 MB.', 'font: 13px monospace; color: #5eead4;');
-                return '💾';
+                return '◆';
             },
             status() {
                 const li = X.levelInfo();
-                return { name: X.user || 'Gast', level: li.level, xp: P.xp, disketten: X.eggCount() + '/' + X.eggs.length, orte: Object.keys(P.visited).length + '/' + X.pages.length };
+                return { name: X.user || 'Gast', level: li.level, xp: P.xp, kristalle: X.eggCount() + '/' + X.eggs.length, orte: Object.keys(P.visited).length + '/' + X.pages.length };
             },
             geheimnis(w) {
                 if (String(w || '').toLowerCase() === 'diskette') { X.egg('b-konsole2'); return 'Die Maschine nickt zufrieden.'; }

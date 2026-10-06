@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mixer-Studio · Xiruprojekts</title>
+    <meta name="description" content="Das Mixer-Studio von Xiruprojekts: Klänge, Beats, Farben, Namen und Kreaturen mischen – alles live im Browser erzeugt.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="css/mixer.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="js/mixer.js"></script>
+    <style>
+        .studio-hero { padding: 0; overflow: hidden; display: grid; grid-template-columns: minmax(0, 1fr) 230px; }
+        .studio-hero__stage { position: relative; height: 290px; touch-action: pan-y; cursor: crosshair; }
+        .studio-hero__stage canvas { width: 100%; height: 100%; display: block; }
+        .studio-hero__side {
+            border-left: 1px solid var(--border); padding: 1.25rem; display: flex; flex-direction: column; gap: .9rem; align-items: center; justify-content: center; text-align: center;
+            background: linear-gradient(180deg, var(--surface), var(--surface-2));
+        }
+        .studio-hero__side h2 { font-size: 1rem; margin: 0; letter-spacing: .08em; text-transform: uppercase; color: var(--text-muted); }
+        .studio-hero__side p { font-size: .82rem; color: var(--text-faint); margin: 0; }
+        .studio-hero__hint {
+            position: absolute; left: 1rem; bottom: .8rem; font: 600 .75rem var(--mono); color: var(--text-faint);
+            letter-spacing: .06em; pointer-events: none; transition: opacity .6s;
+        }
+        @media (max-width: 760px) {
+            .studio-hero { grid-template-columns: 1fr; }
+            .studio-hero__stage { height: 220px; }
+            .studio-hero__side { border-left: 0; border-top: 1px solid var(--border); flex-direction: row; justify-content: space-between; text-align: left; }
+            .studio-hero__side .knob-text { flex: 1; }
+        }
+
+        /* Drehregler */
+        .knob { --a: 0deg; position: relative; width: 132px; height: 132px; flex-shrink: 0; touch-action: none; user-select: none; -webkit-user-select: none; cursor: grab; border-radius: 50%; }
+        .knob:active { cursor: grabbing; }
+        .knob:focus-visible { outline: 3px solid var(--rc); outline-offset: 4px; }
+        .knob__scale { position: absolute; inset: 0; }
+        .knob__scale span {
+            position: absolute; left: 50%; top: 50%; width: 22px; margin-left: -11px; margin-top: -8px; text-align: center;
+            font: 700 .66rem var(--mono); color: var(--text-faint);
+            transform: rotate(var(--t)) translateY(-58px) rotate(calc(var(--t) * -1));
+        }
+        .knob__scale span.is-lit { color: var(--rc); }
+        .knob__body {
+            position: absolute; inset: 22px; border-radius: 50%;
+            background: radial-gradient(circle at 35% 30%, var(--surface-3), var(--bg-2) 75%);
+            border: 1px solid var(--border-strong);
+            box-shadow: 0 8px 20px -8px rgba(0, 0, 0, .6), inset 0 2px 0 color-mix(in srgb, var(--text) 10%, transparent);
+            transform: rotate(var(--a)); transition: transform .12s var(--ease);
+        }
+        .knob__body::after { content: ""; position: absolute; left: 50%; top: 7px; width: 4px; height: 20px; margin-left: -2px; border-radius: 3px; background: var(--rc); box-shadow: 0 0 10px var(--rc); }
+        .knob__val { position: absolute; inset: 0; display: grid; place-items: center; font: 800 1.35rem var(--mono); color: var(--text); pointer-events: none; }
+        .knob.is-eleven .knob__val { color: var(--danger); animation: shake .4s linear 3; }
+        .knob.is-eleven .knob__body::after { background: var(--danger); box-shadow: 0 0 14px var(--danger); }
+
+        .mixer-tile .tile__icon { font-size: 1.5rem; }
+        .mixer-tile .tile__wave { display: flex; gap: 3px; align-items: flex-end; height: 18px; margin-left: auto; }
+        .mixer-tile .tile__wave i { width: 3px; border-radius: 2px; background: var(--tc, var(--rc)); height: 30%; opacity: .7; }
+        .mixer-tile:hover .tile__wave i { animation: eqBounce .9s ease-in-out infinite; }
+        .mixer-tile .tile__wave i:nth-child(2) { animation-delay: -.3s; } .mixer-tile .tile__wave i:nth-child(3) { animation-delay: -.6s; } .mixer-tile .tile__wave i:nth-child(4) { animation-delay: -.15s; }
+        .mixer-tile .tile__head { display: flex; align-items: center; gap: .75rem; }
+        .mixer-tile.is-locked .tile__lock { font-size: .8rem; color: var(--text-muted); }
+        @keyframes eqBounce { 0%, 100% { height: 25%; } 50% { height: 100%; } }
+
+        .shelf { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 1rem; }
+        .shelf .stat { padding: .8rem 1rem; border-radius: var(--radius-sm); background: var(--surface-2); border: 1px solid var(--border); }
+        .shelf .stat__value { font-size: 1.5rem; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">≋ Mixer-Studio</span>
+        <h1>Mixer-Studio</h1>
+        <p class="lead">Hier wird gemischt, was das Zeug hält: Regen mit Kaminfeuer, Rot mit Blau, „Drache“ mit „Diskette“. Alles entsteht live in deinem Browser – keine Aufnahmen, keine Bilder von irgendwo, nur Mathematik und eine Prise Magie.</p>
+    </header>
+
+    <section class="card studio-hero" aria-label="Studio-Pult mit Live-Equalizer">
+        <div class="studio-hero__stage" id="stage">
+            <canvas id="eq" aria-hidden="true"></canvas>
+            <div class="studio-hero__hint" id="eq-hint">↔ Maus oder Finger über die Balken · Klick = Welle</div>
+        </div>
+        <div class="studio-hero__side">
+            <div class="knob-text">
+                <h2>Energie</h2>
+                <p>Dreh am Regler – mit Maus, Finger, Mausrad oder Pfeiltasten.</p>
+            </div>
+            <div class="knob" id="knob" role="slider" tabindex="0" aria-label="Energie des Equalizers" aria-valuemin="0" aria-valuemax="11" aria-valuenow="5" aria-valuetext="5">
+                <div class="knob__scale" id="knob-scale" aria-hidden="true"></div>
+                <div class="knob__body"></div>
+                <div class="knob__val" id="knob-val">5</div>
+            </div>
+        </div>
+    </section>
+
+    <h2 class="mt-4">Alle Mixer</h2>
+    <p class="muted">Vier Mixer stehen dir sofort offen. Synthesizer und Beatmaschine schaltest du im <a href="../konto/skilltree.html">Skilltree</a> über den Ast „Magier“ frei.</p>
+    <div class="grid mt-2" id="tiles"></div>
+
+    <section class="grid-2 mt-4">
+        <div class="card" data-reveal>
+            <h3>Dein Studio-Regal</h3>
+            <p class="small muted">Was du in den Mixern gespeichert hast (nur in diesem Browser).</p>
+            <div class="shelf mt-2" id="shelf"></div>
+        </div>
+        <div class="card" data-reveal style="--d:.1s">
+            <h3>So funktioniert das Studio</h3>
+            <ul class="small muted">
+                <li><strong>Alles lokal:</strong> Töne entstehen mit Web Audio, Bilder im Canvas. Nichts wird hochgeladen.</li>
+                <li><strong>Ton erst nach Klick:</strong> Browser spielen erst Musik, wenn du etwas antippst.</li>
+                <li><strong>Ton aus?</strong> Wenn du den Ton in den <a href="../konto/einstellungen.html">Einstellungen</a> ausgeschaltet hast, sagen dir die Mixer Bescheid.</li>
+                <li><strong>Speichern:</strong> Mischungen, Paletten, Namen und Kreaturen landen in deinem Konto – oder als Gast im Browser.</li>
+                <li><strong>Realitätskristalle:</strong> In jedem Mixer stecken ein paar. Probier Dinge aus, die man eigentlich nicht tun sollte.</li>
+            </ul>
+        </div>
+    </section>
+</main>
+<script src="js/studio.js"></script>
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Über uns · Xiruprojekts</title>
+    <meta name="description" content="Xiruprojekts ist ein kleines Indie-Hobby-Gamestudio von zwei Freunden.">
+    <link rel="stylesheet" href="assets/css/main.css">
+    <script src="assets/js/site.js"></script>
+    <script src="assets/js/core.js"></script>
+    <style>
+        .about-hero { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 2.5rem; align-items: center; margin-bottom: 3rem; }
+        @media (max-width: 860px) { .about-hero { grid-template-columns: 1fr; } }
+        .photo { aspect-ratio: 4 / 3; border-radius: var(--radius); border: 2px dashed var(--border-strong); display: grid; place-items: center; text-align: center; color: var(--text-faint);
+            background: repeating-linear-gradient(45deg, var(--surface) 0 14px, var(--surface-2) 14px 28px); cursor: pointer; position: relative; overflow: hidden; }
+        .photo:hover { border-color: var(--rc); }
+        .photo__icon { font-size: 3.2rem; transition: transform .4s var(--ease); }
+        .photo:hover .photo__icon { transform: rotate(-12deg) scale(1.1); }
+        .team { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); }
+        .member { display: grid; grid-template-columns: auto 1fr; gap: 1rem; align-items: center; }
+        .member__ava { width: 72px; height: 72px; border-radius: 20px; display: grid; place-items: center; font-size: 2rem; font-weight: 900; color: var(--accent-ink); background: linear-gradient(135deg, var(--rc), var(--accent-2)); }
+        .values { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); }
+        .logo-explain { display: grid; grid-template-columns: 140px 1fr; gap: 1.5rem; align-items: center; }
+        .logo-explain svg { width: 140px; height: 140px; }
+        @media (max-width: 560px) { .logo-explain { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+<main class="content">
+    <section class="about-hero">
+        <div>
+            <span class="eyebrow">◆ Zentrum</span>
+            <h1>Über uns</h1>
+            <p class="lead">Xiruprojekts ist ein kleines Indie-Hobby-Gamestudio, gegründet von zwei Freunden mit einer gemeinsamen Leidenschaft
+                für Spiele, alte Technik und das Basteln an Dingen, die eigentlich niemand braucht – bis man sie hat.</p>
+            <p>Kein Konzern, kein Investor, kein Zeitplan. Nur zwei Leute, viele Ideen und ein ziemlich vollgestopfter Projektordner.</p>
+        </div>
+        <div class="photo" data-egg="p-foto" role="img" aria-label="Platzhalter für ein Teamfoto">
+            <div><div class="photo__icon">📷</div><p class="small mb-0">Hier kommt irgendwann ein Foto von uns hin.<br>Versprochen.</p></div>
+        </div>
+    </section>
+
+    <h2>Das Team</h2>
+    <div class="team mb-4">
+        <div class="card member" data-reveal><div class="member__ava">M</div><div><h3 class="mb-0">Mael</h3><p class="small muted mb-0">Gründer · baut Launcher, Websites und Dungeon-Crawler – meistens gleichzeitig.</p></div></div>
+        <div class="card member" data-reveal style="--d:.1s"><div class="member__ava" style="background:linear-gradient(135deg,var(--accent-2),#f472b6)">L</div><div><h3 class="mb-0">Luka</h3><p class="small muted mb-0">Gründer · kümmert sich um Releases, Downloads und alles, was in ZIP-Dateien passt.</p></div></div>
+        <div class="card member" data-reveal style="--d:.2s"><div class="member__ava" style="background:var(--surface-3);color:var(--text-muted)">?</div><div><h3 class="mb-0">Du?</h3><p class="small muted mb-0">Wir suchen immer Beta-Tester. <a href="studio/beta.html">Mehr dazu →</a></p></div></div>
+    </div>
+
+    <h2>Was uns wichtig ist</h2>
+    <div class="values mb-4">
+        <div class="card" data-reveal><h3>🎮 Spass zuerst</h3><p class="small muted mb-0">Wir bauen, was wir selbst spielen und benutzen wollen.</p></div>
+        <div class="card" data-reveal style="--d:.08s"><h3>🔒 Deine Daten gehören dir</h3><p class="small muted mb-0">Diese Website hat keinen Server, keine Tracker und keine Werbung. Alles bleibt in deinem Browser.</p></div>
+        <div class="card" data-reveal style="--d:.16s"><h3>🧩 Basteln erlaubt</h3><p class="small muted mb-0">Der Code ist einfach gehalten: HTML, CSS, JavaScript – ohne Zauberei.</p></div>
+        <div class="card" data-reveal style="--d:.24s"><h3>🕹 Alt trifft neu</h3><p class="small muted mb-0">Disketten, CDs und Festplatten neben KI und RGB. Wir mögen beides.</p></div>
+    </div>
+
+    <section class="card logo-explain" data-reveal>
+        <div id="logo-big"></div>
+        <div>
+            <h2>Unser Logo</h2>
+            <p class="muted mb-0">Ein Gerüst – noch nicht fertig, aber stabil. Oben liegt eine CD, an der Seite steckt eine Diskette, gegenüber ein Prozessor.
+                Alte und neue Technik, zusammengehalten von leuchtenden Verbindungen. So sehen wir auch diese Website:
+                ein Bauplatz, auf dem ständig etwas Neues entsteht.</p>
+        </div>
+    </section>
+
+    <section class="card card--accent mt-3" data-reveal>
+        <h2>Mitmachen</h2>
+        <p>Du möchtest Xiruprojekts unterstützen? Teste unsere Projekte im <a href="studio/beta.html">Beta-Programm</a> oder hol dir eines unserer
+            <a href="studio/index.html">Programme und Spiele</a>. Oder erkunde einfach diese Website – irgendwo wartet bestimmt noch ein Realitätskristall auf dich.</p>
+    </section>
+</main>
+<script>
+XIRU.ready(function () {
+    XIRU.$('#logo-big').innerHTML = XIRU.logoSVG.replace('class="brand__logo"', 'class="brand__logo" style="width:140px;height:140px"');
+});
+</script>
+</body>
+</html>

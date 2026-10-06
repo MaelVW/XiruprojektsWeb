@@ -156,8 +156,8 @@ main, .content {
     letter-spacing: -.02em; white-space: nowrap; user-select: none;
 }
 .brand:hover { color: var(--text); }
-.brand__disk { width: 30px; height: 30px; flex-shrink: 0; transition: transform .5s var(--ease); }
-.brand:hover .brand__disk { transform: rotate(-12deg) scale(1.08); }
+.brand__logo { width: 34px; height: 34px; flex-shrink: 0; overflow: visible; transition: transform .5s var(--ease), filter .5s; }
+.brand:hover .brand__logo { transform: translateY(-2px) scale(1.08); filter: drop-shadow(0 0 6px var(--rc)); }
 .brand__name { position: relative; }
 .brand:hover .brand__name { animation: glitch .45s steps(2) 2; }
 
@@ -613,3 +613,16 @@ html.no-anim [data-reveal] { opacity: 1; transform: none; }
 .hw-pager__next { text-align: right; align-items: flex-end; }
 .hw-egg { background: none; border: 0; font-size: .6em; vertical-align: middle; cursor: pointer; filter: grayscale(.6); opacity: .55; transition: transform .3s var(--ease), opacity .3s, filter .3s; }
 .hw-egg:hover { transform: rotate(-12deg) scale(1.2); opacity: 1; filter: none; }
+
+/* ── 10 · Realitätskristalle ────────────────────────────────────────────── */
+.crystal { display: block; flex-shrink: 0; overflow: visible; filter: drop-shadow(0 2px 6px rgba(0, 0, 0, .35)); }
+.crystal:not(.crystal--locked) { animation: crystalFloat 4s ease-in-out infinite; }
+.crystal--locked { opacity: .45; }
+.crystal__spark { animation: twinkle 2.4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes crystalFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+@keyframes twinkle { 0%, 100% { opacity: 0; transform: scale(.4); } 50% { opacity: 1; transform: scale(1.2); } }
+.toast--egg .toast__icon .crystal { width: 26px; height: 32px; }
+.crystal-glow { position: relative; display: inline-grid; place-items: center; }
+.crystal-glow::before { content: ""; position: absolute; inset: -30%; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--cg, var(--rc)) 45%, transparent), transparent 70%); animation: pulseGlow 3s ease-in-out infinite; }
+.crystal-glow > * { position: relative; }
+@keyframes pulseGlow { 0%, 100% { opacity: .5; transform: scale(.9); } 50% { opacity: 1; transform: scale(1.1); } }

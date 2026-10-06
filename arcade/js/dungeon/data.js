@@ -44,7 +44,7 @@
         'eis+blitz':        { n: 'Kettenfrost',      mp: 8,  kind: 'chain', jumps: 3, jr: 3, dmg: [5, 8], el: 'blitz', st: { frozen: [2, .4] }, d: 'Ein Frostblitz, der von Gegner zu Gegner springt.', hint: 'Kälte, die überspringt.' },
         'eis+erde':         { n: 'Gletscherwall',    mp: 5,  kind: 'wall', len: 3, ft: 12, d: 'Lässt eine Mauer aus Eis wachsen. Perfekt für enge Gänge.', hint: 'Ein Berg, der in einer Nacht wächst.' },
         'eis+wasser':       { n: 'Frostnova',        mp: 8,  kind: 'nova', r: 2, dmg: [2, 4], el: 'eis', st: { frozen: [3, 1] }, d: 'Friert alles um dich herum ein.', hint: 'Der See, der in einem Atemzug gefriert.' },
-        'eis+licht':        { n: 'Kristallschild',   mp: 7,  kind: 'self', shield: 12, t: 30, d: 'Ein Schild aus Licht und Eis fängt Schaden ab.', hint: 'Gefrorenes Licht als Panzer.' },
+        'eis+licht':        { n: 'Frostschild',   mp: 7,  kind: 'self', shield: 12, t: 30, d: 'Ein Schild aus Licht und Eis fängt Schaden ab.', hint: 'Gefrorenes Licht als Panzer.' },
         'eis+schatten':     { n: 'Grabeskälte',      mp: 6,  kind: 'bolt', dmg: [4, 7], el: 'eis', st: { frozen: [2, .5], weak: [6, 1] }, d: 'Lähmende Kälte: Das Ziel richtet nur noch halben Schaden an.', hint: 'Die Kälte, die aus Gräbern steigt.' },
         'blitz+erde':       { n: 'Donnerschlag',     mp: 8,  kind: 'nova', r: 1, dmg: [7, 11], el: 'blitz', st: { stun: [2, 1] }, d: 'Du schlägst auf den Boden – alle Nachbarn sind betäubt.', hint: 'Wenn der Himmel den Boden küsst.' },
         'blitz+wasser':     { n: 'Elektroschock',    mp: 8,  kind: 'ball', r: 2, dmg: [5, 8], el: 'blitz', st: { wet: [3, 1], stun: [1, .6] }, d: 'Wasser leitet den Strom: trifft das Ziel und alle in der Nähe.', hint: 'Nie im Gewitter baden.' },
@@ -87,7 +87,7 @@
         zombie:     { n: 'Zombie', spr: 'zombie', hp: 24, atk: [3, 6], def: 1, spd: 55, xp: 11, d: [5, 22], w: 7, ai: 'basic', undead: 1, poison: [.2, 3], res: { licht: 1.5, feuer: 1.25 } },
         geist:      { n: 'Geist', spr: 'geist', hp: 15, atk: [2, 5], def: 0, spd: 100, xp: 13, d: [6, 99], w: 6, ai: 'ghost', undead: 1, phase: 1, fly: 1, res: { phys: .5, licht: 2, schatten: 0 }, noSleep: 1 },
         ork:        { n: 'Ork', spr: 'ork', hp: 28, atk: [4, 8], def: 2, spd: 100, xp: 17, d: [7, 99], w: 8, ai: 'basic', pack: [1, 2] },
-        hexer:      { n: 'Dunkler Magier', spr: 'hexer', hp: 17, atk: [2, 4], shot: [4, 7], range: 7, def: 0, spd: 100, xp: 18, d: [8, 99], w: 5, ai: 'caster' },
+        hexer:      { n: 'Hexer', spr: 'hexer', hp: 17, atk: [2, 4], shot: [4, 7], range: 7, def: 0, spd: 100, xp: 18, d: [8, 99], w: 5, ai: 'caster' },
         flamme:     { n: 'Feuer-Elementar', spr: 'flamme', hp: 22, atk: [4, 7], def: 1, spd: 110, xp: 19, d: [9, 99], w: 5, ai: 'basic', burnTouch: 1, glow: '#ff7a2a', res: { feuer: 0, eis: 2, wasser: 2 }, noBurn: 1, noPoison: 1 },
         troll:      { n: 'Höhlentroll', spr: 'troll', hp: 42, atk: [5, 9], def: 2, spd: 100, xp: 30, d: [11, 99], w: 5, ai: 'basic', regen: 2, res: { feuer: 1.5 } },
         golem:      { n: 'Lehmgolem', spr: 'golem', hp: 60, atk: [6, 11], def: 5, spd: 55, xp: 36, d: [13, 99], w: 4, ai: 'basic', res: { blitz: .5, wasser: 1.75, erde: .5 }, noPoison: 1, noStun: 1 },
@@ -140,10 +140,15 @@
         plattenpanzer:  { n: 'Plattenpanzer', t: 'ruestung', spr: 'harnisch', def: 5, dodge: -.05, val: 95, minD: 8, d: 'Schwer, aber fast undurchdringlich.' },
         sternenrobe:    { n: 'Sternenrobe', t: 'ruestung', spr: 'robe', def: 2, mp: 10, sp: 1, val: 110, minD: 10, d: '+10 Mana und +1 Zauberkraft.' },
         drachenpanzer:  { n: 'Drachenschuppen', t: 'ruestung', spr: 'harnisch', def: 6, fireRes: 1, val: 220, minD: 99, d: 'Halbiert Feuerschaden. Aus Ignifax\' Schuppen.' },
-        // Besonderes
-        diskette:     { n: 'Uralte Diskette', t: 'besonders', spr: 'diskette', val: 0, d: '1,44 MB voller Geheimnisse.' }
+        // Zaubertinte (für das Buch) und Alt-Technik (Händler lieben sie)
+        tinte:        { n: 'Zaubertinte', t: 'tinte', spr: 'tinte', val: 45, d: 'Das Buch braucht ein Fläschchen, um eine neue Seite zu schreiben.' },
+        diskette:     { n: 'Diskette (1,44 MB)', t: 'schrott', spr: 'diskette', val: 16, w: 1, d: 'Alt-Technik. Händler zahlen gut dafür.' },
+        cd:           { n: 'CD-ROM', t: 'schrott', spr: 'cd', val: 22, w: 1, d: 'Schillert im Fackellicht. Händler zahlen gut dafür.' },
+        festplatte:   { n: 'Festplatte (40 MB)', t: 'schrott', spr: 'festplatte', val: 34, w: 1, d: 'Rattert noch, wenn man sie schüttelt. Händler zahlen gut dafür.' },
+        realkristall: { n: 'Realitätskristall', t: 'besonders', spr: 'realkristall', val: 0, d: 'Er leuchtet in Farben, die es hier unten nicht geben dürfte.' }
     };
     Object.keys(ITEMS).forEach(k => { ITEMS[k].id = k; });
+    const JUNK = ['diskette', 'cd', 'festplatte'];
     const FLOOR_LOOT = ['heiltrank', 'manatrank', 'reinigung', 'hast', 'staerke', 'leben', 'rolle_teleport', 'rolle_karte', 'rolle_feuer', 'rolle_furcht', 'rolle_verzaubern'];
     const WEAPONS = ['dolch', 'kurzschwert', 'magierstab', 'streitkolben', 'langschwert', 'kriegsaxt', 'erzstab', 'runenklinge'];
     const ARMORS = ['robe', 'lederwams', 'kettenhemd', 'schattenmantel', 'plattenpanzer', 'sternenrobe'];
@@ -154,28 +159,28 @@
             n: 'Magier', spr: 'magier', icon: '🔮',
             d: 'Verbannt, aber nicht gebrochen. Startet mit Feuer, Eis und dem Mysteriösen Buch.',
             hp: 22, mp: 20, str: 0, sp: 1, slots: 3, crit: .05, dodge: .05,
-            runes: ['feuer', 'eis'], crystals: 2, gold: 10, hpRegen: 9, mpRegen: 2,
+            runes: ['feuer', 'eis'], ink: 2, gold: 10, hpRegen: 9, mpRegen: 2,
             weapon: 'magierstab', armor: 'robe', inv: [['heiltrank', 1], ['manatrank', 1]]
         },
         krieger: {
             n: 'Krieger', spr: 'krieger', icon: '⚔',
             d: 'Zäh und stark im Nahkampf. Wenig Mana, dafür ein Schwert, das spricht.',
             hp: 34, mp: 8, str: 1, sp: 0, slots: 2, crit: .05, dodge: .03,
-            runes: ['erde'], crystals: 1, gold: 15, hpRegen: 5, mpRegen: 5,
+            runes: ['erde'], ink: 1, gold: 15, hpRegen: 5, mpRegen: 5,
             weapon: 'kurzschwert', armor: 'lederwams', inv: [['heiltrank', 2]]
         },
         schurke: {
             n: 'Schurke', spr: 'schurke', icon: '🗡',
             d: 'Leise und tödlich. Schlafende Gegner nehmen dreifachen Schaden.',
             hp: 26, mp: 12, str: 0, sp: 0, slots: 2, crit: .18, dodge: .14, sneak: 3,
-            runes: ['schatten'], crystals: 1, gold: 40, hpRegen: 7, mpRegen: 4,
+            runes: ['schatten'], ink: 1, gold: 40, hpRegen: 7, mpRegen: 4,
             weapon: 'dolch', armor: 'lederwams', inv: [['heiltrank', 1], ['rolle_teleport', 1]]
         },
         erzmagier: {
             n: 'Erzmagier', spr: 'erzmagier', icon: '✦', skill: 's4',
             d: 'Der Veteran der Gilde. Drei Runen, vier Zauberplätze, viel Mana – aber zerbrechlich.',
             hp: 20, mp: 28, str: 0, sp: 2, slots: 4, crit: .05, dodge: .05,
-            runes: ['feuer', 'eis', 'blitz'], crystals: 3, gold: 10, hpRegen: 9, mpRegen: 2,
+            runes: ['feuer', 'eis', 'blitz'], ink: 3, gold: 10, hpRegen: 9, mpRegen: 2,
             weapon: 'erzstab', armor: 'robe', inv: [['heiltrank', 1], ['manatrank', 2]]
         }
     };
@@ -203,7 +208,7 @@
 
     const INTRO = 'Verbannt aus der Gilde, die Taschen leer, steigst du in die Katakomben unter der Stadt. ' +
         'In der ersten Kammer liegt es: ein uraltes, in Leder gebundenes Buch. Seine Seiten flüstern. ' +
-        'Es kann zwei Elemente zu einem neuen Zauber verbinden – wenn du ihm einen Arkankristall opferst.';
+        'Es kann zwei Elemente zu einem neuen Zauber verbinden – wenn du ihm ein Fläschchen Zaubertinte schenkst.';
 
-    PXM.D = { EL, EL_ORDER, SPELLS, COMBOS, comboKey, NEEDS_TARGET, MON, BOSSES, BOSS_INTRO, ITEMS, FLOOR_LOOT, WEAPONS, ARMORS, CLASSES, ZONES, BOSS_FLOOR_NAMES, xpNext, LEVEL_OPTS, INTRO };
+    PXM.D = { EL, EL_ORDER, SPELLS, COMBOS, comboKey, NEEDS_TARGET, MON, BOSSES, BOSS_INTRO, ITEMS, FLOOR_LOOT, JUNK, WEAPONS, ARMORS, CLASSES, ZONES, BOSS_FLOOR_NAMES, xpNext, LEVEL_OPTS, INTRO };
 })();

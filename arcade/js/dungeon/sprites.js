@@ -246,6 +246,24 @@
             '...kGggxgggGk...', '...kGgxggxgGk...', '...kGggxxggGk...', '...kGgggggGGk...',
             '...kGGGGGGGGk...', '....kkkkkkkk....', '................', '................'
         ],
+        tinte: [
+            '................', '............kk..', '...........kwwk.', '..........kwWk..',
+            '.........kwWk...', '........kwWk....', '.......kWk......', '....kkkkkkkk....',
+            '....kGgggggk....', '...kPPPkPPPPk...', '..kPpPPPPPPPPk..', '..kPpPPPPPPPPk..',
+            '..kPPPPPPPPPPk..', '...kkkkkkkkkk...', '................', '................'
+        ],
+        cd: [
+            '................', '................', '.....kkkkkk.....', '...kkwccwwwkk...',
+            '..kwwcmwwwwwwk..', '.kwwcmwwwwwwwwk.', '.kwcmwwwkkwwwwk.', 'kwwmwwwk..kwwwwk',
+            'kwwwwwwk..kwwyyk', '.kwwwwwwkkwyywk.', '.kwwwwwwwwyywwk.', '..kwwwwwwwyyyk..',
+            '...kkwwwwyykk...', '.....kkkkkk.....', '................', '................'
+        ],
+        festplatte: [
+            '................', '................', '................', '..kkkkkkkkkkkk..',
+            '..kggggggggggk..', '..kgGGGGGGGGgk..', '..kgGwwwwwGGgk..', '..kgwwwKwwwGgk..',
+            '..kgwwKKKwwyGk..', '..kgwwwKwwyGgk..', '..kgGwwwwyGGgk..', '..kgGGGGGGGGgk..',
+            '..kggggggggrgk..', '..kkkkkkkkkkkk..', '................', '................'
+        ],
         diskette: [
             '................', '................', '..kkkkkkkkkkkk..', '..kBBgggggBBBk..',
             '..kBBgKgggBBBk..', '..kBBgKgggBBBk..', '..kBBgggggBBBk..', '..kBBBBBBBBBBk..',
@@ -260,7 +278,9 @@
         zombie: { base: 'zombie', pal: { n: '#6f9a6a', l: '#9cc48f' } },
         spinne: { base: 'spinne', pal: { K: '#4a3d52' } },
         hexer: { base: 'hexer', pal: { R: '#5a1a46', m: '#ff7af0' } },
-        schleim_gift: { base: 'schleim', pal: { l: '#c58cf0', n: '#7a4fb0', N: '#4a2a70' } }
+        schleim_gift: { base: 'schleim', pal: { l: '#c58cf0', n: '#7a4fb0', N: '#4a2a70' } },
+        realkristall: { base: 'kristall', pal: { c: '#bfe9ff', p: '#f472b6', P: '#a78bfa', w: '#ffffff' } },
+        diskette: { base: 'diskette', pal: { B: '#3b6fd0' } }
     };
 
     function rgb(hex) {
@@ -284,7 +304,7 @@
                 const ch = row[x];
                 if (!ch || ch === '.') continue;
                 const col = p[ch]; if (!col) continue;
-                const [r, g, b] = mode === 'white' ? [255, 255, 255] : mode === 'shadow' ? [0, 0, 0] : rgb(col);
+                const [r, g, b] = mode === 'white' ? [255, 255, 255] : mode === 'shadow' ? [0, 0, 0] : (mode && mode[0] === '#') ? rgb(mode) : rgb(col);
                 const i = (y * 16 + x) * 4;
                 img.data[i] = r; img.data[i + 1] = g; img.data[i + 2] = b; img.data[i + 3] = 255;
             }
@@ -350,6 +370,14 @@
         for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) P.set(x, y, shade(base, .85 + R() * .3));
         for (let i = 0; i < 6; i++) P.set((R() * 16) | 0, (R() * 16) | 0, shade(base, 1.45));
         return P.done();
+    }
+    function wallTopCracked(z) {
+        const c = wallTop(z, 0), ctx = c.getContext('2d');
+        ctx.fillStyle = 'rgb(14,11,14)';
+        [[4, 3], [5, 4], [5, 5], [6, 6], [7, 7], [7, 8], [8, 9], [9, 10], [10, 10], [11, 11], [6, 9], [5, 10]].forEach(([x, y]) => ctx.fillRect(x, y, 1, 1));
+        ctx.fillStyle = 'rgba(255,255,255,.18)';
+        [[5, 3], [6, 5], [8, 8], [10, 9]].forEach(([x, y]) => ctx.fillRect(x, y, 1, 1));
+        return c;
     }
     function wallFront(z, v, cracked) {
         const R = rngFrom(3000 + v * 53), c = canvas(16, 16), P = painter(c);
@@ -428,6 +456,7 @@
             top: [0, 1].map(v => wallTop(z, v)),
             front: [0, 1, 2].map(v => wallFront(z, v)),
             secret: wallFront(z, 0, true),
+            secretTop: wallTopCracked(z),
             door: doorTile(z, false),
             doorOpen: doorTile(z, true),
             stairs: stairsTile(z, false),

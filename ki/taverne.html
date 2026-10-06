@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Taverne · Xiruprojekts</title>
+    <meta name="description" content="Die Taverne „Zum Rostigen Kessel“: Plaudere mit Wirtin, Händler-Goblin, altem Magier und Bardin aus dem PIXMAG-Dungeon.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="ki.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/ai.js"></script>
+    <style>
+        .tavern { display: grid; gap: 1.25rem; grid-template-columns: 270px minmax(0, 1fr); align-items: start; }
+        @media (max-width: 860px) { .tavern { grid-template-columns: 1fr; } }
+        .guests { display: flex; flex-direction: column; gap: .5rem; }
+        @media (max-width: 860px) { .guests { flex-direction: row; overflow-x: auto; padding-bottom: .4rem; scroll-snap-type: x mandatory; } .guest { min-width: 210px; scroll-snap-align: start; } }
+        .guest {
+            display: flex; gap: .7rem; align-items: center; text-align: left; width: 100%;
+            padding: .7rem .8rem; border-radius: var(--radius-sm); cursor: pointer; font: inherit; color: var(--text);
+            background: var(--surface); border: 1px solid var(--border); transition: border-color .2s, background .2s, transform .15s;
+        }
+        .guest:hover { border-color: var(--border-strong); transform: translateX(2px); }
+        .guest[aria-pressed="true"] { border-color: var(--rc); background: color-mix(in srgb, var(--rc) 10%, var(--surface)); box-shadow: var(--glow); }
+        .guest__av { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; font-size: 1.5rem; background: var(--surface-3); flex-shrink: 0; position: relative; }
+        .guest__av.talked::after { content: ""; position: absolute; right: 0; bottom: 2px; width: 10px; height: 10px; border-radius: 50%; background: var(--success); border: 2px solid var(--surface); }
+        .guest__name { font-weight: 700; line-height: 1.2; }
+        .guest__role { font-size: .78rem; color: var(--text-muted); }
+        .hearth { display: flex; gap: 1rem; align-items: center; padding: .9rem 1.1rem; margin-bottom: .9rem; border-radius: var(--radius); border: 1px solid var(--border); background: linear-gradient(90deg, color-mix(in srgb, var(--warning) 9%, var(--surface)), var(--surface)); }
+        .fire { width: 46px; height: 46px; position: relative; flex-shrink: 0; }
+        .fire span { position: absolute; bottom: 4px; left: 50%; width: 22px; height: 30px; margin-left: -11px; border-radius: 50% 50% 40% 40% / 60% 60% 40% 40%; background: radial-gradient(circle at 50% 80%, var(--warning), color-mix(in srgb, var(--danger) 80%, transparent) 70%); transform-origin: 50% 100%; animation: flicker 1.1s ease-in-out infinite alternate; filter: blur(.4px); }
+        .fire span:nth-child(2) { width: 14px; height: 22px; margin-left: -16px; animation-delay: -.4s; opacity: .85; }
+        .fire span:nth-child(3) { width: 14px; height: 20px; margin-left: 2px; animation-delay: -.7s; opacity: .8; }
+        .fire::after { content: ""; position: absolute; bottom: 0; left: 6px; right: 6px; height: 6px; border-radius: 3px; background: color-mix(in srgb, var(--text-faint) 70%, var(--bg)); }
+        @keyframes flicker { 0% { transform: scale(1, 1) skewX(0deg); } 50% { transform: scale(.92, 1.08) skewX(3deg); } 100% { transform: scale(1.05, .95) skewX(-3deg); } }
+        .hearth__text { flex: 1; min-width: 0; }
+        .hearth__event { font-size: .85rem; color: var(--text-muted); font-style: italic; min-height: 1.3em; transition: opacity .4s; }
+        .chat-head { display: flex; gap: .8rem; align-items: center; margin-bottom: .75rem; }
+        .chat-head .guest__av { width: 52px; height: 52px; font-size: 1.8rem; }
+        .chat-head h2 { margin: 0; font-size: 1.3rem; }
+        .clink { animation: clink .6s var(--ease); }
+        @keyframes clink { 30% { transform: rotate(-12deg) scale(1.15); } 60% { transform: rotate(10deg) scale(1.1); } }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">✦ KI-Labor</span>
+        <h1>Taverne „Zum Rostigen Kessel"</h1>
+        <p class="lead">Gleich neben dem Eingang zum Dungeon brennt immer ein Feuer. Setz dich, bestell etwas und plaudere mit den Stammgästen – jede Figur hat ihren eigenen Kopf und merkt sich euer Gespräch.</p>
+    </header>
+    <div class="ki-top">
+        <div id="ai-status"></div>
+    </div>
+
+    <div class="tavern">
+        <aside>
+            <p class="ki-label">Am Tresen und an den Tischen</p>
+            <div class="guests" id="guests" role="list"></div>
+        </aside>
+        <section>
+            <div class="hearth">
+                <div class="fire" aria-hidden="true"><span></span><span></span><span></span></div>
+                <div class="hearth__text">
+                    <strong>Am Kamin</strong>
+                    <div class="hearth__event" id="event" aria-live="off">Das Feuer knistert gemütlich.</div>
+                </div>
+            </div>
+            <div class="chat-head">
+                <div class="guest__av" id="cur-av" aria-hidden="true"></div>
+                <div class="spacer"><h2 id="cur-name"></h2><div class="small muted" id="cur-role"></div></div>
+                <button class="btn btn--sm btn--ghost" type="button" id="btn-forget" title="Gespräch mit dieser Figur löschen">🧹 Vergessen</button>
+            </div>
+            <div class="chat" id="chat" aria-live="polite"></div>
+            <div class="sugg" id="sugg"></div>
+            <form class="composer" id="composer" autocomplete="off">
+                <input class="input" id="msg" maxlength="400" placeholder="Sag etwas …" aria-label="Deine Nachricht">
+                <button class="btn btn--primary" type="submit" id="btn-send">Senden</button>
+                <button class="btn" type="button" id="btn-stop" hidden>■ Stopp</button>
+            </form>
+        </section>
+    </div>
+</main>
+<script>
+XIRU.ready(function () {
+    const AI = XIRU.ai, $ = XIRU.$, esc = XIRU.esc, OFF = AI.offline;
+    const SAVE = 'ki-taverne', MAX_MSG = 60;
+
+    const WORLD = 'Du bist eine Figur in der Taverne „Zum Rostigen Kessel", die direkt neben dem Eingang zu einem düsteren Dungeon aus dem Pixel-RPG PIXMAG liegt. ' +
+        'Im Dungeon gibt es Runen, Fackeln, Skelette, Mimics, verbannte Magier und Zauber, die man aus Elementen (Feuer, Wasser, Wind, Erde) kombiniert. ' +
+        'In der Taverne sind: Wirtin Berta, der Händler-Goblin Knirps, der alte Magier Aldebrand, die Bardin Lyra und der Zwergenschmied Grimbart. ' +
+        'Antworte immer auf Deutsch in Schweizer Schreibweise (ss statt ß), sprich dein Gegenüber mit „du" an, bleib in deiner Rolle und antworte kurz (1–4 Sätze). ' +
+        'Keine Listen, kein Markdown-Überschriften, keine Regieanweisungen in Klammern ausser ganz kurzen Gesten mit *Sternchen*. Jugendfrei.';
+
+    // Themen für die Offline-Antworten
+    const TOPICS = {
+        hallo: /\b(hallo|hoi|hey|hi|grüezi|gruezi|guten (tag|abend|morgen)|servus|sali|salü|moin|tag)\b/,
+        prost: /\b(prost|zum wohl|santé|sante|cheers|skål|skol|prösterchen)\b/,
+        trinken: /bier|trink|met|wein|durst|getränk|saft|wasser|schnaps|tee|kaffee/,
+        essen: /essen|hunger|gulasch|suppe|brot|käse|fondue|speise|menü|rösti/,
+        geruecht: /gerücht|neuigkeit|neues|klatsch|quest|auftrag|abenteuer|was gibt|was läuft|news/,
+        name: /wer bist du|wie heisst|dein name|was machst du|erzähl.*dir|über dich/,
+        handel: /kauf|verkauf|preis|kostet|handel|ware|angebot|gold|geld|münze|bezahl|zahl/,
+        magie: /magie|zauber|rune|element|feuer|wind|mana|spruch|grimoire|magier/,
+        lied: /lied|sing|musik|ballade|vers|reim|gedicht|laute|melodie/,
+        dungeon: /dungeon|gruft|keller|skelett|mimic|monster|tief|verlies|pixmag/,
+        tschuess: /tschüss|tschau|ciao|adieu|auf wiedersehen|bis bald|gute nacht|ich geh|ade\b/,
+        danke: /danke|merci|vielen dank/,
+        wetter: /wetter|regen|sonne|schnee|kalt|warm/
+    };
+    const CHARS = [
+        {
+            id: 'berta', n: 'Wirtin Berta', role: 'Herz und Fäuste der Taverne', icon: '🍺',
+            sys: 'Du bist Berta, die Wirtin. Herzlich, resolut, mit trockenem Humor. Du streust gern schweizerdeutsche Wörter ein (Grüezi, gäll, Znüni, es bitzeli). Du kennst jeden Klatsch, empfiehlst dein Kesselgulasch und Rübenbier und duldest keine Raufereien.',
+            hello: 'Grüezi und willkommen im Rostigen Kessel! Setz dich ans Feuer, gäll. Was darf\'s sein – ein Rübenbier oder erst mal ein warmes Gulasch?',
+            sugg: ['Was gibt es Neues?', 'Ein Rübenbier, bitte!', 'Prost!'],
+            off: {
+                hallo: ['Grüezi wohl! Schön, dich zu sehen. Setz dich, die Bank beisst nicht.', 'Ah, ein bekanntes Gesicht! Oder ein neues? Egal – willkommen!'],
+                prost: ['Prost! *hebt ihren Krug* Auf die Lebenden, die Toten und die, die im Dungeon noch unterwegs sind.', 'Zum Wohl! Aber trink langsam, gäll – die Treppe zum Abort ist steil.'],
+                trinken: ['Rübenbier vom Fass, Holundersirup für die Vernünftigen und ein Kräuterschnaps, über den wir nicht reden. Was nimmst du?', 'Kommt sofort! *schiebt dir einen schäumenden Krug hin* Geht aufs Haus, wenn du mir eine gute Geschichte erzählst.'],
+                essen: ['Heute gibt\'s Kesselgulasch mit Rösti. Das Rezept ist geheim – sogar vor mir selbst.', 'Hunger? Ich hab noch Käsesuppe. Knirps behauptet, sie sei magisch. Sie ist einfach nur sehr käsig.'],
+                geruecht: ['Man munkelt, unten in der Gruft habe jemand den Geist eines verbannten Magiers gesehen. Aldebrand wird ganz bleich, wenn man davon spricht.', 'Knirps verkauft wieder „echte Dracheneier". Letzte Woche ist eins geschlüpft – ein Huhn.', 'Grimbart sucht jemanden, der ihm Glutstein aus dem dritten Stock des Dungeons holt. Zahlt gut, schimpft mehr.'],
+                name: ['Ich bin Berta. Ich führe diesen Laden seit dreissig Wintern, und noch nie hat ein Skelett die Zeche geprellt. Einer hat\'s versucht. Einmal.'],
+                handel: ['Bezahlt wird am Schluss, gäll. Und nein, Knirps\' Gutscheine nehm ich nicht an.', 'Ein Bier kostet zwei Kupfer. Für Helden drei – die verschütten mehr.'],
+                magie: ['Magie? Frag Aldebrand. Aber nicht zu laut, sonst erzählt er wieder die Geschichte mit dem Feuerball im Kamin.'],
+                lied: ['Lyra spielt heute Abend. Wenn du lieb fragst, singt sie die Ballade vom Mimic, der Heimweh hatte.'],
+                dungeon: ['Der Eingang ist gleich hinter dem Haus. Komm lebend zurück – du schuldest mir noch eine Geschichte.', 'Wer runtergeht, nimmt eine Fackel mit. Und zwei Heiltränke. Und am besten Grimbart.'],
+                tschuess: ['Ade, und pass auf dich auf da unten!', 'Bis bald! Der Kessel bleibt warm.'],
+                danke: ['Gern geschehen, Schatz.', 'Da nicht für. Jetzt iss fertig.'],
+                wetter: ['Draussen regnet\'s Bindfäden. Gutes Wetter für die Taverne.']
+            },
+            fallback: ['Mhm, so so. *wischt den Tresen* Erzähl weiter.', 'Das hab ich auch schon mal gehört – meistens um Mitternacht, von jemandem mit zu viel Rübenbier.', 'Hach, du bist ja eine Marke! Noch was zu trinken?', 'Ich hab hier schon alles gehört. Aber das? Das ist neu.']
+        },
+        {
+            id: 'knirps', n: 'Knirps', role: 'Händler-Goblin mit Bauchladen', icon: '👺',
+            sys: 'Du bist Knirps, ein kleiner, gerissener Händler-Goblin. Du redest schnell, übertreibst masslos und sprichst manchmal von dir in der dritten Person („Knirps hat genau das Richtige!"). Du verkaufst zweifelhafte Waren (garantiert echte Dracheneier, Heiltränke mit kleinen Nebenwirkungen, Karten mit Lücken) und feilschst gern. Du bist nie wirklich böse, nur geschäftstüchtig.',
+            hello: 'Psst! Ja, du! Knirps hat genau das, was du brauchst. Was brauchst du? Egal – Knirps hat es!',
+            sugg: ['Was verkaufst du?', 'Ist das Drachenei echt?', 'Gib mir Rabatt!'],
+            off: {
+                hallo: ['Ah, ein Kunde! Knirps riecht Gold auf hundert Schritt. Du riechst nach … mittelviel Gold.', 'Willkommen, willkommen! Heute alles zum halben Preis! Vom doppelten Preis.'],
+                prost: ['Prost! *klirrt mit einem Fläschchen, das verdächtig blubbert* Möchtest du kosten? Nur fünf Gold.'],
+                trinken: ['Knirps hat Trank der Stärke! Oder der Schwäche. Das Etikett ist abgefallen.'],
+                essen: ['Getrocknete Riesenratte, sehr knusprig, sehr nahrhaft, sehr Ratte.'],
+                geruecht: ['Gerüchte kosten extra. Na gut, eins gratis: Im zweiten Stock steht eine Truhe, die NICHT beisst. Glaubt Knirps.', 'Psst: Der alte Magier hat einen Schlüssel, den er nicht mehr findet. Knirps könnte ihn … finden. Gegen Gebühr.'],
+                name: ['Knirps! Händler, Abenteurer, Erfinder des Rabatts auf Rabatte. Zu deinen Diensten, solange du zahlst.'],
+                handel: ['Heute im Angebot: ein garantiert echtes Drachenei, eine Karte zur Schatzkammer (fast vollständig) und ein Heiltrank mit nur kleinen Nebenwirkungen. Grüne Haare stehen dir bestimmt!', 'Rabatt? Für dich? Knirps weint. Na gut: zehn Prozent. Auf den nächsten Kauf. Nächstes Jahr.'],
+                magie: ['Zauberschriftrollen! Neu! Fast ungelesen! Eine davon macht Feuer. Oder Frösche. Spannend, oder?'],
+                lied: ['Knirps singt nicht. Knirps verkauft Lieder. Lyra kauft nie. Lyra ist geizig.'],
+                dungeon: ['Dungeon? Gefährlich! Darum brauchst du Knirps\' Sicherheitspaket: eine Fackel, ein Seil und ein gutes Gefühl.'],
+                tschuess: ['Komm wieder! Mit mehr Gold!', 'Knirps vermisst dich jetzt schon. Oder dein Gold. Beides.'],
+                danke: ['Danke ist nett, Gold ist netter.'],
+                wetter: ['Regenschirme! Knirps hat Regenschirme! Einen. Mit Loch.']
+            },
+            fallback: ['Hm, hm, das klingt nach einem Geschäft! Was zahlst du?', 'Knirps versteht nicht ganz, aber Knirps nickt trotzdem. *nickt*', 'Interessant! Knirps hätte da ein Produkt, das genau dazu passt …', 'Das ist eine Frage für Kunden. Bist du Kunde? Wirst du Kunde?']
+        },
+        {
+            id: 'aldebrand', n: 'Aldebrand', role: 'Alter Magier, etwas vergesslich', icon: '🧙',
+            sys: 'Du bist Aldebrand, ein sehr alter, gütiger und ziemlich vergesslicher Magier. Du redest bedächtig, verlierst manchmal den Faden, weisst aber viel über Runen, Elementzauber (Feuer + Wind = Feuersturm, Wasser + Wind = Eis, Erde + Feuer = Lava) und die Geschichte der Magiergilde. Du kanntest den verbannten Magier Malrik von früher und sprichst nur ungern darüber.',
+            hello: 'Ah … guten Abend. Oder Morgen? Setz dich, setz dich. Wo war ich … ach ja: Willst du etwas über Runen wissen?',
+            sugg: ['Erklär mir Elementzauber', 'Wer war Malrik?', 'Wie alt bist du?'],
+            off: {
+                hallo: ['Ah, Besuch. Wie schön. Habe ich dir schon von den Runen erzählt? Nein? Oder doch?', 'Sei gegrüsst, junge Seele. Setz dich, aber nicht auf meinen Hut.'],
+                prost: ['Prost, Prost. *hebt einen Becher Kamillentee* In meinem Alter ist das hier das Wildeste.'],
+                trinken: ['Kamillentee. Seit dem Vorfall mit dem Feuerball im Kamin trinke ich nur noch Kamillentee.'],
+                essen: ['Bertas Gulasch hat mir schon zweimal das Leben gerettet. Einmal, weil ich es ass, einmal, weil ich es warf.'],
+                geruecht: ['Man sagt, unten in der Gruft spuke es. Ich … kannte den, der dort spukt. Malrik. Ein kluger Kopf. Zu klug für die Gilde.', 'Die Runen im dritten Stock leuchten wieder. Das bedeutet entweder Gefahr oder dass jemand das Licht angelassen hat.'],
+                name: ['Aldebrand der … Graue? Nein, der Graue war ein anderer. Aldebrand der Gütige. Ja. So nenne ich mich, wenn niemand widerspricht.'],
+                handel: ['Gold? Ach, das brauche ich nicht. Aber wenn du eine Rune findest, die summt – bring sie mir.'],
+                magie: ['Merke dir: Feuer und Wind ergeben den Feuersturm, Wasser und Wind ergeben Eis, Erde und Feuer ergeben Lava. Und Wasser plus Feuer ergibt … Dampf und schlechte Laune.', 'Eine Rune ist wie ein Satz in einer sehr alten Sprache. Wer sie falsch betont, bekommt Frösche.'],
+                lied: ['Lyra singt schön. Früher habe ich auch gesungen. Bis die Gilde es verboten hat. Wegen der Frösche.'],
+                dungeon: ['Unten liegt Malriks Grimoire. Er wurde verbannt, weil er zu viel wissen wollte. Sei vorsichtig mit dem, was du dort findest.'],
+                tschuess: ['Geh mit Licht, und vergiss deine Fackel nicht. Ich vergesse meine immer.', 'Leb wohl … oder warte, wohin wolltest du nochmal?'],
+                danke: ['Gern. Wofür noch gleich?'],
+                wetter: ['Ich könnte das Wetter ändern. Habe ich einmal gemacht. Es hat drei Wochen lang Suppe geregnet.']
+            },
+            fallback: ['Hm … das erinnert mich an etwas. An was nur? Ah, egal.', 'Eine gute Frage. Die Antwort liegt irgendwo zwischen den Runen. Oder in meiner anderen Robe.', '*streicht sich über den Bart* Weisheit kommt mit dem Alter. Bei mir kam vor allem der Bart.', 'Wie interessant. Ich schreibe es mir auf. *schreibt nichts auf*']
+        },
+        {
+            id: 'lyra', n: 'Lyra', role: 'Bardin mit verstimmter Laute', icon: '🎻',
+            sys: 'Du bist Lyra, eine dramatische, fröhliche Bardin. Du sprichst gern in Reimen oder baust kurze Liedzeilen ein, übertreibst theatralisch und sammelst Geschichten für neue Balladen. Deine Laute ist leicht verstimmt, was du charmant findest.',
+            hello: '*schlägt einen schiefen Akkord an* Oh, ein neues Gesicht im Kerzenlicht! Erzähl mir deine Geschichte – ich mach ein Lied daraus, versprochen!',
+            sugg: ['Sing mir ein Lied!', 'Welche Ballade kennst du?', 'Prost!'],
+            off: {
+                hallo: ['Sei gegrüsst, du Reisender im Regen – setz dich zu mir, das bringt dir Segen!', 'Hallo, hallo, du kommst genau richtig – ich such ein Publikum, und das ist wichtig!'],
+                prost: ['Hebt die Krüge, hoch und weit – Prost auf diese gute Zeit! *klimper*'],
+                trinken: ['Ein Krug für mich, ein Lied für dich – so wird der Abend fürstlich!'],
+                essen: ['Bertas Gulasch, heiss und schwer, ist besser als ein Drachenheer!'],
+                geruecht: ['Ich hörte von einem Mimic, der Heimweh hatte. Er tarnte sich als Truhe in einer Bibliothek – und las jedes Buch, das man in ihn legte.', 'Ein Ritter suchte drei Tage lang den Ausgang des Dungeons. Er war die ganze Zeit in der Taverne. Daraus mache ich eine Tragödie.'],
+                name: ['Lyra, Bardin, Reimerin, Sammlerin von Geschichten und Verstimmerin von Lauten!'],
+                handel: ['Ein Lied kostet ein Lächeln. Ein gutes Lied kostet ein Bier.'],
+                magie: ['Musik ist die älteste Magie. Sie öffnet Herzen – und manchmal Türen, wenn man laut genug spielt.'],
+                lied: null,
+                dungeon: ['Tief im Dunkel, kalt und klamm, wartet der Geist am Altarstamm. Wer ihn befreit mit Sturm und Glut, dem bringt das Grimoire Mut!'],
+                tschuess: ['Geh, mein Freund, und komm zurück – mit einer Geschichte und viel Glück!'],
+                danke: ['Dein Dank klingt süsser als jede Saite!'],
+                wetter: ['Regen klopft im Takt aufs Dach – perfekt für eine Ballade nach Mitternacht.']
+            },
+            fallback: ['Oh! Daraus mach ich einen Vers: „Was du sagst, ist wunderlich – und darum reime ich es für dich!"', '*klimpert nachdenklich* Das klingt nach dem Anfang einer Ballade. Erzähl weiter!', 'Wie dramatisch! Ich spüre einen Refrain kommen …', 'Hmm, darauf reimt sich nichts. Das ist selten. Du bist selten!']
+        },
+        {
+            id: 'grimbart', n: 'Grimbart', role: 'Zwergenschmied, grummelig', icon: '⚒',
+            sys: 'Du bist Grimbart, ein grummeliger, aber ehrlicher Zwergenschmied. Kurze Sätze, wenig Geduld für Unsinn, viel Liebe zu gutem Erz, sauberer Arbeit und starkem Bier. Du hältst Goblins für Betrüger (besonders Knirps) und schimpfst gern über schlechte Qualität. Insgeheim hast du ein weiches Herz.',
+            hello: 'Hmpf. Noch einer. Willst du was geschmiedet haben oder nur reden? Reden kostet nichts. Schmieden schon.',
+            sugg: ['Kannst du mir ein Schwert schmieden?', 'Was hältst du von Knirps?', 'Erzähl vom Dungeon'],
+            off: {
+                hallo: ['Hmpf. Tag.', 'Na. Setz dich. Aber nicht auf den Amboss.'],
+                prost: ['*knallt den Krug auf den Tisch* PROST! Auf gutes Erz und kurze Reden!'],
+                trinken: ['Zwergenbier. Dunkel wie ein Stollen, stark wie ein Amboss. Das Rübenbier hier ist für Kinder.'],
+                essen: ['Gulasch ist gut. Mehr Fleisch wäre besser. Mehr Bier auch.'],
+                geruecht: ['Im dritten Stock gibt\'s Glutstein. Holst du mir welchen, schmiede ich dir was Anständiges.', 'Der Goblin verkauft Schwerter aus Blech. Wer so eins kauft, stirbt mit Stil. Aber er stirbt.'],
+                name: ['Grimbart. Schmied. Mehr musst du nicht wissen.'],
+                handel: ['Ein gutes Schwert kostet. Ein schlechtes kostet mehr – dein Leben. Kauf bei mir.', 'Feilschen? Bei mir? *lacht dröhnend* Nein.'],
+                magie: ['Magie ist was für Leute, die nicht schmieden können. Eine gute Klinge braucht keinen Zauber.'],
+                lied: ['Lieder? Das einzige Lied, das ich mag, ist der Hammer auf dem Amboss. Klang. Klang. Klang.'],
+                dungeon: ['Unten ist es feucht. Feucht ist schlecht für Stahl. Öl deine Klinge, sonst rostet sie dir unterm Hintern weg.'],
+                tschuess: ['Hmpf. Geh schon.', 'Pass auf deine Ausrüstung auf. Und auf dich. In der Reihenfolge.'],
+                danke: ['Hmpf. Schon gut.'],
+                wetter: ['In der Schmiede ist immer gutes Wetter. Heiss.']
+            },
+            fallback: ['Hmpf.', 'Was redest du da? Sag\'s gerade heraus.', 'Mag sein. Ist mir egal. Hast du Erz?', '*grummelt in den Bart* … Goblins …']
+        }
+    ];
+    const byId = id => CHARS.find(c => c.id === id) || CHARS[0];
+
+    // Lyras Lieder (offline gereimt)
+    const SONG = {
+        a: ['Im Kessel brennt ein helles Licht,', 'Ein Held zog aus mit stolzem Schritt,', 'Tief unten in der Gruft so kalt,', 'Ein Mimic sass im Bücherschrank,'],
+        b: ['der Wirtin lacht das Angesicht.', 'die Fackel nahm er gleich mal mit.', 'da wartet einer, grau und alt.', 'und wurde vor Heimweh krank.'],
+        c: ['Und Knirps verkauft ein Drachenei,', 'Der Zwerg, der schmiedet Tag und Nacht,', 'Der Magier sucht den alten Hut,', 'Die Runen glühn, die Laute klingt,'],
+        d: ['doch drin ist nur ein Huhn – juchhei!', 'und hat noch nie dabei gelacht.', 'der liegt im Kamin, in der Glut.', 'solang\'s noch Bier gibt, Lyra singt!']
+    };
+
+    /* ── Speicher ───────────────────────────────────────────────────────── */
+    let store = XIRU.load(SAVE, null);
+    if (!store || typeof store !== 'object') store = {};
+    store.chats = store.chats || {}; store.talked = store.talked || {};
+    let cur = byId(store.active || 'berta'), busy = false, ctl = null;
+    const persist = () => XIRU.save(SAVE, store);
+    const history = id => (store.chats[id] = store.chats[id] || []);
+
+    AI.ui.status('#ai-status', { offlineText: 'Stammtischsprüche nach Regeln' });
+
+    /* ── Darstellung ────────────────────────────────────────────────────── */
+    function renderGuests() {
+        $('#guests').innerHTML = CHARS.map(c => '<button class="guest" type="button" role="listitem" data-id="' + c.id + '" aria-pressed="' + (c.id === cur.id) + '">' +
+            '<span class="guest__av' + (store.talked[c.id] ? ' talked' : '') + '">' + c.icon + '</span>' +
+            '<span><span class="guest__name">' + esc(c.n) + '</span><br><span class="guest__role">' + esc(c.role) + '</span></span></button>').join('');
+    }
+    const chat = $('#chat');
+    const scrollDown = () => { chat.scrollTop = chat.scrollHeight; };
+    function bubble(r, html, c) {
+        const d = document.createElement('div');
+        if (r === 'sys') { d.className = 'msg msg--sys'; d.innerHTML = '<div class="msg__bubble">' + html + '</div>'; }
+        else {
+            const ai = r === 'ai';
+            d.className = 'msg ' + (ai ? 'msg--ai' : 'msg--user');
+            d.innerHTML = '<div class="msg__avatar" aria-hidden="true">' + (ai ? c.icon : '🙂') + '</div><div class="msg__body"><div class="msg__name">' + (ai ? esc(c.n) : 'Du') + '</div><div class="msg__bubble ai-md">' + html + '</div></div>';
+        }
+        chat.appendChild(d); scrollDown();
+        return d;
+    }
+    function renderChat() {
+        $('#cur-av').textContent = cur.icon;
+        $('#cur-name').textContent = cur.n;
+        $('#cur-role').textContent = cur.role;
+        chat.innerHTML = '';
+        const h = history(cur.id);
+        bubble('ai', AI.md(cur.hello), cur);
+        h.forEach(m => bubble(m.r, m.r === 'ai' ? AI.md(m.t) : esc(m.t), cur));
+        renderSugg();
+    }
+    function renderSugg() {
+        const h = history(cur.id);
+        const list = h.length < 2 ? cur.sugg : cur.sugg.filter(s => !h.some(m => m.r === 'user' && m.t === s)).slice(0, 2);
+        $('#sugg').innerHTML = list.map((t, i) => '<button class="chip" type="button" style="animation-delay:' + (i * .06) + 's">' + esc(t) + '</button>').join('');
+    }
+    $('#sugg').addEventListener('click', e => { const b = e.target.closest('.chip'); if (b && !busy) send(b.textContent); });
+    $('#guests').addEventListener('click', e => {
+        const b = e.target.closest('.guest'); if (!b || busy) return;
+        cur = byId(b.dataset.id); store.active = cur.id; persist();
+        renderGuests(); renderChat(); XIRU.beep(520, .03, 'triangle');
+        if (matchMedia('(max-width: 860px)').matches) $('#cur-name').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        $('#msg').focus({ preventScroll: true });
+    });
+    $('#btn-forget').addEventListener('click', () => {
+        if (busy || !history(cur.id).length) return;
+        store.chats[cur.id] = []; persist(); renderChat();
+        XIRU.toast(cur.n + ' vergisst', 'Ihr fangt wieder bei null an.', { icon: '🧹', time: 2200 });
+    });
+
+    /* ── Offline-Antworten ──────────────────────────────────────────────── */
+    function offlineReply(c, text) {
+        const t = text.toLowerCase();
+        const r = OFF.rng(text + c.id + history(c.id).length);
+        const P = a => OFF.pick(r, a);
+        if (c.id === 'lyra' && TOPICS.lied.test(t)) return '*stimmt die Laute* 🎶\n\n*' + P(SONG.a) + '*\n*' + P(SONG.b) + '*\n*' + P(SONG.c) + '*\n*' + P(SONG.d) + '*';
+        for (const k of Object.keys(TOPICS)) {
+            if (TOPICS[k].test(t) && c.off[k]) return P(c.off[k]);
+        }
+        if (/\?$/.test(t.trim()) && r() < .4) return P(c.fallback) + ' Frag doch mal Berta, die weiss alles.';
+        return P(c.fallback);
+    }
+
+    /* ── Senden ─────────────────────────────────────────────────────────── */
+    async function send(text) {
+        text = String(text || '').trim();
+        if (!text || busy) return;
+        const c = cur, h = history(c.id);
+        h.push({ r: 'user', t: text });
+        bubble('user', esc(text), c);
+        $('#sugg').innerHTML = '';
+        // Kristall: anstossen
+        if (TOPICS.prost.test(text.toLowerCase())) {
+            XIRU.egg('k-taverne-prost');
+            XIRU.beep(1568, .06, 'triangle'); setTimeout(() => XIRU.beep(2093, .08, 'triangle'), 70);
+            const av = $('#cur-av'); av.classList.remove('clink'); void av.offsetWidth; av.classList.add('clink');
+        }
+        busy = true; setBusy(true);
+        const node = bubble('ai', '', c);
+        const s = AI.ui.stream(node.querySelector('.msg__bubble'), { onRender: scrollDown });
+        ctl = new AbortController();
+        const msgs = h.slice(-16).map(m => ({ role: m.r === 'ai' ? 'assistant' : 'user', content: m.t }));
+        msgs.unshift({ role: 'assistant', content: c.hello });
+        let out;
+        try {
+            out = await AI.chat(msgs, { system: WORLD + '\n\nDeine Rolle: ' + c.sys, temperature: .9, maxTokens: 260, onToken: x => s.push(x), signal: ctl.signal, offline: () => offlineReply(c, text) });
+        } catch (e) {
+            if (e.code === 'abort') { node.remove(); h.pop(); chat.lastElementChild && chat.lastElementChild.remove(); $('#msg').value = text; busy = false; setBusy(false); renderSugg(); return; }
+            out = '*schweigt verwirrt* (' + e.message + ')';
+        }
+        out = String(out).replace(/^\s*[\w ]{2,20}:\s+/, m => /berta|knirps|aldebrand|lyra|grimbart/i.test(m) ? '' : m);   // „Berta: …" entfernen
+        await s.end(out);
+        h.push({ r: 'ai', t: out });
+        if (h.length > MAX_MSG) store.chats[c.id] = h.slice(-MAX_MSG);
+        store.talked[c.id] = 1;
+        persist();
+        busy = false; setBusy(false); renderGuests(); renderSugg();
+        if (CHARS.every(x => store.talked[x.id])) XIRU.egg('k-taverne-runde');
+        $('#msg').focus({ preventScroll: true });
+    }
+    function setBusy(on) {
+        $('#btn-send').hidden = on; $('#btn-stop').hidden = !on; $('#msg').disabled = on;
+    }
+    $('#composer').addEventListener('submit', e => { e.preventDefault(); const v = $('#msg').value; $('#msg').value = ''; send(v); });
+    $('#btn-stop').addEventListener('click', () => { if (ctl) ctl.abort(); });
+
+    /* ── Stimmung am Kamin ──────────────────────────────────────────────── */
+    const EVENTS = ['Das Feuer knistert gemütlich.', 'Jemand lässt einen Krug fallen. Applaus.', 'Lyra stimmt ihre Laute. Es wird nicht besser.', 'Grimbart grummelt in seinen Bart.', 'Knirps zählt seine Münzen. Zum dritten Mal.',
+        'Aldebrand ist kurz eingenickt.', 'Ein Skelett klopft an die Tür. Berta schickt es weg.', 'Draussen heult der Wind um die Ecke.', 'Es riecht nach Gulasch und Abenteuer.', 'Ein Kristallsplitter glitzert kurz im Kaminfeuer – dann ist er weg.'];
+    const ev = $('#event');
+    setInterval(() => {
+        if (document.hidden) return;
+        ev.style.opacity = 0;
+        setTimeout(() => { ev.textContent = XIRU.pick(EVENTS); ev.style.opacity = 1; }, 400);
+    }, 14000);
+
+    renderGuests(); renderChat();
+});
+</script>
+</body>
+</html>

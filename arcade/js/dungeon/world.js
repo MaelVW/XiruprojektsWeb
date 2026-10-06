@@ -134,10 +134,10 @@
                 if (tile(m, x, y) === T.WALL && walkable(tile(m, x, y + 1)) && !m.torches.includes(y * W + x)) m.torches.push(y * W + x);
             }
         });
-        // Floppy-Kammer (selten, hinter einer morschen Wand)
-        let floppy = null;
-        if (opt.floppy) {
-            for (let i = 0; i < 60 && !floppy; i++) {
+        // Das vergessene Archiv (selten, hinter einer morschen Wand)
+        let archive = null;
+        if (opt.archive) {
+            for (let i = 0; i < 60 && !archive; i++) {
                 const r = R.pick(rooms);
                 if (r === sr) continue;
                 const side = R.int(0, 3);
@@ -156,7 +156,7 @@
                 for (let y = cy - 1; y <= cy + 1; y++) for (let x = cx - 1; x <= cx + 1; x++) setT(m, x, y, T.FLOOR);
                 setT(m, sx, sy, T.SECRET);
                 m.torches = m.torches.filter(ti => ti !== sy * W + sx);
-                floppy = { x: cx, y: cy, wall: { x: sx, y: sy } };
+                archive = { x: cx, y: cy, wall: { x: sx, y: sy } };
             }
         }
         // Platz für den Händler
@@ -171,7 +171,7 @@
             }
         }
         m.start = start; m.stairs = stairs; m.startRoom = sIdx; m.lair = opt.boss ? lr : null; m.stairsRoom = lr;
-        m.floppy = floppy; m.merchantSpot = merchant;
+        m.archive = archive; m.merchantSpot = merchant;
         return m;
     }
 

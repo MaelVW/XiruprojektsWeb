@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Textabenteuer · Xiruprojekts</title>
+    <meta name="description" content="Ein KI-Erzähler spinnt dein Abenteuer: Dungeon, Sci-Fi, Krimi in Zürich, Western und mehr – mit Inventar, Spielständen und Offline-Modus.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="ki.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/ai.js"></script>
+    <style>
+        .genres { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); }
+        .genre {
+            text-align: left; cursor: pointer; font: inherit; color: var(--text);
+            display: flex; flex-direction: column; gap: .3rem; padding: 1rem;
+            background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+            transition: border-color .2s, transform .15s, box-shadow .2s;
+        }
+        .genre:hover { border-color: var(--border-strong); transform: translateY(-2px); }
+        .genre[aria-pressed="true"] { border-color: var(--rc); box-shadow: var(--glow); background: color-mix(in srgb, var(--rc) 10%, var(--surface-2)); }
+        .genre__icon { font-size: 1.7rem; line-height: 1; }
+        .genre__name { font-weight: 700; }
+        .genre__desc { font-size: .85rem; color: var(--text-muted); }
+        .genre__off { font-size: .72rem; color: var(--text-faint); }
+        .slots { display: flex; flex-direction: column; gap: .6rem; }
+        .slot { display: flex; flex-wrap: wrap; gap: .5rem 1rem; align-items: center; padding: .8rem 1rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-2); }
+        .slot__icon { font-size: 1.5rem; }
+        .slot__main { flex: 1; min-width: 180px; }
+        .slot__title { font-weight: 700; }
+        .slot__meta { font-size: .8rem; color: var(--text-faint); }
+        .story .msg--ai .msg__bubble { font-family: Georgia, "Times New Roman", serif; font-size: 1.02rem; }
+        .story .msg--ai { max-width: 100%; }
+        .story .msg--ai .msg__bubble { border-radius: 4px 16px 16px 16px; }
+        .story .msg--ai.is-end .msg__bubble { border-color: var(--rc); box-shadow: var(--glow); }
+        .diff { display: flex; flex-wrap: wrap; gap: .35rem; justify-content: center; }
+        .diff .badge { animation: popIn .35s var(--ease) both; }
+        .hp { display: flex; align-items: center; gap: .6rem; }
+        .hp .bar { flex: 1; height: 10px; }
+        .hp .bar__fill { background: linear-gradient(90deg, var(--danger), var(--warning), var(--success)); background-size: 300% 100%; background-position: var(--hpPos, 100%) 0; }
+        .hp.is-hit { animation: shake .4s linear 1; }
+        .inv { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: .35rem; }
+        .inv li { margin: 0; padding: .25rem .6rem; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--border); font-size: .85rem; animation: popIn .35s var(--ease) both; }
+        .state-row { display: flex; justify-content: space-between; gap: .5rem; font-size: .9rem; padding: .3rem 0; border-bottom: 1px dashed var(--border); }
+        .state-row:last-child { border-bottom: 0; }
+        .state-row span:first-child { color: var(--text-muted); }
+        .end-card { text-align: center; padding: 1.25rem; border: 1px solid var(--rc); border-radius: var(--radius); background: color-mix(in srgb, var(--rc) 8%, var(--surface)); animation: popIn .4s var(--ease) both; }
+        .end-card .big { font-size: 2.6rem; line-height: 1; margin-bottom: .4rem; }
+        .clues { display: flex; gap: .3rem; }
+        .clues span { width: 14px; height: 14px; border-radius: 4px; border: 1px solid var(--border-strong); background: var(--surface-3); }
+        .clues span.on { background: var(--rc); border-color: var(--rc); }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">✦ KI-Labor</span>
+        <h1>Textabenteuer</h1>
+        <p class="lead">Du tippst, was deine Figur tut – der Erzähler spinnt die Geschichte weiter. Mit Inventar, Lebenspunkten und mehreren Spielständen. Ohne KI-Dienst wartet ein handgeschriebenes Abenteuer.</p>
+    </header>
+    <div class="ki-top">
+        <div id="ai-status"></div>
+        <div class="row">
+            <button class="btn btn--sm" type="button" id="btn-menu" hidden>☰ Spielstände</button>
+        </div>
+    </div>
+
+    <!-- Auswahl -->
+    <section id="view-setup">
+        <div class="ki-layout ki-layout--wide-side">
+            <div class="card">
+                <h2>Neues Abenteuer</h2>
+                <p class="ki-label">Welt wählen</p>
+                <div class="genres" id="genres"></div>
+                <div class="grid-2 mt-3">
+                    <div class="field">
+                        <label for="hero">Name deiner Figur</label>
+                        <div class="row" style="flex-wrap:nowrap">
+                            <input id="hero" maxlength="24" placeholder="z. B. Ilvy" style="flex:1;min-width:0">
+                            <button class="btn btn--sm" type="button" id="hero-dice" title="Zufälliger Name" aria-label="Zufälliger Name">🎲</button>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <span class="label">Erzähler</span>
+                        <p class="small mb-1" id="mode-info"></p>
+                        <label class="check" id="force-offline-wrap"><input type="checkbox" id="force-offline"> Lieber offline spielen</label>
+                    </div>
+                </div>
+                <button class="btn btn--primary btn--lg" type="button" id="btn-start">▶ Abenteuer beginnen</button>
+            </div>
+            <aside class="card">
+                <h3>Spielstände</h3>
+                <div class="slots" id="slots"></div>
+            </aside>
+        </div>
+    </section>
+
+    <!-- Spiel -->
+    <section id="view-game" hidden>
+        <div class="ki-layout">
+            <div>
+                <div class="chat chat--tall story" id="story" aria-live="polite"></div>
+                <div class="sugg" id="sugg" aria-label="Vorschläge"></div>
+                <form class="composer" id="composer" autocomplete="off">
+                    <input class="input" id="action" maxlength="200" placeholder="Was tust du? z. B. „Ich untersuche die Tür“" aria-label="Deine Aktion">
+                    <button class="btn btn--primary" type="submit" id="btn-send">Los</button>
+                    <button class="btn" type="button" id="btn-stop" hidden>■ Stopp</button>
+                </form>
+            </div>
+            <aside class="ki-side">
+                <div class="card">
+                    <h3 id="g-title">Abenteuer</h3>
+                    <p class="small muted" id="g-sub"></p>
+                    <div class="state-row"><span>Ort</span><strong id="s-ort">–</strong></div>
+                    <div class="state-row"><span>Leben</span><span class="hp" id="s-hp-wrap" style="flex:1;max-width:60%"><span class="bar"><span class="bar__fill" id="s-hp"></span></span><strong id="s-hp-n">100</strong></span></div>
+                    <div class="state-row"><span id="s-cur">Gold</span><strong id="s-gold">0</strong></div>
+                    <div class="state-row"><span>Züge</span><strong id="s-turns">0</strong></div>
+                    <div class="state-row" id="s-clues-row" hidden><span>Hinweise</span><span class="clues" id="s-clues"></span></div>
+                </div>
+                <div class="card">
+                    <h3>Inventar</h3>
+                    <ul class="inv" id="s-inv"></ul>
+                </div>
+                <div class="card card--flat">
+                    <div class="stack">
+                        <button class="btn btn--sm btn--block" type="button" id="btn-undo">↶ Letzten Zug zurücknehmen</button>
+                        <button class="btn btn--sm btn--block btn--ghost" type="button" id="btn-back">☰ Zu den Spielständen</button>
+                    </div>
+                    <p class="small faint mt-2 mb-0">Alles wird automatisch in deinem Browser gespeichert.</p>
+                </div>
+            </aside>
+        </div>
+    </section>
+</main>
+<script>
+XIRU.ready(function () {
+    const AI = XIRU.ai, $ = XIRU.$, esc = XIRU.esc, OFF = AI.offline;
+    const SAVE = 'ki-abenteuer', MAX_SLOTS = 8, MAX_LOG = 140;
+    const clone = o => JSON.parse(JSON.stringify(o));
+    const clamp = XIRU.clamp;
+
+    /* ── Welten ─────────────────────────────────────────────────────────── */
+    const GENRES = {
+        dungeon: {
+            n: 'Dungeon', icon: '🗡', d: 'Düstere Gewölbe im PIXMAG-Stil', cur: 'Gold',
+            setting: 'ein düsterer Fantasy-Dungeon im Stil des Pixel-RPGs PIXMAG: verbannte Magier, Runen, Fackeln, Skelette, Zauber, die aus Elementen (Feuer, Wasser, Wind, Erde) kombiniert werden',
+            goal: 'das verlorene Grimoire eines verbannten Magiers aus der tiefsten Kammer bergen',
+            start: { ort: 'Vor der Gruft', inventar: ['Fackel', 'Runenstein'], gold: 5 },
+            im: {
+                places: ['die Halle der Säulen', 'eine Kammer voller Spinnweben', 'eine überflutete Krypta', 'die Runenschmiede', 'ein Gang mit flackernden Fackeln', 'die Knochengrube'],
+                npcs: ['ein redseliges Skelett', 'eine Goblin-Händlerin', 'der Geist eines Gildenmagiers'],
+                items: ['Heiltrank', 'Runenstein', 'Dietrich', 'Silberdolch', 'Zauberschriftrolle'],
+                foes: ['eine Skelettwache', 'ein Schwarm Fledermäuse', 'ein Mimic, der sich als Truhe tarnt', 'ein Schleim mit schlechter Laune'],
+                talk: ['Hier unten ist nichts, wie es scheint. Folge den Runen.', 'Drei Siegel öffnen die letzte Kammer. Mehr sag ich nicht. Na gut, vielleicht für ein Gold.', 'Hast du Feuer und Wind schon zusammen probiert?'],
+                mood: ['Irgendwo tropft Wasser.', 'Die Fackel wirft tanzende Schatten.', 'Es riecht nach Moder und Magie.'],
+                clue: 'Siegel', finale: 'Du setzt die drei Siegel in die Steintür. Sie gleitet auf, und im Licht deiner Fackel liegt das **Grimoire** auf einem Podest. Geschafft!'
+            }
+        },
+        scifi: {
+            n: 'Sci-Fi', icon: '🚀', d: 'Raumstation am Rand der Galaxis', cur: 'Credits',
+            setting: 'eine heruntergekommene Raumstation am Rand der Galaxis, mit Androiden, Wartungsrobotern, Weltraumschrott und einer launischen Bord-KI',
+            goal: 'die Station vor dem Absturz in einen Gasriesen retten',
+            start: { ort: 'Kryokammer', inventar: ['Multitool', 'Zugangskarte (Stufe 1)'], gold: 50 },
+            im: {
+                places: ['Hangar 7', 'der Hydroponik-Garten', 'die Brücke', 'ein enger Wartungsschacht', 'der Frachtraum', 'das Observatorium'],
+                npcs: ['eine Androidin mit Schweizer Akzent', 'der müde Chefingenieur', 'die Bord-KI MUTTI'],
+                items: ['Plasmaschneider', 'Datenkristall', 'Energiezelle', 'Sauerstoffpatrone', 'Zugangskarte (Stufe 2)'],
+                foes: ['ein durchgedrehter Wartungsroboter', 'ein Schleimwesen aus dem Abfluss', 'eine Sicherheitsdrohne'],
+                talk: ['Die Triebwerke brauchen den vollständigen Navigationscode. Drei Teile, über die Station verstreut.', 'Ich würde ja helfen, aber meine Pause dauert noch 40 Jahre.', 'Hast du schon im Frachtraum nachgesehen? Da liegt alles Mögliche.'],
+                mood: ['Ein Alarm blinkt lautlos.', 'Durch das Fenster dreht sich der Gasriese bedrohlich nah.', 'Die Lüftung röchelt.'],
+                clue: 'Teil des Navigationscodes', finale: 'Du gibst den vollständigen Navigationscode ein. Die Triebwerke heulen auf, die Station stabilisiert sich. MUTTI sagt: „Gut gemacht. Ich hätte es auch gekonnt."'
+            }
+        },
+        krimi: {
+            n: 'Krimi in Zürich', icon: '🕵', d: 'Nebel über der Limmat', cur: 'Franken',
+            setting: 'ein Kriminalfall im heutigen Zürich: Altstadt, Limmat, Trams, Bahnhofstrasse, Fondue-Stübli, verschwiegene Banken; die Spielfigur ermittelt für die Stadtpolizei',
+            goal: 'herausfinden, wer den Goldbarren aus dem Tresor einer Privatbank am Paradeplatz gestohlen hat',
+            start: { ort: 'Polizeiposten Urania', inventar: ['Notizbuch', 'Tramkarte'], gold: 40 },
+            im: {
+                places: ['das Niederdorf', 'der Lindenhof', 'der Hauptbahnhof', 'ein Fondue-Stübli', 'die Quaibrücke', 'ein Antiquariat in der Altstadt', 'der Uetliberg'],
+                npcs: ['eine nervöse Bankangestellte', 'ein Tramchauffeur', 'ein Strassenmusikant', 'die Wirtin des Stübli'],
+                items: ['Quittung', 'Schlüssel mit Gravur', 'unscharfes Foto', 'USB-Stick', 'Streichholzheft'],
+                foes: ['ein Taschendieb', 'ein Schläger in Lederjacke', 'ein sehr aggressiver Schwan'],
+                talk: ['Am Abend des Diebstahls war hier ein Mann mit grauem Hut. Er zahlte bar.', 'Fragen Sie im Antiquariat nach. Da gehen seltsame Leute ein und aus.', 'Ich habe nichts gesehen. Gar nichts. Wirklich.'],
+                mood: ['Ein Tram bimmelt vorbei.', 'Nebel hängt über der Limmat.', 'Irgendwo schlägt eine Kirchenglocke.'],
+                clue: 'Indiz', finale: 'Du legst alle Indizien auf den Tisch. Der Mann mit dem grauen Hut gesteht – Fall gelöst! Morgen steht es in allen Zeitungen.'
+            }
+        },
+        western: {
+            n: 'Western', icon: '🤠', d: 'Staub, Saloon und Showdown', cur: 'Dollar',
+            setting: 'eine staubige Wildwest-Stadt namens Dry Creek: Saloon, Sheriffbüro, Goldmine, Postkutsche und eine Bande von Gesetzlosen',
+            goal: 'die Bande des „Schwarzen Hank" vor dem Mittagszug stoppen',
+            start: { ort: 'Saloon „Zum Durstigen Kaktus"', inventar: ['Lasso', 'Feldflasche'], gold: 12 },
+            im: {
+                places: ['der Saloon', 'das Sheriffbüro', 'die alte Goldmine', 'der Bahnhof', 'die Schmiede', 'eine Schlucht vor der Stadt'],
+                npcs: ['ein zahnloser Goldgräber', 'die Barkeeperin Rosie', 'ein wortkarger Fremder'],
+                items: ['Steckbrief', 'Dynamitstange', 'Hufeisen', 'Fernrohr', 'Sheriffstern'],
+                foes: ['ein Handlanger von Hank', 'eine Klapperschlange', 'ein bockiges Maultier'],
+                talk: ['Hank plant was mit dem Mittagszug. Gold aus der Mine.', 'Wer zu viel fragt, landet in der Schlucht, Fremder.', 'Der Sheriff ist seit drei Tagen „angeln". Ha!'],
+                mood: ['Ein Steppenläufer rollt vorbei.', 'Die Sonne brennt.', 'In der Ferne pfeift ein Zug.'],
+                clue: 'Hinweis auf Hanks Plan', finale: 'Du stellst dich am Bahnhof auf. Als Hanks Bande auftaucht, wartet schon die halbe Stadt auf sie. Ohne einen Schuss ergeben sie sich. Dry Creek feiert dich!'
+            }
+        },
+        maerchen: {
+            n: 'Märchen', icon: '🧚', d: 'Ein verwunschener Alpenwald', cur: 'Taler',
+            setting: 'ein verwunschener Märchenwald in den Alpen, mit sprechenden Tieren, Zwergen, einer Bergfee, verzauberten Seen und einem launischen Drachen',
+            goal: 'den Fluch brechen, der das Dorf in ewigen Winter getaucht hat',
+            start: { ort: 'Am Waldrand', inventar: ['Laib Brot', 'Wollschal'], gold: 3 },
+            im: {
+                places: ['eine Lichtung voller Glühwürmchen', 'die Zwergenmine', 'ein gefrorener Bergsee', 'die Hütte der Kräuterhexe', 'eine Brücke mit einem Troll darunter', 'der Drachenfels'],
+                npcs: ['ein sprechender Fuchs', 'eine Zwergin mit Laterne', 'die Bergfee', 'ein sehr höflicher Troll'],
+                items: ['goldene Feder', 'Kräuterbündel', 'Bergkristall', 'Zauberbohne', 'silberner Kamm'],
+                foes: ['ein hungriger Wolf', 'ein Schwarm Krähen', 'ein Kobold mit Steinschleuder'],
+                talk: ['Drei Geschenke braucht es, um den Winter zu brechen.', 'Wer freundlich ist, kommt weiter. Meistens.', 'Der Drache ist gar nicht böse. Er hat nur kalte Füsse.'],
+                mood: ['Schnee knirscht unter deinen Füssen.', 'Etwas raschelt im Unterholz.', 'Die Luft riecht nach Tanne und Zauber.'],
+                clue: 'Geschenk für die Bergfee', finale: 'Du legst die drei Geschenke vor die Bergfee. Sie lächelt, und der Winter schmilzt wie Butter in der Sonne. Das Dorf jubelt!'
+            }
+        },
+        piraten: {
+            n: 'Piraten', icon: '🏴‍☠️', d: 'Schatzsuche auf hoher See', cur: 'Dublonen',
+            setting: 'eine Piraten-Schatzsuche in einer tropischen Inselwelt, mit Meutereien, Seemonstern, vergessenen Karten und einem Papagei, der zu viel weiss',
+            goal: 'den legendären Schatz von Kapitänin Einauge finden',
+            start: { ort: 'Hafen von Tortuga', inventar: ['zerrissene Schatzkarte', 'Kompass'], gold: 8 },
+            im: {
+                places: ['die Hafentaverne', 'das Deck der „Seeschwalbe"', 'eine einsame Insel', 'eine Höhle hinter dem Wasserfall', 'ein Schiffswrack', 'die Totenkopfbucht'],
+                npcs: ['ein Papagei, der zu viel weiss', 'ein einbeiniger Koch', 'eine Meerjungfrau mit Geschäftssinn'],
+                items: ['Kartenstück', 'Fernrohr', 'Enterhaken', 'Rumfass', 'rostiger Schlüssel'],
+                foes: ['ein Meuterer', 'ein Riesenkrebs', 'eine Seeschlange'],
+                talk: ['Kraaah! Drei Kartenstücke! Kraaah!', 'Die Kapitänin hat ihren Schatz nie vergraben. Sie hat ihn versenkt.', 'Für eine Dublone erzähl ich dir alles. Für zwei sogar die Wahrheit.'],
+                mood: ['Möwen kreischen.', 'Der Wind dreht.', 'Salz liegt in der Luft.'],
+                clue: 'Kartenstück', finale: 'Du legst die Kartenstücke zusammen: Das X liegt mitten in der Totenkopfbucht. Unter Wasser glitzert es golden – der Schatz von Kapitänin Einauge gehört dir!'
+            }
+        }
+    };
+
+    /* ── Vorgeschriebenes Offline-Abenteuer: Die Gruft des Verbannten ──── */
+    const has = (s, item) => (s.inventar || []).some(i => i.toLowerCase() === item.toLowerCase());
+    const BACK = { t: 'Zurück in die Halle', to: 'halle', kw: ['zurück', 'halle'] };
+    const SCRIPT = {
+        start: { ort: 'Vor der Gruft', text: 'Der Wind heult über die Hügel, als du vor dem eingesunkenen Tor der **Gruft des Verbannten** stehst. Man erzählt sich, hier unten liege das Grimoire von Malrik, einem Magier, den die Gilde vor hundert Jahren verstossen hat.\n\nDeine Fackel knistert. In deiner Tasche summt ein kleiner Runenstein, als würde er etwas spüren.',
+            choices: [{ t: 'Die Gruft betreten', to: 'halle', kw: ['betret', 'eintret', 'hinein', 'rein', 'gruft', 'tor', 'geh'] }, { t: 'Den Runenstein untersuchen', to: 'stein', kw: ['stein', 'rune', 'untersuch', 'anschau'], ifNot: 'runen' }, { t: 'Umkehren und nach Hause gehen', to: 'feige', kw: ['umkehr', 'heim', 'nach hause', 'flieh', 'weg'] }] },
+        stein: { ort: 'Vor der Gruft', set: { runen: 1 }, text: 'Du drehst den Runenstein im Fackellicht. Drei Zeichen glühen schwach auf: eine **Flamme**, eine **Welle** und ein **Wirbel**. Als du ihn Richtung Tor hältst, wird er warm. Er scheint den Weg zu kennen.',
+            choices: [{ t: 'Die Gruft betreten', to: 'halle', kw: ['betret', 'eintret', 'hinein', 'rein', 'gruft', 'tor', 'geh'] }, { t: 'Umkehren und nach Hause gehen', to: 'feige', kw: ['umkehr', 'heim', 'flieh', 'weg'] }] },
+        feige: { ort: 'Auf dem Heimweg', ende: 'niederlage', text: 'Du drehst um. Zuhause wartet eine warme Suppe – und die ewige Frage, was wohl in der Gruft gewesen wäre. Die Barden singen keine Lieder über Leute, die umgekehrt sind.\n\n**Ende.** Kein Heldentod, aber auch kein Ruhm.' },
+        halle: { ort: 'Halle der Säulen', text: 'Staub rieselt von der Decke. Die Halle wird von zerbrochenen Säulen getragen. Links führt ein Gang zu einer **Bibliothek**, rechts hörst du ein rhythmisches Klappern aus einem **Wachraum**. Geradeaus versperrt ein schweres **Eisentor** den Weg in die Tiefe.',
+            choices: [{ t: 'Zur Bibliothek (links)', to: 'biblio', kw: ['bibliothek', 'links', 'buch'] }, { t: 'Zum Wachraum (rechts)', to: 'wache', kw: ['wach', 'rechts', 'klapper', 'skelett'] }, { t: 'Das Eisentor aufschliessen', to: 'treppe', kw: ['aufschliess', 'schlüssel', 'aufsperr'], show: 'Eiserner Schlüssel' }, { t: 'Das Eisentor untersuchen', to: 'tor', kw: ['tor', 'eisen', 'geradeaus', 'tür'] }] },
+        biblio: { ort: 'Verstaubte Bibliothek', text: s => 'Regale bis unter die Decke, voller Spinnweben. Auf einem Lesepult liegt ein aufgeschlagenes Buch: *„Von den Kombinationen der Elemente"*.' + (s.flags.kiste ? '' : ' In der Ecke steht eine kleine, mit Messing beschlagene **Kiste**.'),
+            choices: [{ t: 'Das Buch lesen', to: 'buch', kw: ['buch', 'les', 'pult'], ifNot: 'wissen' }, { t: 'Die Kiste öffnen', to: 'kiste', kw: ['kiste', 'öffn', 'truhe'], ifNot: 'kiste' }, BACK] },
+        buch: { ort: 'Verstaubte Bibliothek', set: { wissen: 1 }, text: 'Mit zittriger Tinte steht da: *„Flamme und Wirbel ergeben den Feuersturm – die einzige Kraft, die einen Gebundenen befreit. Welle und Wirbel ergeben Eis, das hält, aber nicht erlöst."*\n\nDu prägst dir die Zeilen ein. Das könnte nützlich werden.',
+            choices: [{ t: 'Die Kiste öffnen', to: 'kiste', kw: ['kiste', 'öffn', 'truhe'], ifNot: 'kiste' }, BACK] },
+        kiste: { ort: 'Verstaubte Bibliothek', set: { kiste: 1 }, give: ['Heiltrank'], gold: 12, text: 'Das Schloss ist längst verrostet und springt beim ersten Ruck auf. Drinnen: ein **Heiltrank** mit rötlichem Schimmer und ein paar alte Goldmünzen.',
+            choices: [{ t: 'Das Buch lesen', to: 'buch', kw: ['buch', 'les', 'pult'], ifNot: 'wissen' }, BACK] },
+        wache: { ort: 'Wachraum', text: s => s.flags.wache ? 'Der Wachraum ist still. Nur ein Knochenhaufen erinnert an die Skelettwache.' : 'Ein **Skelett** in rostiger Rüstung sitzt auf einem Hocker und schnarcht – klappernd. An seinem Gürtel baumelt ein **eiserner Schlüssel**.',
+            choices: [{ t: 'Anschleichen und den Schlüssel stibitzen', to: 'schleichen', kw: ['schleich', 'stibitz', 'leise', 'klau', 'stehl', 'nimm', 'nehm'], ifNot: 'wache' }, { t: 'Das Skelett angreifen', to: 'kampf', kw: ['angreif', 'greif', 'kämpf', 'kampf', 'schlag', 'attack', 'angriff', 'zauber'], ifNot: 'wache' }, BACK] },
+        schleichen: { ort: 'Wachraum', set: { wache: 1 }, give: ['Eiserner Schlüssel'], text: 'Du hältst den Atem an. Ein Schritt, noch einer … das Skelett schnarcht weiter. Mit spitzen Fingern löst du den Schlüssel vom Gürtel. Geschafft! Beim Hinausgehen stösst du allerdings den Hocker an – das Skelett zerfällt vor Schreck zu einem Knochenhaufen. Auch gut.', choices: [BACK] },
+        kampf: { ort: 'Wachraum', set: { wache: 1 }, give: ['Eiserner Schlüssel'], hp: -25, gold: 20, text: 'Das Skelett schreckt hoch und schwingt ein rostiges Schwert. Ihr kämpft im flackernden Licht – du triffst, es trifft auch. Schliesslich fällt es klirrend auseinander. Zwischen den Knochen: der **eiserne Schlüssel** und ein Beutel Gold. Deine Schulter brennt.', choices: [BACK] },
+        tor: { ort: 'Halle der Säulen', text: s => has(s, 'Eiserner Schlüssel') ? 'Das Eisentor hat ein grosses Schlüsselloch. Der eiserne Schlüssel in deiner Tasche würde perfekt passen.' : 'Das Eisentor ist verschlossen. Durch das riesige Schlüsselloch weht kalte Luft. Irgendwo hier muss es einen Schlüssel geben.',
+            choices: [{ t: 'Das Tor aufschliessen', to: 'treppe', kw: ['aufschliess', 'schlüssel', 'öffn', 'aufmach'], need: 'Eiserner Schlüssel' }, BACK] },
+        treppe: { ort: 'Wendeltreppe', text: 'Das Tor ächzt auf. Eine Wendeltreppe führt in die Tiefe. Auf halbem Weg hörst du Kratzen und Quieken – ein Schwarm **Riesenratten** versperrt die Stufen, die Augen glühen im Fackelschein.',
+            choices: [{ t: 'Mit der Fackel wedeln', to: 'ratten_ok', kw: ['fackel', 'wedel', 'feuer', 'schwenk'] }, { t: 'Einfach durchrennen', to: 'ratten_au', kw: ['renn', 'durch', 'lauf', 'spring'] }, { t: 'Zurück nach oben', to: 'halle', kw: ['zurück', 'hoch', 'oben'] }] },
+        ratten_ok: { ort: 'Untere Gewölbe', text: 'Du schwenkst die Fackel – die Ratten quieken empört und flüchten in die Ritzen. Unten öffnet sich ein Gewölbe. In der Mitte steht eine prunkvolle **Truhe**, dahinter ein steinerner **Altar** in blassblauem Licht.',
+            choices: [{ t: 'Die Truhe öffnen', to: 'mimic', kw: ['truhe', 'öffn', 'schatz'], ifNot: 'mimic' }, { t: 'Zum Altar gehen', to: 'altar', kw: ['altar', 'licht', 'geh'] }] },
+        ratten_au: { ort: 'Untere Gewölbe', hp: -15, text: 'Du rennst los. Die Ratten zwicken dich in die Waden, aber du kommst durch. Unten öffnet sich ein Gewölbe. In der Mitte steht eine prunkvolle **Truhe**, dahinter ein steinerner **Altar** in blassblauem Licht.',
+            choices: [{ t: 'Die Truhe öffnen', to: 'mimic', kw: ['truhe', 'öffn', 'schatz'], ifNot: 'mimic' }, { t: 'Zum Altar gehen', to: 'altar', kw: ['altar', 'licht', 'geh'] }] },
+        mimic: { ort: 'Untere Gewölbe', set: { mimic: 1 }, hp: -30, gold: 45, text: 'Kaum berührst du den Deckel, reisst die Truhe ein Maul voller Holzzähne auf – ein **Mimic**! Er beisst kräftig zu, bevor du ihn mit einem Tritt in die Ecke beförderst, wo er beleidigt Münzen ausspuckt. Immerhin: 45 Gold.',
+            choices: [{ t: 'Zum Altar gehen', to: 'altar', kw: ['altar', 'geh'] }] },
+        altar: { ort: 'Altar des Verbannten', text: 'Über dem Altar flimmert eine Gestalt: **Malrik**, der verbannte Magier, gefangen als Geist. „Hundert Jahre", flüstert er, „hundert Jahre gebunden. Befreie mich – oder beantworte mein Rätsel, dann lasse ich dich ziehen: *Was wird nasser, je mehr es trocknet?*"',
+            choices: [{ t: '„Ein Handtuch!"', to: 'raetsel_ok', kw: ['handtuch', 'tuch'] }, { t: '„Ein Schwamm!"', to: 'raetsel_falsch', kw: ['schwamm'] }, { t: 'Den Feuersturm wirken (Flamme + Wirbel)', to: 'befreit', kw: ['feuersturm', 'flamme', 'feuer'], flag: 'wissen' }, { t: 'Einen Eiszauber wirken (Welle + Wirbel)', to: 'eis', kw: ['eis', 'welle'], flag: 'runen' }] },
+        raetsel_falsch: { ort: 'Altar des Verbannten', hp: -25, text: '„Falsch!" Ein eisiger Windstoss wirft dich gegen die Wand. „Noch einmal."',
+            choices: [{ t: '„Ein Handtuch!"', to: 'raetsel_ok', kw: ['handtuch', 'tuch'] }, { t: 'Den Feuersturm wirken (Flamme + Wirbel)', to: 'befreit', kw: ['feuersturm', 'flamme', 'feuer'], flag: 'wissen' }] },
+        eis: { ort: 'Altar des Verbannten', hp: -10, text: 'Eis kriecht über den Altar und hält den Geist fest – für einen Moment. Dann splittert es. „Eis hält, aber es erlöst nicht", seufzt Malrik. Hattest du das nicht irgendwo gelesen?',
+            choices: [{ t: '„Ein Handtuch!"', to: 'raetsel_ok', kw: ['handtuch', 'tuch'] }, { t: 'Den Feuersturm wirken (Flamme + Wirbel)', to: 'befreit', kw: ['feuersturm', 'flamme', 'feuer'], flag: 'wissen' }] },
+        raetsel_ok: { ort: 'Altar des Verbannten', ende: 'sieg', gold: 60, give: ['Malriks Siegelring'], text: 'Malrik lacht – ein Lachen wie raschelndes Pergament. „Ein Handtuch. Natürlich." Er schiebt dir einen **Siegelring** über den Altar. „Geh. Und erzähl der Gilde, dass ich Humor habe."\n\nDu steigst ans Tageslicht, den Ring am Finger und die Taschen voller Gold.\n\n🏆 **Sieg!** Du hast die Gruft lebend verlassen.' },
+        befreit: { ort: 'Altar des Verbannten', ende: 'sieg', gold: 100, give: ['Malriks Grimoire'], text: 'Du hältst den Runenstein hoch, Flamme und Wirbel leuchten auf – ein **Feuersturm** fegt durch das Gewölbe und verbrennt die alten Bannketten. Malrik richtet sich auf, zum ersten Mal seit hundert Jahren frei. „Danke", sagt er leise und legt dir sein **Grimoire** in die Hände, bevor er als Funkenregen verglüht.\n\n🏆 **Wahrer Sieg!** Du hast den Verbannten erlöst.' },
+        tot: { ort: 'Im Dunkeln', ende: 'niederlage', text: 'Dir wird schwarz vor Augen. Die Fackel rollt über den Boden und erlischt. Irgendwo kichert ein Skelett.\n\n💀 **Game Over.** Nimm den letzten Zug zurück oder beginne neu.' }
+    };
+    const visibleChoices = (node, s) => (node.choices || []).filter(c => (!c.ifNot || !s.flags[c.ifNot]) && (!c.flag || s.flags[c.flag]) && (!c.show || has(s, c.show)));
+    const jsonBlock = (s, sugg) => '\n\n```json\n' + JSON.stringify(Object.assign({}, s, { vorschlaege: sugg })) + '\n```';
+
+    function scripted(action, isStart) {
+        const s = clone(game.state);
+        s.flags = s.flags || {};
+        let node = SCRIPT[s.node] || SCRIPT.start, text;
+        const a = (action || '').toLowerCase().trim();
+        if (isStart) { s.node = 'start'; node = SCRIPT.start; text = node.text; }
+        else {
+            const vis = visibleChoices(node, s);
+            let choice = vis.find(c => c.t.toLowerCase() === a) || vis[parseInt(a, 10) - 1];
+            if (!choice) choice = vis.find(c => c.kw.some(k => a.includes(k)));
+            if (/^(inventar|tasche|rucksack)/.test(a)) {
+                text = 'Du kramst in deiner Tasche: ' + (s.inventar.length ? s.inventar.join(', ') : 'nichts als Staub') + '.';
+            } else if (/trank|trink|heil/.test(a) && has(s, 'Heiltrank')) {
+                s.inventar = s.inventar.filter(i => i !== 'Heiltrank'); s.leben = Math.min(100, s.leben + 40);
+                text = 'Du entkorkst den Heiltrank. Er schmeckt nach Kirschen und Rost – aber deine Wunden schliessen sich. (+40 Leben)';
+            } else if (!choice) {
+                text = XIRU.pick(['Das klappt hier nicht.', 'Hmm, darauf weiss die Gruft keine Antwort.', 'Du überlegst kurz – nein, das bringt nichts.']) + ' Möglich ist: ' + vis.map(c => '*' + c.t + '*').join(', ') + '.';
+            } else if (choice.need && !has(s, choice.need)) {
+                text = 'Dafür fehlt dir etwas. Du rüttelst ein bisschen herum, aber nichts passiert.';
+            } else {
+                node = SCRIPT[choice.to]; s.node = choice.to;
+                Object.assign(s.flags, node.set || {});
+                (node.give || []).forEach(i => { if (!has(s, i)) s.inventar.push(i); });
+                if (node.gold) s.gold += node.gold;
+                if (node.hp) s.leben = clamp(s.leben + node.hp, 0, 100);
+                if (node.ende) s.ende = node.ende;
+                if (s.leben <= 0) { node = SCRIPT.tot; s.node = 'tot'; s.ende = 'niederlage'; }
+                text = typeof node.text === 'function' ? node.text(s) : node.text;
+            }
+        }
+        s.ort = node.ort || s.ort;
+        const sugg = s.ende ? [] : visibleChoices(SCRIPT[s.node], s).map(c => c.t).concat(has(s, 'Heiltrank') && s.leben < 80 ? ['Heiltrank trinken'] : []);
+        return text + jsonBlock(s, sugg);
+    }
+
+    /* ── Offline-Improvisation (alle Welten, auch als Ersatz für die KI) ── */
+    function improvise(action, isStart) {
+        const G = GENRES[game.genre] || GENRES.dungeon, v = G.im;
+        const r = OFF.rng(String(action) + '|' + game.turns + '|' + game.id);
+        const P = a => OFF.pick(r, a);
+        const s = clone(game.state);
+        s.hinweise = s.hinweise || 0;
+        const a = String(action || '').toLowerCase();
+        let txt, clue = 0;
+        if (isStart) {
+            txt = 'Willkommen, ' + game.hero + '. Deine Aufgabe: ' + G.goal + '. ' + P(v.mood) + '\n\nDu stehst hier: **' + s.ort + '**. Man munkelt, du brauchst drei Dinge, um ans Ziel zu kommen – jedes davon ein „' + v.clue + '".';
+        } else if (s.hinweise >= 3 && /finale|showdown|ziel|stell|löse|wag|entscheid/.test(a)) {
+            txt = v.finale + '\n\n🏆 **Sieg!**'; s.ende = 'sieg'; s.gold += 50;
+        } else if (/geh|lauf|reis|fahr|flieg|segel|reit|weiter|nach |zum |zur |betret|klettr|kletter/.test(a)) {
+            s.ort = P(v.places.filter(p => p !== s.ort));
+            txt = 'Du machst dich auf den Weg. ' + P(v.mood) + ' Schliesslich bist du da: **' + s.ort + '**. ' + P(['Hier warst du noch nie.', 'Es wirkt verlassen – fast.', 'Jemand war vor kurzem hier.']);
+            clue = r() < .35;
+        } else if (/nimm|nehm|pack|heb|sammel|steck|klau/.test(a)) {
+            const m = a.match(/(?:nimm|nehme|nehm\w*|pack\w*|heb\w*|sammel\w*|steck\w*|klau\w*)\s+(?:den|die|das|einen|eine|ein|mir)?\s*([a-zäöüß-]{3,24})/);
+            const item = m ? m[1].charAt(0).toUpperCase() + m[1].slice(1) : P(v.items);
+            if (s.inventar.length >= 12) txt = 'Deine Taschen sind voll. Du müsstest erst etwas loswerden.';
+            else { s.inventar.push(item); txt = 'Du steckst **' + item + '** ein. ' + P(['Könnte nützlich sein.', 'Fühlt sich wichtig an.', 'Man weiss ja nie.']); clue = r() < .25; }
+        } else if (/kämpf|greif|schlag|schiess|duell|attack|angriff|\bhau|zauber/.test(a)) {
+            const foe = P(v.foes), dmg = 5 + Math.floor(r() * 18), loot = 3 + Math.floor(r() * 15);
+            s.leben = clamp(s.leben - dmg, 0, 100); s.gold += loot;
+            txt = 'Plötzlich stellt sich dir ' + foe + ' in den Weg! Ein kurzes, heftiges Gerangel – du gewinnst, aber es kostet dich ' + dmg + ' Lebenspunkte. Zur Belohnung: ' + loot + ' ' + G.cur + '.';
+            clue = r() < .4;
+        } else if (/sprich|frag|red|unterhalt|grüss|hallo|hoi|ruf/.test(a)) {
+            const npc = P(v.npcs);
+            txt = npc.charAt(0).toUpperCase() + npc.slice(1) + ' mustert dich und sagt: „' + P(v.talk) + '"';
+            clue = r() < .45;
+        } else if (/such|untersuch|schau|betracht|inspizier|lies|lese|horch|riech|umseh/.test(a)) {
+            txt = 'Du siehst dich gründlich um. ' + P(v.mood) + ' ';
+            if (r() < .45) { const it = P(v.items); if (!s.inventar.includes(it)) s.inventar.push(it); txt += 'Unter etwas Gerümpel findest du: **' + it + '**.'; }
+            else txt += P(['Auf den ersten Blick nichts Besonderes.', 'Ein paar Spuren führen weiter.', 'Du hast das Gefühl, beobachtet zu werden.']);
+            clue = r() < .5;
+        } else if (/trink|heil|iss |essen|rast|schlaf|ausruh|verbind/.test(a)) {
+            const plus = 10 + Math.floor(r() * 20);
+            s.leben = clamp(s.leben + plus, 0, 100);
+            txt = 'Du gönnst dir eine Pause. ' + P(['Das tut gut.', 'Die Kräfte kehren zurück.', 'Kurz die Augen zu – herrlich.']) + ' (+' + plus + ' Leben)';
+        } else if (/inventar|tasche|rucksack/.test(a)) {
+            txt = 'In deinen Taschen: ' + (s.inventar.length ? s.inventar.join(', ') : 'gähnende Leere') + '.';
+        } else {
+            txt = 'Du versuchst es: *' + esc(action) + '*. ' + P(['Das Ergebnis ist … überraschend unspektakulär.', 'Es passiert etwas Merkwürdiges, aber du kannst es nicht genau deuten.', 'Niemand scheint es zu bemerken.', 'Gar keine schlechte Idee.']) + ' ' + P(v.mood);
+            clue = r() < .25;
+        }
+        if (clue && !s.ende && s.hinweise < 3) {
+            s.hinweise++;
+            txt += '\n\nDu findest ein **' + v.clue + '** (' + s.hinweise + '/3).' + (s.hinweise === 3 ? ' Jetzt fehlt nur noch das Finale!' : '');
+        }
+        if (s.leben <= 0) { s.ende = 'niederlage'; txt += '\n\n💀 **Game Over.** Nimm den letzten Zug zurück oder beginne neu.'; }
+        const zu = p => { const m = /^(der|die|das|eine|ein) /.exec(p); return m ? ({ der: 'zum ', die: 'zur ', das: 'zum ', eine: 'zu einer ', ein: 'zu einem ' }[m[1]]) + p.slice(m[0].length) : 'zu ' + p; };
+        const sugg = s.ende ? [] : (s.hinweise >= 3 ? ['Das Finale wagen'] : []).concat([
+            'Weiter ' + zu(P(v.places.filter(p => p !== s.ort))),
+            P(['Die Gegend absuchen', 'Mich gründlich umsehen']), P(['Jemanden ansprechen', 'Nach Hinweisen fragen'])
+        ]).slice(0, 3);
+        return txt + jsonBlock(s, sugg);
+    }
+
+    /* ── KI-Erzähler ────────────────────────────────────────────────────── */
+    function systemPrompt() {
+        const G = GENRES[game.genre];
+        const st = { ort: game.state.ort, leben: game.state.leben, gold: game.state.gold, inventar: game.state.inventar };
+        return 'Du bist der Erzähler eines interaktiven Textabenteuers. Schreib auf Deutsch in Schweizer Schreibweise (ss statt ß) und sprich die Spielfigur mit „du" an.\n' +
+            'Welt: ' + G.setting + '.\nSpielfigur: ' + game.hero + '.\nZiel des Abenteuers: ' + G.goal + '. Die Währung heisst ' + G.cur + '.\n' +
+            'Regeln:\n- Erzähle lebendig in 2–3 kurzen Absätzen (höchstens 130 Wörter). Dann hör auf und warte auf die nächste Aktion.\n' +
+            '- Die Spielfigur entscheidet selbst. Unvernünftige Aktionen dürfen scheitern. Jugendfrei, keine brutalen Details.\n' +
+            '- Nur Gegenstände aus dem Inventar können benutzt werden. Kämpfe kosten Leben. Nach etwa 15–25 Zügen soll ein Ende möglich sein.\n' +
+            '- Beende JEDE Antwort mit genau einem JSON-Block in ```json … ``` mit diesen Feldern:\n' +
+            '{"ort": "kurzer Ortsname", "leben": 0-100, "gold": Zahl, "inventar": ["Gegenstand", …], "vorschlaege": ["drei kurze Aktionen"], "ende": null oder "sieg" oder "niederlage"}\n' +
+            'Aktueller Zustand: ' + JSON.stringify(st);
+    }
+    function buildMessages(action, isStart) {
+        const hist = game.log.filter(l => l.r === 'ai' || l.r === 'user').slice(-14).map(l => ({ role: l.r === 'ai' ? 'assistant' : 'user', content: l.t }));
+        if (isStart) hist.push({ role: 'user', content: 'Beginne das Abenteuer: Beschreib die Ausgangslage.' });
+        const last = hist[hist.length - 1];
+        if (last && last.role === 'user') last.content = 'Meine Aktion: ' + last.content + '\n(Antworte als Erzähler und beende mit dem JSON-Block.)';
+        return hist;
+    }
+
+    /* ── Zustand anwenden ───────────────────────────────────────────────── */
+    function applyData(d) {
+        const s = game.state;
+        if (!d || typeof d !== 'object') return false;
+        const num = (v, def) => (v != null && isFinite(+v)) ? +v : def;
+        const pickKey = (...keys) => { for (const k of keys) if (d[k] != null) return d[k]; return null; };
+        const ort = pickKey('ort', 'location', 'ortname');
+        if (typeof ort === 'string' && ort.trim()) s.ort = ort.trim().slice(0, 60);
+        const hp = pickKey('leben', 'hp', 'gesundheit', 'lebenspunkte');
+        if (hp != null) s.leben = clamp(Math.round(num(hp, s.leben)), 0, 100);
+        const gold = pickKey('gold', 'geld', 'credits', 'franken', 'dollar', 'taler', 'dublonen', 'muenzen');
+        if (gold != null) s.gold = Math.max(0, Math.round(num(gold, s.gold)));
+        const inv = pickKey('inventar', 'inventory', 'gegenstaende', 'gegenstände');
+        if (Array.isArray(inv)) s.inventar = inv.map(x => typeof x === 'string' ? x : (x && (x.name || x.n)) || '').map(x => String(x).trim().slice(0, 40)).filter(Boolean).slice(0, 16);
+        const sg = pickKey('vorschlaege', 'vorschläge', 'optionen', 'aktionen', 'suggestions', 'choices');
+        if (Array.isArray(sg)) game.sugg = sg.map(x => String(typeof x === 'string' ? x : (x && (x.text || x.t)) || '').trim().slice(0, 80)).filter(Boolean).slice(0, 4);
+        const e = String(pickKey('ende', 'end', 'status') || '').toLowerCase();
+        if (/sieg|gewonnen|win|erfolg/.test(e)) s.ende = 'sieg';
+        else if (/niederlage|tod|tot|verloren|lose|game ?over/.test(e)) s.ende = 'niederlage';
+        if (d.node) s.node = String(d.node);
+        if (d.flags && typeof d.flags === 'object') s.flags = d.flags;
+        if (d.hinweise != null) s.hinweise = clamp(num(d.hinweise, 0), 0, 3);
+        if (s.leben <= 0) s.ende = 'niederlage';
+        return true;
+    }
+
+    /* ── Speicher ───────────────────────────────────────────────────────── */
+    let store = XIRU.load(SAVE, null);
+    if (!store || !Array.isArray(store.slots)) store = { slots: [], active: null };
+    let game = null, busy = false, ctl = null, genre = 'dungeon';
+    function persist() {
+        if (game) {
+            game.updated = Date.now();
+            if (game.log.length > MAX_LOG) game.log = game.log.slice(-MAX_LOG);
+        }
+        store.slots.sort((a, b) => b.updated - a.updated);
+        store.slots = store.slots.slice(0, MAX_SLOTS);
+        XIRU.save(SAVE, store);
+    }
+
+    /* ── Auswahl-Ansicht ────────────────────────────────────────────────── */
+    AI.ui.status('#ai-status', { offlineText: 'handgeschriebenes Abenteuer' });
+    function wantsOffline() { return $('#force-offline').checked || !AI.hasOnline(); }
+    function modeFor(g) { return wantsOffline() ? (g === 'dungeon' ? 'skript' : 'impro') : 'ki'; }
+    function renderGenres() {
+        const online = AI.hasOnline();
+        $('#genres').innerHTML = Object.keys(GENRES).map(k => {
+            const G = GENRES[k];
+            const off = k === 'dungeon' ? 'Offline: handgeschriebenes Abenteuer' : 'Offline: improvisierter Erzähler';
+            return '<button class="genre" type="button" data-genre="' + k + '" aria-pressed="' + (k === genre) + '">' +
+                '<span class="genre__icon">' + G.icon + '</span><span class="genre__name">' + esc(G.n) + '</span>' +
+                '<span class="genre__desc">' + esc(G.d) + '</span>' + (online && !$('#force-offline').checked ? '' : '<span class="genre__off">' + off + '</span>') + '</button>';
+        }).join('');
+        const st = AI.status();
+        $('#mode-info').innerHTML = AI.hasOnline()
+            ? '✦ KI-Erzähler über <strong>' + esc(st.label) + '</strong>' + (st.model ? ' <span class="faint mono">' + esc(String(st.model).split('/').pop()) + '</span>' : '')
+            : '◌ Offline: Im Dungeon wartet „Die Gruft des Verbannten", die anderen Welten erzählt ein improvisierender Erzähler. <a href="../konto/dienste.html">KI einrichten</a>';
+        $('#force-offline-wrap').hidden = !AI.hasOnline();
+    }
+    $('#genres').addEventListener('click', e => {
+        const b = e.target.closest('[data-genre]'); if (!b) return;
+        genre = b.dataset.genre; renderGenres(); XIRU.beep(660, .03, 'triangle');
+    });
+    $('#force-offline').addEventListener('change', renderGenres);
+    XIRU.on('keys', () => { if (!$('#view-setup').hidden) renderGenres(); });
+    const rollHero = () => { $('#hero').value = OFF.name(Math.random, 'person'); };
+    $('#hero-dice').addEventListener('click', rollHero);
+
+    function renderSlots() {
+        const el = $('#slots');
+        if (!store.slots.length) { el.innerHTML = '<div class="empty"><div class="empty__icon">📜</div>Noch keine Spielstände.<br>Dein erstes Abenteuer wartet!</div>'; return; }
+        el.innerHTML = store.slots.map(sl => {
+            const G = GENRES[sl.genre] || GENRES.dungeon;
+            const status = sl.state.ende === 'sieg' ? '<span class="badge badge--success">Sieg</span>' : sl.state.ende === 'niederlage' ? '<span class="badge badge--danger">Ende</span>' : '<span class="badge">' + sl.turns + ' Züge</span>';
+            return '<div class="slot" data-id="' + esc(sl.id) + '"><span class="slot__icon">' + G.icon + '</span>' +
+                '<div class="slot__main"><div class="slot__title">' + esc(sl.hero) + ' · ' + esc(G.n) + ' ' + status + '</div>' +
+                '<div class="slot__meta">' + esc(sl.state.ort || '') + ' · ' + new Date(sl.updated).toLocaleString('de-CH', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) +
+                ' · ' + ({ ki: 'KI-Erzähler', skript: 'Handgeschrieben', impro: 'Improvisiert' }[sl.mode] || '') + '</div></div>' +
+                '<div class="row"><button class="btn btn--sm btn--primary" type="button" data-act="open">' + (sl.state.ende ? 'Ansehen' : 'Weiter') + '</button>' +
+                '<button class="btn btn--sm btn--ghost" type="button" data-act="del" aria-label="Löschen">🗑</button></div></div>';
+        }).join('');
+    }
+    $('#slots').addEventListener('click', e => {
+        const b = e.target.closest('[data-act]'); if (!b) return;
+        const id = b.closest('.slot').dataset.id, sl = store.slots.find(s => s.id === id);
+        if (!sl) return;
+        if (b.dataset.act === 'open') return openGame(sl);
+        const m = XIRU.modal('<h2>Spielstand löschen?</h2><p>„' + esc(sl.hero) + ' · ' + esc((GENRES[sl.genre] || {}).n || '') + '" wird endgültig gelöscht.</p><div class="row"><button class="btn btn--danger" type="button" id="ok">Löschen</button><button class="btn" type="button" data-close>Abbrechen</button></div>');
+        m.el.querySelector('#ok').addEventListener('click', () => {
+            store.slots = store.slots.filter(s => s.id !== id);
+            if (store.active === id) store.active = null;
+            persist(); renderSlots(); m.close();
+        });
+    });
+
+    $('#btn-start').addEventListener('click', () => {
+        const G = GENRES[genre];
+        const hero = ($('#hero').value.trim() || OFF.name(Math.random, 'person')).slice(0, 24);
+        const sl = {
+            id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), genre, hero, mode: modeFor(genre),
+            created: Date.now(), updated: Date.now(), turns: 0, log: [], sugg: [],
+            state: { ort: G.start.ort, leben: 100, gold: G.start.gold, inventar: G.start.inventar.slice(), ende: null, flags: {}, hinweise: 0, node: 'start' }
+        };
+        sl.init = clone(sl.state);
+        store.slots.unshift(sl);
+        if (store.slots.length > MAX_SLOTS) { store.slots.sort((a, b) => b.updated - a.updated); store.slots = store.slots.slice(0, MAX_SLOTS); }
+        openGame(sl, true);
+    });
+
+    function showSetup() {
+        if (ctl) ctl.abort();
+        game = null; store.active = null; persist();
+        $('#view-game').hidden = true; $('#view-setup').hidden = false; $('#btn-menu').hidden = true;
+        renderGenres(); renderSlots();
+    }
+    $('#btn-back').addEventListener('click', showSetup);
+    $('#btn-menu').addEventListener('click', showSetup);
+
+    /* ── Spiel-Ansicht ──────────────────────────────────────────────────── */
+    const story = $('#story');
+    const scrollDown = () => { story.scrollTop = story.scrollHeight; };
+    function bubble(r, html, extraCls) {
+        const div = document.createElement('div');
+        if (r === 'sys') { div.className = 'msg msg--sys'; div.innerHTML = '<div class="msg__bubble">' + html + '</div>'; }
+        else {
+            const ai = r === 'ai';
+            div.className = 'msg ' + (ai ? 'msg--ai' : 'msg--user') + (extraCls ? ' ' + extraCls : '');
+            div.innerHTML = '<div class="msg__avatar" aria-hidden="true">' + (ai ? '📜' : (GENRES[game.genre] || {}).icon || '🙂') + '</div>' +
+                '<div class="msg__body"><div class="msg__name">' + (ai ? 'Erzähler' : esc(game.hero)) + '</div><div class="msg__bubble ai-md">' + html + '</div></div>';
+        }
+        story.appendChild(div); scrollDown();
+        return div;
+    }
+    function renderLog() {
+        story.innerHTML = '';
+        game.log.forEach(l => {
+            if (l.r === 'diff') return bubble('sys', '<div class="diff">' + l.t + '</div>');
+            if (l.r === 'sys') return bubble('sys', esc(l.t));
+            bubble(l.r, l.r === 'ai' ? AI.md(l.t) : esc(l.t), l.end ? 'is-end' : '');
+        });
+        if (game.state.ende) endCard();
+        scrollDown();
+    }
+    function renderState(prev) {
+        const s = game.state, G = GENRES[game.genre] || GENRES.dungeon;
+        $('#s-ort').textContent = s.ort || '–';
+        $('#s-hp').style.setProperty('--v', s.leben + '%');
+        $('#s-hp').style.setProperty('--hpPos', (100 - s.leben) + '%');
+        $('#s-hp-n').textContent = s.leben;
+        $('#s-cur').textContent = G.cur;
+        $('#s-gold').textContent = XIRU.fmt(s.gold);
+        $('#s-turns').textContent = game.turns;
+        $('#s-inv').innerHTML = s.inventar.length ? s.inventar.map(i => '<li>' + esc(i) + '</li>').join('') : '<li class="faint">leer</li>';
+        $('#s-clues-row').hidden = game.mode === 'ki';
+        $('#s-clues').innerHTML = [0, 1, 2].map(i => '<span class="' + (i < (s.hinweise || 0) ? 'on' : '') + '"></span>').join('');
+        if (game.mode === 'skript') $('#s-clues-row').hidden = true;
+        if (prev && s.leben < prev.leben) { const w = $('#s-hp-wrap'); w.classList.remove('is-hit'); void w.offsetWidth; w.classList.add('is-hit'); }
+        $('#g-title').textContent = G.icon + ' ' + G.n;
+        $('#g-sub').textContent = game.hero + ' · ' + ({ ki: 'KI-Erzähler', skript: 'Die Gruft des Verbannten (offline)', impro: 'Improvisierter Erzähler (offline)' }[game.mode]);
+        $('#btn-undo').disabled = busy || !game.log.some(l => l.r === 'user');
+    }
+    function renderSugg() {
+        const el = $('#sugg');
+        const list = game.state.ende ? [] : (game.sugg && game.sugg.length ? game.sugg : ['Mich umsehen', 'Weitergehen', 'Inventar prüfen']);
+        el.innerHTML = list.map((t, i) => '<button class="chip" type="button" style="animation-delay:' + (i * .06) + 's">' + esc(t) + '</button>').join('');
+    }
+    $('#sugg').addEventListener('click', e => { const b = e.target.closest('.chip'); if (b && !busy) turn(b.textContent); });
+    function setBusy(on) {
+        busy = on;
+        $('#action').disabled = on || !!(game && game.state.ende);
+        $('#btn-send').hidden = on; $('#btn-stop').hidden = !on;
+        XIRU.$$('#sugg .chip').forEach(c => { c.disabled = on; });
+        $('#btn-undo').disabled = on;
+    }
+    function diffBadges(a, b) {
+        const out = [];
+        b.inventar.filter(i => !a.inventar.includes(i)).forEach(i => out.push('<span class="badge badge--success">＋ ' + esc(i) + '</span>'));
+        a.inventar.filter(i => !b.inventar.includes(i)).forEach(i => out.push('<span class="badge">− ' + esc(i) + '</span>'));
+        if (b.leben !== a.leben) out.push('<span class="badge ' + (b.leben < a.leben ? 'badge--danger' : 'badge--success') + '">' + (b.leben > a.leben ? '+' : '') + (b.leben - a.leben) + ' ❤</span>');
+        if (b.gold !== a.gold) out.push('<span class="badge badge--warning">' + (b.gold > a.gold ? '+' : '') + (b.gold - a.gold) + ' ' + esc((GENRES[game.genre] || GENRES.dungeon).cur) + '</span>');
+        if ((b.hinweise || 0) > (a.hinweise || 0)) out.push('<span class="badge badge--accent">✦ ' + esc((GENRES[game.genre] || GENRES.dungeon).im.clue) + '</span>');
+        return out.join('');
+    }
+    function endCard() {
+        const win = game.state.ende === 'sieg';
+        const div = document.createElement('div');
+        div.className = 'end-card';
+        div.innerHTML = '<div class="big">' + (win ? '🏆' : '💀') + '</div><h3>' + (win ? 'Abenteuer bestanden!' : 'Das Abenteuer ist vorbei') + '</h3>' +
+            '<p class="muted">' + game.turns + ' Züge · ' + XIRU.fmt(game.state.gold) + ' ' + esc((GENRES[game.genre] || GENRES.dungeon).cur) + (win ? '' : ' · Nimm den letzten Zug zurück oder versuch es neu.') + '</p>' +
+            '<div class="row" style="justify-content:center">' + (win ? '' : '<button class="btn" type="button" data-end="undo">↶ Zug zurücknehmen</button>') +
+            '<button class="btn btn--primary" type="button" data-end="new">Neues Abenteuer</button></div>';
+        div.addEventListener('click', e => {
+            const b = e.target.closest('[data-end]'); if (!b) return;
+            if (b.dataset.end === 'undo') undo(); else showSetup();
+        });
+        story.appendChild(div); scrollDown();
+    }
+
+    function openGame(sl, fresh) {
+        game = sl; store.active = sl.id;
+        // Unterbrochener Zug (Seite neu geladen)? Aktion zurück ins Eingabefeld legen.
+        let pending = '';
+        while (sl.log.length && sl.log[sl.log.length - 1].r !== 'ai' && sl.log[sl.log.length - 1].r !== 'diff') { const l = sl.log.pop(); if (l.r === 'user') pending = l.t; }
+        if (!sl.log.some(l => l.r === 'ai')) fresh = true;
+        persist();
+        $('#action').value = pending;
+        $('#view-setup').hidden = true; $('#view-game').hidden = false; $('#btn-menu').hidden = false;
+        renderLog(); renderState(); renderSugg(); setBusy(false);
+        window.scrollTo({ top: $('#view-game').offsetTop - 90, behavior: 'smooth' });
+        if (fresh) turn('', true);
+        else setTimeout(() => $('#action').focus({ preventScroll: true }), 300);
+    }
+
+    async function turn(action, isStart) {
+        action = String(action || '').trim();
+        if (busy || !game || game.state.ende || (!action && !isStart)) return;
+        const g = game;
+        if (!isStart) {
+            g.log.push({ r: 'user', t: action });
+            bubble('user', esc(action));
+            if (/\bxyzzy\b/i.test(action)) {
+                XIRU.egg('k-abenteuer-xyzzy');
+                g.log.push({ r: 'sys', t: 'Eine hohle Stimme sagt: „Narr."' });
+                bubble('sys', 'Eine hohle Stimme sagt: „Narr."');
+            }
+        }
+        setBusy(true);
+        $('#sugg').innerHTML = '';
+        const node = bubble('ai', '');
+        const s = AI.ui.stream(node.querySelector('.msg__bubble'), { filter: t => AI.visibleText(t), onRender: scrollDown });
+        ctl = new AbortController();
+        let raw;
+        try {
+            const opts = { onToken: c => s.push(c), signal: ctl.signal };
+            if (g.mode === 'skript') raw = await AI.chat([], Object.assign(opts, { provider: 'offline', offline: () => scripted(action, isStart) }));
+            else if (g.mode === 'impro') raw = await AI.chat([], Object.assign(opts, { provider: 'offline', offline: () => improvise(action, isStart) }));
+            else raw = await AI.chat(buildMessages(action, isStart), Object.assign(opts, { system: systemPrompt(), temperature: .85, maxTokens: 650, offline: () => improvise(action, isStart) }));
+        } catch (e) {
+            if (e.code === 'abort') {
+                node.remove();
+                if (!isStart) { g.log.pop(); story.lastElementChild && story.lastElementChild.classList.contains('msg--user') && story.lastElementChild.remove(); }
+                setBusy(false); renderSugg(); renderState();
+                if (!isStart) $('#action').value = action;
+                return;
+            }
+            raw = 'Der Erzähler verliert kurz den Faden: ' + e.message;
+        }
+        if (game !== g) return;   // inzwischen gewechselt
+        const before = clone(g.state);
+        const parsed = AI.extractJSON(raw);
+        const ok = applyData(parsed.data);
+        const text = (parsed.text || AI.visibleText(raw) || '…').trim();
+        await s.end(text);
+        if (!ok && g.mode === 'ki') g.sugg = [];
+        g.turns += isStart ? 0 : 1;
+        g.log.push({ r: 'ai', t: text, s: clone(g.state), sugg: (g.sugg || []).slice(), end: !!g.state.ende });
+        const d = diffBadges(before, g.state);
+        if (d) { g.log.push({ r: 'diff', t: d }); bubble('sys', '<div class="diff">' + d + '</div>'); }
+        if (g.state.ende) {
+            node.classList.add('is-end');
+            if (g.state.ende === 'sieg') { XIRU.confetti(); XIRU.egg('k-abenteuer-sieg'); XIRU.once('ki-abenteuer-sieg-' + g.genre, 25, 'Abenteuer bestanden: ' + GENRES[g.genre].n); }
+            else XIRU.beep(196, .3, 'sawtooth');
+            endCard();
+        }
+        persist();
+        setBusy(false); renderState(before); renderSugg();
+        if (!g.state.ende) $('#action').focus({ preventScroll: true });
+    }
+    $('#composer').addEventListener('submit', e => {
+        e.preventDefault();
+        const v = $('#action').value.trim();
+        if (!v) return;
+        $('#action').value = '';
+        turn(v);
+    });
+    $('#btn-stop').addEventListener('click', () => { if (ctl) ctl.abort(); });
+
+    function undo() {
+        if (busy || !game) return;
+        const idx = game.log.map(l => l.r).lastIndexOf('user');
+        if (idx < 0) return;
+        game.log = game.log.slice(0, idx);
+        const lastAi = game.log.slice().reverse().find(l => l.r === 'ai' && l.s);
+        game.state = clone(lastAi ? lastAi.s : game.init);
+        game.sugg = lastAi ? (lastAi.sugg || []).slice() : [];
+        game.turns = Math.max(0, game.turns - 1);
+        persist(); renderLog(); renderState(); renderSugg(); setBusy(false);
+        XIRU.toast('Zug zurückgenommen', 'Die Zeit dreht sich ein Stück zurück.', { icon: '↶', time: 2200 });
+    }
+    $('#btn-undo').addEventListener('click', undo);
+
+    /* ── Start ──────────────────────────────────────────────────────────── */
+    rollHero();
+    renderGenres(); renderSlots();
+    const act = store.active && store.slots.find(s => s.id === store.active);
+    if (act) openGame(act);
+});
+</script>
+</body>
+</html>

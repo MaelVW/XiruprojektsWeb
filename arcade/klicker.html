@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diskettenfabrik · Xiruprojekts</title>
+    <meta name="description" content="Diskettenfabrik – ein Idle-Spiel: Klick dich von der ersten Diskette über CDs, Festplatten und SSDs bis zum Realitätskristall.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="css/klicker.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/arcade.js"></script>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">▶ Spielhalle · Idle</span>
+        <h1>Diskettenfabrik</h1>
+        <p class="lead">Klick, und eine Diskette ist gebrannt. Stell Praktikanten ein, bau Brennstrassen und Server – und führ deine Fabrik von 1,44 MB bis in eine Zukunft, die niemand so richtig versteht.</p>
+    </header>
+
+    <div class="game kl">
+        <div>
+            <div class="kl-top">
+                <section class="card kl-stage" id="kl-stage" aria-label="Fabrik">
+                    <p class="kl-news" id="kl-news" aria-live="off"></p>
+                    <div class="kl-count" title="">
+                        <span id="kl-num">0</span>
+                        <small>Disketten</small>
+                    </div>
+                    <div class="kl-rate"><span id="kl-rate">0</span> pro Sekunde</div>
+                    <button class="kl-disk" id="kl-disk" type="button" aria-label="Diskette brennen"></button>
+                    <div class="kl-click"><span id="kl-cp">+1</span> pro Klick · <span id="kl-era">Diskette</span></div>
+                    <div class="kl-buffs" id="kl-buffs"></div>
+                    <canvas class="kl-fx" id="kl-fx" aria-hidden="true"></canvas>
+                    <button class="kl-gold" id="kl-gold" type="button" hidden aria-label="Goldene Diskette einsammeln"></button>
+                    <div class="kl-format" id="kl-format" hidden><div><strong>A:\&gt; FORMAT A:</strong><span>Formatiere …</span><div class="bar"><div class="bar__fill"></div></div></div></div>
+                </section>
+                <section class="card kl-shop">
+                    <div class="kl-shop__head">
+                        <h3 class="mb-0">Gebäude</h3>
+                        <div class="row" id="kl-bulk" role="group" aria-label="Menge">
+                            <button class="chip" type="button" data-bulk="1">×1</button>
+                            <button class="chip" type="button" data-bulk="10">×10</button>
+                            <button class="chip" type="button" data-bulk="100">×100</button>
+                        </div>
+                    </div>
+                    <div class="kl-buildings" id="kl-buildings"></div>
+                </section>
+            </div>
+            <section class="card kl-upgrades">
+                <div class="kl-shop__head"><h3 class="mb-0">Upgrades</h3><span class="small muted" id="kl-up-count"></span></div>
+                <div class="kl-up-grid" id="kl-upgrades"></div>
+            </section>
+        </div>
+        <aside class="game__side">
+            <div class="card">
+                <h3>Rekord</h3>
+                <p class="stat__value" id="best">–</p>
+                <p class="small muted mb-0">Disketten insgesamt produziert – über alle Formatierungen hinweg.</p>
+            </div>
+            <div class="card card--accent kl-prestige">
+                <h3>Formatieren</h3>
+                <p class="small muted">Lösch die Fabrik und starte neu – mit <strong>Magnetpunkten</strong>. Jeder Punkt gibt dauerhaft +5 % Produktion.</p>
+                <div class="kl-prestige__row"><span>Magnetpunkte</span><strong id="kl-mp">0</strong></div>
+                <div class="kl-prestige__row"><span>Bonus</span><strong id="kl-mp-bonus">+0 %</strong></div>
+                <div class="kl-prestige__row"><span>Beim Formatieren</span><strong id="kl-mp-new">+0</strong></div>
+                <div class="bar mt-1" title="Fortschritt zum nächsten Magnetpunkt"><div class="bar__fill" id="kl-mp-bar"></div></div>
+                <p class="small faint mt-1" id="kl-mp-next"></p>
+                <button class="btn btn--danger btn--block mt-2" id="kl-format-btn" type="button" disabled>Fabrik formatieren</button>
+            </div>
+            <div class="card">
+                <h3>Erfolge <span class="badge badge--accent" id="kl-ach-count">0</span></h3>
+                <p class="small muted">Jeder Erfolg gibt +1 % Produktion.</p>
+                <div class="kl-ach-grid" id="kl-ach"></div>
+                <p class="small kl-ach-info" id="kl-ach-info">Tipp: Tippe ein Abzeichen an, um zu sehen, wofür es ist.</p>
+            </div>
+            <div class="card">
+                <h3>Statistik</h3>
+                <dl class="kl-stats" id="kl-stats"></dl>
+            </div>
+            <div class="card">
+                <h3>Steuerung</h3>
+                <ul class="keys-help">
+                    <li>Klick oder Tipp auf das Speichermedium – brennen</li>
+                    <li><kbd>Leertaste</kbd> – ebenfalls brennen</li>
+                    <li>Goldene Disketten tauchen ab und zu auf – schnell anklicken!</li>
+                    <li>Im Hintergrund arbeitet die Fabrik mit halber Kraft weiter (höchstens 8 Stunden).</li>
+                </ul>
+            </div>
+        </aside>
+    </div>
+</main>
+<script src="js/klicker.js"></script>
+</body>
+</html>

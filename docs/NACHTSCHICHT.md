@@ -7,6 +7,7 @@ Du arbeitest selbstständig (Nachtschicht, Mael schläft) an der statischen Webs
 1. **Sperre prüfen:** Gibt es die Datei `F:\Code stuff\XiruprojektsWeb\docs\.nachtschicht-lauf` und ist sie jünger als 100 Minuten (Änderungszeit), läuft schon eine andere Schicht → sofort beenden, nichts ändern. Sonst die Datei anlegen bzw. überschreiben mit der aktuellen Uhrzeit.
 2. Lies vollständig: `docs/TASKS.md` (Aufgabenliste + Spielregeln), `docs/NEUE-SEITE.md` (Konventionen, XIRU-API), danach nur die Dateien, die du für die nächste Aufgabe brauchst.
 3. Nimm die **oberste offene Aufgabe** (`- [ ]`) aus `docs/TASKS.md` und erledige sie vollständig und poliert. Danach die nächste. Höchstens etwa 90 Minuten bzw. 3–4 Aufgaben pro Schicht, dann sauber aufhören.
+   Abschnitt H (Werft/Weltkarte) überspringen – dort wartet alles auf Maels Input. Abschnitt J kommt in der letzten Schicht (06:30) zuerst dran.
 4. Nach jeder Aufgabe: testen (siehe unten), `python tools/check_site.py` ausführen, in `docs/TASKS.md` abhaken (`- [x]`) und unter „Notizen der letzten Sitzung" eine Zeile mit Datum/Uhrzeit und dem Ergebnis ergänzen. So kann die nächste Schicht nahtlos weitermachen, auch wenn du mittendrin abbrichst.
 5. Zum Schluss: kurze Zusammenfassung der Schicht in den Notizen von `docs/TASKS.md` und die Sperrdatei `docs/.nachtschicht-lauf` löschen.
 
@@ -19,7 +20,9 @@ Diese Sitzung wird unterwegs sehr wahrscheinlich komprimiert – danach erinners
   (Notizen + „IN ARBEIT") erneut lesen und genau dort weitermachen. Nichts doppelt bauen – vorher prüfen, ob die Datei schon existiert.
 - Ist eine Aufgabe fertig: abhaken, die „IN ARBEIT"-Zeile in eine normale Notiz umwandeln.
 - `konto/skilltree.html` (Werft) in dieser Nacht nur anfassen, wenn dort ein Fehler die Seite unbenutzbar macht.
-- **Horror-Teil gehört Mael:** `Why.html`, `why/*`, `assets/css/liminal.css`, `assets/js/liminal.js` nie bearbeiten – er arbeitet ab dem 7.10. selbst daran, teils gleichzeitig.
+- **Horror-Teil gehört Mael:** `Why.html`, `why/*` (auch `liminal-art.*`, `band.html`, `gaestebuch.html`), `assets/css/liminal.css`,
+  `assets/js/liminal.js`, `assets/js/liminal-ton.js` nie bearbeiten. Die versteckten Eingänge `XIRU.riss.bind(…)` in `weltkarte.html`, `404.html`
+  und `hardware/netzteil-rechner.html` sowie `X.riss` in `core.js` drin lassen. Der Teil ist bewusst nicht im Register und gibt keine Kristalle.
 
 ## Regeln (strikt)
 - **Keine Subagenten** (zu teuer). **Niemals committen**, keine Release-Texte, nichts pushen.

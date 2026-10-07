@@ -19,7 +19,9 @@ Arbeitsliste für alle weiteren Sitzungen (auch automatische Nachtschichten).
 8. Seiten auf Inseln sind erst nach einer Werft-Expedition offen. Zum Testen im eigenen Tab per Konsole:
    `XIRU.mech.state().islands = {werkzeuge:1,studio:1,arcade:1,hardware:1,mixer:1,ki:1}; XIRU.persist();`
    Skill-gesperrte Seiten: Testkonto wie in `docs/NEUE-SEITE.md` simulieren. Testdaten danach wieder entfernen.
-9. **Horror-Teil gehört Mael** (`Why.html`, `why/*`, `assets/css/liminal.css`, `assets/js/liminal.js`): nicht bearbeiten.
+9. **Horror-Teil gehört Mael** (`Why.html`, `why/*`, `assets/css/liminal.css`, `assets/js/liminal.js`, `assets/js/liminal-ton.js`): nicht bearbeiten.
+   Ebenso unverändert lassen: die drei versteckten Eingänge (`XIRU.riss.bind(…)` in `weltkarte.html`, `404.html`,
+   `hardware/netzteil-rechner.html`), `X.riss` und das blutige Tab-Symbol für `data-bare` in `core.js`. Keine Links zu `Why.html`/`why/`.
 10. Lieber eine Seite richtig fertig als drei halb. Wenn das Limit naht: aktuellen Stand hier notieren.
 
 ---
@@ -36,6 +38,8 @@ Arbeitsliste für alle weiteren Sitzungen (auch automatische Nachtschichten).
       Je Seite: lädt ohne Konsolenfehler, Spiel startet/endet, `XIRU.score` wird gemeldet, Texte sprechen von Kristallen.
 - [x] Testreste suchen und löschen (z. B. temporäre Kopien wie `*-test.html`, Debug-Hooks `window.__debug…`).
 - [x] `grep -ri "diskette" --include=*.html --include=*.js` durchgehen: wo „Diskette" ein **Sammelobjekt** meint → Kristall.
+- [ ] „Skilltree" in **sichtbaren Texten** durch „Werft" bzw. „Module" ersetzen (z. B. `arcade/index.html`: „…den lüftest du im Skilltree").
+      Dateinamen (`konto/skilltree.html`) und Code-Bezeichner bleiben. Kurz, dann weiter.
 
 ## A2 · Eigene Designs pro Bereich (Wunsch von Mael, direkt nach A)
 
@@ -43,14 +47,15 @@ Jeder Bereich bekommt ein eigenes Design über eine Body-Klasse, die die Farb-Va
 (Vorbild: `body.theme-werft` in `konto/skilltree.html`). Gemeinsame Bereichs-Designs gehören in
 `assets/css/themes/<bereich>.css` und werden auf allen Seiten des Bereichs eingebunden. KI-Labor und Zentrum („Entdecken") bleiben wie sie sind.
 
-- [ ] **Spielhalle = 80er-Arcade-Halle** (`theme-arcade`, alle `arcade/*.html`): fast schwarzer Raum, Arcade-Teppichmuster (CSS),
-      Neonschilder mit Flackern (Text-Shadow-Glow in Pink/Cyan/Gelb), **Logo und „Spielhalle"-Schriftzug wie aus Neonröhren**
-      (auf Arcade-Seiten `.brand` mit Neon-Glow), Spiele stehen in Automaten-Gehäusen (Stage mit Gehäuserahmen + Marquee oben).
-      Lesbarkeit und Kontraste prüfen. **→ umgesetzt (Nachtschicht 2), nur Sichtprüfung + Feinschliff offen, siehe Notizen.**
+- [ ] **Spielhalle = 80er-Arcade-Halle – Sichtprüfung & Feinschliff** (Design `assets/css/themes/arcade.css` ist seit Nachtschicht 2 eingebaut):
+      jedes `arcade/*.html` kurz öffnen (eigener Tab, Inseln freischalten), Screenshot/Prüfung: Gehäuse + Marquee sitzen, Spielfeld lesbar,
+      Spiele mit eigenen Stage-Stilen (`dungeon`, `2048`, `pc-bauer`, `hardware-quiz`, `tower-defense`) nicht zerschossen, 375 px ohne Querscrollen,
+      Kontraste ok. Gefundenes direkt beheben, dann abhaken.
 - [ ] **Hardware = im Inneren eines Cyber-Anime-Computers** (`theme-hardware`, alle `hardware/**`; die Datenblätter erzeugt
       `tools/build_hardware.py` → Vorlage `HEAD` dort anpassen und neu generieren): dunkles Mainboard mit leuchtenden Leiterbahnen
       (Cyan/Magenta), Hologramm-Fenster (Glas, Scanlines, Eck-Klammern), fliessende Datenströme, Reiter/Tabs wie Bauteile auf der Platine
       (Chips mit Pins). Animationen dezent, `prefers-reduced-motion` beachten.
+      Achtung: `hardware/netzteil-rechner.html` enthält `XIRU.riss.bind(3, …)` – diese Zeile drin lassen (versteckter Eingang).
 - [ ] **Studio = Aufnahme- bzw. Mix-Studio** (`theme-studio`, alle `studio/*.html`): Schaumstoff-Akustikwände (CSS-Muster), warmes Licht,
       an der Seite hängende Kopfhörer nur als Schatten/Silhouetten (SVG, unscharf), Mischpult-Optik mit Schiebereglern.
       **Downloads: Man zieht den Datenträger (Diskette/CD) in ein Laufwerk** (Drag & Drop mit Laufwerk-Animation und Geräusch),
@@ -131,6 +136,8 @@ Jeder Bereich bekommt ein eigenes Design über eine Body-Klasse, die die Farb-Va
 
 ## J · Sicherheit (in der **letzten Nachtschicht** zuerst!)
 
+Der Liminal-Teil (`Why.html`, `why/*`, `liminal*.js`) wird mitgeprüft, aber **nicht verändert** – Funde dort nur in den Notizen für Mael aufschreiben.
+
 - [ ] Gesamte Website auf Code-Injection prüfen und beheben: jede Stelle mit `innerHTML`/`insertAdjacentHTML`, in die
       Nutzereingaben, URL-Parameter (`location.search`, `location.hash`), importierte JSON-Dateien (Profil-Import),
       localStorage-Inhalte (Gästebuch, Notizen, Namen, Spielstände), KI-Antworten (`ai.js`, Textabenteuer, Taverne) oder
@@ -149,6 +156,9 @@ Jeder Bereich bekommt ein eigenes Design über eine Body-Klasse, die die Farb-Va
 ---
 
 ## Notizen der letzten Sitzung
+
+- 2026-10-08 (00:05, mit Mael): Aufgaben für Nachtschicht 3 aktualisiert. Reihenfolge: „Skilltree“-Texte → Spielhalle-Sichtprüfung →
+  Hardware-Design → Studio-Design → Werft-Minispiele → B–G (fehlende Seiten). H überspringen. 06:30-Schicht: zuerst J (Sicherheit).
 
 - 2026-10-07 (Abend): **Liminal-Lore** (Mael erlaubt, mehr zu erfinden; Hommage an Dead by Daylight – keine Original-Bilder/-Töne):
   Die Legion (Frank Morrison, Julie Kostenko, Joey Cadogan, Susie Lavoie) sind die **Killer**, man versteckt sich vor ihnen. Vor dem Nebel:

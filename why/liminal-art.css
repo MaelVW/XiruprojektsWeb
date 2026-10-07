@@ -1,0 +1,37 @@
+/* ==========================================================================
+   Liminal – Illustrationen (gehört zu why/liminal-art.js)
+   Generator-Anzeige, eingeritzte Strichlisten, Risse, Handabdruck mit Messer
+   ========================================================================== */
+
+/* ── Generator-Anzeige ───────────────────────────────────────────────── */
+.lm-meter { width: min(380px, 84vw); margin: 1.2rem auto .5rem; filter: drop-shadow(0 12px 18px rgba(0, 0, 0, .38)); }
+.lm-meter__svg { display: block; width: 100%; height: auto; }
+.lm-meter__num { font: 700 8px Georgia, "Times New Roman", serif; fill: #2b261b; opacity: .8; }
+.lm-meter__label { font: 600 7px "Segoe UI", system-ui, sans-serif; letter-spacing: 2.5px; fill: #2b261b; opacity: .65; }
+.lm-meter__sub { font: italic 5.5px Georgia, serif; fill: #2b261b; opacity: .45; }
+.lm-meter__zone { opacity: 0; transition: opacity .3s; }
+.lm-meter__zone.is-on { opacity: .9; }
+.lm-meter__zone.is-hit { animation: lmZoneHit .5s ease-out; }
+.lm-meter.is-miss { animation: lmShake .38s ease-out; }
+@keyframes lmZoneHit { 0% { opacity: 1; stroke-width: 19px; } 100% { opacity: .9; stroke-width: 15px; } }
+@keyframes lmShake {
+    0%, 100% { transform: translate(0, 0); }
+    20% { transform: translate(-5px, 1px) rotate(-.6deg); }
+    45% { transform: translate(4px, -1px) rotate(.5deg); }
+    70% { transform: translate(-2px, 0); }
+}
+
+/* ── Strichlisten ────────────────────────────────────────────────────── */
+.lm-tallies { display: flex; justify-content: center; gap: 1.5rem; min-height: 66px; margin: .9rem auto; }
+.lm-tally { width: 60px; height: 65px; overflow: visible; }
+.lm-stroke { opacity: .07; }              /* noch nicht gefunden: nur eine Ahnung, dass hier schon jemand gezählt hat */
+.lm-stroke.is-on { opacity: 1; }
+.lm-stroke.is-new.lm-stroke--v { animation: lmScratchV .3s ease-out; }
+.lm-stroke.is-new.lm-stroke--d { animation: lmScratchD .38s ease-out; }
+@keyframes lmScratchV { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0 0 0 0); } }
+@keyframes lmScratchD { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+
+@media (prefers-reduced-motion: reduce) {
+    .lm-meter.is-miss, .lm-meter__zone.is-hit, .lm-stroke.is-new { animation: none !important; }
+}
+html.no-anim .lm-meter.is-miss, html.no-anim .lm-meter__zone.is-hit, html.no-anim .lm-stroke.is-new { animation: none !important; }

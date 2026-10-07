@@ -3,7 +3,8 @@
    Fester Look, unabhängig vom gewählten Design: Neonröhrenlicht, vergilbte Tapete, Stille.
    ========================================================================== */
 :root { color-scheme: light; }
-html, body { margin: 0; height: 100%; }
+html { height: 100%; }
+body { margin: 0; }
 body.liminal {
     min-height: 100vh;
     display: grid; place-items: center; text-align: center;
@@ -13,7 +14,7 @@ body.liminal {
         #cfc69c;
     color: #2a2820;
     font: 400 1rem/1.6 "Segoe UI", system-ui, sans-serif;
-    overflow: hidden;
+    overflow-x: hidden; overflow-y: auto;   /* lange Räume dürfen scrollen */
     cursor: default;
 }
 body.liminal::before {      /* Vignette: der Raum endet irgendwo im Dunkeln */
@@ -37,6 +38,8 @@ body.liminal::after {       /* Neonröhren flackern selten */
 .lm-ghost { position: fixed; z-index: 4; font-size: .8rem; letter-spacing: .4em; color: #2a2820; opacity: 0; pointer-events: none; transition: opacity .25s; }
 .lm-back { position: fixed; left: 1.2rem; bottom: 1rem; z-index: 5; font-size: .72rem; letter-spacing: .3em; color: #2a2820; opacity: .25; text-decoration: none; }
 .lm-back:hover { opacity: .6; }
+.lm-forward { position: fixed; right: 1.2rem; bottom: 1rem; z-index: 5; font-size: .72rem; letter-spacing: .3em; color: #2a2820; opacity: .25; text-decoration: none; }
+.lm-forward:hover, .lm-forward:focus-visible { opacity: .6; outline: none; }
 
 /* Why.html */
 .liminal h1 { font-weight: 300; letter-spacing: .35em; font-size: clamp(1.1rem, 3.5vw, 1.8rem); margin: 0 0 3rem; }
@@ -52,4 +55,35 @@ body.liminal::after {       /* Neonröhren flackern selten */
     .lm-answers { flex-direction: column; align-items: center; gap: 1rem; }
     .lm-experienced { margin-top: 2rem; }
 }
+/* Fundstücke: Zettel, Hüllen, Fotos – liegen am Rand des Raums (als Geschwister von <main>, nicht darin) */
+.lm-note {
+    position: fixed; left: clamp(.8rem, 3vw, 4rem); top: 50%; z-index: 4; max-width: 14rem; padding: 1rem 1.1rem .9rem; text-align: left;
+    background: linear-gradient(170deg, #ede6cd, #d8cdab); color: #2b2419; font: 400 .84rem/1.5 "Segoe Print", "Ink Free", "Bradley Hand", cursive;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, .28), inset 0 0 30px rgba(120, 96, 40, .18); transform: translateY(-50%) rotate(-3deg); opacity: .93;
+}
+.lm-note::before { content: ""; position: absolute; top: -9px; left: 36%; width: 64px; height: 18px; background: rgba(232, 228, 205, .6); transform: rotate(4deg); box-shadow: 0 1px 2px rgba(0, 0, 0, .15); }
+.lm-note p { margin: 0 0 .45rem; }
+.lm-note p:last-child { margin-bottom: 0; }
+.lm-note small { display: block; font-size: .7rem; opacity: .6; }
+.lm-note a { color: inherit; }
+.lm-note--typed { font: 400 .76rem/1.55 "Courier New", Consolas, monospace; }
+.lm-note--photo { background: linear-gradient(170deg, #f3efe4, #e0d9c6); transform: translateY(-50%) rotate(2.5deg); }
+.lm-note--right { left: auto; right: clamp(.8rem, 3vw, 4rem); }
+@media (max-width: 1180px) {
+    body.liminal { height: auto; overflow-y: auto; }
+    .lm-note, .lm-note--photo { position: static; transform: rotate(-1.5deg); margin: 0 auto 4.5rem; }
+}
+.lm-stamp { float: right; margin: -.3rem -.4rem .3rem .6rem; padding: .05rem .4rem; border: 1.5px solid currentColor; color: #8a2116; font: 700 .58rem/1.4 "Courier New", monospace; letter-spacing: .12em; text-transform: uppercase; transform: rotate(6deg); opacity: .75; }
+.lm-stamp--im { color: #3b3f46; }
+.lm-spider { display: block; width: 84px; height: 63px; margin: .3rem auto 0; color: #2b2419; opacity: .8; }
+/* Beine aus dem Nebel (why/liminal-art.js) */
+.lm-legs { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; }
+/* Der ganze Spruch, das eigene Stück hervorgehoben */
+.lm-motto { margin-top: 3.2rem; font-size: .76rem; letter-spacing: .24em; text-transform: uppercase; opacity: .62; }
+.lm-motto span { opacity: .4; }
+.lm-motto b { font-weight: 500; opacity: 1; }
+/* Etwas folgt dir von Raum zu Raum (liminal.js) */
+.lm-follow { position: fixed; left: 50%; bottom: 2.7rem; z-index: 5; margin: 0; transform: translateX(-50%); font-size: .82rem; letter-spacing: .2em; white-space: nowrap; opacity: 0; transition: opacity 2.5s; pointer-events: none; }
+.lm-follow.is-on { opacity: .7; }
+@media (max-width: 560px) { .lm-follow { white-space: normal; width: 84vw; text-align: center; } }
 @media (prefers-reduced-motion: reduce) { .lm-text { transition: none; } body.liminal::after { animation: none; } }

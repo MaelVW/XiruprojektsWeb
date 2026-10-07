@@ -346,6 +346,7 @@ XIRU.ready(function () {
 
     /* ── Laufwerk, Ton, Sprechblase ───────────────────────────────────── */
     const disk = X.$('#disk'), led = X.$('#led'), bubble = X.$('#bubble');
+    X.riss.bind(2, X.$('.drive__slot'), 4);
     const sound = () => X.setting('sound') !== false;
     function seek(times) {
         if (!sound()) return;

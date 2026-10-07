@@ -150,6 +150,27 @@ Jeder Bereich bekommt ein eigenes Design über eine Body-Klasse, die die Farb-Va
 
 ## Notizen der letzten Sitzung
 
+- 2026-10-07 (Abend): **Liminal-Lore** (Mael erlaubt, mehr zu erfinden; Hommage an Dead by Daylight – keine Original-Bilder/-Töne):
+  Die Legion (Frank Morrison, Julie Kostenko, Joey Cadogan, Susie Lavoie) sind die **Killer**, man versteckt sich vor ihnen. Vor dem Nebel:
+  Ormond, Lodge am Mount Ormond, Einbruch im Laden, der Hauswart, Vergraben hinter der Lodge, Nebel im Wald (Zettel mit Stempel „vor dem Nebel“,
+  Seite B = Mitschnitt der Tatnacht, Gästebuch der Lodge). Im Nebel: Welt des Wesens mit Spinnenbeinen, 5 Generatoren, Tore, Haken; die vier
+  jagen, weil es sie sonst holt (Stempel „im Nebel“, Franks Zettel). „To be present.“ = das Wesen. Spinnenbeine am Rand (`data-lm-beine`),
+  Kritzeleien (`data-lm-spinne`), Verfolgung `.lm-follow`. Seite B ohne Stimmen, nur Radiorauschen. `erlebt.html` = man ist „entkommen“ und wieder da.
+
+- 2026-10-07 (Abend, mit Mael): Liminal-Teil hat jetzt einen Weiter-Knopf mit Zufall je Raum (`data-lm-weiter`), ein blutiges Tab-Symbol
+  (core.js, nur `data-bare`) und Geräusche je Raum (`assets/js/liminal-ton.js`, `data-lm-ton`), live erzeugt, ohne Aufnahmen.
+
+- 2026-10-07 (später, mit Mael): Liminal-Illustrationen in `why/liminal-art.js` + `why/liminal-art.css` (`LM_ART.cracks/mark/meter/tallies`):
+  wachsende Putzrisse, Blut-Handabdruck mit Messer und verwischten Strichen (Abdrift-Seiten), alte Generator-Anzeige + eingeritzte Striche (Level 5).
+  Level 5 scrollt jetzt und ist per Antippen der Anzeige auch auf dem Handy spielbar.
+
+- 2026-10-07 (Nachmittag, mit Mael): **Liminal-Teil = eigene Welt.** `Why.html` + `why/*` aus dem Register genommen, Kristall `h-why-alle` entfernt,
+  `data-bare`-Seiten zählen keine Besuche/XP/Kristalle mehr (core.js `boot`). Eingänge nur über drei unsichtbare Risse (`XIRU.riss` in core.js):
+  1 Weltkarte unbekanntes Land unten rechts 5× · 2 `404.html` Laufwerksschlitz 4× · 3 `hardware/netzteil-rechner.html` Anzeige 4×.
+  Jeder Rauswurf (`why/abdrift2.html` → `XIRU.riss.lock()`) schliesst den benutzten Riss, der nächste öffnet sich; nach 3 ist Schluss.
+  `check_site.py` ignoriert `Why.html`/`why/`. Der Code `A7L-3N8` (Level 5) ist für einen späteren Floppy-Hub-Kanal mit Rätsel-Bot reserviert – nicht anderweitig verwenden.
+  **Nachtschicht: Liminal-Dateien, die drei Riss-Stellen und `X.riss` nicht anfassen.**
+
 - 2026-10-07 (Nachtschicht 2, abgebrochen – Aufgaben gehen zurück in die normalen Sitzungen):
   **A2 Spielhalle = 80er-Arcade-Halle – umgesetzt, Sichtprüfung offen.**
   - Neu: `assets/css/themes/arcade.css` (`body.theme-arcade`): fast schwarzer Raum mit Arcade-Teppich (SVG-Muster), Neon-Logo +

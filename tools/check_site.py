@@ -49,7 +49,8 @@ for base, dirs, names in os.walk(ROOT):
                 used.setdefault(m, set()).add(rel)
 
 missing_files = [p for p in pages if not os.path.exists(os.path.join(ROOT, p))]
-unregistered_pages = sorted(f for f in files if f not in pages and not f.startswith('assets/'))
+# Why.html + why/ = Liminal-Teil (Maels Bereich): bewusst nicht im Register, keine Kristalle
+unregistered_pages = sorted(f for f in files if f not in pages and not f.startswith(('assets/', 'why/')) and f != 'Why.html')
 unregistered_eggs = {k: v for k, v in used.items() if k not in egg_ids and not k.startswith(('id', 'g-<'))}
 never_used = sorted(e for e in egg_ids - set(used) - auto_eggs)
 

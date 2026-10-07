@@ -9,13 +9,10 @@
 (function () {
     'use strict';
     const X = window.XIRU;
-    const pagePath = location.pathname.toLowerCase();
-    if (X.load('why-abdrift-locked', false) === true) {
-        if (pagePath.includes('/why/') || /\/why\.html$/.test(pagePath)) {
-            location.replace(/\/why\//.test(pagePath) ? '../index.html' : 'index.html');
-            return;
-        }
-    }
+    // Nur wer durch einen offenen Riss gekommen ist, darf hier sein (siehe X.riss in core.js)
+    if (!X.riss.open()) { location.replace(X.url('index.html')); return; }
+    // Geräusche (Brummen, Klopfen, Schritte …) – Schichten je Raum über <body data-lm-ton="…">
+    { const t = document.createElement('script'); t.src = X.url('assets/js/liminal-ton.js'); document.head.appendChild(t); }
     const visits = (X.load('liminal-besuche', 0) || 0) + 1;
     X.save('liminal-besuche', visits);
     const rnd = (a, b) => a + Math.random() * (b - a);
@@ -93,7 +90,47 @@
         setTimeout(ghost, rnd(9000, 20000));
         idle();
         if (/\/why\.html$/i.test(location.pathname)) X.save('why-back-clicks', 0);
+        // Die vier jagen dich: zählt die Räume seit Why.html, mit jedem Raum kommen sie näher
+        const path = location.pathname.toLowerCase();
+        if (/\/why\.html$/.test(path)) X.save('why-folgt', 0);
+        else if (!document.body.classList.contains('lm-drift') && !/(weiter|erlebt)\.html$/.test(path)) {
+            const rooms = (X.load('why-folgt', 0) || 0) + 1;
+            X.save('why-folgt', rooms);
+            const FOLLOW = ['Hinter dir ist eine Tür ins Schloss gefallen.', 'Irgendwo lacht jemand. Dann noch jemand.',
+                'Sie sind zu viert. Sie rennen nie gleichzeitig.', 'Ein Messer schleift an der Wand entlang.', 'Sie haben deine Spur.',
+                'Einer von ihnen ist zwei Räume hinter dir.', 'Einer ist im Raum nebenan.'];
+            const f = document.createElement('p');
+            f.className = 'lm-follow';
+            f.textContent = rooms <= FOLLOW.length ? FOLLOW[rooms - 1] : X.pick(['Versteck dich.', 'Nicht atmen.', 'Eine Maske grinst in der Tür.', 'Über dir bewegt sich etwas mit zu vielen Beinen.']);
+            document.body.appendChild(f);
+            setTimeout(() => f.classList.add('is-on'), 2500);
+        }
+        // Spinnenbeine (<body data-lm-beine="2">) und gekritzelte Spinnen (<span data-lm-spinne="12">) aus why/liminal-art.js
+        if (document.body.hasAttribute('data-lm-beine') || document.querySelector('[data-lm-spinne]')) {
+            const art = () => {
+                if (document.body.hasAttribute('data-lm-beine')) LM_ART.legs(+document.body.getAttribute('data-lm-beine') || 1);
+                X.$$('[data-lm-spinne]').forEach(el => LM_ART.spider(el));
+            };
+            if (window.LM_ART) art();
+            else { const s = document.createElement('script'); s.src = X.url('why/liminal-art.js'); s.onload = art; document.head.appendChild(s); }
+        }
         const back = document.querySelector('[data-lm-back]');
+        // Weiter-Knopf: meistens tiefer hinein, manchmal passiert nichts, manchmal geht es doch zurück.
+        // Chancen am zurück-Link: data-lm-weiter="weiter nichts zurück" (in %), je nach Stimmung des Raums
+        if (back && back.getAttribute('data-lm-next')) {
+            const odds = (back.getAttribute('data-lm-weiter') || '80 10 10').split(/\s+/).map(Number);
+            const fwd = document.createElement('a');
+            fwd.className = 'lm-forward'; fwd.href = '#'; fwd.textContent = 'weiter';
+            document.body.appendChild(fwd);
+            fwd.addEventListener('click', function (event) {
+                event.preventDefault();
+                const destinations = back.getAttribute('data-lm-next').split('|').filter(Boolean);
+                const r = Math.random() * (odds[0] + odds[1] + odds[2]);
+                if (r < odds[0]) location.href = X.pick(destinations);
+                else if (r >= odds[0] + odds[1]) location.href = back.getAttribute('href');
+                // sonst: nichts. Gar nichts.
+            });
+        }
         if (back) {
             back.addEventListener('click', function (event) {
                 const destinations = (back.getAttribute('data-lm-next') || '').split('|').filter(Boolean);
@@ -107,10 +144,5 @@
                 }
             });
         }
-        // Wer alle drei Antworten gegeben hat …
-        const page = (X.page && X.page.p) || '';
-        const seen = X.load('why-gesehen', {}) || {};
-        if (/^why\//.test(page)) { seen[page] = 1; X.save('why-gesehen', seen); }
-        if (['why/neugier.html', 'why/testen.html', 'why/unbekannt.html'].every(p => seen[p])) X.egg('h-why-alle');
     });
 })();

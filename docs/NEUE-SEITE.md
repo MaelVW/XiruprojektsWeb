@@ -176,7 +176,13 @@ erst nach dem ersten Besuch in Navigation, Suche und Weltkarte.
 ## Bereichs-Designs & leere Seiten
 
 - Bereiche dürfen ein eigenes Design haben: Klasse auf `<body>` (z. B. `theme-werft`), die die Farb-Variablen überschreibt.
-- `<html data-bare>`: Seite ohne Kopf, Fuss, Banner und Toasts (für leere/unheimliche Seiten wie `Why.html`), zählt aber als Ort.
+- `<html data-bare>`: Seite ohne Kopf, Fuss, Banner und Toasts – nur für den Liminal-Teil (`Why.html`, `why/`). Diese Seiten sind bewusst
+  **nicht im Register**, geben **keine XP, Kristalle oder Besuche**. Hinein kommt man nur durch einen „Riss" (`XIRU.riss`, siehe core.js):
+  Riss 1 = Weltkarte, unbekanntes Land unten rechts 5× klicken · Riss 2 = 404-Seite, Laufwerksschlitz 4× · Riss 3 = Netzteil-Rechner, Anzeige 4×.
+  Riss n wirkt nur nach n−1 Rauswürfen (`XIRU.riss.lock()` in `why/abdrift2.html`); nach 3 Rauswürfen ist der Teil zu. Zurücksetzen: `dev/testkonto.html`.
+  Pro Raum einstellbar: `<body data-lm-ton="brumm klopfen schritte stimmen schreie band lueftung riss">` (Geräusche, `assets/js/liminal-ton.js`;
+  leer = Stille) und am zurück-Link `data-lm-weiter="80 10 10"` (Weiter-Knopf: tiefer / nichts / zurück in %, nur mit `data-lm-next`).
+  Illustrationen (Risse, Handabdruck, Generator-Anzeige, Striche): `why/liminal-art.js`.
 
 ## Daten & Datenschutz
 

@@ -99,6 +99,7 @@
 </main>
 <script>
 XIRU.ready(function () {
+    XIRU.riss.bind(3, XIRU.$('.gauge'), 4);
     const hw = XIRU.hw || { cpu: [], gpu: [], psu: [] };
     const $ = XIRU.$;
     const byName = (a, b) => a.name.localeCompare(b.name);

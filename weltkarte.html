@@ -25,7 +25,7 @@
         .dot.unseen { opacity: .45; }
         .dot.hiddenp { cursor: help; }
         .fog { filter: url(#fog); }
-        .cloud { fill: var(--text-muted); opacity: .3; filter: url(#cloud); animation: drift var(--t, 60s) ease-in-out infinite alternate; transform-box: fill-box; }
+        .cloud { fill: var(--text-muted); opacity: .3; filter: url(#cloud); animation: drift var(--t, 60s) ease-in-out infinite alternate; transform-box: fill-box; pointer-events: none; }
         @keyframes drift { from { transform: translate(0, 0); } to { transform: translate(var(--dx, 40px), var(--dy, 10px)); } }
         .unknown-land { fill: var(--text-faint); opacity: .12; cursor: help; transition: opacity .4s; }
         .unknown-land:hover { opacity: .22; }
@@ -179,6 +179,7 @@ XIRU.ready(function () {
         const msg = XIRU.pick(['Noch im Nebel …', 'Hier entsteht vielleicht bald etwas.', 'Unerforschtes Land.', 'Die Karte ist hier noch leer.', 'Man hört leises Laufwerk-Rattern.']);
         land.addEventListener('pointerenter', e => showTip(e, '<b>Unbekanntes Land</b><small>' + msg + '</small>'));
         land.addEventListener('pointerleave', hideTip);
+        if (i === 2) XIRU.riss.bind(1, land, 5);
     });
     // Nebelbänke rund um die bekannten Inseln
     const fog = XIRU.$('#fog'), frand = rng(99);

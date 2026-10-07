@@ -261,6 +261,28 @@
     X.load = (k, def) => X.store.get(saveKey(k), def === undefined ? null : def);
     X.save = (k, v) => X.store.set(saveKey(k), v);
 
+    /* ── Risse: versteckte Eingänge in den Liminal-Teil (Why.html, why/) ──
+       Riss n wirkt nur, solange man genau (n-1)-mal ausgeschlossen wurde.
+       why-eingang = zuletzt benutzter Riss, why-ausschluss = wie oft rausgeworfen. */
+    X.riss = {
+        max: 3,
+        out() { return Math.max(X.load('why-ausschluss', 0) || 0, X.load('why-abdrift-locked', false) === true ? 1 : 0); },
+        open() { const o = this.out(); return o < this.max && (X.load('why-eingang', 0) || 0) > o; },
+        lock() { X.save('why-ausschluss', Math.max(this.out(), X.load('why-eingang', 0) || 0)); },
+        bind(n, el, clicks) {
+            if (!el) return;
+            let count = 0, last = 0;
+            el.addEventListener('click', () => {
+                if (this.out() !== n - 1) return;          // dieser Riss ist (noch) zu oder schon verbraucht
+                const now = Date.now();
+                count = now - last < 2000 ? count + 1 : 1; last = now;
+                if (count < clicks) return;
+                X.save('why-eingang', n);
+                location.href = X.url('Why.html');
+            });
+        }
+    };
+
     /* ── API-Schlüssel (getrennt vom Profil, nie im Export) ─────────────── */
     X.keys = {
         all() { return X.store.get('xiru:keys:' + (X.user ? X.user.toLowerCase() : GUEST), {}); },
@@ -734,12 +756,31 @@
     X.diskSVG = LOGO_SVG;
     // Favicon mit festen Farben (CSS-Variablen gibt es im Tab-Symbol nicht)
     (function () {
-        const fixed = LOGO_INNER.replace(/var\(--rc\)/g, '#5eead4').replace(/var\(--accent-2\)/g, '#a78bfa')
-            .replace(/var\(--bg\)/g, '#0b0e1a').replace(/var\(--surface-3\)/g, '#232b4f');
+        const bare = document.documentElement.hasAttribute('data-bare');   // Liminal-Teil: blutrot und verschmiert
+        const c = bare ? { rc: '#9b0f0b', a2: '#5c0806', bg: '#120403', s3: '#2b0806' } : { rc: '#5eead4', a2: '#a78bfa', bg: '#0b0e1a', s3: '#232b4f' };
+        let fixed = LOGO_INNER.replace(/var\(--rc\)/g, c.rc).replace(/var\(--accent-2\)/g, c.a2)
+            .replace(/var\(--bg\)/g, c.bg).replace(/var\(--surface-3\)/g, c.s3);
+        if (bare) fixed = fixed.replace(/#d6dcf5/g, '#6e1612').replace(/#f472b6|#60a5fa/g, '#c3221b').replace(/#fff/g, '#b48a82');
+        // Verzogen, mit einem Wisch quer darüber und Tropfen an den unteren Ecken
+        const bloody = worse => '<defs><filter id="b" x="-15%" y="-15%" width="130%" height="140%"><feTurbulence type="fractalNoise" baseFrequency="' + (worse ? .22 : .14) + '" numOctaves="2" seed="7"/>' +
+            '<feDisplacementMap in="SourceGraphic" scale="' + (worse ? 5 : 2.6) + '" xChannelSelector="R" yChannelSelector="G"/></filter></defs>' +
+            '<g filter="url(#b)" transform="rotate(' + (worse ? -8 : -3) + ' 24 24)">' + fixed +
+            '<path d="M5 9 C15 15 27 22 43 35 L40 40 C27 29 15 21 3 15Z" fill="#7a0b08" opacity="' + (worse ? .75 : .5) + '"/>' +
+            (worse ? '<path d="M38 6 C32 14 22 24 10 40 L7 37 C19 23 29 13 35 4Z" fill="#5e0806" opacity=".6"/>' : '') +
+            '<g fill="#9b0f0b"><path d="M4.2 34V' + (worse ? 46 : 42) + 'q.8 3 1.6 0V34Z"/><path d="M23.3 25V' + (worse ? 36 : 31) + 'q.7 2.6 1.4 0V25Z"/><path d="M42.3 34V' + (worse ? 45 : 39) + 'q.7 2.6 1.4 0V34Z"/></g></g>';
+        const icon = inner => 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">' + inner + '</svg>');
         const link = document.createElement('link');
         link.rel = 'icon'; link.type = 'image/svg+xml';
-        link.href = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">' + fixed + '</svg>');
+        link.href = icon(bare ? bloody(false) : fixed);
         document.head.appendChild(link);
+        if (bare) {   // Schaut man weg, wird es im Tab schlimmer – und bleibt es noch einen Moment, wenn man zurückkommt
+            let back;
+            document.addEventListener('visibilitychange', () => {
+                clearTimeout(back);
+                if (document.hidden) link.href = icon(bloody(true));
+                else back = setTimeout(() => { link.href = icon(bloody(false)); }, 2200);
+            });
+        }
     })();
 
     function navLink(p, extra) {
@@ -1108,9 +1149,8 @@
 
     function boot() {
         const body = document.body;
-        if (document.documentElement.hasAttribute('data-bare')) {   // leere, eigenständige Seiten (z. B. Why)
+        if (document.documentElement.hasAttribute('data-bare')) {   // Liminal-Teil (Why): eigene Welt – keine XP, Kristalle, Besuche
             const safe0 = fn => { try { fn(); } catch (e) { console.error('[XIRU]', e); } };
-            safe0(initEggSpots); safe0(trackVisit);
             booted = true;
             readyQueue.splice(0).forEach(fn => { if (!X.locked) safe0(fn); });
             return;

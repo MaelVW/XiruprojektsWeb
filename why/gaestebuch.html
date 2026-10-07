@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="de" data-bare>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liminal – Gästebuch</title>
+    <meta name="robots" content="noindex">
+    <link rel="stylesheet" href="../assets/css/liminal.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/liminal.js"></script>
+    <style>
+        body.liminal {
+            background:
+                radial-gradient(ellipse at 50% 35%, rgba(240, 228, 180, .35), transparent 60%),
+                repeating-linear-gradient(90deg, rgba(90, 70, 30, .1) 0 2px, transparent 2px 46px),
+                #b9a978;
+            color: #2a2418;
+            height: auto;
+            overflow-y: auto;
+        }
+        .lm-room { max-width: 760px; padding-top: 3.5rem; padding-bottom: 7rem; }
+        .lm-book {
+            position: relative; margin: 1.8rem auto 0; max-width: 34rem; padding: 2.2rem 2rem 2.4rem 3.2rem; text-align: left;
+            background:
+                linear-gradient(90deg, transparent 2.3rem, rgba(150, 40, 30, .35) 2.3rem 2.4rem, transparent 2.4rem),
+                repeating-linear-gradient(0deg, transparent 0 1.85rem, rgba(70, 90, 120, .22) 1.85rem calc(1.85rem + 1px)),
+                linear-gradient(175deg, #efe8d2, #dcd1b0);
+            box-shadow: 0 14px 30px rgba(40, 30, 10, .35), inset 0 0 50px rgba(120, 90, 30, .22);
+            transform: rotate(-.6deg);
+        }
+        .lm-entry { margin: 0 0 1.25rem; font: 400 .95rem/1.85rem "Segoe Print", "Ink Free", "Bradley Hand", cursive; }
+        .lm-entry time, .lm-entry .lm-who { font-size: .8rem; opacity: .65; margin-right: .5rem; }
+        .lm-entry--typed { font: 400 .82rem/1.85rem "Courier New", Consolas, monospace; }
+        .lm-entry--chalk { font: 700 1.5rem/1.85rem "Segoe Print", "Ink Free", cursive; letter-spacing: .08em; color: #1c1a16; transform: rotate(-4deg); opacity: .85; }
+        .lm-entry--torn { font: italic .78rem/1.85rem Georgia, serif; opacity: .5; text-align: center; }
+        .lm-entry--you { font-family: "Ink Free", "Segoe Print", cursive; }
+        .lm-entry--late { color: #5a120e; opacity: 0; transition: opacity 6s; font-family: "Ink Free", "Segoe Print", cursive; transform: rotate(1.5deg); }
+        .lm-entry--late.is-on { opacity: .9; }
+        .lm-margin-spider { position: absolute; right: -1.2rem; top: 58%; transform: rotate(14deg); }
+        .lm-margin-spider .lm-spider { width: 70px; height: 52px; }
+    </style>
+</head>
+<body class="liminal" data-lm-ton="brumm klopfen">
+    <main class="lm-room">
+        <p class="lm-small">Hütte am Ormond · <span class="lm-text" data-v="gästebuch|bitte eintragen|alle tragen sich ein|du auch">Gästebuch</span></p>
+        <div class="lm-book">
+            <p class="lm-entry"><time>14. Februar</time><span class="lm-who">Familie Roth</span><br>Letzte Saison vor der Schliessung. Schade um die schöne Lodge.</p>
+            <p class="lm-entry"><time>2. März</time><span class="lm-who">M. &amp; T.</span><br>Eingestiegen, um die Aussicht zu sehen. Jemand hat LEGION an den Kamin gesprüht.</p>
+            <p class="lm-entry lm-entry--chalk">We are Legion. <small style="font-size:.8rem">F. J. S. J.</small></p>
+            <p class="lm-entry"><time>Freitag</time><span class="lm-who">Frank</span><br>Das ist jetzt unser Ort. Wer hier schläft, zahlt.</p>
+            <p class="lm-entry lm-entry--typed"><time>30. Januar</time><span class="lm-who">Polizeiposten Ormond</span><br>Lodge durchsucht. Fund im Schnee hinter dem Gebäude. Von den vier Vermissten keine Spur.</p>
+            <p class="lm-entry"><time>11. Dezember</time><span class="lm-who">Lena</span><br>Jemand hat Striche an die Wand gemacht. Gestern waren es vier.</p>
+            <p class="lm-entry"><time>12. Dezember</time><span class="lm-who">Lena</span><br>Fünf. Im Wald ist Nebel, obwohl es nicht kalt ist. Und darin lacht jemand.</p>
+            <span data-lm-spinne="10" class="lm-margin-spider"></span>
+            <p class="lm-entry lm-entry--torn">– Seite herausgerissen –</p>
+            <p class="lm-entry lm-entry--you" id="you"></p>
+            <p class="lm-entry lm-entry--late" id="late"></p>
+        </div>
+    </main>
+    <a class="lm-back" href="../Why.html" data-lm-back data-lm-weiter="66 16 18" data-lm-next="level3.html|level4b.html|level4d.html">zurück</a>
+    <script>
+        XIRU.ready(function () {
+            // Der letzte Eintrag ist deiner – du hast ihn nur nicht geschrieben
+            const name = XIRU.user || 'Gast', today = new Date().toLocaleDateString('de-CH', { day: 'numeric', month: 'long' });
+            function entry(el, text) {
+                const t = document.createElement('time'), w = document.createElement('span');
+                t.textContent = today; w.className = 'lm-who'; w.textContent = name;
+                el.replaceChildren(t, w, document.createElement('br'), document.createTextNode(text));
+            }
+            entry(document.getElementById('you'), 'war hier.');
+            const late = document.getElementById('late');
+            entry(late, 'ist noch hier.');
+            setTimeout(() => late.classList.add('is-on'), 9000);
+        });
+    </script>
+</body>
+</html>

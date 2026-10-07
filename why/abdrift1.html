@@ -7,22 +7,14 @@
     <meta name="robots" content="noindex">
     <link rel="stylesheet" href="../assets/css/liminal.css">
     <link rel="stylesheet" href="abdrift.css">
+    <link rel="stylesheet" href="liminal-art.css">
     <script src="../assets/js/site.js"></script>
     <script src="../assets/js/core.js"></script>
     <script src="../assets/js/liminal.js"></script>
 </head>
-<body class="liminal lm-drift">
-    <svg class="lm-drift__cracks" viewBox="0 0 1200 800" preserveAspectRatio="none" aria-hidden="true">
-        <path d="M0 170 82 188 111 226 162 231 190 279 236 290 266 342 M1200 120 1118 153 1095 201 1044 220 1012 267 968 282 945 329 M22 800 61 724 53 683 98 634 104 581 151 548" />
-        <path d="M162 231 139 268 152 305 130 334 M1095 201 1130 240 1118 278 1147 319 M98 634 139 650 170 689" />
-    </svg>
-    <svg class="lm-drift__mark" viewBox="0 0 180 260" aria-hidden="true">
-        <path class="lm-drift__smear" d="M35 210 22 231M51 220 45 248M126 199 144 223M139 184 163 204" />
-        <path class="lm-drift__stain" d="M53 198c-8-7-12-19-10-30l6-32c1-7-1-14-5-19l-18-22c-8-10 2-22 12-14l28 22-13-47c-3-12 12-17 17-5l19 43-8-53c-2-13 14-15 17-2l13 54 4-42c2-13 18-11 18 2l-1 65c0 9-3 18-8 26l-17 27c-7 11-9 23-7 36l4 25-55 13z" />
-        <path class="lm-drift__knife" d="m22 36 89 113-11 10L14 47z" />
-        <path class="lm-drift__knife" d="m22 36 16-18 3 28z" />
-        <path class="lm-drift__blade-mark" d="m99 159 15 19" />
-    </svg>
+<body class="liminal lm-drift" data-lm-beine="2" data-lm-ton="riss lueftung">
+    <svg class="lm-drift__cracks" aria-hidden="true"></svg>
+    <svg class="lm-drift__mark" aria-hidden="true"></svg>
     <main class="lm-room lm-drift__room">
         <p class="lm-small">Du hast den Takt verpasst.</p>
         <div class="lm-gap"></div>
@@ -32,7 +24,10 @@
         <p class="lm-drift__status" aria-live="polite">Der Nebel bewegt sich gegen den Luftzug.</p>
         <button class="lm-drift__continue" id="drift-continue" type="button">Weiter</button>
     </main>
+    <script src="liminal-art.js"></script>
     <script>
+        LM_ART.cracks(document.querySelector('.lm-drift__cracks'), { count: 4 });
+        LM_ART.mark(document.querySelector('.lm-drift__mark'));
         XIRU.ready(function () {
             document.getElementById('drift-continue').addEventListener('click', function () {
                 location.href = 'abdrift2.html';

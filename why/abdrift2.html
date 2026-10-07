@@ -7,22 +7,14 @@
     <meta name="robots" content="noindex">
     <link rel="stylesheet" href="../assets/css/liminal.css">
     <link rel="stylesheet" href="abdrift.css">
+    <link rel="stylesheet" href="liminal-art.css">
     <script src="../assets/js/site.js"></script>
     <script src="../assets/js/core.js"></script>
     <script src="../assets/js/liminal.js"></script>
 </head>
-<body class="liminal lm-drift">
-    <svg class="lm-drift__cracks" viewBox="0 0 1200 800" preserveAspectRatio="none" aria-hidden="true">
-        <path d="M0 92 124 139 170 184 220 188 269 251 332 268 377 335 442 350 M1200 80 1084 124 1041 176 984 196 945 256 883 274 843 329 790 356 M0 590 102 552 159 579 216 543 264 576 322 552 M1200 626 1090 575 1044 612 984 573 927 609 872 572" />
-        <path d="M269 251 244 303 270 344 240 392 276 436 M984 196 1018 244 996 294 1031 333 1008 383 M159 579 185 628 153 673 185 725 M1044 612 1012 659 1047 706" />
-    </svg>
-    <svg class="lm-drift__mark" viewBox="0 0 180 260" aria-hidden="true">
-        <path class="lm-drift__smear" d="M35 210 22 231M51 220 45 248M126 199 144 223M139 184 163 204" />
-        <path class="lm-drift__stain" d="M53 198c-8-7-12-19-10-30l6-32c1-7-1-14-5-19l-18-22c-8-10 2-22 12-14l28 22-13-47c-3-12 12-17 17-5l19 43-8-53c-2-13 14-15 17-2l13 54 4-42c2-13 18-11 18 2l-1 65c0 9-3 18-8 26l-17 27c-7 11-9 23-7 36l4 25-55 13z" />
-        <path class="lm-drift__knife" d="m22 36 89 113-11 10L14 47z" />
-        <path class="lm-drift__knife" d="m22 36 16-18 3 28z" />
-        <path class="lm-drift__blade-mark" d="m99 159 15 19" />
-    </svg>
+<body class="liminal lm-drift" data-lm-beine="3" data-lm-ton="riss schreie">
+    <svg class="lm-drift__cracks" aria-hidden="true"></svg>
+    <svg class="lm-drift__mark" aria-hidden="true"></svg>
     <main class="lm-room lm-drift__room" id="last-room">
         <p class="lm-small">Der Putz löst sich in dünnen Schichten.</p>
         <div class="lm-gap"></div>
@@ -31,9 +23,12 @@
         <p class="lm-big"><span class="lm-text" data-v="Du hörst vier Schritte.|Der fünfte Strich verschwindet.|Jetzt ist alles still.">Der fünfte Strich verschwindet.</span></p>
         <p class="lm-drift__status" id="return-status" aria-live="polite">Du wirst zurückgebracht.</p>
     </main>
+    <script src="liminal-art.js"></script>
     <script>
+        LM_ART.cracks(document.querySelector('.lm-drift__cracks'), { count: 7, pace: 1.9, delay: .2 });
+        LM_ART.mark(document.querySelector('.lm-drift__mark'));
         XIRU.ready(function () {
-            XIRU.save('why-abdrift-locked', true);
+            XIRU.riss.lock();
             document.getElementById('last-room').classList.add('is-failing');
             setTimeout(function () {
                 location.replace('../index.html');

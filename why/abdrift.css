@@ -34,41 +34,26 @@ body.lm-drift::after {
     animation: lm-ash 24s linear infinite;
 }
 .lm-drift .lm-room { z-index: 4; }
-.lm-drift__cracks {
+.lm-drift__cracks {            /* Risse zeichnet why/liminal-art.js */
     position: fixed;
     z-index: 1;
     inset: 0;
     width: 100%;
     height: 100%;
     pointer-events: none;
-    opacity: .52;
 }
-.lm-drift__cracks path {
-    fill: none;
-    stroke: rgba(15, 14, 13, .84);
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-dasharray: 180;
-    stroke-dashoffset: 180;
-    animation: lm-crack 16s ease-in-out forwards;
-}
-.lm-drift__mark {
+.lm-drift__mark {              /* Handabdruck, Messer, Striche: why/liminal-art.js */
     position: fixed;
     z-index: 1;
-    right: clamp(1rem, 8vw, 8rem);
+    right: clamp(.5rem, 6vw, 7rem);
     top: 50%;
-    width: clamp(96px, 17vw, 220px);
+    width: clamp(170px, 30vw, 400px);
     height: auto;
-    transform: translateY(-50%) rotate(-8deg);
+    transform: translateY(-50%) rotate(-3deg);
     overflow: visible;
-    opacity: .56;
-    filter: blur(.45px);
+    opacity: .9;
     pointer-events: none;
 }
-.lm-drift__stain { fill: #39201e; }
-.lm-drift__smear { fill: none; stroke: #4c2522; stroke-width: 8; stroke-linecap: round; opacity: .58; }
-.lm-drift__knife { fill: #908b7d; stroke: #292824; stroke-width: 2; }
-.lm-drift__blade-mark { stroke: #191817; stroke-width: 4; stroke-linecap: round; }
 .lm-drift__room {
     min-height: 100vh;
     display: grid;
@@ -102,17 +87,11 @@ body.lm-drift::after {
     from { background-position: 0 0, 30px 50px; }
     to { background-position: 0 180px, 30px -110px; }
 }
-@keyframes lm-crack {
-    0%, 12% { stroke-dashoffset: 180; opacity: .08; }
-    55%, 100% { stroke-dashoffset: 0; opacity: .82; }
-}
 @media (max-width: 560px) {
-    .lm-drift__mark { right: .15rem; width: 86px; opacity: .4; }
+    .lm-drift__mark { right: .15rem; width: 120px; opacity: .55; }
 }
 @media (prefers-reduced-motion: reduce) {
     body.lm-drift::before,
-    body.lm-drift::after,
-    .lm-drift__cracks path { animation: none; }
-    .lm-drift__cracks path { stroke-dashoffset: 0; }
+    body.lm-drift::after { animation: none; }
     .lm-drift__room { transition: none; }
 }

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="de" data-bare>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liminal – Seite B</title>
+    <meta name="robots" content="noindex">
+    <link rel="stylesheet" href="../assets/css/liminal.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/liminal.js"></script>
+    <style>
+        body.liminal {
+            background:
+                radial-gradient(ellipse at 50% 30%, rgba(214, 196, 140, .22), transparent 55%),
+                repeating-linear-gradient(90deg, rgba(0, 0, 0, .18) 0 2px, transparent 2px 46px),
+                #3a3527;
+            color: #ddd3b2;
+            height: auto;
+            overflow-y: auto;
+        }
+        body.liminal::before { background: radial-gradient(ellipse at center, transparent 35%, rgba(8, 6, 2, .7) 100%); }
+        .lm-room { max-width: 720px; padding-top: 4rem; padding-bottom: 6rem; }
+        .lm-cassette { width: min(320px, 78vw); margin: 2rem auto 1.4rem; filter: drop-shadow(0 14px 22px rgba(0, 0, 0, .5)); }
+        .lm-cassette svg { display: block; width: 100%; height: auto; }
+        .lm-reel { transform-box: fill-box; transform-origin: center; }
+        .is-playing .lm-reel { animation: lmReel 2.4s linear infinite; }
+        @keyframes lmReel { to { transform: rotate(-360deg); } }
+        .liminal .lm-play { color: #ddd3b2; border-color: rgba(221, 211, 178, .45); }
+        .liminal .lm-play:hover, .liminal .lm-play:focus-visible { background: rgba(221, 211, 178, .12); border-color: #ddd3b2; }
+        .lm-transcript { list-style: none; margin: 2rem auto 0; padding: 0; max-width: 34rem; text-align: left; font: 400 .9rem/1.65 "Courier New", Consolas, monospace; }
+        .lm-transcript li { margin-bottom: .35rem; animation: lmLine .6s ease-out; }
+        .lm-transcript li.is-fx { opacity: .55; font-style: italic; }
+        .lm-transcript li.is-unknown { color: #c9b98a; text-shadow: 0 0 10px rgba(201, 185, 138, .35); }
+        .lm-transcript .lm-ts { opacity: .45; margin-right: .6rem; }
+        .lm-transcript b { font-weight: 700; margin-right: .3rem; }
+        .lm-tape-label { margin-top: 2.5rem; font: 400 .8rem/1.5 "Segoe Print", "Ink Free", cursive; opacity: 0; transition: opacity 3s; }
+        .lm-tape-label.is-on { opacity: .75; }
+        @keyframes lmLine { from { opacity: 0; transform: translateY(4px); } }
+        @media (prefers-reduced-motion: reduce) { .is-playing .lm-reel, .lm-transcript li { animation: none; } }
+    </style>
+</head>
+<body class="liminal" data-lm-beine="1" data-lm-ton="band">
+    <main class="lm-room">
+        <p class="lm-small"><span class="lm-stamp" style="float:none;display:inline-block;margin:0 .6rem 0 0">vor dem Nebel</span>Kassette · <span class="lm-text" data-v="seite b|nicht abspielen|seite b – überspielt|wir">Seite B</span></p>
+        <div class="lm-cassette" id="cassette" aria-hidden="true">
+            <svg viewBox="0 0 320 200">
+                <rect x="6" y="6" width="308" height="188" rx="12" fill="#1d1b17" stroke="#0c0b09" stroke-width="3"/>
+                <rect x="24" y="22" width="272" height="96" rx="6" fill="#d9cfae"/>
+                <rect x="24" y="22" width="272" height="20" rx="6" fill="#8a2a1c" opacity=".85"/>
+                <text x="40" y="37" font-family="Courier New, monospace" font-size="11" fill="#f1e9d0" letter-spacing="2">C-60 · SEITE B</text>
+                <text x="40" y="66" font-family="Segoe Print, Ink Free, cursive" font-size="15" fill="#2b2419">F. J. S. J.</text>
+                <path d="M40 72 H170 M40 76 H170 M40 80 H170 M40 84 H170" stroke="#2b2419" stroke-width="1.2" opacity=".7"/>
+                <text x="190" y="66" font-family="Segoe Print, Ink Free, cursive" font-size="10" fill="#6b1a12">nicht abspielen</text>
+                <rect x="84" y="88" width="152" height="44" rx="20" fill="#0f0e0b" stroke="#3a372f"/>
+                <rect x="132" y="98" width="56" height="24" fill="#2c2416" opacity=".9"/>
+                <g class="lm-reel"><circle cx="110" cy="110" r="15" fill="#d6d0bd"/><circle cx="110" cy="110" r="6" fill="#0f0e0b"/>
+                    <path d="M110 97 v6 M110 117 v6 M97 110 h6 M117 110 h6" stroke="#0f0e0b" stroke-width="3"/></g>
+                <g class="lm-reel"><circle cx="210" cy="110" r="15" fill="#d6d0bd"/><circle cx="210" cy="110" r="6" fill="#0f0e0b"/>
+                    <path d="M210 97 v6 M210 117 v6 M197 110 h6 M217 110 h6" stroke="#0f0e0b" stroke-width="3"/></g>
+                <path d="M70 186 L90 150 H230 L250 186Z" fill="#141310" stroke="#2c2a24"/>
+                <circle cx="118" cy="170" r="5" fill="#0a0907"/><circle cx="202" cy="170" r="5" fill="#0a0907"/>
+                <circle cx="22" cy="22" r="4" fill="#3a372f"/><circle cx="298" cy="22" r="4" fill="#3a372f"/><circle cx="22" cy="178" r="4" fill="#3a372f"/><circle cx="298" cy="178" r="4" fill="#3a372f"/>
+            </svg>
+        </div>
+        <button class="lm-play" id="play" type="button">Abspielen</button>
+        <ol class="lm-transcript" id="transcript" aria-live="polite"></ol>
+        <p class="lm-tape-label" id="label"></p>
+    </main>
+    <a class="lm-back" href="../Why.html" data-lm-back data-lm-weiter="58 22 20" data-lm-next="level4c.html|level5.html|level4e.html">zurück</a>
+    <script>
+        XIRU.ready(function () {
+            // [Sekunde auf dem Band, wer spricht ('' = Geräusch), Text, Effekt]
+            const LINES = [
+                [0, '', '(Rauschen. Ein Motor läuft. Jemand lacht.)'],
+                [4, 'FRANK', 'Läuft es? … Gut. Für später.'],
+                [8, 'JOEY', 'Der Laden, der mich rausgeschmissen hat. Heute Nacht zahlen sie.'],
+                [12, 'JULIE', 'Masken auf.'],
+                [14, 'FRANK', 'We are Legion.'],
+                [16, 'JULIE', 'We do not forget.'],
+                [18, 'JOEY', 'But we do forgive.'],
+                [21, 'SUSIE', '(leise) … Expect us.'],
+                [24, '', '(Glas splittert. Gelächter. Regale fallen.)'],
+                [28, 'MANN', 'He! Lass sie los –'],
+                [29, 'JULIE', 'Frank!'],
+                [31, '', '(Gerangel. Etwas fällt schwer. Dann ist es sehr still.)'],
+                [36, 'FRANK', 'Jeder von uns. Jetzt. Dann gehört es uns allen.'],
+                [40, 'SUSIE', 'Ich kann nicht.'],
+                [41, 'FRANK', 'Doch. Du kannst.'],
+                [44, '', '(Lange nichts. Dann schlägt eine Autotür zu.)'],
+                [50, 'JOEY', 'Wohin bringen wir ihn?'],
+                [52, 'FRANK', 'Zum Berg. Hinter die alte Lodge.'],
+                [57, '', '(Schaufeln in nassem Schnee. Schneller Atem.)'],
+                [63, 'FRANK', 'Da war was zwischen den Bäumen. Wartet hier.'],
+                [68, 'JULIE', 'Frank? … Woher kommt der Nebel?'],
+                [72, '', '(Über ihnen bewegt sich etwas Grosses. Zu viele Beine.)', 'steps'],
+                [75, '?', 'To be present.'],
+                [76, '', '(Das Band läuft weiter. Niemand kommt zurück.)']
+            ];
+            const list = document.getElementById('transcript'), play = document.getElementById('play');
+            const cassette = document.getElementById('cassette'), label = document.getElementById('label');
+            const ton = () => window.LM_TON || {};
+            const mmss = s => String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+            play.addEventListener('click', function () {
+                play.hidden = true;
+                cassette.classList.add('is-playing');
+                list.replaceChildren();
+                let i = 0;
+                (function next() {
+                    if (i >= LINES.length) {
+                        cassette.classList.remove('is-playing');
+                        label.textContent = 'Gefunden im Schnee hinter der Lodge, Wochen später. Auf dem Etikett, mit Filzstift: F. J. S. J.';
+                        setTimeout(() => label.classList.add('is-on'), 600);
+                        return;
+                    }
+                    const [t, who, text, fx] = LINES[i];
+                    const li = document.createElement('li');
+                    const ts = document.createElement('span');
+                    ts.className = 'lm-ts'; ts.textContent = '[' + mmss(t) + ']';
+                    li.appendChild(ts);
+                    if (who) { const b = document.createElement('b'); b.textContent = who + ':'; li.appendChild(b); }
+                    li.appendChild(document.createTextNode(text));
+                    if (!who) li.className = 'is-fx';
+                    if (who === '?') li.className = 'is-unknown';
+                    list.appendChild(li);
+                    if (ton().burst) ton().burst();   // nur Rauschen – lesen muss man selbst
+                    if (fx === 'steps' && ton().steps) ton().steps();
+                    const gap = i + 1 < LINES.length ? (LINES[i + 1][0] - t) * .55 + .7 : 1.6;
+                    i++;
+                    setTimeout(next, gap * 1000);
+                })();
+            });
+        });
+    </script>
+</body>
+</html>

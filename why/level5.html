@@ -6,6 +6,7 @@
     <title>Liminal Level 5 – Das Summen</title>
     <meta name="robots" content="noindex">
     <link rel="stylesheet" href="../assets/css/liminal.css">
+    <link rel="stylesheet" href="liminal-art.css">
     <script src="../assets/js/site.js"></script>
     <script src="../assets/js/core.js"></script>
     <script src="../assets/js/liminal.js"></script>
@@ -16,6 +17,8 @@
                 repeating-linear-gradient(90deg, rgba(20, 22, 20, .28) 0 2px, transparent 2px 46px),
                 #696b60;
             color: #11130f;
+            height: auto;
+            overflow-y: auto;
         }
         .lm-room { filter: contrast(1.4) brightness(.76) saturate(.58); }
         .lm-code {
@@ -39,31 +42,6 @@
         }
         .lm-audio-status { min-height: 1.5em; font-size: .72rem; opacity: .62; }
         .lm-search { margin-top: 1.5rem; }
-        .lm-track {
-            position: relative;
-            width: min(360px, 75vw);
-            height: 30px;
-            margin: 1rem auto;
-            border: 1px solid rgba(17, 19, 15, .5);
-            background: rgba(17, 19, 15, .08);
-        }
-        .lm-target {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            background: rgba(222, 221, 190, .35);
-            border-inline: 1px solid rgba(17, 19, 15, .45);
-        }
-        .lm-needle {
-            position: absolute;
-            top: -5px;
-            bottom: -5px;
-            left: 0;
-            width: 2px;
-            background: #181a14;
-            box-shadow: 0 0 8px rgba(239, 235, 205, .55);
-            transform: translateX(-1px);
-        }
         .lm-check-button {
             min-width: 13rem;
             margin: .35rem;
@@ -77,31 +55,11 @@
         }
         .lm-check-button:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
         .lm-check-status { min-height: 2.5em; font-size: .78rem; opacity: .75; }
-        .lm-tallies { display: flex; justify-content: center; gap: .8rem; min-height: 42px; margin: .7rem auto; }
-        .lm-tally { width: 34px; height: 38px; overflow: visible; opacity: .82; }
-        .lm-tally line {
-            fill: none;
-            stroke: currentColor;
-            stroke-width: 2.2;
-            stroke-linecap: round;
-            stroke-dasharray: 40;
-            stroke-dashoffset: 40;
-            transition: stroke-dashoffset .35s ease;
-        }
-        .lm-tally.is-found line { stroke-dashoffset: 0; }
-        .lm-tally line:nth-child(2) { transform: translateY(1px); }
-        .lm-tally line:nth-child(3) { transform: translateX(-1px); }
-        .lm-tally line:nth-child(4) { transform: translateY(-1px); }
-        .lm-tally line:nth-child(5) { stroke-width: 2.8; }
         .lm-discovery { min-height: 3em; max-width: 34rem; margin: 1rem auto; font-size: .92rem; }
         .lm-next { display: inline-block; margin-top: .6rem; color: inherit; letter-spacing: .2em; }
-        @media (prefers-reduced-motion: reduce) {
-            .lm-tally line { transition: none; }
-            .lm-needle { box-shadow: none; }
-        }
     </style>
 </head>
-<body class="liminal">
+<body class="liminal" data-lm-beine="1" data-lm-ton="klopfen schritte">
     <main class="lm-room">
         <p class="lm-small">Liminal Level 5 · <span class="lm-text" data-v="das summen|raum null|der letzte käfig|hier endet nichts">Das Summen</span></p>
         <div class="lm-gap"></div>
@@ -112,17 +70,16 @@
         <p class="lm-discovery" id="discovery" aria-live="polite">Ein Kontakt zittert. Vier Stimmen sind auf der Aufnahme.</p>
         <section class="lm-search" id="search" aria-label="Generator prüfen">
             <p class="lm-check-status" id="check-status" aria-live="polite">Drücke die Leertaste oder den Knopf, um den Generator zu prüfen.</p>
-            <div class="lm-track" id="check-track" role="img" aria-label="Bewege den Zeiger in den hellen Bereich">
-                <span class="lm-target" id="check-target"></span>
-                <span class="lm-needle" id="check-needle"></span>
-            </div>
+            <div class="lm-meter" id="check-track" role="img" aria-label="Anzeige am Generator: Drücke, wenn der Zeiger im hellen Feld steht"></div>
             <div class="lm-tallies" id="tallies" aria-label="Noch keine Treffer"></div>
             <button class="lm-check-button" id="check-button" type="button">Skillcheck starten</button>
         </section>
         <button class="lm-audio" id="hum-toggle" type="button" aria-pressed="false">Summen einschalten</button>
         <p class="lm-audio-status" id="hum-status" aria-live="polite">Ein leises Summen wartet hinter dem Geräusch.</p>
     </main>
+    <aside class="lm-note"><span class="lm-stamp lm-stamp--im">im Nebel</span><p>Wenn der Zeiger springt, wissen sie, wo du bist.</p><p>Vier Kontakte. Dann der fünfte Strich. Dann lauf. Nicht zum Haken schauen.</p></aside>
     <a class="lm-back" id="continue-link" href="../index.html">zurück</a>
+    <script src="liminal-art.js"></script>
     <script src="liminal-skillcheck.js"></script>
     <script>
         XIRU.ready(function () {

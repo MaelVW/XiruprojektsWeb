@@ -46,7 +46,7 @@ Jeder Bereich bekommt ein eigenes Design über eine Body-Klasse, die die Farb-Va
 - [ ] **Spielhalle = 80er-Arcade-Halle** (`theme-arcade`, alle `arcade/*.html`): fast schwarzer Raum, Arcade-Teppichmuster (CSS),
       Neonschilder mit Flackern (Text-Shadow-Glow in Pink/Cyan/Gelb), **Logo und „Spielhalle"-Schriftzug wie aus Neonröhren**
       (auf Arcade-Seiten `.brand` mit Neon-Glow), Spiele stehen in Automaten-Gehäusen (Stage mit Gehäuserahmen + Marquee oben).
-      Lesbarkeit und Kontraste prüfen.
+      Lesbarkeit und Kontraste prüfen. **→ umgesetzt (Nachtschicht 2), nur Sichtprüfung + Feinschliff offen, siehe Notizen.**
 - [ ] **Hardware = im Inneren eines Cyber-Anime-Computers** (`theme-hardware`, alle `hardware/**`; die Datenblätter erzeugt
       `tools/build_hardware.py` → Vorlage `HEAD` dort anpassen und neu generieren): dunkles Mainboard mit leuchtenden Leiterbahnen
       (Cyan/Magenta), Hologramm-Fenster (Glas, Scanlines, Eck-Klammern), fliessende Datenströme, Reiter/Tabs wie Bauteile auf der Platine
@@ -149,6 +149,19 @@ Jeder Bereich bekommt ein eigenes Design über eine Body-Klasse, die die Farb-Va
 ---
 
 ## Notizen der letzten Sitzung
+
+- 2026-10-07 (Nachtschicht 2, abgebrochen – Aufgaben gehen zurück in die normalen Sitzungen):
+  **A2 Spielhalle = 80er-Arcade-Halle – umgesetzt, Sichtprüfung offen.**
+  - Neu: `assets/css/themes/arcade.css` (`body.theme-arcade`): fast schwarzer Raum mit Arcade-Teppich (SVG-Muster), Neon-Logo +
+    „Spielhalle"-Schriftzug als Neonröhre (`.brand::after`, ab < 1100 px ausgeblendet), flackernde Neon-H1, Neon-Karten/Kacheln/Knöpfe,
+    Automaten-Gehäuse (`.cabinet`) mit beleuchtetem Marquee (Spielname), Bildschirm-Rahmen mit Glas/Scanlines, runde Automatenknöpfe als Touch-Pad.
+    Flackern aus bei „Animationen aus" (`html.no-anim`) und `prefers-reduced-motion`. Design ist immer dunkel (wie Werft), auch bei „Hell".
+  - Alle 28 `arcade/*.html`: Stylesheet eingebunden + `<body class="theme-arcade">`.
+  - `assets/js/arcade.js`: `cabinet()` macht den Eltern-Block von `.game__stage` zum Gehäuse und setzt `data-marquee` aus der H1;
+    `G.css()` liest jetzt vom `body`, damit Canvas-Spiele die Bereichsfarben bekommen.
+  - Getestet nur: Snake lädt ohne Konsolenfehler, Gehäuse + Marquee vorhanden, `--rc` = Neon-Cyan. **Offen:** Sichtprüfung aller Spiele
+    (bes. `dungeon`, `2048`, `pc-bauer`, `hardware-quiz` mit eigenen Stage-Stilen), Handybreite 375 px, Kontraste. Danach abhaken.
+  - `check_site.py`: nur die bekannten „nirgends ausgelöst"-Fehlalarme (u. a. `m-*`, `p-*`).
 
 - 2026-10-07 (00:00): Mech neu im futuristischen, dunklen Stil (Gunmetal-Panzer, Visier-Helm, Cockpit-Glasluke in der Brust,
   Energielinien mit Glow, Akzentfarbe je Rahmen; fehlende Teile als Hologramm). Werkhalle dunkel/kalt (Nebel, Projektor-Ring,

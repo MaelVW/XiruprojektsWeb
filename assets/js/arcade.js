@@ -168,5 +168,18 @@
         ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
         ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
     };
-    G.css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    // vom body lesen: Bereichs-Designs (z. B. theme-arcade) überschreiben die Farben dort
+    G.css = name => getComputedStyle(document.body || document.documentElement).getPropertyValue(name).trim();
+
+    /* Spielhallen-Design: Spielbereich (HUD + Bildschirm + Knöpfe) als Automaten-Gehäuse mit Marquee */
+    function cabinet() {
+        if (!document.body.classList.contains('theme-arcade')) return;
+        const stage = document.querySelector('.game .game__stage');
+        const box = stage && stage.parentElement;
+        if (!box || box.classList.contains('game') || box.classList.contains('cabinet')) return;
+        box.classList.add('cabinet');
+        const h1 = document.querySelector('.page-head h1');
+        if (h1) box.setAttribute('data-marquee', h1.textContent.trim());
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', cabinet); else cabinet();
 })();

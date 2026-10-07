@@ -1,0 +1,172 @@
+/* ==========================================================================
+   Bereichs-Design Spielhalle – 80er-Arcade-Halle (body.theme-arcade)
+   Fast schwarzer Raum, Arcade-Teppich, Neonschilder, Spiele in Automaten-Gehäusen.
+   Wird auf allen arcade/*.html nach main.css eingebunden. Das Gehäuse
+   (.cabinet + data-marquee) setzt arcade.js um den Spielbereich.
+   ========================================================================== */
+body.theme-arcade {
+    --bg: #06030b; --bg-2: #0a0612; --surface: #110a1c; --surface-2: #181026; --surface-3: #221636;
+    --border: #2e1c4a; --border-strong: #4a2c78;
+    --text: #f4ecff; --text-muted: #bdaedb; --text-faint: #8a78ab;
+    --accent: #ff4fb0; --accent-2: #33f0ff; --accent-ink: #1d0012;
+    --success: #5dff8f; --warning: #ffe14d; --danger: #ff5a6e;
+    --rc: #33f0ff; --rc-raw: #33f0ff;
+    --neon-pink: #ff4fb0; --neon-cyan: #33f0ff; --neon-yellow: #ffe14d;
+    --glow: 0 0 0 1px rgba(51, 240, 255, .45), 0 0 22px -4px rgba(51, 240, 255, .5);
+    color-scheme: dark;
+    background-color: var(--bg);
+    /* Arcade-Teppich: bunte Kringel, Dreiecke und Punkte auf Schwarz, darüber ein Lichtkegel von oben */
+    background-image:
+        radial-gradient(1100px 520px at 50% -8%, rgba(255, 79, 176, .13), transparent 65%),
+        radial-gradient(700px 400px at 100% 40%, rgba(51, 240, 255, .07), transparent 70%),
+        linear-gradient(rgba(6, 3, 11, .55), rgba(6, 3, 11, .55)),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cg fill='none' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10 30q10-14 20 0t20 0' stroke='%23ff4fb0'/%3E%3Cpath d='M98 18l16 26h-32z' stroke='%2333f0ff'/%3E%3Ccircle cx='132' cy='96' r='9' stroke='%23ffe14d'/%3E%3Cpath d='M30 112l10-10 10 10 10-10 10 10' stroke='%239b5cff'/%3E%3Cpath d='M118 140q8-12 16 0t16 0' stroke='%2333f0ff'/%3E%3Cpath d='M60 64l12 12M72 64l-12 12' stroke='%23ffe14d'/%3E%3Crect x='12' y='136' width='14' height='14' transform='rotate(18 19 143)' stroke='%23ff4fb0'/%3E%3C/g%3E%3Cg fill='%2333f0ff'%3E%3Ccircle cx='86' cy='100' r='2.6'/%3E%3Ccircle cx='146' cy='54' r='2.6' fill='%23ff4fb0'/%3E%3Ccircle cx='44' cy='82' r='2.2' fill='%23ffe14d'/%3E%3Ccircle cx='102' cy='150' r='2.2' fill='%239b5cff'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: auto, auto, auto, 160px 160px;
+    background-attachment: fixed;
+}
+
+/* ── Kopf: Logo + „Spielhalle" als Neonröhren ─────────────────────────── */
+.theme-arcade .site-header {
+    background: color-mix(in srgb, #050208 88%, transparent);
+    border-bottom: 1px solid rgba(255, 79, 176, .55);
+    box-shadow: 0 1px 0 rgba(255, 79, 176, .25), 0 6px 24px -10px rgba(255, 79, 176, .55);
+}
+.theme-arcade .brand__logo { filter: drop-shadow(0 0 3px var(--neon-cyan)) drop-shadow(0 0 10px rgba(51, 240, 255, .6)); }
+.theme-arcade .brand__name {
+    color: #e9feff;
+    text-shadow: 0 0 2px #fff, 0 0 6px var(--neon-cyan), 0 0 14px var(--neon-cyan), 0 0 28px rgba(51, 240, 255, .7);
+}
+.theme-arcade .brand::after {
+    content: "Spielhalle";
+    font-family: "Brush Script MT", "Segoe Script", "Lucida Handwriting", cursive;
+    font-weight: 400; font-size: 1.45rem; letter-spacing: .02em; line-height: 1;
+    color: #ffe3f3; margin-left: .15rem; transform: rotate(-4deg) translateY(1px);
+    text-shadow: 0 0 2px #fff, 0 0 6px var(--neon-pink), 0 0 14px var(--neon-pink), 0 0 30px rgba(255, 79, 176, .75);
+    animation: arcadeFlicker 7s linear infinite;
+}
+@media (max-width: 1100px) { .theme-arcade .brand::after { display: none; } }
+
+/* ── Neonschilder: Überschriften ──────────────────────────────────────── */
+.theme-arcade .page-head h1 {
+    color: #ffe9f6; letter-spacing: .01em;
+    text-shadow: 0 0 2px #fff, 0 0 8px var(--neon-pink), 0 0 18px var(--neon-pink), 0 0 42px rgba(255, 79, 176, .65);
+    animation: arcadeFlicker 9s linear infinite;
+}
+.theme-arcade .page-head .eyebrow, .theme-arcade .eyebrow {
+    color: var(--neon-cyan);
+    text-shadow: 0 0 6px rgba(51, 240, 255, .8);
+}
+.theme-arcade h2 { color: #fff7c7; text-shadow: 0 0 6px rgba(255, 225, 77, .55), 0 0 18px rgba(255, 225, 77, .25); }
+.theme-arcade .card h3, .theme-arcade .game__side h3 {
+    color: var(--neon-cyan); text-transform: uppercase; letter-spacing: .1em; font-size: .95rem;
+    text-shadow: 0 0 6px rgba(51, 240, 255, .6);
+}
+
+/* ── Karten & Kacheln: dunkle Kästen mit Neonkante ────────────────────── */
+.theme-arcade .card {
+    background: linear-gradient(180deg, rgba(34, 22, 54, .92), rgba(17, 10, 28, .95));
+    border-color: rgba(155, 92, 255, .35);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05), 0 10px 30px -14px #000;
+}
+.theme-arcade .card--accent { border-color: rgba(51, 240, 255, .6); box-shadow: var(--glow); }
+.theme-arcade .tile {
+    background: linear-gradient(180deg, rgba(30, 18, 48, .95), rgba(14, 8, 24, .97));
+    border-color: rgba(155, 92, 255, .35);
+}
+.theme-arcade .tile:hover {
+    border-color: var(--tc, var(--neon-pink));
+    box-shadow: 0 0 0 1px var(--tc, var(--neon-pink)), 0 0 24px -4px var(--tc, var(--neon-pink)), 0 16px 30px -16px #000;
+}
+.theme-arcade .tile__title { text-shadow: 0 0 8px rgba(255, 255, 255, .25); }
+
+/* Knöpfe: Leuchtknöpfe wie am Automaten */
+.theme-arcade .btn--primary {
+    background: var(--neon-pink); color: var(--accent-ink); border-color: transparent;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, .25) inset, 0 0 16px -2px var(--neon-pink);
+}
+.theme-arcade .btn--primary:hover { box-shadow: 0 0 0 1px rgba(255, 255, 255, .35) inset, 0 0 24px 0 var(--neon-pink); }
+.theme-arcade .chip.is-active {
+    background: rgba(51, 240, 255, .14); border-color: var(--neon-cyan); color: #e9feff;
+    box-shadow: 0 0 12px -2px rgba(51, 240, 255, .7);
+}
+.theme-arcade kbd { background: #1d1230; border-color: #4a2c78; color: #fff; }
+.theme-arcade .stat__value { color: var(--neon-yellow); text-shadow: 0 0 10px rgba(255, 225, 77, .55); }
+
+/* ── Automaten-Gehäuse um Spielfeld, HUD und Touch-Steuerung ──────────── */
+.theme-arcade .cabinet {
+    position: relative;
+    padding: 0 clamp(.6rem, 2.2vw, 1.4rem) clamp(.8rem, 2vw, 1.2rem);
+    border-radius: 18px 18px 10px 10px;
+    background:
+        linear-gradient(90deg, rgba(255, 79, 176, .22) 0 6px, transparent 6px calc(100% - 6px), rgba(51, 240, 255, .22) calc(100% - 6px)),
+        repeating-linear-gradient(135deg, rgba(155, 92, 255, .10) 0 14px, transparent 14px 28px),
+        linear-gradient(180deg, #1c1030, #0d0717 70%, #07040c);
+    border: 3px solid #000;
+    box-shadow:
+        0 0 0 2px rgba(255, 79, 176, .55),            /* T-Leiste rundherum */
+        0 0 26px -6px rgba(255, 79, 176, .7),
+        0 30px 50px -24px #000;
+}
+.theme-arcade .cabinet::before {                  /* Marquee: beleuchtetes Schild oben */
+    content: "★ Xiru Arcade ★";
+    display: block; margin: 0 calc(-1 * clamp(.6rem, 2.2vw, 1.4rem)) .9rem;
+    padding: .55rem 1rem; border-radius: 15px 15px 0 0;
+    text-align: center; text-transform: uppercase; letter-spacing: .22em; font-weight: 900;
+    font-size: clamp(.85rem, 2.4vw, 1.15rem); color: #fff6d2;
+    background:
+        radial-gradient(120% 140% at 50% 120%, rgba(255, 225, 77, .35), transparent 60%),
+        linear-gradient(180deg, #3a1a5c, #1a0c2c);
+    border-bottom: 3px solid #000;
+    box-shadow: inset 0 -2px 0 rgba(255, 225, 77, .35), inset 0 0 22px rgba(255, 79, 176, .35);
+    text-shadow: 0 0 2px #fff, 0 0 8px var(--neon-yellow), 0 0 20px rgba(255, 179, 71, .8);
+    overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+}
+.theme-arcade .cabinet[data-marquee]::before { content: "★ " attr(data-marquee) " ★"; }
+.theme-arcade .cabinet .game__hud {
+    background: #05030a; border: 2px solid #000; border-radius: 8px; padding: .45rem .75rem;
+    box-shadow: inset 0 0 12px rgba(51, 240, 255, .18), 0 0 0 1px rgba(51, 240, 255, .25);
+    font-family: var(--mono); color: var(--neon-yellow); text-shadow: 0 0 6px rgba(255, 225, 77, .5);
+}
+.theme-arcade .cabinet .game__hud span { color: var(--neon-cyan); text-shadow: none; }
+.theme-arcade .cabinet .game__stage {
+    border: 0; border-radius: 10px;
+    box-shadow: 0 0 0 10px #050208, 0 0 0 12px #000, 0 0 0 13px rgba(155, 92, 255, .45), inset 0 0 40px rgba(0, 0, 0, .8);
+    margin: 13px 13px 13px;
+}
+.theme-arcade .cabinet .game__stage::after {     /* Glasscheibe: leichte Spiegelung + Scanlines */
+    content: ""; position: absolute; inset: 0; z-index: 6; pointer-events: none; border-radius: inherit;
+    background:
+        linear-gradient(125deg, rgba(255, 255, 255, .07) 0 18%, transparent 30% 100%),
+        repeating-linear-gradient(0deg, rgba(0, 0, 0, .12) 0 1px, transparent 1px 3px);
+}
+.theme-arcade .game__overlay h2 {
+    color: #ffe9f6; text-shadow: 0 0 2px #fff, 0 0 10px var(--neon-pink), 0 0 26px rgba(255, 79, 176, .7);
+}
+.theme-arcade .game__overlay { background: color-mix(in srgb, #06030b 80%, transparent); }
+
+/* Touch-Steuerung als runde Automatenknöpfe */
+.theme-arcade .cabinet .touch-pad button {
+    border-radius: 50%; border: 2px solid #000; color: #1d0012; font-weight: 900;
+    background: radial-gradient(circle at 35% 30%, #fff 0 6%, var(--neon-pink) 22%, #a3115f 100%);
+    box-shadow: 0 4px 0 #4d0730, 0 0 14px -2px var(--neon-pink);
+}
+.theme-arcade .cabinet .touch-pad button:nth-child(2n) {
+    background: radial-gradient(circle at 35% 30%, #fff 0 6%, var(--neon-cyan) 22%, #0b7d8a 100%);
+    box-shadow: 0 4px 0 #04363c, 0 0 14px -2px var(--neon-cyan);
+}
+.theme-arcade .cabinet .touch-pad button:active { transform: translateY(3px); box-shadow: 0 1px 0 #000; }
+
+@media (max-width: 560px) {
+    .theme-arcade .cabinet { border-radius: 12px 12px 8px 8px; }
+    .theme-arcade .cabinet::before { letter-spacing: .12em; border-radius: 10px 10px 0 0; }
+    .theme-arcade .cabinet .game__stage { box-shadow: 0 0 0 6px #050208, 0 0 0 8px #000, 0 0 0 9px rgba(155, 92, 255, .45); margin: 9px; }
+}
+
+/* Flackern wie eine alte Neonröhre (aus bei „Animationen aus" und reduzierter Bewegung) */
+@keyframes arcadeFlicker {
+    0%, 18%, 20%, 22%, 61%, 63%, 100% { opacity: 1; }
+    19%, 21%, 62% { opacity: .55; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .theme-arcade .brand::after, .theme-arcade .page-head h1 { animation: none; }
+}

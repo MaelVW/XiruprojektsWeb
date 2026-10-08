@@ -63,8 +63,8 @@ XIRU.ready(function () {
     if (page.easy) return;
     const SHAFTS = [
         { id: 1, n: 'Obere Stollen',  d: 'Kabel, Zahnräder, Altöl. Ehrliche Arbeit.', need: {},           o: { mats: 1, rare: .04, item: .05, maxT: 2 } },
-        { id: 2, n: 'Kristallgänge',  d: 'Platinen, Chips – und Splitter in den Wänden.', need: { E: 4 },  o: { mats: 1, rare: .2, item: .1, maxT: 3, luck: .2 } },
-        { id: 3, n: 'Nebelgrund',     d: 'Ganz unten. Kalt. Hier entstehen Nebelkerne.', need: { E: 6, S: 4 }, o: { mats: 1, rare: .5, item: .18, maxT: 4, luck: .5 } }
+        { id: 2, n: 'Kristallgänge',  d: 'Platinen, Chips – und Splitter in den Wänden.', need: { E: 4 },  o: { mats: 1, rare: .2, item: .1, maxT: 3, luck: .2, bp: .03, bpT: 3 } },
+        { id: 3, n: 'Nebelgrund',     d: 'Ganz unten. Kalt. Hier entstehen Nebelkerne.', need: { E: 6, S: 4 }, o: { mats: 1, rare: .5, item: .18, maxT: 4, luck: .5, bp: .04, bpT: 5 } }
     ];
     const DURS = [[2, '2 Min.', 2], [15, '15 Min.', 7], [60, '1 Std.', 20]];   // [Minuten, Text, Würfe]
     const mine = () => { const m = M.state(); if (!m.mine || typeof m.mine !== 'object') m.mine = {}; return m.mine; };

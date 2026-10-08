@@ -429,6 +429,10 @@
     (X.mechParts || []).forEach(p => { partMap[p.id] = p; });
     (X.islands || []).forEach(i => { isleMap[i.id] = i; });
     (X.materials || []).forEach(m => { matMap[m.id] = m; });
+    const fishMap = {}, spotMap = {};
+    (X.fish || []).forEach(f => { fishMap[f.id] = f; });
+    (X.fishSpots || []).forEach(f => { spotMap[f.id] = f; });
+    const SPOT_STOCK = 4, SPOT_REGEN = 4 * 60 * 1000;   // Angelplatz: Vorrat und Nachwachsen
     const SLOT_IDS = (X.mechSlots || []).map(s => s.id);
     const RAR = X.rarities || [null, { n: 'Gewöhnlich', c: '#9ca3af', m: 1 }];
     const INV_MAX = 80;
@@ -450,8 +454,10 @@
         let m = P.data.mech;
         if (!m || typeof m !== 'object' || Array.isArray(m)) m = P.data.mech = { v: 2, tutorial: 0 };
         if (m.v !== 2) migrateMech(m);
-        ['eq', 'mat', 'islands', 'arena', 'stats'].forEach(k => { if (!m[k] || typeof m[k] !== 'object' || Array.isArray(m[k])) m[k] = {}; });
+        ['eq', 'mat', 'islands', 'arena', 'stats', 'bp', 'scan', 'fish', 'fishing', 'fishbook'].forEach(k => { if (!m[k] || typeof m[k] !== 'object' || Array.isArray(m[k])) m[k] = {}; });
         if (!Array.isArray(m.inv)) m.inv = [];
+        // Baupläne gibt es seit Okt. 2026: wer schon Teile besitzt, kennt deren Pläne
+        if (!m.bpv) { m.inv.forEach(it => { if (partMap[it.id] && !m.bp[it.id]) m.bp[it.id] = it.at || Date.now(); }); m.bpv = 1; }
         m.spent = +m.spent || 0; m.taler = Math.max(0, +m.taler || 0); m.tutorial = +m.tutorial || 0;
         if (!isleMap[m.pos]) m.pos = 'konto';
         return m;
@@ -475,6 +481,30 @@
         const b = partMap[it.id], out = {};
         if (b && b.fx) Object.keys(b.fx).forEach(k => { out[k] = +(b.fx[k] * (1 + ((it.q || 1) - 1) * .2 + (it.up || 0) * .05)).toFixed(3); });
         return out;
+    }
+    /* Rezept eines Bauplans: Schrott + Materialien. Jeder Bauplatz hat zwei typische
+       Materialien, höhere Stufen brauchen zusätzlich Chips, Kristallsplitter und Nebelkerne.
+       Ein Teil kann mit p.recipe ein eigenes Rezept festlegen. */
+    const SIG = { rahmen: ['zahnrad', 'platine'], antrieb: ['zahnrad', 'oel'], kern: ['kabel', 'platine'], sensor: ['kabel', 'chip'], arm: ['zahnrad', 'kabel'], panzer: ['oel', 'zahnrad'], waffe: ['kabel', 'oel'], zubehoer: ['platine', 'kabel'] };
+    function recipeOf(p) {
+        if (!p) return null;
+        if (p.recipe) return p.recipe;
+        const sig = SIG[p.slot] || ['kabel', 'zahnrad'], t = p.t || 1, mats = {};
+        const add = (k, n) => { if (n > 0) mats[k] = (mats[k] || 0) + n; };
+        add(sig[0], t + 1);
+        if (t >= 2) add(sig[1], t - 1);
+        if (t >= 3) add('chip', t - 2);
+        if (t >= 4) add('splitter', t === 4 ? 1 : 3);
+        if (t >= 5) add('nebelkern', 1);
+        return { scrap: Math.max(10, Math.round((p.cost || 0) * .4 / 5) * 5), mats };
+    }
+    const SCAN_CD = 3 * 60 * 1000;   // Sonar-Peilung: Pause je Insel
+    const STOP = 3;                   // Zwischenstopp auf einer Route (Sekunden)
+    /* Abstand eines Punkts (Mitte eines Gewässers) zur Strecke A → B */
+    function segDist(A, B, P) {
+        const dx = B.x - A.x, dy = B.y - A.y, l2 = dx * dx + dy * dy || 1;
+        const t = Math.max(0, Math.min(1, ((P.x - A.x) * dx + (P.y - A.y) * dy) / l2));
+        return Math.hypot(A.x + dx * t - P.x, A.y + dy * t - P.y);
     }
     const viewOf = it => { const b = it && partMap[it.id]; return b ? Object.assign({}, b, { u: it.u, q: it.q || 1, c: it.c, up: it.up || 0, s: itemStats(it), rep: repOf(it), fx: fxOf(it), base: b }) : null; };
 
@@ -541,32 +571,120 @@
         /* Verkaufswert in Talern */
         value(it) { const b = partMap[it.id]; if (!b) return 0; return Math.max(2, Math.round((b.cost / 3 + 6 + b.t * 4) * Math.pow(rarOf(it.q).m, 1.6) * (1 + (it.up || 0) * .25) * (.4 + (it.c / 100) * .6))); },
 
-        /* Baupläne: gewöhnliche Teile aus Schrott bauen */
+        /* Baupläne: muss man auf den Inseln finden (oder als Beute), dann in der Werft
+           aus Schrott und Materialien bauen */
         progress() {
             return { level: X.levelInfo().level, eggs: X.eggCount(), pages: Object.keys(P.visited).filter(q => pageMap[q]).length, games: Object.keys(P.scores).length };
         },
+        knows(id) { return X.easy() || (X.starterBlueprints || []).includes(id) || !!mechState().bp[id]; },
+        bpSpot(id) { const sp = X.blueprintSpots || {}; return Object.keys(sp).find(k => sp[k].includes(id)) || null; },
+        bpLeft(isle) { return ((X.blueprintSpots || {})[isle] || []).filter(id => partMap[id] && !this.knows(id)); },
+        bpCount() { const all = X.mechParts || []; return { known: all.filter(p => this.knows(p.id)).length, total: all.length }; },
+        learnBp(id) {
+            if (!partMap[id] || this.knows(id)) return false;
+            const m = mechState(); m.bp[id] = Date.now(); persist();
+            X.egg('m-bauplan');
+            if ((X.mechParts || []).every(p => this.knows(p.id))) X.egg('m-bauplaene');
+            emit('mech', 'bp'); return true;
+        },
+        /* Zufälliger unbekannter Bauplan bis Stufe maxT (niedrige Stufen häufiger) */
+        randomBp(maxT) {
+            const pool = (X.mechParts || []).filter(p => p.t <= (maxT || 5) && !this.knows(p.id)); if (!pool.length) return null;
+            let r = Math.random() * pool.reduce((a, p) => a + 1 / p.t, 0);
+            for (const p of pool) { r -= 1 / p.t; if (r <= 0) return p.id; }
+            return pool[0].id;
+        },
+        recipe: id => recipeOf(partMap[id]),
         available(part) {
             if ((X.starterSet || []).includes(part.id)) return mechState().tutorial >= 1;
-            const r = part.req || {}, pr = this.progress();
-            return (!r.level || pr.level >= r.level) && (!r.eggs || pr.eggs >= r.eggs) && (!r.pages || pr.pages >= r.pages) && (!r.games || pr.games >= r.games);
+            return this.knows(part.id);
         },
         reqText(part) {
-            if ((X.starterSet || []).includes(part.id)) return 'Startausrüstung (Tutorial)';
-            const r = part.req || {}, out = [];
-            if (r.level) out.push('Level ' + r.level);
-            if (r.eggs) out.push(r.eggs + ' Realitätskristalle');
-            if (r.pages) out.push(r.pages + ' entdeckte Orte');
-            if (r.games) out.push(r.games + ' verschiedene Spiele gespielt');
-            return out.join(' · ') || 'frei';
+            if ((X.starterSet || []).includes(part.id) && mechState().tutorial < 1) return 'Startausrüstung (Tutorial)';
+            if (this.knows(part.id)) return 'Bauplan bekannt';
+            const isle = this.bpSpot(part.id);
+            return isle ? 'Bauplan verschollen – irgendwo auf ' + (this.discovered(isle) ? isleMap[isle].n : 'einer unentdeckten Insel') : 'Bauplan verschollen';
         },
         owned: id => mechState().inv.some(x => x.id === id),
         isBuilt(id) { return this.owned(id); },
+        canBuild(id) {
+            const pt = partMap[id], r = recipeOf(pt);
+            if (!pt || !this.available(pt)) return false;
+            return this.scrap() >= r.scrap && this.hasMats(r.mats) && !this.full();
+        },
         build(id) {
-            const pt = partMap[id];
-            if (!pt || !this.available(pt) || this.scrap() < pt.cost || this.full()) return null;
-            mechState().spent += pt.cost;
+            if (!this.canBuild(id)) return null;
+            const r = recipeOf(partMap[id]);
+            if (!this.spendMats(r.mats)) return null;
+            mechState().spent += r.scrap;
             return this.add(id, 1);
         },
+        /* Schrottpresse: n Stück eines Materials aus Schrott (und einfachen Materialien) */
+        pressRecipe: id => (X.pressRecipes || []).find(r => r.id === id) || null,
+        pressCost(id, n) {
+            const r = this.pressRecipe(id); if (!r) return null; n = Math.max(1, Math.floor(n || 1));
+            const mats = {}; Object.keys(r.mats || {}).forEach(k => { mats[k] = r.mats[k] * n; });
+            return { scrap: r.scrap * n, mats };
+        },
+        canPress(id, n) { const c = this.pressCost(id, n); return !!c && this.scrap() >= c.scrap && this.hasMats(c.mats); },
+        press(id, n) {
+            n = Math.max(1, Math.floor(n || 1));
+            if (!this.canPress(id, n)) return false;
+            const c = this.pressCost(id, n);
+            if (!this.spendMats(c.mats)) return false;
+            mechState().spent += c.scrap; this.addMat(id, n);
+            X.egg('m-presse'); return true;
+        },
+        /* ── Angeln ── */
+        rod: () => X.clamp(+mechState().rod || 1, 1, Math.max(1, (X.rods || []).length - 1)),
+        rodInfo(l) { return (X.rods || [])[l || this.rod()] || null; },
+        canUpgradeRod() { const nx = this.rodInfo(this.rod() + 1); return !!nx && this.taler() >= nx.taler && this.hasMats(nx.mats); },
+        upgradeRod() {
+            const nx = this.rodInfo(this.rod() + 1);
+            if (!nx || !this.canUpgradeRod() || !this.spendMats(nx.mats) || !this.spendTaler(nx.taler)) return false;
+            mechState().rod = this.rod() + 1; persist(); emit('mech', 'rod'); return true;
+        },
+        fishInfo: id => fishMap[id] || null,
+        spot: id => spotMap[id] || null,
+        fishes: () => mechState().fish,
+        caught: id => !!mechState().fishbook[id],
+        addFish(id, n) {
+            const f = fishMap[id]; if (!f || !n) return;
+            const m = mechState(); m.fish[id] = Math.max(0, (m.fish[id] || 0) + Math.round(n)); if (!m.fish[id]) delete m.fish[id];
+            if (n > 0) {
+                if (!m.fishbook[id]) m.fishbook[id] = Date.now();
+                X.egg('m-angler'); if (f.abart) X.egg('m-abart'); if (id === 'leviathan') X.egg('m-leviathan');
+            }
+            persist(); emit('mech', 'fish');
+        },
+        /* Sichtbar ab dem Sensor-Wert des Platzes (im Entdecker-Modus gibt es kein Angeln) */
+        spotSeen(id) { const sp = spotMap[id]; return !!sp && !X.easy() && this.stats().S >= sp.s; },
+        spotStock(id) {
+            const st = mechState().fishing[id]; if (!st) return SPOT_STOCK;
+            return Math.min(SPOT_STOCK, (+st.n || 0) + Math.floor((Date.now() - (+st.t || 0)) / SPOT_REGEN));
+        },
+        spotNext(id) { const st = mechState().fishing[id]; if (!st || this.spotStock(id) >= SPOT_STOCK) return 0; return SPOT_REGEN - (Date.now() - st.t) % SPOT_REGEN; },
+        useSpot(id) {
+            const m = mechState(), c = this.spotStock(id); if (c <= 0) return false;
+            const st = m.fishing[id], now = Date.now();
+            m.fishing[id] = { n: c - 1, t: !st || c >= SPOT_STOCK ? now : st.t + Math.floor((now - st.t) / SPOT_REGEN) * SPOT_REGEN };
+            persist(); return true;
+        },
+        SPOT_STOCK,
+        /* Was fehlt, um hier zu angeln? (leer = los) */
+        fishMissing(id) {
+            const sp = spotMap[id], out = []; if (!sp) return ['unbekannter Platz'];
+            if (this.pos() !== sp.near) out.push('Dein Mech muss in ' + (isleMap[sp.near] || {}).n + ' vor Anker liegen');
+            if (this.rod() < sp.tier) out.push('Angel Stufe ' + sp.tier + ' nötig (du hast ' + this.rodInfo().n + ')');
+            if (this.spotStock(id) <= 0) out.push('Hier ist gerade alles weggefischt');
+            return out;
+        },
+
+        /* Sonar-Peilung auf einer Insel: alle paar Minuten möglich */
+        scanWait(isle) { const t = mechState().scan[isle] || 0; return Math.max(0, t + SCAN_CD - Date.now()); },
+        scanUsed(isle) { mechState().scan[isle] = Date.now(); persist(); emit('mech', 'scan'); },
+        /* Sensor-Wert, den man braucht, um einen Bauplan der Stufe t aufzuspüren */
+        scanNeed: t => Math.max(0, (t || 1) - 2),
 
         /* Zustand & Werte */
         cond(u) { const it = this.item(u) || this.items().find(x => x.id === u && this.equipped(x.u)) || this.items().find(x => x.id === u); return it ? it.c : 100; },
@@ -605,33 +723,93 @@
             return report;
         },
 
-        /* Inseln & Reisen */
-        req: r => (X.islandReq || {})[r] || null,
-        discovered(r) { return X.easy() || !this.req(r) || !!mechState().islands[r]; },
+        /* ── Inseln & Reisen ──
+           Die Reichweite gilt pro Strecke: legNeed(a, b) wächst mit der Entfernung, schwierige
+           Gewässer (XIRU.seaZones) legen etwas drauf. Reicht sie für die direkte Fahrt nicht,
+           plant route() eine Reise über bekannte Inseln mit Zwischenstopps (STOP Sekunden).
+           Weitere Werte (E, S, P, A aus islands[].req) braucht nur die erste Reise. */
+        STOP,
+        baseReq: r => (X.islandReq || {})[r] || null,
+        req(r) { const b = this.baseReq(r); return b ? Object.assign({ R: this.needR(r) }, b) : null; },
+        discovered(r) { return X.easy() || !this.baseReq(r) || !!mechState().islands[r]; },
+        pos: () => mechState().pos,
+        dist(a, b) { const A = isleMap[a], B = isleMap[b]; return A && B ? Math.hypot(A.x - B.x, A.y - B.y) : 0; },
+        /* Schwierige Gewässer, durch die die Strecke a → b führt */
+        legZones(a, b) {
+            const A = isleMap[a], B = isleMap[b]; if (!A || !B) return [];
+            return (X.seaZones || []).filter(z => segDist(A, B, z) < z.r);
+        },
+        /* Nötige Reichweite für die direkte Strecke a → b */
+        legNeed(a, b) {
+            if (a === b || !isleMap[a] || !isleMap[b]) return 0;
+            return Math.max(1, Math.ceil((this.dist(a, b) - 160) / 200)) + this.legZones(a, b).reduce((n, z) => n + (z.add || 0), 0);
+        },
+        /* Inseln, über die eine Route führen darf: bekannt, nicht geheim */
+        stops() { return (X.islands || []).filter(i => !i.secret && this.discovered(i.id)).map(i => i.id); },
+        /* Kleinste Reichweite, mit der man (notfalls mit Zwischenstopps) ans Ziel kommt */
+        needR(to, from) {
+            from = from || this.pos(); if (from === to) return 0;
+            const nodes = Array.from(new Set(this.stops().concat([from, to]))), best = {}, done = {};
+            nodes.forEach(n => { best[n] = Infinity; }); best[from] = 0;
+            for (;;) {
+                let u = null; nodes.forEach(n => { if (!done[n] && (u === null || best[n] < best[u])) u = n; });
+                if (u === null || best[u] === Infinity) break;
+                if (u === to) return best[u];
+                done[u] = true;
+                nodes.forEach(v => { if (!done[v]) { const c = Math.max(best[u], this.legNeed(u, v)); if (c < best[v]) best[v] = c; } });
+            }
+            return best[to] === Infinity ? 99 : best[to];
+        },
+        /* Schnellste Route mit der aktuellen Reichweite: [Start, Stopp…, Ziel] oder null */
+        route(to, from, R) {
+            from = from || this.pos(); R = R == null ? this.stats().R : R;
+            if (from === to) return [to];
+            const nodes = Array.from(new Set(this.stops().concat([from, to]))), dist = {}, prev = {}, done = {};
+            nodes.forEach(n => { dist[n] = Infinity; }); dist[from] = 0;
+            for (;;) {
+                let u = null; nodes.forEach(n => { if (!done[n] && (u === null || dist[n] < dist[u])) u = n; });
+                if (u === null || dist[u] === Infinity || u === to) break;
+                done[u] = true;
+                nodes.forEach(v => {
+                    if (done[v] || this.legNeed(u, v) > R) return;
+                    const c = dist[u] + this.legSecs(u, v) + (v === to ? 0 : STOP);
+                    if (c < dist[v]) { dist[v] = c; prev[v] = u; }
+                });
+            }
+            if (dist[to] === Infinity) return null;
+            const out = [to]; while (out[0] !== from) out.unshift(prev[out[0]]);
+            return out;
+        },
+        /* Fahrzeit einer einzelnen Strecke: je weiter und je schwächer der Antrieb, desto länger */
+        legSecs(a, b) {
+            const st = this.stats(), speed = (40 + Math.max(1, st.R) * 14) * (1 + (st.fx.speed || 0));
+            return X.clamp(this.dist(a, b) / speed, 2.5, 20);
+        },
+        /* Ganze Reise in Sekunden (Strecken + Zwischenstopps); ohne Route: direkte Fahrzeit */
+        travelSecs(to, from) {
+            from = from || this.pos(); const r = this.route(to, from);
+            if (!r) return this.legSecs(from, to);
+            let t = 0; for (let i = 1; i < r.length; i++) t += this.legSecs(r[i - 1], r[i]);
+            return t + (r.length - 2) * STOP;
+        },
         missing(r) {
-            const need = this.req(r) || {}, st = this.stats(), out = [];
-            const names = { R: 'Reichweite', E: 'Energie', S: 'Sensor', P: 'Panzerung', A: 'Angriff' };
-            Object.keys(need).forEach(k => { if (st[k] < need[k]) out.push(names[k] + ' ' + st[k] + '/' + need[k]); });
-            if (!this.ready()) out.unshift('Rahmen, Antrieb und Energiekern müssen eingebaut und intakt sein');
+            const st = this.stats(), out = [], names = { R: 'Reichweite', E: 'Energie', S: 'Sensor', P: 'Panzerung', A: 'Angriff' };
+            if (!this.ready()) out.push('Rahmen, Antrieb und Energiekern müssen eingebaut und intakt sein');
+            if (this.pos() !== r) { const nr = this.needR(r); if (st.R < nr) out.push('Reichweite ' + st.R + '/' + nr + ' (ab ' + (isleMap[this.pos()] || {}).n + ')'); }
+            if (!this.discovered(r)) { const need = this.baseReq(r) || {}; Object.keys(need).forEach(k => { if (st[k] < need[k]) out.push(names[k] + ' ' + st[k] + '/' + need[k]); }); }
             return out;
         },
         canReach(r) { return this.missing(r).length === 0; },
         islandReqText(r) {
-            const need = this.req(r); if (!need) return 'frei zugänglich';
-            const names = { R: 'Reichweite', E: 'Energie', S: 'Sensor', P: 'Panzerung', A: 'Angriff' };
-            return Object.keys(need).map(k => names[k] + ' ' + need[k]).join(' · ');
-        },
-        pos: () => mechState().pos,
-        dist(a, b) { const A = isleMap[a], B = isleMap[b]; return A && B ? Math.hypot(A.x - B.x, A.y - B.y) : 0; },
-        /* Reisedauer in Sekunden: je weiter weg und je schwächer der Antrieb, desto länger */
-        travelSecs(to, from) {
-            const st = this.stats(), speed = (40 + Math.max(1, st.R) * 14) * (1 + (st.fx.speed || 0));
-            return X.clamp(this.dist(from || this.pos(), to) / speed, 2.5, 20);
+            const b = this.baseReq(r), names = { E: 'Energie', S: 'Sensor', P: 'Panzerung', A: 'Angriff' }, out = [];
+            if (this.pos() !== r && isleMap[r]) out.push('Reichweite ' + this.needR(r) + ' ab ' + (isleMap[this.pos()] || {}).n);
+            if (b && !this.discovered(r)) Object.keys(b).forEach(k => out.push((names[k] || k) + ' ' + b[k]));
+            return out.join(' · ') || 'frei zugänglich';
         },
         /* Ankunft nach einer Reise: neue Inseln werden entdeckt, der Antrieb nutzt sich ab */
         arrive(to) {
             const m = mechState(), isle = isleMap[to]; if (!isle) return null;
-            const first = !!this.req(to) && !m.islands[to], km = Math.round(this.dist(m.pos, to));
+            const first = !!this.baseReq(to) && !m.islands[to], km = Math.round(this.dist(m.pos, to));
             const report = this.wear(1, 2 + Math.round(km / 220), ['antrieb']);
             m.pos = to; m.stats.trips = (m.stats.trips || 0) + 1; m.stats.km = (m.stats.km || 0) + km;
             if (first) {

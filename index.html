@@ -552,7 +552,7 @@ XIRU.ready(function () {
             '<span class="compass__t">' + XIRU.esc(o.t) + '</span><span class="compass__d">' + o.d + '</span>' + (o.extra || '') + '</span></a>';
         const out = [], M = XIRU.mech, st = M.stats(), NAMES = { R: 'Reichweite', E: 'Energie', S: 'Sensor', P: 'Panzerung', A: 'Angriff' };
         // 1 · Die am leichtesten erreichbare Insel im Nebel (Inhalts- und Spiel-Inseln)
-        const isle = XIRU.easy() ? null : XIRU.islands.filter(i => i.req && !M.discovered(i.id)).sort((a, b) => sum(a.req) - sum(b.req)).map(i => ({ id: i.id, name: i.n, icon: i.game ? '⛵' : XIRU.region(i.r).icon, color: i.game ? '#22d3ee' : XIRU.region(i.r).color }))[0];
+        const isle = XIRU.easy() ? null : XIRU.islands.filter(i => i.req && !M.discovered(i.id)).sort((a, b) => sum(M.req(a.id)) - sum(M.req(b.id))).map(i => ({ id: i.id, name: i.n, icon: i.game ? '⛵' : XIRU.region(i.r).icon, color: i.game ? '#22d3ee' : XIRU.region(i.r).color }))[0];
         if (XIRU.easy()) out.push({ k: 'Entdecker-Modus', icon: '🧭', color: 'var(--accent)', href: 'weltkarte.html', t: 'Die ganze Welt ist offen', d: 'Ohne Mech unterwegs. Auf der Weltkarte siehst du alle Inseln und ihre Gebäude.' });
         else if (isle) {
             const need = M.req(isle.id), ready = M.canReach(isle.id);

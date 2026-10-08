@@ -21,7 +21,9 @@
         .wk-isle { cursor: pointer; }
         .wk-isle:focus { outline: none; }
         .wk-isle:hover path, .wk-isle:focus-visible path { fill: rgba(253, 230, 138, .12); }
-        .wk-dragon { cursor: pointer; }
+        .wk-dragon, .wk-festland { cursor: pointer; }
+        .wk-festland:hover path, .wk-festland:focus-visible path { stroke: #fde68a; opacity: 1; }
+        .wk-festland:focus { outline: none; }
         .sel-ring { fill: none; stroke: #fde68a; stroke-width: 6; stroke-dasharray: 12 12; pointer-events: none; animation: ringDash 1.2s steps(4) infinite; }
         @keyframes ringDash { to { stroke-dashoffset: -24; } }
         html.no-anim .sel-ring { animation: none; }
@@ -55,6 +57,13 @@
         .tipbox { position: absolute; pointer-events: none; z-index: 3; padding: .35rem .6rem; font: 700 .8rem Consolas, monospace; transform: translate(-50%, calc(-100% - 16px)); white-space: nowrap; }
         .tipbox small { display: block; color: #94a3b8; font-weight: 400; }
         .tok { filter: drop-shadow(0 0 6px rgba(63, 243, 255, .7)); }
+        .wk-spot { cursor: pointer; }
+        .wk-spot:focus { outline: none; }
+        .wk-spot:hover circle, .wk-spot:focus-visible circle { fill: rgba(63, 243, 255, .15); }
+        .fishlist { display: flex; flex-wrap: wrap; gap: .35rem; }
+        .px-sil { filter: brightness(0) drop-shadow(0 0 2px #64748b); }
+        .plan-route { fill: none; stroke: #fde68a; stroke-width: 6; stroke-dasharray: 6 12; pointer-events: none; opacity: .9; }
+        .plan-stop { fill: #e8c56a; stroke: #000; stroke-width: 4; pointer-events: none; }
         @media (max-width: 720px) {
             .atlas { height: 70vh; }
             .atlas__mech { font-size: .74rem; padding: .45rem .55rem; }
@@ -71,7 +80,7 @@
     <header class="page-head">
         <span class="eyebrow">Zentrum · Seekarte</span>
         <h1>Sektaria</h1>
-        <p class="lead" id="lead">Die Inseln der Nebelsee. Zieh die Karte mit der Maus oder dem Finger, zoom mit dem Mausrad. Klick auf eine Insel, um ihre Gebäude zu sehen – und reise mit deinem Mech dorthin.</p>
+        <p class="lead" id="lead">Die Inseln der Nebelsee. Zieh die Karte mit der Maus oder dem Finger, zoom mit dem Mausrad. Klick auf eine Insel, um ihre Gebäude zu sehen – und reise mit deinem Mech dorthin. Je weiter die Strecke, desto mehr Reichweite braucht sie; zu weit entfernte Ziele erreichst du mit Zwischenstopps. Rundherum liegt die Nebelwand – und dahinter das Festland.</p>
     </header>
 
     <div class="atlas" id="atlas" role="img" aria-label="Pixel-Seekarte von Sektaria">
@@ -79,7 +88,8 @@
         <div class="atlas__ctrl">
             <button type="button" id="z-in" title="Hineinzoomen" aria-label="Hineinzoomen">+</button>
             <button type="button" id="z-out" title="Herauszoomen" aria-label="Herauszoomen">−</button>
-            <button type="button" id="z-fit" title="Ganze Karte" aria-label="Ganze Karte"><i data-px="st-R"></i></button>
+            <button type="button" id="z-fit" title="Ganz Sektaria" aria-label="Ganz Sektaria"><i data-px="st-R"></i></button>
+            <button type="button" id="z-world" title="Die ganze Welt" aria-label="Die ganze Welt"><i data-px="ev-nebel"></i></button>
             <button type="button" id="z-mech" title="Zu meinem Mech" aria-label="Zu meinem Mech"><i data-px="z-anker"></i></button>
         </div>
         <section class="atlas__panel px-ui" id="panel" hidden aria-live="polite"></section>
@@ -111,6 +121,35 @@ XIRU.ready(function () {
             hover(g, () => tipFor(id));
         });
         X.$$('.wk-dragon', ctl.ov).forEach(d => hover(d, () => '<b>Hic sunt dracones</b><small>Hier sind Drachen.</small>'));
+        // Schwierige Gewässer
+        (X.seaZones || []).forEach(z => {
+            const g = document.createElementNS(NS, 'g'); g.setAttribute('class', 'wk-zone');
+            const label = z.n.toUpperCase() + ' · +' + z.add + ' REICHWEITE', tw = label.length * 9.4 + 22;
+            g.innerHTML = '<circle cx="' + z.x + '" cy="' + z.y + '" r="' + z.r + '" fill="rgba(2,6,16,.14)" stroke="#94a3b8" stroke-width="5" stroke-dasharray="10 14"/>' +
+                '<g class="pm-lbl"><rect x="' + Math.round(z.x - tw / 2) + '" y="' + Math.round(z.y + z.r - 34) + '" width="' + Math.round(tw) + '" height="24" fill="#0b1726" stroke="#94a3b8" stroke-width="2"/>' +
+                '<text x="' + z.x + '" y="' + Math.round(z.y + z.r - 16) + '" text-anchor="middle" fill="#cbd5e1" style="font-size:14px">' + label + '</text></g>';
+            hover(g, () => '<b>' + X.esc(z.n) + '</b><small>' + X.esc(z.d) + ' Strecken hier brauchen +' + z.add + ' Reichweite.</small>');
+            ctl.layer('lanes').appendChild(g);
+        });
+        // Angelplätze – nur sichtbar, wenn der Sensor stark genug ist
+        if (!easy) (X.fishSpots || []).forEach(sp => {
+            if (!M.spotSeen(sp.id)) return;
+            const g = document.createElementNS(NS, 'g'); g.setAttribute('class', 'wk-spot'); g.dataset.spot = sp.id;
+            g.setAttribute('tabindex', '0'); g.setAttribute('role', 'button'); g.setAttribute('aria-label', 'Angelplatz ' + sp.n);
+            g.innerHTML = '<circle cx="' + sp.x + '" cy="' + sp.y + '" r="46" fill="transparent"/><g class="' + (anim ? 'pm-bob' : '') + '">' + X.pix.svg('ic-spot', 72).replace('<svg class="px"', '<svg x="' + (sp.x - 36) + '" y="' + (sp.y - 36) + '"') + '</g>';
+            hover(g, () => '<b>' + X.esc(sp.n) + '</b><small>Angelplatz · Angel Stufe ' + sp.tier + ' · Vorrat ' + M.spotStock(sp.id) + '/' + M.SPOT_STOCK + '</small>');
+            g.addEventListener('click', () => { if (!moved) spotPanel(sp.id); });
+            g.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); spotPanel(sp.id); } });
+            ctl.layer('fx').appendChild(g);
+        });
+        // Das Festland hinter der Nebelwand
+        X.$$('.wk-festland', ctl.ov).forEach(f => {
+            hover(f, () => '<b>' + X.esc(X.mapArt.FESTLAND.n) + ' – das Festland</b><small>Hinter der Nebelwand. Noch kein Weg hinüber.</small>');
+            f.addEventListener('click', () => { if (!moved) festland(); });
+            f.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); festland(); } });
+        });
+        X.$$('.wk-place', ctl.ov).forEach(g => { const pl = X.mapArt.FESTLAND.PLACES.find(p => p.id === g.dataset.place); g.style.pointerEvents = 'auto'; g.style.cursor = 'pointer'; hover(g, () => '<b>' + X.esc(pl.n) + '</b><small>Gerücht: ' + X.esc(pl.d) + '</small>'); g.addEventListener('click', () => { if (!moved) festland(); }); });
+        X.$$('.wk-land', ctl.ov).forEach(g => hover(g, () => '<b>Unbekanntes Land</b><small>Ganz im Nebel. Nicht einmal die Seefahrer wissen etwas darüber.</small>'));
         X.$$('.wk-unknown', ctl.ov).forEach(u => {
             hover(u, () => '<b>Unbekanntes Land</b><small>' + X.pick(['Noch im Nebel …', 'Hier ist die Karte noch leer.', 'Unerforschtes Land.', 'Man hört leises Laufwerk-Rattern.']) + '</small>');
             if (u.dataset.u === '5') X.riss.bind(1, u, 5);
@@ -129,7 +168,8 @@ XIRU.ready(function () {
         const i = M.isle(id), secret = i.secret && !visitedSecret;
         if (secret) return '<b>???</b><small>Ein Ort im Nebel</small>';
         const seen = M.discovered(id);
-        return '<b>' + X.esc(i.n) + '</b><small>' + (easy ? 'Klick: Gebäude ansehen' : seen ? (M.pos() === id ? 'Dein Mech ist hier' : Math.round(M.travelSecs(id)) + ' s Reise') : 'Expedition: ' + X.esc(M.islandReqText(id))) + '</small>';
+        const r = !easy && seen && M.pos() !== id ? M.route(id) : null;
+        return '<b>' + X.esc(i.n) + '</b><small>' + (easy ? 'Klick: Gebäude ansehen' : seen ? (M.pos() === id ? 'Dein Mech ist hier' : r ? Math.round(M.travelSecs(id)) + ' s Reise' + (r.length > 2 ? ' · ' + (r.length - 2) + ' Stopp' + (r.length > 3 ? 's' : '') : '') : 'Zu weit: Reichweite ' + M.needR(id) + ' nötig') : 'Expedition: ' + X.esc(M.islandReqText(id))) + '</small>';
     }
 
     /* ── Mech-Figur (Pixel-Sprite) und Auswahl ── */
@@ -139,6 +179,11 @@ XIRU.ready(function () {
             const i = M.isle(sel), r = document.createElementNS(NS, 'rect');
             [['x', i.x - i.s * 1.3], ['y', i.y - i.s * 1.02], ['width', i.s * 2.6], ['height', i.s * 2.04]].forEach(([k, v]) => r.setAttribute(k, Math.round(v)));
             r.setAttribute('class', 'sel-ring'); top.appendChild(r);
+            const plan = !easy && M.pos() !== sel ? M.route(sel) : null;
+            if (plan) for (let k = 1; k < plan.length; k++) {
+                const p = document.createElementNS(NS, 'path'); p.setAttribute('d', X.mapArt.route(plan[k - 1], plan[k])); p.setAttribute('class', 'plan-route'); top.appendChild(p);
+                if (k < plan.length - 1) { const I = M.isle(plan[k]), q = document.createElementNS(NS, 'rect'); [['x', I.x - 12], ['y', I.y + I.s * .45 - 12], ['width', 24], ['height', 24]].forEach(([a, v]) => q.setAttribute(a, Math.round(v))); q.setAttribute('class', 'plan-stop'); top.appendChild(q); }
+            }
         }
         if (tokCv) { tokCv.remove(); tokCv = null; } clearInterval(tokT);
         if (easy) return;
@@ -171,14 +216,23 @@ XIRU.ready(function () {
         }
         h += '<p class="small muted mt-1">' + X.esc(i.d || (reg ? reg.desc : '')) + '</p>';
         if (!easy) {
-            if (here) h += '<p class="small">' + PX('z-anker') + ' <b>Dein Mech liegt hier vor Anker.</b></p>';
-            else if (!seen) h += '<p class="small">' + PX('ev-nebel') + ' <b>Noch im Nebel.</b> Erste Reise braucht: ' + X.esc(M.islandReqText(id)) + (M.canReach(id) ? ' – <span style="color:#86efac">dein Mech schafft das!</span>' : '<br><span style="color:#fca5a5">Es fehlt: ' + X.esc(M.missing(id).join(' · ')) + '</span>') + '</p>';
-            else h += '<p class="small">' + PX('ev-schiff') + ' ' + Math.round(M.dist(M.pos(), id) / 10) + ' Seemeilen · ca. ' + Math.round(M.travelSecs(id)) + ' s Reise von ' + X.esc(W.isleName(M.pos())) + '</p>';
-            if (!here) h += '<button class="px-btn" type="button" data-travel' + (!seen && !M.canReach(id) ? ' disabled' : '') + '>' + PX(seen ? 'ev-schiff' : 'z-kompass') + ' ' + (seen ? 'Hinreisen' : 'Expedition starten') + '</button>';
+            if (here) h += '<p class="small">' + PX('z-anker') + ' <b>Dein Mech liegt hier vor Anker.</b></p>' + (W.bpDots(id) ? '<div class="row mb-1">' + W.bpDots(id) + '<span class="spacer"></span>' + W.scanButton(id).replace('btn btn--sm', 'px-btn') + '</div>' : '');
+            else if (!seen) h += '<p class="small">' + PX('ev-nebel') + ' <b>Noch im Nebel.</b> Erste Reise braucht: ' + X.esc(M.islandReqText(id)) + (M.canReach(id) ? ' – <span style="color:#86efac">dein Mech schafft das!</span>' : '<br><span style="color:#fca5a5">Es fehlt: ' + X.esc(M.missing(id).join(' · ')) + '</span>') + '</p>' +
+                (M.canReach(id) && (M.route(id) || []).length > 2 ? '<p class="small">' + PX('st-R') + ' Route: ' + M.route(id).map(k => X.esc(W.isleName(k))).join(' → ') + ' · ca. ' + Math.round(M.travelSecs(id)) + ' s</p>' : '');
+            else {
+                const plan = M.route(id), direct = M.legNeed(M.pos(), id), zones = M.legZones(M.pos(), id);
+                h += '<p class="small">' + PX('ev-schiff') + ' ' + Math.round(M.dist(M.pos(), id) / 10) + ' Seemeilen von ' + X.esc(W.isleName(M.pos())) + ' · direkte Fahrt braucht Reichweite <b>' + direct + '</b>' + (zones.length ? ' (inkl. ' + zones.map(z => X.esc(z.n)).join(', ') + ')' : '') + '</p>';
+                h += plan ? '<p class="small">' + PX('st-R') + ' ' + (plan.length > 2 ? 'Route: ' + plan.map(k => X.esc(W.isleName(k))).join(' → ') + ' · ' : 'Direkt · ') + 'ca. ' + Math.round(M.travelSecs(id)) + ' s</p>'
+                    : '<p class="small" style="color:#fca5a5">Zu weit für deinen Mech – auch mit Zwischenstopps. Nötig: Reichweite ' + M.needR(id) + ' (du hast ' + M.stats().R + ').</p>';
+                if (W.bpDots(id)) h += '<p class="small mb-1">' + W.bpDots(id) + '</p>';
+            }
+            if (!here) h += '<button class="px-btn" type="button" data-travel' + (!M.canReach(id) ? ' disabled' : '') + '>' + PX(seen ? 'ev-schiff' : 'z-kompass') + ' ' + (seen ? (M.canReach(id) && (M.route(id) || []).length > 2 ? 'Route fahren' : 'Hinreisen') : 'Expedition starten') + '</button>';
         }
+        const spots = easy ? [] : (X.fishSpots || []).filter(sp => sp.near === id && M.spotSeen(sp.id));
+        if (spots.length && seen) h += '<div class="row mb-1" style="gap:.4rem">' + spots.map(sp => '<button class="chip-px" type="button" data-open-spot="' + sp.id + '" style="border:0;cursor:pointer">' + PX('ic-angel') + ' ' + X.esc(sp.n) + ' · ' + M.spotStock(sp.id) + '/' + M.SPOT_STOCK + '</button>').join('') + '</div>';
         if (seen || easy) {
             h += '<div class="bldg">' + i.b.map(b => {
-                const pg = X.pageFor(b[1]), lock = pg && !X.isUnlocked(pg);
+                const pg = X.pageFor(b[1].split('#')[0]), lock = pg && !X.isUnlocked(pg);
                 return '<button type="button" data-enter="' + X.esc(b[1]) + '">' + (X.pix.has(b[2]) ? PX(b[2], 26) : '<span style="width:26px;text-align:center">' + X.esc(b[2]) + '</span>') + '<span><b>' + X.esc(b[0]) + '</b><br><span class="small muted">' + (lock ? 'gesperrt · ' : '') + X.esc(pg ? pg.t : '') + '</span></span></button>';
             }).join('') + '</div>';
             if (!i.game && pages.length) {
@@ -189,9 +243,38 @@ XIRU.ready(function () {
         }
         panel.innerHTML = h; panel.hidden = false; wirePanel();
     }
+    function spotPanel(id) {
+        const sp = M.spot(id), near = M.isle(sp.near), miss = M.fishMissing(id), stock = M.spotStock(id), here = M.pos() === sp.near;
+        sel = null; drawOverlay();
+        let h = '<div class="row"><h2>' + X.esc(sp.n) + '</h2><span class="spacer"></span><button class="px-x" type="button" data-x aria-label="Schliessen">×</button></div>' +
+            '<p class="small muted mt-1">' + X.esc(sp.d) + '</p>' +
+            '<p class="small">' + PX('ic-angel') + ' Angelplatz bei <b>' + X.esc(near.n) + '</b> · Angel Stufe ' + sp.tier + ' · Vorrat ' + '<span class="bp-dots">' + Array.from({ length: M.SPOT_STOCK }, (_, i) => '<i class="' + (i < stock ? 'is-found' : '') + '"></i>').join('') + '</span>' +
+            (stock < M.SPOT_STOCK ? ' <span class="muted">(+1 in ' + Math.ceil(M.spotNext(id) / 60000) + ' min)</span>' : '') + '</p>' +
+            '<p class="small mb-1"><b>Was hier beisst:</b></p><div class="fishlist">' + sp.fish.map(fid => { const f = M.fishInfo(fid), k = M.caught(fid); return '<span class="chip-px" title="' + X.esc(k ? f.d : 'Noch nie gefangen') + '">' + PX('fish-' + fid, 20).replace('class="px"', 'class="px' + (k ? '' : ' px-sil') + '"') + ' ' + (k ? X.esc(f.n) : '???') + '</span>'; }).join('') + '</div>';
+        if (!miss.length) h += '<button class="px-btn mt-2" type="button" data-fish="' + id + '">' + PX('ic-angel') + ' Angeln</button>';
+        else {
+            h += '<p class="small mt-2" style="color:#fca5a5">' + X.esc(miss.join(' · ')) + '</p>';
+            if (!here && M.discovered(sp.near)) h += '<button class="px-btn" type="button" data-go-near="' + sp.near + '"' + (M.canReach(sp.near) ? '' : ' disabled') + '>' + PX('ev-schiff') + ' Nach ' + X.esc(near.n) + ' reisen</button>';
+        }
+        h += '<p class="small muted mt-2 mb-0">Fische kauft und tauscht Flossie in der <a href="' + X.url('welt/markt.html') + '#fisch">Händlerbucht</a>. Dort gibt es auch bessere Angeln.</p>';
+        panel.innerHTML = h; panel.hidden = false; wirePanel();
+    }
+    function festland() {
+        sel = null; drawOverlay();
+        panel.innerHTML = '<div class="row"><h2>' + X.esc(X.mapArt.FESTLAND.n) + '</h2><span class="spacer"></span><button class="px-x" type="button" data-x aria-label="Schliessen">×</button></div>' +
+            '<p class="small muted mt-1">Das Festland hinter der Nebelwand. Seefahrer erzählen von endlosen Wäldern, Bergen mit Schnee und Städten, in denen Reisende aus aller Welt zusammenkommen.</p>' +
+            '<p class="small">' + PX('ev-nebel') + ' <b>Noch unerreichbar.</b> Kein Mech kommt durch die Nebelwand – für die grosse Überfahrt braucht es eines Tages ein richtiges Schiff. Drüben geht es dann zu Fuss und über Land weiter.</p>' +
+            '<p class="small mb-1"><b>Was man sich erzählt:</b></p><ul class="plist" style="columns:1">' + X.mapArt.FESTLAND.PLACES.map(pl => '<li><span class="dot"></span><b>' + X.esc(pl.n) + '</b> – <span class="muted">' + X.esc(pl.d) + '</span></li>').join('') + '</ul>' +
+            '<p class="small mt-2 mb-0">' + PX('st-R') + ' Bis dahin: Erkunde Sektaria, sammle Baupläne und mach deinen Mech bereit.</p>';
+        panel.hidden = false; wirePanel();
+    }
     function wirePanel() {
         const close = panel.querySelector('[data-x]'); if (close) close.addEventListener('click', () => { panel.hidden = true; sel = null; drawOverlay(); });
         const tr = panel.querySelector('[data-travel]'); if (tr) tr.addEventListener('click', () => go(sel, null));
+        const sc = panel.querySelector('[data-scan]'); if (sc) sc.addEventListener('click', () => { const id = sel; W.scan(id).then(() => { drawMechBox(); select(id); }); });
+        const fi = panel.querySelector('[data-fish]'); if (fi) fi.addEventListener('click', () => { const id = fi.dataset.fish; W.fish(id).then(() => { drawMechBox(); spotPanel(id); }); });
+        const gn = panel.querySelector('[data-go-near]'); if (gn) gn.addEventListener('click', () => { const id = gn.dataset.goNear; W.travel(id).then(r => { if (r && r.arrived) { build(); drawMechBox(); renderLists(); } }); });
+        X.$$('[data-open-spot]', panel).forEach(b => b.addEventListener('click', () => spotPanel(b.dataset.openSpot)));
         X.$$('[data-enter]', panel).forEach(b => b.addEventListener('click', () => {
             const page = b.dataset.enter, i = M.isle(sel);
             if (easy || !i.game || M.pos() === sel) { location.href = X.url(page); return; }   // Spiel-Inseln brauchen den Mech vor Ort
@@ -207,12 +290,12 @@ XIRU.ready(function () {
     }
 
     /* ── Ziehen & Zoomen ── */
-    const VW = 2400, VH = 1600;
+    const VW = 2400, VH = 1600, B = X.mapArt.BOUNDS;   // Archipel und ganze Welt (mit Nebelsee und Festland)
     let vb = { x: 0, y: 0, w: VW };
     const aspect = () => atlas.clientWidth / Math.max(1, atlas.clientHeight);
     function applyView() {
-        vb.w = X.clamp(vb.w, 300, VW * 1.1); const h = vb.w / aspect();
-        vb.x = X.clamp(vb.x, -vb.w * .2, VW - vb.w * .8); vb.y = X.clamp(vb.y, -h * .2, VH - h * .8);
+        vb.w = X.clamp(vb.w, 300, Math.max(B.w, B.h * aspect()) * 1.02); const h = vb.w / aspect();
+        vb.x = X.clamp(vb.x, B.x - vb.w * .2, B.x + B.w - vb.w * .8); vb.y = X.clamp(vb.y, B.y - h * .2, B.y + B.h - h * .8);
         ctl.setView(vb.x, vb.y, vb.w, h, 'contain');
     }
     function fit() { const a = aspect(); vb.w = a > VW / VH ? VH * a : VW; vb.x = (VW - vb.w) / 2; vb.y = (VH - vb.w / a) / 2; applyView(); }
@@ -245,6 +328,7 @@ XIRU.ready(function () {
     X.$('#z-in').addEventListener('click', () => zoom(1 / 1.3));
     X.$('#z-out').addEventListener('click', () => zoom(1.3));
     X.$('#z-fit').addEventListener('click', fit);
+    X.$('#z-world').addEventListener('click', () => { const a = aspect(); vb.w = Math.max(B.w, B.h * a); vb.x = B.x + (B.w - vb.w) / 2; vb.y = B.y + (B.h - vb.w / a) / 2; applyView(); });
     X.$('#z-mech').addEventListener('click', () => { const i = M.isle(easy ? 'zentrum' : M.pos()); centerOn(i.x, i.y, 900); });
     addEventListener('resize', () => applyView());
 

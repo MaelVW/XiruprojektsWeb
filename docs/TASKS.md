@@ -119,7 +119,7 @@ marineblau, weiss, fett; Spalten 3.5/5/7.5 cm; Code in Consolas; der Begriff in 
 
 Jeder Bereich bekommt ein eigenes Design über eine Body-Klasse, die die Farb-Variablen auf `body` überschreibt
 (Vorbild: `body.theme-werft` in `konto/skilltree.html`). Gemeinsame Bereichs-Designs gehören in
-`assets/css/themes/<bereich>.css` und werden auf allen Seiten des Bereichs eingebunden. KI-Labor und Zentrum („Entdecken") bleiben wie sie sind.
+`assets/css/themes/<bereich>.css` und werden auf allen Seiten des Bereichs eingebunden. Zentrum („Entdecken") bleibt wie es ist; das KI-Labor hat seit 2026-10-09 `theme-ki`.
 
 - [x] **Spielhalle = 80er-Arcade-Halle – Sichtprüfung & Feinschliff** (Design `assets/css/themes/arcade.css` ist seit Nachtschicht 2 eingebaut):
       jedes `arcade/*.html` kurz öffnen (eigener Tab, Inseln freischalten), Screenshot/Prüfung: Gehäuse + Marquee sitzen, Spielfeld lesbar,
@@ -204,6 +204,11 @@ Jeder Bereich bekommt ein eigenes Design über eine Body-Klasse, die die Farb-Va
 
 ## H · Werft & Weltkarte (Ausbau – auf Maels Input warten, nur kleine Verbesserungen)
 
+- [x] **Weltkarte vergrössern, Teil 1** (2026-10-09): Reichweite je Strecke statt je Insel, Routen mit 3-s-Zwischenstopps, schwierige Gewässer,
+      Welt rundherum mit Nebelwand, Umriss des Festlands Mnemora im Osten.
+- [ ] **Festland Mnemora** (Maels Idee, später): Überfahrt per Schiff, auf dem Festland Landreisen, dort in Zukunft andere Spieler treffen.
+      **Erst mit Mael besprechen** – nichts vorab bauen. Hinweis: andere Spieler bräuchten einen Server (heute ist alles lokal) → Datenschutz/Sicherheit klären.
+
 - [ ] Weitere Schadensquellen (z. B. Spiele mit Absturz/Game Over beschädigen kein Teil – nur Expeditionen; Idee: „Sturm"-Ereignisse).
 - [ ] Neue Inseln im Nebel (Platzhalter `#unknown` in `weltkarte.html`) – **erst nach Maels Vorgaben**.
 - [ ] Mech-Grafik: Animation beim Expeditionsstart auf der Weltkarte.
@@ -230,6 +235,25 @@ Der Liminal-Teil (`Why.html`, `why/*`, `liminal*.js`) wird mitgeprüft, aber **n
 ---
 
 ## Notizen der letzten Sitzung
+
+- 2026-10-09 (Abend, mit Mael – letzte Aufträge des Tages): **Joe-Glücksstreifen, Angeln (Dredge-artig) + Flossie, Mnemora-Geografie, zwei neue
+  Landmassen (Norden, Südwesten) als Dreieck, alles im Nebel.** Neue Kristalle: `m-angler`, `m-abart`, `m-leviathan`, `m-fischbuch`.
+  Keine Nachtroutine (Mael spart). Nächstes Thema laut Mael: weiter mit **Mnemora** (Schiff, Landreisen, andere Spieler) – erst besprechen.
+
+- 2026-10-09 (später, mit Mael): **Reichweite pro Strecke + Routen + Nebelwand + Festland-Umriss.** Beispiele von Mael stimmen exakt:
+  Heimathafen→Zentrum 1, Heimathafen→Studio 3, Zentrum→Studio 2. Starter-Mech (R1) kommt nur ins Zentrum, von dort zur Händlerbucht und weiter zur
+  Spielhalle (Route mit Stopps). Tutorial-Text angepasst (Ziel jetzt Zentrum; „fertig“ auch nach der ersten Fahrt zu einer Insel ohne Anforderungen).
+  Karte: `max-width: none` für Canvas/SVG in `.pmap` ist wichtig (main.css begrenzt sonst auf 100 % und staucht die breitere Welt).
+
+- 2026-10-09 (mit Mael): **Arcade-Automaten, KI-Design, Crafting, Baupläne, Lucky Joe.**
+  - Spielhalle: jedes Spiel steckt jetzt in einem echten Automaten (Marquee, Bezel, Joystick/Knöpfe reagieren auf Tasten, Münztür) – `arcade.js` `cabinet()`,
+    `themes/arcade.css`. Geprüft: snake, dungeon, minen.
+  - KI-Labor: eigenes Design `assets/css/themes/ki.css` (`theme-ki`, alle 9 `ki/*.html`).
+  - Mech: Baupläne müssen gefunden werden (Sonar-Peilung auf Inseln, Beute, Joe), Bauen kostet Schrott **und** Materialien, Schrottpresse in der Werft.
+    Bestehende Spielstände kennen die Pläne ihrer vorhandenen Teile (Migration `bpv`). Testkonto kennt alle Pläne ausser denen der Nebelmine.
+  - Händlerbucht: **Lucky Joes Glücksbude** (Wunderkisten Holz/Eisen/Gold/Nebel, Jackpot, Gewinnchancen-Aushang). Neue Kristalle:
+    `m-bauplan`, `m-bauplaene`, `m-presse`, `m-glueck`, `m-jackpot`. Neue Pixel-Icons: `npc-joe`, `box-holz|eisen|gold|nebel`, `bp`.
+  - Offen: Weltkarte vergrössern → **Mael fragen** (er hat eine spezielle Idee).
 
 - 2026-10-08 (Nachmittag, Stand): **Alle H-Punkte (Hauptseite) und N1–N4 erledigt.** Offen aus K: nur noch N5 (fehlende Seiten B–G).
   Neue gemeinsame Dateien: `assets/js/docx.js`, `assets/js/mech-art.js`, `hardware/code/**`, `ki/code-tutor.html`, `tools/build_code.py`.

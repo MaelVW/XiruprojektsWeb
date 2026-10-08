@@ -4,16 +4,37 @@
 
    XIRU.mapPix.mount(host, opts) → Kamera mit Pixel-Karte und gestochen scharfer Überlagerung
      opts: discovered(id), visitedSecret, labels (true), unknown (true), anim (true), view [x, y, w, h], fit 'contain'|'cover'
-     Rückgabe: { cam, ov (SVG in Weltkoordinaten 2400×1600), layer(name), setView(x, y, w, h, fit), view(), toWorld(cx, cy),
+     Rückgabe: { cam, ov (SVG in Weltkoordinaten, ganze Welt A.BOUNDS), layer(name), setView(x, y, w, h, fit), view(), toWorld(cx, cy),
                  fog(id), revealFog(id), ready (Promise), destroy() }
-   XIRU.mapPix.base() → Promise<canvas>  (Grundkarte 800×534 Pixel, je Sitzung zwischengespeichert)
+   Die Welt ist grösser als der Archipel (0…2400 × 0…1600): rundherum liegt die Nebelsee mit einer
+   Nebelwand (eigene, gröbere Pixel-Ebene) und dahinter im Osten der Umriss des Festlands Mnemora.
+   XIRU.mapPix.base() → Promise<canvas>  (Grundkarte der ganzen Welt, 3 Einheiten je Pixel, je Sitzung zwischengespeichert)
    XIRU.mapPix.sprite(svgInner, vb, pw, ph) → Promise<canvas>  (SVG → scharfes Pixel-Sprite mit Umriss)
    XIRU.mapPix.mechSprite(canvas, f, loadout) – zeichnet den Mech als Pixel-Figur in ein Canvas
    ========================================================================== */
 (function () {
     'use strict';
-    const X = window.XIRU, A = X.mapArt, W = A.W, H = A.H, S = 3, CW = Math.ceil(W / S), CH = Math.ceil(H / S);
-    const NS = 'http://www.w3.org/2000/svg', VERSION = 'v3';
+    const X = window.XIRU, A = X.mapArt, W = A.W, H = A.H, S = 3;
+    const BX = A.BOUNDS.x, BY = A.BOUNDS.y, BW = A.BOUNDS.w, BH = A.BOUNDS.h, CW = Math.ceil(BW / S), CH = Math.ceil(BH / S);
+    const NS = 'http://www.w3.org/2000/svg', VERSION = 'v5';
+    /* Klarer Bereich um den Archipel: ausserhalb dieser Ellipse beginnt die Nebelwand */
+    const CLR = { x: 1180, y: 820, rx: 1360, ry: 1080 };
+    const clearE = (wx, wy) => Math.hypot((wx - CLR.x) / CLR.rx, (wy - CLR.y) / CLR.ry);
+    /* Landmassen hinter der Nebelwand (Mnemora + zwei namenlose Länder) */
+    const LANDS = A.LANDS, F = A.FESTLAND;
+    const LBOX = LANDS.map(L => [Math.min(L.x - L.rx * 1.45, L.px - L.prx * 1.4), Math.min(L.y - L.ry * 1.35, L.py - L.pry * 1.4), Math.max(L.x + L.rx * 1.45, L.px + L.prx * 1.4), Math.max(L.y + L.ry * 1.35, L.py + L.pry * 1.4)]);
+    const inBox = (b, x, y) => x > b[0] && x < b[2] && y > b[1] && y < b[3];
+    const landAt = (wx, wy) => { for (let i = 0; i < LANDS.length; i++) if (inBox(LBOX[i], wx, wy) && A.tLand(LANDS[i], wx, wy) < 1) return i; return -1; };
+    /* Abstand zu einem Linienzug (Gebirgskamm, Fluss) */
+    function polyD(x, y, pts) {
+        let best = 1e9;
+        for (let i = 1; i < pts.length; i++) {
+            const ax = pts[i - 1][0], ay = pts[i - 1][1], dx = pts[i][0] - ax, dy = pts[i][1] - ay, l2 = dx * dx + dy * dy;
+            const t = Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / l2)), d = Math.hypot(ax + dx * t - x, ay + dy * t - y);
+            if (d < best) best = d;
+        }
+        return best;
+    }
     const hex = c => [parseInt(c.slice(1, 3), 16), parseInt(c.slice(3, 5), 16), parseInt(c.slice(5, 7), 16)];
     const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map(v => (v + .5) / 16);
     const dith = (x, y) => BAYER[(y & 3) * 4 + (x & 3)];
@@ -62,25 +83,43 @@
         crys: { s: ['.a.', 'aba', 'aba', '.a.'], c: { a: '#0e7490', b: '#67e8f9' } }
     };
 
+    /* Gebirge und Siedlungen auf Mnemora (Pixel-Stempel) */
+    const MOUNT = {
+        small: { s: ['....b....', '...bbb...', '..bbcbb..', '..ccccd..', '.cccccdd.', 'ccccccddd'], c: { b: '#eef3f7', c: '#8d8b80', d: '#5d5c55' } },
+        big: { s: ['......b......', '.....bbb.....', '....bbbbb....', '...bbcbcbb...', '...cccccddd..', '..ccccccdddd.', '.cccccccddddd', 'cccccccdddddd'], c: { b: '#eef3f7', c: '#8d8b80', d: '#5d5c55' } },
+        city: { s: ['...r....r...', '..rrr..rrr..', '..wkw..wkw..', 'r.www.rwwwr.', 'rr...rrrrrr.', 'wkwr.wkwwkw.', 'www..wwwwww.'], c: { r: '#c0392b', w: '#f4e3ae', k: '#3a2618' } },
+        harbor: { s: ['..r..r....', '.rrrrrr...', '.wkwwkw...', '.wwwwww...', 'nnnnnnnnnn', '...n...n..'], c: { r: '#b45309', w: '#f4e3ae', k: '#3a2618', n: '#7a5a32' } },
+        ruin: { s: ['a.a...a.', 'a.a.a.a.', 'a.aaa.a.', 'aaaaaaaa', '.a..a..a'], c: { a: '#9aa0aa' } }
+    };
+
     /* ── Grundkarte berechnen ── */
     function terrain() {
         const cv = document.createElement('canvas'); cv.width = CW; cv.height = CH;
         const ctx = cv.getContext('2d'), img = ctx.createImageData(CW, CH), D = img.data;
         const T = new Float32Array(CW * CH), O = new Int8Array(CW * CH).fill(-1), HH = new Float32Array(CW * CH);
-        const boxes = ISL.map(i => [i.x - i.R * 2.9, i.y - i.R * 2.3, i.x + i.R * 2.9, i.y + i.R * 2.3]);
+        const boxes = ISL.map(i => [i.x - i.R * 2.9, i.y - i.R * 2.3, i.x + i.R * 2.9, i.y + i.R * 2.3]), L0 = ISL.length, FEST = L0;
         for (let y = 0; y < CH; y++) for (let x = 0; x < CW; x++) {
-            const wx = x * S + 1.5, wy = y * S + 1.5, k = y * CW + x;
-            let tm = 9, own = -1;
+            const wx = x * S + 1.5 + BX, wy = y * S + 1.5 + BY, k = y * CW + x;
+            let tm = 9, own = -1, anyL = false;
+            for (let i = 0; i < LANDS.length; i++) if (inBox(LBOX[i], wx, wy)) { anyL = true; const t = A.tLand(LANDS[i], wx, wy); if (t < tm) { tm = t; own = L0 + i; } }
+            if (!anyL && clearE(wx, wy) > 1.35) { T[k] = 9; O[k] = -1; continue; }   // tief in der Nebelsee: nur Wasser
             for (let n = 0; n < ISL.length; n++) { const b = boxes[n]; if (wx < b[0] || wx > b[2] || wy < b[1] || wy > b[3]) continue; const t = tOf(ISL[n], wx, wy); if (t < tm) { tm = t; own = n; } }
-            tm += (N2(wx / 38, wy / 38) - .5) * .09;
+            tm += (N2(wx / 38, wy / 38) - .5) * (own >= L0 ? .05 : .09);
             T[k] = tm; O[k] = own;
-            if (tm < 1) HH[k] = (1 - tm) + (fbm(wx / 120, wy / 120) - .5) * .34;
+            if (tm < 1) {
+                if (own >= L0) {
+                    let h = (1 - tm) * 1.7 + (fbm(wx / 160, wy / 160) - .5) * .5;
+                    if (own === FEST) h += Math.max(0, 1 - polyD(wx, wy, F.RIDGE) / 250) * 1.05;   // Speicherberge
+                    HH[k] = h;
+                } else HH[k] = (1 - tm) + (fbm(wx / 120, wy / 120) - .5) * .34;
+            }
         }
         const set = (k, c) => { D[k * 4] = c[0]; D[k * 4 + 1] = c[1]; D[k * 4 + 2] = c[2]; D[k * 4 + 3] = 255; };
         for (let y = 0; y < CH; y++) for (let x = 0; x < CW; x++) {
-            const k = y * CW + x, t = T[k], wx = x * S, wy = y * S;
+            const k = y * CW + x, t = T[k], wx = x * S + BX, wy = y * S + BY;
             if (t >= 1) {   // Wasser in Tiefenstufen, sanft gedithert
-                const vig = Math.min(1, Math.hypot(wx / W - .5, wy / H - .48) * 1.25);
+                if (t >= 9) { set(k, C.abyss); continue; }
+                const vig = Math.min(1, clearE(wx, wy) * .62);
                 let c;
                 if (t < 1.1) c = C.shal2;
                 else if (t < 1.24) c = pickD(C.shal2, C.shal, (t - 1.1) / .14, x, y);
@@ -91,7 +130,12 @@
                 set(k, c);
                 continue;
             }
-            const isl = ISL[O[k]], h = HH[k], hn = y && x ? (HH[k - CW - 1] || h) : h, art = isl.art;
+            const isl = ISL[O[k]] || LANDS[O[k] - ISL.length] || { art: 'festland' }, h = HH[k], hn = y && x ? (HH[k - CW - 1] || h) : h, art = isl.art;
+            if (O[k] === FEST && t < .9) {   // Mnemora: Bitbrunner See und Flashfluss
+                const lk = Math.hypot((wx - F.LAKE.x) / F.LAKE.rx, (wy - F.LAKE.y) / F.LAKE.ry);
+                if (lk < 1) { set(k, lk > .82 ? C.shal2 : lk > .55 ? pickD(C.shal, C.shal2, (lk - .55) * 3.7, x, y) : C.mid2); continue; }
+                if (polyD(wx, wy, F.RIVER) < 8 + (wy - F.RIVER[0][1]) * .004) { set(k, (x + y) % 5 ? C.shal : C.shal2); continue; }
+            }
             const light = hn - h > .018 ? .84 : h - hn > .018 ? 1.1 : 1;   // Licht von oben links
             let c;
             if (t > .9) c = pickD(C.sandL, C.sand, (t - .9) / .06, x, y);
@@ -101,6 +145,9 @@
             else if (art === 'wrack') c = h > .45 ? pickD(C.g2, C.g1, (h - .45) * 4, x, y) : pickD(C.wet, C.sand, h * 2.2, x, y);
             else if (art === 'arena') c = pickD(C.dryD, C.dry, h * 1.8, x, y);
             else if (art === 'schmiede') c = h > .5 ? pickD(C.rockD, C.rock, (h - .5) * 4, x, y) : pickD(C.g3, C.g2, h * 2, x, y);
+            else if (art === 'tundra') c = h > .75 ? pickD(C.snowD, C.snow, (h - .75) * 3, x, y) : h > .38 ? pickD(C.rockD, C.snowD, (h - .38) * 2.7, x, y) : pickD(C.f2, C.rockD, h * 2.6, x, y);
+            else if (art === 'wueste') c = h > .85 ? pickD(C.rockD, C.rock, (h - .85) * 3, x, y) : h > .4 ? pickD(C.sandD, C.dryD, (h - .4) * 2.2, x, y) : pickD(C.sand, C.sandD, h * 2.5, x, y);
+            else if (art === 'festland') c = h > 1.15 ? pickD(C.snowD, C.snow, (h - 1.15) * 6, x, y) : h > .85 ? pickD(C.rockD, C.rock, (h - .85) * 3.3, x, y) : h > .45 ? pickD(C.f2, C.f1, (h - .45) * 2.5, x, y) : h > .18 ? pickD(C.g3, C.f1, (h - .18) * 3.7, x, y) : pickD(C.g1, C.g2, h * 5.5, x, y);
             else c = h < .3 ? pickD(C.g1, C.g2, h / .3, x, y) : h < .52 ? pickD(C.g2, C.g3, (h - .3) / .22, x, y) : pickD(C.g3, C.f1, (h - .52) / .12, x, y);
             set(k, shade(c, light));
         }
@@ -115,9 +162,9 @@
         }
         // Wellenkämme im tiefen Wasser
         const wr = A.rng(4711);
-        for (let n = 0; n < 900; n++) {
+        for (let n = 0; n < 4200; n++) {
             const x = Math.floor(wr() * (CW - 4)), y = Math.floor(wr() * CH), k = y * CW + x;
-            if (T[k] < 1.5 || T[k + 3] < 1.5) continue;
+            if (T[k] < 1.5 || T[k + 3] < 1.5 || clearE(x * S + BX, y * S + BY) > 1.05) continue;
             const c = shade([D[k * 4], D[k * 4 + 1], D[k * 4 + 2]], 1.35);
             set(k, c); set(k + 1, shade(c, 1.12)); set(k + 2, c);
         }
@@ -129,7 +176,7 @@
             for (let q = 0; q < cnt * 3; q++) {
                 const a = r() * Math.PI * 2, d = Math.sqrt(r()) * isl.R * .86, wx = isl.x + Math.cos(a) * d, wy = isl.y + Math.sin(a) * d * .78;
                 if (Math.hypot(wx - lx, (wy - ly) * 1.25) < lr) continue;
-                const x = Math.round(wx / S), y = Math.round(wy / S), k = y * CW + x;
+                const x = Math.round((wx - BX) / S), y = Math.round((wy - BY) / S), k = y * CW + x;
                 if (k < 0 || k >= T.length || O[k] !== n || T[k] > .8) continue;
                 const art = isl.art, roll = r();
                 if (art === 'mine' || art === 'ruinen') stamp(roll < .7 ? TREE.rock : art === 'mine' ? TREE.crys : TREE.bush, x - 2, y - 2);
@@ -139,11 +186,31 @@
                 if (q > cnt) break;
             }
             for (let q = 0; q < cnt; q++) {   // Blumen
-                const x = Math.round((isl.x + (r() - .5) * isl.R * 1.4) / S), y = Math.round((isl.y + (r() - .5) * isl.R) / S), k = y * CW + x;
+                const x = Math.round((isl.x + (r() - .5) * isl.R * 1.4 - BX) / S), y = Math.round((isl.y + (r() - .5) * isl.R - BY) / S), k = y * CW + x;
                 if (k < 0 || k >= T.length || O[k] !== n || T[k] > .82 || ['mine', 'ruinen', 'wrack'].includes(isl.art)) continue;
                 set(k, hex(['#f472b6', '#fde047', '#f8fafc', '#a78bfa'][q % 4]));
             }
         });
+        // Mnemora: Wälder, Gebirge, Städte, Ruinen (grob – noch Gerüchte)
+        { const r = A.rng(8080), FB = LBOX[0], toPx = (wx, wy) => [Math.round((wx - BX) / S), Math.round((wy - BY) / S)];
+            const nearWater = (wx, wy) => polyD(wx, wy, F.RIVER) < 30 || Math.hypot((wx - F.LAKE.x) / (F.LAKE.rx + 30), (wy - F.LAKE.y) / (F.LAKE.ry + 30)) < 1;
+            const placeAt = id => F.PLACES.find(p => p.id === id);
+            for (let q = 0; q < 5200; q++) {
+                const inForest = q < 1400, wx = inForest ? F.FOREST.x + (r() * 2 - 1) * F.FOREST.rx : FB[0] + r() * (FB[2] - FB[0]), wy = inForest ? F.FOREST.y + (r() * 2 - 1) * F.FOREST.ry : FB[1] + r() * (FB[3] - FB[1]);
+                const [x, y] = toPx(wx, wy), k = y * CW + x;
+                if (k < 0 || k >= T.length || O[k] !== FEST || T[k] > .88 || nearWater(wx, wy)) continue;
+                if (inForest && Math.hypot((wx - F.FOREST.x) / F.FOREST.rx, (wy - F.FOREST.y) / F.FOREST.ry) > 1) continue;
+                const h = HH[k]; if (h > 1.1) continue;
+                if (!inForest && r() < .55) continue;
+                stamp(h > .85 ? TREE.rock : inForest || h > .4 ? TREE.pine : r() < .5 ? TREE.bush : TREE.pine, x - 2, y - 4);
+            }
+            for (let i = 1; i < F.RIDGE.length; i++) {   // Bergspitzen entlang des Kamms
+                const a = F.RIDGE[i - 1], b = F.RIDGE[i], n = Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 70);
+                for (let j = 0; j < n; j++) { const t = j / n, [x, y] = toPx(a[0] + (b[0] - a[0]) * t + (r() - .5) * 90, a[1] + (b[1] - a[1]) * t + (r() - .5) * 60); stamp(r() < .3 ? MOUNT.big : MOUNT.small, x - 6, y - 6); }
+            }
+            const town = (id, spr) => { const pl = placeAt(id), [x, y] = toPx(pl.x, pl.y); stamp(spr, x - Math.floor(spr.s[0].length / 2), y - Math.floor(spr.s.length / 2)); };
+            town('registra', MOUNT.city); town('port', MOUNT.harbor); town('altrom', MOUNT.ruin);
+        }
         ctx.putImageData(img, 0, 0);
         // Handelsrouten als gepunktete Linien
         const tmp = document.createElementNS(NS, 'svg'); tmp.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden'; document.body.appendChild(tmp);
@@ -152,7 +219,7 @@
         (X.islands || []).filter(i => i.id !== 'zentrum' && i.id !== 'geheim').forEach(i => {
             const from = i.id === 'konto' ? 'zentrum' : (Math.hypot(i.x - 1190, i.y - 720) < Math.hypot(i.x - 1010, i.y - 1030) ? 'zentrum' : 'konto');
             pth.setAttribute('d', A.route(from, i.id)); const L = pth.getTotalLength();
-            for (let l = i.s * .7; l < L - i.s * .5; l += 15) { const p = pth.getPointAtLength(l), k = Math.round(p.y / S) * CW + Math.round(p.x / S); if (T[k] >= 1) ctx.fillRect(Math.round(p.x / S), Math.round(p.y / S), 1, 1); }
+            for (let l = i.s * .7; l < L - i.s * .5; l += 15) { const p = pth.getPointAtLength(l), px = Math.round((p.x - BX) / S), py = Math.round((p.y - BY) / S); if (T[py * CW + px] >= 1) ctx.fillRect(px, py, 1, 1); }
         });
         tmp.remove();
         return cv;
@@ -184,10 +251,10 @@
         await Promise.all(ISL.map(async isl => {
             const sc = isl.s / 86, vb = [-82, -102, 164, 164], pw = Math.round(164 * sc / S), wx = isl.x - 82 * sc, wy = isl.y - isl.s * .08 - 102 * sc;
             const sp = A.LM[isl.art] ? await sprite(A.LM[isl.art](false), vb, pw, pw) : null;
-            if (sp) ctx.drawImage(sp, Math.round(wx / S), Math.round(wy / S));
+            if (sp) ctx.drawImage(sp, Math.round((wx - BX) / S), Math.round((wy - BY) / S));
         }));
         const cp = await sprite(A.compass(100, 108), [0, 0, 200, 214], Math.round(200 / S), Math.round(214 / S), false);
-        if (cp) ctx.drawImage(cp, Math.round(2130 / S), Math.round(1252 / S));
+        if (cp) ctx.drawImage(cp, Math.round((2130 - BX) / S), Math.round((1252 - BY) / S));
         return cv;
     }
 
@@ -206,6 +273,30 @@
             decorate(terrain()).then(c => { try { sessionStorage.setItem(key, c.toDataURL('image/png')); } catch (e) { } resolve(c); });
         });
         return basePromise;
+    }
+
+    /* Nebelwand rund um den Archipel: grobe Pixelwolken (6 Einheiten je Pixel), gedithert.
+       Über dem Festland bleibt sie etwas lichter, damit sein Umriss durchschimmert. */
+    const FS = 6, FW = Math.ceil(BW / FS), FH = Math.ceil(BH / FS);
+    let wallCv = null;
+    function fogWall() {
+        if (wallCv) return wallCv;
+        const cv = document.createElement('canvas'); cv.width = FW; cv.height = FH;
+        const ctx = cv.getContext('2d'), img = ctx.createImageData(FW, FH), D = img.data;
+        for (let y = 0; y < FH; y++) for (let x = 0; x < FW; x++) {
+            const wx = x * FS + 3 + BX, wy = y * FS + 3 + BY, e = clearE(wx, wy);
+            if (e < .82) continue;
+            const n = N1(wx / 300 + 7, wy / 300 + 3) * .7 + N2(wx / 110, wy / 110) * .3;
+            let f = (e - .9 + (n - .5) * .45) / .26; if (f <= 0) continue;
+            const li = landAt(wx, wy);
+            f = Math.min(li >= 0 ? LANDS[li].fog : .96, f);
+            if (f <= dith(x, y)) continue;
+            const v = N2(wx / 70 + 11, wy / 70 + 5), i = (y * FW + x) * 4;
+            const col = v > .64 ? [233, 239, 246] : v > .42 ? [200, 210, 223] : v > .25 ? [168, 181, 199] : [139, 153, 173];
+            D[i] = col[0]; D[i + 1] = col[1]; D[i + 2] = col[2]; D[i + 3] = 255;
+        }
+        ctx.putImageData(img, 0, 0);
+        return (wallCv = cv);
     }
 
     /* Nebel als Pixelwolke */
@@ -242,8 +333,8 @@
         if (document.getElementById('pm-style')) return;
         const st = document.createElement('style'); st.id = 'pm-style';
         st.textContent = '.pmap{overflow:hidden;background:#061a2e}.pmap__cam{position:absolute;left:0;top:0;width:' + W + 'px;height:' + H + 'px;transform-origin:0 0}' +
-            '.pmap canvas{position:absolute;image-rendering:pixelated;image-rendering:crisp-edges}.pmap__ov{position:absolute;left:0;top:0;width:' + W + 'px;height:' + H + 'px;overflow:visible}' +
-            '.pm-fog{transition:opacity 1.6s;pointer-events:none}.pm-bob{animation:pmBob 1.6s steps(1) infinite}@keyframes pmBob{50%{transform:translateY(' + S + 'px)}}' +
+            '.pmap canvas{position:absolute;max-width:none;max-height:none;image-rendering:pixelated;image-rendering:crisp-edges}.pmap__ov{position:absolute;max-width:none;max-height:none;left:0;top:0;width:' + W + 'px;height:' + H + 'px;overflow:visible}' +
+            '.pm-wall{pointer-events:none;opacity:.94}.pm-fog{transition:opacity 1.6s;pointer-events:none}.pm-bob{animation:pmBob 1.6s steps(1) infinite}@keyframes pmBob{50%{transform:translateY(' + S + 'px)}}' +
             '.pm-lbl text{font:700 17px Consolas,"Cascadia Code",monospace;letter-spacing:1px;text-transform:uppercase}' +
             'html.no-anim .pm-bob{animation:none}';
         document.head.appendChild(st);
@@ -256,9 +347,11 @@
         host.classList.add('pmap');
         if (getComputedStyle(host).position === 'static') host.style.position = 'relative';
         const cam = document.createElement('div'); cam.className = 'pmap__cam'; host.appendChild(cam);
-        const baseCv = document.createElement('canvas'); baseCv.width = CW; baseCv.height = CH; baseCv.style.cssText = 'left:0;top:0;width:' + W + 'px;height:' + H + 'px'; cam.appendChild(baseCv);
-        const fx = document.createElement('canvas'); fx.width = CW; fx.height = CH; fx.style.cssText = baseCv.style.cssText; cam.appendChild(fx);
-        const ov = document.createElementNS(NS, 'svg'); ov.setAttribute('class', 'pmap__ov'); ov.setAttribute('viewBox', '0 0 ' + W + ' ' + H); cam.appendChild(ov);
+        const box = 'left:' + BX + 'px;top:' + BY + 'px;width:' + BW + 'px;height:' + BH + 'px';
+        const baseCv = document.createElement('canvas'); baseCv.width = CW; baseCv.height = CH; baseCv.style.cssText = box; cam.appendChild(baseCv);
+        const fx = document.createElement('canvas'); fx.width = CW; fx.height = CH; fx.style.cssText = box; cam.appendChild(fx);
+        const wall = document.createElement('canvas'); wall.width = FW; wall.height = FH; wall.style.cssText = box; wall.className = 'pm-wall'; cam.appendChild(wall);
+        const ov = document.createElementNS(NS, 'svg'); ov.setAttribute('class', 'pmap__ov'); ov.setAttribute('viewBox', BX + ' ' + BY + ' ' + BW + ' ' + BH); ov.style.cssText = box; cam.appendChild(ov);
         const layers = {};
         const layer = name => layers[name] || (layers[name] = ov.appendChild(document.createElementNS(NS, 'g')));
         ['lanes', 'isles', 'fx', 'labels', 'route', 'top'].forEach(layer);
@@ -289,6 +382,31 @@
             g.innerHTML = '<ellipse cx="' + x + '" cy="' + y + '" rx="' + R + '" ry="' + R * .74 + '" fill="transparent"/><text x="' + x + '" y="' + (y + 8) + '" text-anchor="middle" fill="#64748b" style="font:700 22px Consolas,monospace;letter-spacing:6px">???</text>';
             layer('isles').appendChild(g);
         });
+        // Das Festland hinter der Nebelwand: Umriss, Name, Trefferfläche
+        if (opts.labels !== false) {
+            const g = document.createElementNS(NS, 'g'); g.setAttribute('class', 'wk-festland'); g.setAttribute('tabindex', '0'); g.setAttribute('role', 'button'); g.setAttribute('aria-label', 'Das Festland ' + F.n);
+            const tw = 420, lx = F.x - tw / 2, ly = F.y - 70;
+            g.innerHTML = '<path d="' + A.festPath() + '" fill="rgba(11,23,38,.001)" stroke="#e8c56a" stroke-width="7" stroke-dasharray="18 14" opacity=".75"/>' +
+                '<g class="pm-lbl" style="pointer-events:none"><rect x="' + (lx + 6) + '" y="' + (ly + 6) + '" width="' + tw + '" height="104" fill="#020610"/>' +
+                '<rect x="' + lx + '" y="' + ly + '" width="' + tw + '" height="104" fill="#13243a" stroke="#e8c56a" stroke-width="4"/>' +
+                '<text x="' + F.x + '" y="' + (ly + 52) + '" text-anchor="middle" fill="#f4e3ae" style="font:800 40px Consolas,monospace;letter-spacing:10px">' + F.n.toUpperCase() + '</text>' +
+                '<text x="' + F.x + '" y="' + (ly + 84) + '" text-anchor="middle" fill="#c8a96a" style="font:700 15px Consolas,monospace;letter-spacing:3px">DAS FESTLAND · HINTER DER NEBELWAND</text></g>';
+            layer('isles').appendChild(g);
+            // Grobe Orte auf Mnemora (Gerüchte von Seefahrern)
+            const pg = document.createElementNS(NS, 'g'); pg.setAttribute('class', 'pm-lbl');
+            pg.innerHTML = F.PLACES.map(pl => { const nm = pl.n.toUpperCase(), tw = nm.length * 12.6 + 26, big = pl.t === 'stadt' || pl.t === 'hafen';
+                return '<g class="wk-place" data-place="' + pl.id + '"><rect x="' + (pl.x - 9) + '" y="' + (pl.y - 9) + '" width="18" height="18" transform="rotate(45 ' + pl.x + ' ' + pl.y + ')" fill="' + (big ? '#e8c56a' : '#94a3b8') + '" stroke="#000" stroke-width="4"/>' +
+                    '<rect x="' + Math.round(pl.x - tw / 2) + '" y="' + (pl.y + 18) + '" width="' + Math.round(tw) + '" height="30" fill="#0b1726" stroke="' + (big ? '#e8c56a' : '#64748b') + '" stroke-width="3" stroke-dasharray="' + (big ? 'none' : '8 5') + '"/>' +
+                    '<text x="' + pl.x + '" y="' + (pl.y + 39) + '" text-anchor="middle" fill="' + (big ? '#f4e3ae' : '#cbd5e1') + '" style="font-size:19px">' + nm + '</text></g>'; }).join('');
+            layer('labels').appendChild(pg);
+            // Die anderen Länder: ganz im Nebel, nur ein Schild
+            LANDS.slice(1).forEach(L => {
+                const u = document.createElementNS(NS, 'g'); u.setAttribute('class', 'wk-land'); u.dataset.land = L.id;
+                u.innerHTML = '<ellipse cx="' + L.x + '" cy="' + L.y + '" rx="' + L.rx + '" ry="' + L.ry + '" fill="transparent"/><g class="pm-lbl" style="pointer-events:none"><rect x="' + (L.x - 110) + '" y="' + (L.y - 30) + '" width="220" height="60" fill="#13243a" stroke="#64748b" stroke-width="4" stroke-dasharray="12 8" opacity=".85"/>' +
+                    '<text x="' + L.x + '" y="' + (L.y + 12) + '" text-anchor="middle" fill="#94a3b8" style="font:800 34px Consolas,monospace;letter-spacing:10px">???</text></g>';
+                layer('isles').appendChild(u);
+            });
+        }
         // Seedrache, Krake, Wal als Pixel-Sprites (wippen in ganzen Pixeln)
         const creatures = [[A.dragon(250, 930, false), [158, 732, 594, 222], 'p-seemonster'], [A.kraken(2070, 1290, false), [2010, 1205, 130, 100]], [A.whale(1790, 250, false), [1700, 182, 170, 92]]];
         const crReady = Promise.all(creatures.map(([svgS, vb, egg], n) => sprite(svgS, vb, Math.round(vb[2] / S), Math.round(vb[3] / S)).then(sp => {
@@ -306,12 +424,12 @@
             '<text y="28" fill="#f4e3ae" style="font:700 13px Consolas,monospace">0</text><text x="200" y="28" text-anchor="end" fill="#f4e3ae" style="font:700 13px Consolas,monospace">100 SEEMEILEN</text></g>';
         layer('labels').appendChild(t);
         // Grundkarte einsetzen
-        const ready = base().then(b => { baseCv.getContext('2d').drawImage(b, 0, 0); return crReady; });
+        const ready = base().then(b => { baseCv.getContext('2d').drawImage(b, 0, 0); wall.getContext('2d').drawImage(fogWall(), 0, 0); return crReady; });
         // Glitzernde Wellen
         let waveT = 0, pts = null;
         const fxc = fx.getContext('2d');
         function waves() {
-            if (!pts) { pts = []; const r = A.rng(31); for (let i = 0; i < 2600 && pts.length < 420; i++) { const x = Math.floor(r() * CW), y = Math.floor(r() * CH), wx = x * S, wy = y * S; if ((X.islands || []).every(isl => Math.hypot(isl.x - wx, (isl.y - wy) / .78) > isl.s * 1.55)) pts.push([x, y, r() * 6.28]); } }
+            if (!pts) { pts = []; const r = A.rng(31); for (let i = 0; i < 6000 && pts.length < 420; i++) { const x = Math.floor(r() * CW), y = Math.floor(r() * CH), wx = x * S + BX, wy = y * S + BY; if (clearE(wx, wy) < .9 && (X.islands || []).every(isl => Math.hypot(isl.x - wx, (isl.y - wy) / .78) > isl.s * 1.55)) pts.push([x, y, r() * 6.28]); } }
             fxc.clearRect(0, 0, CW, CH);
             const tt = performance.now() / 700;
             pts.forEach(([x, y, ph]) => { const v = Math.sin(tt + ph); if (v < .55) return; fxc.fillStyle = v > .9 ? 'rgba(201,242,239,.85)' : 'rgba(120,200,230,.55)'; fxc.fillRect(x, y, v > .9 ? 3 : 2, 1); });
@@ -341,5 +459,5 @@
     }
     const M_ISLE = id => (X.islands || []).find(i => i.id === id);
 
-    window.XIRU.mapPix = { S, CW, CH, base, sprite, mount, mechSprite, css };
+    window.XIRU.mapPix = { S, CW, CH, BOUNDS: A.BOUNDS, base, sprite, mount, mechSprite, css };
 })();

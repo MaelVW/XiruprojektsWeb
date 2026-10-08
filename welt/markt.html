@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Händlerbucht · Xiruprojekts</title>
-    <meta name="description" content="Die Händlerbucht in Sektaria: Bauteile kaufen, Materialien handeln und alte Teile verkaufen.">
+    <meta name="description" content="Die Händlerbucht in Sektaria: Bauteile kaufen, Materialien handeln, alte Teile verkaufen, bei Flossie Fische tauschen – und bei Lucky Joe Wunderkisten öffnen.">
     <link rel="stylesheet" href="../assets/css/main.css">
     <link rel="stylesheet" href="../assets/css/welt.css">
     <script src="../assets/js/site.js"></script>
@@ -28,6 +28,39 @@
             <div class="npc"><div class="npc__face"><i data-px="npc-kraehe"></i></div><div><h2 class="mb-1">Kapitänin Krähe · Bauteile</h2><p class="npc__say" id="say-kraehe"></p></div></div>
             <div class="row mt-2"><span class="small muted" id="stock-info"></span><span class="spacer"></span><button class="btn btn--sm" type="button" id="reroll">Neue Ladung holen · 25 <i data-px="taler"></i></button></div>
             <div class="shop__grid mt-1"><div class="items" id="offers"></div><div id="offer-detail"><p class="muted small">Klick ein Teil an, um es genauer anzusehen.</p></div></div>
+        </section>
+
+        <section class="card joe" id="joe" data-here>
+            <div class="joe__awning" aria-hidden="true"></div>
+            <div class="joe__bulbs" aria-hidden="true"></div>
+            <div class="joe__top">
+                <div class="npc"><div class="npc__face joe__face"><i data-px="npc-joe"></i></div><div><h2 class="mb-1">Lucky Joes Glücksbude</h2><p class="npc__say" id="say-joe"></p></div></div>
+                <div class="joe__pot" title="Ein Zehntel jedes Kistenpreises wandert in den Jackpot"><small>Jackpot</small><b id="joe-pot">0</b><span><i data-px="taler"></i> Taler</span></div>
+            </div>
+            <div class="joe__boxes" id="joe-boxes"></div>
+            <div class="joe__foot">
+                <span class="small muted" id="joe-stats"></span><span class="spacer"></span>
+                <button class="btn btn--sm btn--ghost" type="button" id="joe-odds" aria-expanded="false">Joes Aushang: Gewinnchancen</button>
+            </div>
+            <div class="joe__odds" id="joe-oddsbox" hidden></div>
+            <p class="small faint mt-2 mb-0">Joes Ehrenwort: Hier zahlst du nur mit Talern aus dem Spiel. Echtes Geld gibt es in Sektaria nicht – und wird es nie geben.
+                Nach fünf Nieten in Folge legt Joe dir ein Bauteil in die nächste Kiste.</p>
+        </section>
+
+        <section class="card flossie" id="fisch" data-here>
+            <div class="npc"><div class="npc__face"><i data-px="npc-flossie"></i></div><div><h2 class="mb-1">Flossies Fischstand</h2><p class="npc__say" id="say-flossie"></p></div></div>
+            <div class="flossie__grid mt-2">
+                <div class="flossie__rod" id="fl-rod"></div>
+                <div class="flossie__wish" id="fl-wish"></div>
+            </div>
+            <h3 class="mt-3">Deine Fischkiste</h3>
+            <div class="items" id="fl-box"></div>
+            <div class="row mt-1"><span class="small muted" id="fl-sum"></span><span class="spacer"></span><button class="btn btn--sm" type="button" id="fl-sellall">Alle Fische verkaufen</button></div>
+            <h3 class="mt-3">Tauschbörse</h3>
+            <p class="small muted">Flossie nimmt immer die günstigsten Fische der verlangten Seltenheit.</p>
+            <div class="trades" id="fl-trades"></div>
+            <h3 class="mt-3">Sammelbuch <span class="badge" id="fl-count"></span></h3>
+            <div class="fishbook" id="fl-book"></div>
         </section>
 
         <section class="card" data-here>
@@ -125,7 +158,220 @@ XIRU.ready(function () {
         const got = M.addTaler(n / 5); traded(); X.toast('Eingetauscht', n + ' Schrott → ' + got + ' Taler', { iconHtml: W.px('npc-frieda', 26) }); render();
     });
 
-    function render() { page.redraw && page.redraw(); renderOffers(); renderMats(); renderSell(); }
+    /* ── Lucky Joe: Wunderkisten ──
+       Jede Kiste würfelt aus ihrer Tabelle (Gewicht, Art, Werte). Ein Zehntel des Preises
+       geht in Joes Jackpot. Nach fünf Nieten (weniger Taler als der Preis) gibt es sicher ein Teil. */
+    const JOE_SAY = ['„Komm näher, Freund! Heute ist dein Glückstag – das spür ich im kleinen Zeh.“', '„Jede Kiste ein Abenteuer! Manche Abenteuer sind halt kurz.“',
+        '„Das Haus gewinnt immer. Aber heute ist das Haus in Spendierlaune!“', '„Psst – die Goldkisten sind heute besonders golden. Sag\'s nicht weiter.“', '„Lucky Joe lügt nie. Fast nie. Eigentlich selten.“'];
+    const JOE_WIN = ['„Ha! Siehst du? Ich hab\'s doch gesagt!“', '„Na also! Glück ist eine Frage der Einstellung. Und der Kiste.“', '„Nicht schlecht, nicht schlecht … noch eine?“'];
+    const JOE_LOSE = ['„Knapp daneben ist auch vorbei! Nochmal?“', '„Die nächste. Die nächste ist es. Ganz sicher.“', '„Pech im Spiel, Glück in der Werft!“'];
+    const BOXES = [
+        { id: 'holz', n: 'Holzkiste', icon: 'box-holz', price: 20, d: 'Klein, knarrt, riecht nach Hafen.', t: [
+            [34, 'taler', 5, 15], [24, 'taler', 16, 30], [22, 'mats', 2, 0], [12, 'item', 2, 1, 3], [6, 'bp', 2], [1.6, 'taler', 80, 120], [.4, 'jackpot']] },
+        { id: 'eisen', n: 'Eisenkiste', icon: 'box-eisen', price: 60, d: 'Schwer. Klappert verheissungsvoll.', t: [
+            [30, 'taler', 20, 45], [20, 'taler', 46, 80], [19, 'mats', 3, .12], [18, 'item', 3, 2, 4], [9, 'bp', 3], [3.4, 'taler', 200, 300], [.6, 'jackpot']] },
+        { id: 'gold', n: 'Goldkiste', icon: 'box-gold', price: 150, d: 'Glänzt. Joe poliert sie jeden Morgen.', t: [
+            [25, 'taler', 60, 120], [18, 'taler', 121, 220], [16, 'mats', 4, .3], [25, 'item', 4, 3, 5], [12, 'bp', 4], [3.2, 'taler', 500, 700], [.8, 'jackpot']] },
+        { id: 'nebel', n: 'Nebelkiste', icon: 'box-nebel', price: 400, d: 'Kalt. Leise. Niemand weiss, woher Joe sie hat.', t: [
+            [20, 'taler', 150, 300], [24, 'mats', 4, .6], [35, 'item', 5, 4, 6], [16, 'bp', 5], [4, 'taler', 1200, 1600], [1, 'jackpot']] }
+    ];
+    const POT0 = 250;
+    function joe() { const m = M.state(); if (!m.joe || typeof m.joe !== 'object') m.joe = {}; const j = m.joe; j.n = +j.n || 0; j.best = +j.best || 0; j.dry = +j.dry || 0; j.pot = Math.max(POT0, +j.pot || POT0); return j; }
+    $('#say-joe').textContent = X.pick(JOE_SAY);
+    function renderJoe() {
+        const j = joe();
+        $('#joe-pot').textContent = X.fmt(j.pot);
+        $('#joe-stats').textContent = j.n ? j.n + ' Kiste' + (j.n === 1 ? '' : 'n') + ' geöffnet · bester Fang: ' + X.fmt(j.best) + ' Taler-Wert' : 'Noch keine Kiste geöffnet.';
+        $('#joe-boxes').innerHTML = BOXES.map(b => '<div class="jbox jbox--' + b.id + '"><div class="jbox__icon">' + W.px(b.icon, 64) + '</div><b>' + esc(b.n) + '</b><span class="small muted">' + esc(b.d) + '</span>' +
+            '<button class="btn btn--sm' + (b.id === 'holz' ? ' btn--primary' : '') + '" type="button" data-box="' + b.id + '"' + (M.taler() < b.price ? ' disabled' : '') + '>Öffnen · ' + X.fmt(b.price) + ' ' + W.px('taler') + '</button></div>').join('');
+        const kind = r => r[1] === 'taler' ? r[2] + '–' + r[3] + ' Taler' : r[1] === 'mats' ? r[2] + '× Material' + (r[3] ? ' (evtl. Splitter/Nebelkern)' : '') : r[1] === 'item' ? 'Bauteil bis Stufe ' + r[2] + ', ' + W.qName(r[3]) + '–' + W.qName(r[4]) : r[1] === 'bp' ? 'unbekannter Bauplan bis Stufe ' + r[2] : 'JACKPOT';
+        $('#joe-oddsbox').innerHTML = BOXES.map(b => { const sum = b.t.reduce((a, r) => a + r[0], 0); return '<div><h3 class="mb-1">' + W.px(b.icon, 20) + ' ' + esc(b.n) + '</h3><table class="mtable"><tbody>' + b.t.map(r => '<tr><td>' + esc(kind(r)) + '</td><td>' + (r[0] / sum * 100).toFixed(1).replace('.', ',') + ' %</td></tr>').join('') + '</tbody></table></div>'; }).join('');
+    }
+    $('#joe-odds').addEventListener('click', e => { const box = $('#joe-oddsbox'); box.hidden = !box.hidden; e.currentTarget.setAttribute('aria-expanded', String(!box.hidden)); });
+    function rollBox(b, j) {
+        let rows = b.t;
+        if (j.dry >= 5) rows = rows.filter(r => r[1] === 'item');            // Joes Ehrenwort
+        const sum = rows.reduce((a, r) => a + r[0], 0); let x = Math.random() * sum, row = rows[0];
+        for (const r of rows) { x -= r[0]; if (x <= 0) { row = r; break; } }
+        if (row[1] === 'bp') { const id = M.randomBp(row[2]); if (id) return { type: 'bp', id }; row = b.t.find(r => r[1] === 'item'); }
+        if (row[1] === 'taler') return { type: 'taler', n: X.rand(row[2], row[3]) };
+        if (row[1] === 'jackpot') return { type: 'jackpot', n: j.pot };
+        if (row[1] === 'mats') { const sum = {}; W.loot({ mats: row[2], rare: row[3] }).forEach(e => { sum[e.id] = (sum[e.id] || 0) + e.n; }); return { type: 'mats', list: Object.keys(sum).map(id => ({ type: 'mat', id, n: sum[id] })) }; }
+        const pt = W.rollPart({ maxT: row[2], minQ: row[3], maxQ: row[4] });
+        return { type: 'item', id: pt.id, q: pt.q };
+    }
+    function openBox(b) {
+        if (!page.at()) return;
+        if (!M.spendTaler(b.price)) { X.toast('Zu wenig Taler', 'Die ' + b.n + ' kostet ' + b.price + ' Taler.', { iconHtml: W.px('npc-joe', 26), type: 'error' }); return; }
+        const j = joe(); j.pot += Math.round(b.price / 10); j.n++;
+        const res = rollBox(b, j);
+        // Wert in Talern (für Statistik & Nieten-Zähler) und Gutschrift
+        let worth = 0, html = '', q = 1, icon = 'taler', title = '';
+        if (res.type === 'taler' || res.type === 'jackpot') {
+            const got = M.addTaler(res.n);
+            worth = got; icon = 'taler';
+            if (res.type === 'jackpot') { j.pot = POT0; title = 'JACKPOT!'; q = 6; X.egg('m-jackpot'); }
+            else { title = got >= b.price * 3 ? 'Glückstreffer!' : got >= b.price ? 'Gewinn!' : 'Ein paar Taler'; q = got >= b.price * 3 ? 5 : got >= b.price ? 2 : 1; }
+            html = '<b>+' + X.fmt(got) + '</b> Taler';
+        } else if (res.type === 'mats') {
+            const lines = W.grant(res.list); worth = res.list.reduce((a, e) => a + e.n * (M.mat(e.id) || { v: 0 }).v, 0);
+            icon = 'mat-' + res.list[0].id; title = 'Materialien'; q = res.list.some(e => e.id === 'nebelkern') ? 5 : res.list.some(e => e.id === 'splitter') ? 3 : 1; html = lines.join('<br>');
+        } else if (res.type === 'bp') {
+            M.learnBp(res.id); const pt = M.part(res.id); worth = pt.cost; icon = res.id; title = 'Ein Bauplan!'; q = Math.min(6, pt.t + 1);
+            html = W.px('bp') + ' Bauplan für <b class="bp-new">' + esc(pt.n) + '</b> (Stufe ' + pt.t + ')';
+        } else {
+            const pt = M.part(res.id), it = M.add(res.id, res.q); q = res.q; icon = res.id; title = W.qName(res.q) + '!';
+            if (it) { worth = M.value(it); html = '<b class="q' + res.q + '">' + esc(pt.n) + '</b> <span class="small q' + res.q + '">(' + W.qName(res.q) + ')</span>'; }
+            else { worth = M.addTaler(M.value({ id: res.id, q: res.q, up: 0, c: 100 })); html = 'Inventar voll – Joe zahlt dir den Wert aus: <b>+' + worth + '</b> Taler'; }
+        }
+        j.dry = (res.type === 'taler' || res.type === 'mats') && worth < b.price ? j.dry + 1 : 0;
+        j.best = Math.max(j.best, worth); X.persist();
+        X.egg('m-glueck');
+        reveal(b, { html, q, icon, title, win: worth >= b.price || res.type === 'bp' || res.type === 'item', jackpot: res.type === 'jackpot' });
+        render();
+    }
+    /* Öffnen mit Spannung: Kiste wackelt → Glücksstreifen mit Silhouetten in den Farben der
+       Seltenheiten rast vorbei und bremst auf dem Gewinn → das Leuchten steigt Stufe für Stufe
+       bis zur echten Seltenheit → Enthüllung. Der Streifen zeigt nur Zufallsfüller, das Ergebnis
+       steht vorher fest (rollBox). Klick auf „Überspringen“ springt ans Ende. */
+    const ROLL_Q = { holz: [0, 60, 25, 10, 4, 1, 0], eisen: [0, 40, 30, 18, 9, 3, 0], gold: [0, 14, 30, 28, 18, 9, 1], nebel: [0, 4, 12, 28, 32, 18, 6] };
+    const ROLL_T = { holz: 2, eisen: 3, gold: 4, nebel: 5 };
+    const QTONE = [0, 330, 392, 466, 554, 659, 784];
+    function filler(b) {
+        const wq = ROLL_Q[b.id], sum = wq.reduce((a, x) => a + x, 0); let x = Math.random() * sum, q = 1;
+        for (let k = 1; k < wq.length; k++) { x -= wq[k]; if (x <= 0) { q = k; break; } }
+        const roll = Math.random(), parts = X.mechParts.filter(p => p.t <= ROLL_T[b.id]);
+        const icon = roll < .55 ? X.pick(parts).id : roll < .72 ? 'taler' : roll < .88 ? 'mat-' + X.pick(['kabel', 'zahnrad', 'oel', 'platine', 'chip', 'splitter']) : roll < .97 ? 'bp' : 'box-' + b.id;
+        return { q, icon };
+    }
+    function reveal(b, r) {
+        const N = 46, TGT = 39, cards = [];
+        for (let k = 0; k < N; k++) cards.push(k === TGT ? { q: r.q, icon: r.icon } : filler(b));
+        const mo = X.modal('<div class="jopen">' +
+            '<div class="jopen__box is-shaking">' + W.px(b.icon, 128) + '</div>' +
+            '<div class="jroll" hidden><div class="jroll__track">' + cards.map((c, k) => '<div class="jroll__card" style="--qc:var(--q' + c.q + ')"' + (k === TGT ? ' data-win' : '') + '>' + W.px(c.icon, 56) + '</div>').join('') + '</div><i class="jroll__pin"></i></div>' +
+            '<div class="jopen__res" hidden><div class="jopen__glow q' + r.q + '"></div><div class="jopen__icon">' + W.px(r.icon, 96) + '</div>' +
+            '<h2 class="q' + r.q + '">' + esc(r.title) + '</h2><p>' + r.html + '</p></div><p class="npc__say jopen__say"></p>' +
+            '<div class="row" style="justify-content:center"><button class="btn btn--sm btn--ghost" type="button" id="jo-skip">Überspringen</button><button class="btn btn--primary" type="button" id="jo-again" hidden>Noch eine ' + esc(b.n) + '</button><button class="btn" type="button" data-close hidden>Fertig</button></div></div>',
+            { onClose: () => { done = true; cancelAnimationFrame(raf); } });
+        const el = mo.el, anim = X.setting('anim') !== false && !matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const box = el.querySelector('.jopen__box'), roll = el.querySelector('.jroll'), track = el.querySelector('.jroll__track'), win = el.querySelector('[data-win]');
+        let raf = 0, done = false, stage = 0, timers = [];
+        const later = (fn, ms) => timers.push(setTimeout(fn, ms));
+        [330, 392, 494, 587].forEach((f, k) => later(() => X.beep(f, .07, 'square', .035), k * 170));
+        // 1 · Glücksstreifen
+        function startRoll() {
+            if (done) return; stage = 1;
+            box.hidden = true; roll.hidden = false;
+            const pitch = win.offsetWidth + 8, viewW = roll.clientWidth;
+            const end = TGT * pitch - (viewW / 2 - win.offsetWidth / 2) + (Math.random() - .5) * win.offsetWidth * .7;
+            const D = 3900, t0 = performance.now(); let lastIdx = -1;
+            const ease = t => 1 - Math.pow(1 - t, 4);
+            (function step(now) {
+                if (done) return;
+                const k = Math.min(1, (now - t0) / D), x = end * ease(k);
+                track.style.transform = 'translateX(' + (-x).toFixed(1) + 'px)';
+                const idx = Math.floor((x + viewW / 2) / pitch);   // Karte unter der Nadel
+                if (idx !== lastIdx && idx >= 0 && idx < N) { lastIdx = idx; X.beep(QTONE[cards[idx].q] * (k < .7 ? 1 : 1.5), .025, 'square', .025); }
+                if (k < 1) raf = requestAnimationFrame(step); else escalate();
+            })(t0);
+        }
+        // 2 · Seltenheits-Treppe: das Leuchten steigt bis zur echten Stufe
+        function escalate() {
+            if (done || stage >= 2) return; stage = 2;
+            win.classList.add('is-win');
+            for (let q = 1; q <= r.q; q++) later(() => {
+                win.style.setProperty('--qc', 'var(--q' + q + ')'); win.dataset.q = q;
+                X.beep(QTONE[q], .09, 'triangle', .05);
+                roll.style.setProperty('--qc', 'var(--q' + q + ')'); roll.classList.add('is-flash');
+                later(() => roll.classList.remove('is-flash'), 120);
+            }, (q - 1) * (r.q >= 5 ? 260 : 190));
+            later(show, (r.q - 1) * (r.q >= 5 ? 260 : 190) + (r.q >= 5 ? 700 : 450));
+        }
+        // 3 · Enthüllung
+        function show() {
+            if (done || stage >= 3) return; stage = 3; timers.forEach(clearTimeout); timers = []; cancelAnimationFrame(raf);
+            box.hidden = true; roll.hidden = true; el.querySelector('.jopen__res').hidden = false;
+            el.querySelector('#jo-skip').hidden = true; el.querySelector('#jo-again').hidden = false; el.querySelector('[data-close]').hidden = false;
+            el.querySelector('.jopen__say').textContent = r.jackpot ? '„Der … der Jackpot? Bei MIR? Na gut. Ehrenwort ist Ehrenwort.“' : X.pick(r.win ? JOE_WIN : JOE_LOSE);
+            if (r.win) { [659, 784, 1046].forEach((f, k) => setTimeout(() => X.beep(f, .1, 'triangle', .05), k * 90)); if (r.q >= 4 || r.jackpot) X.confetti(r.jackpot ? 220 : 90); }
+            else X.beep(196, .18, 'sawtooth', .03);
+            el.querySelector('#jo-again').focus();
+        }
+        el.querySelector('#jo-skip').addEventListener('click', show);
+        if (anim) later(startRoll, 900); else show();
+        const again = el.querySelector('#jo-again');
+        again.disabled = M.taler() < b.price;
+        again.addEventListener('click', () => { mo.close(); openBox(b); });
+    }
+    $('#joe-boxes').addEventListener('click', e => { const b = e.target.closest('[data-box]'); if (b) openBox(BOXES.find(x => x.id === b.dataset.box)); });
+    if (location.hash === '#joe') setTimeout(() => $('#joe').scrollIntoView({ block: 'start' }), 300);
+
+    /* ── Flossies Fischstand: Fische verkaufen & tauschen, Angel verbessern, Wunschfisch, Sammelbuch ── */
+    const FL_SAY = ['„Moin! Frisch aus dem Wasser oder gar nicht – so halte ich das.“', '„Zeig mal, was du an der Leine hattest!“', '„Wer im Nebelstrudel angelt, braucht eine gute Rute. Und gute Nerven.“', '„Der Kabelaal? Leicht elektrisch. Ich trag Gummihandschuhe.“'];
+    $('#say-flossie').textContent = X.pick(FL_SAY);
+    const TRADES = [
+        { q: 1, n: 5, t: 'Kleiner Fang', get: () => [{ type: 'mat', id: 'oel', n: 2 }, { type: 'mat', id: 'kabel', n: 2 }], d: '2× Altöl (Fischöl!) + 2× Kupferkabel' },
+        { q: 2, n: 3, t: 'Guter Fang', get: () => [{ type: 'mat', id: 'platine', n: 2 }, { type: 'mat', id: 'chip', n: 1 }], d: '2× Platine + 1× Mikrochip' },
+        { q: 3, n: 2, t: 'Seltener Fang', get: () => [{ type: 'mat', id: 'splitter', n: 1 }, { type: 'taler', n: 30 }], d: '1× Kristallsplitter + 30 Taler' },
+        { q: 4, n: 1, t: 'Prachtfang', get: () => { const pt = W.rollPart({ maxT: 4, minQ: 3, maxQ: 5 }); return [{ type: 'item', id: pt.id, q: pt.q }]; }, d: 'ein Bauteil bis Stufe 4, mindestens Selten' },
+        { q: 5, n: 1, t: 'Nebelfang', get: () => [{ type: 'mat', id: 'nebelkern', n: 1 }, { type: 'mat', id: 'splitter', n: 2 }], d: '1× Nebelkern + 2× Kristallsplitter' },
+        { q: 6, n: 1, t: 'Mythischer Fang', get: () => { const pt = W.rollPart({ maxT: 5, minT: 4, minQ: 6, maxQ: 6 }); const bp = M.randomBp(5); return [{ type: 'item', id: pt.id, q: 6 }].concat(bp ? [{ type: 'bp', id: bp }] : []); }, d: 'ein mythisches Bauteil + ein unbekannter Bauplan' }
+    ];
+    const fishOfQ = q => X.fish.filter(f => f.q === q && (M.fishes()[f.id] || 0) > 0).sort((a, b) => a.v - b.v);
+    const countQ = q => fishOfQ(q).reduce((a, f) => a + M.fishes()[f.id], 0);
+    function takeQ(q, n) { for (const f of fishOfQ(q)) { const k = Math.min(n, M.fishes()[f.id]); M.addFish(f.id, -k); n -= k; if (!n) break; } }
+    function wish() {
+        const m = M.state(); if (!m.flossie || m.flossie.date !== X.today()) { m.flossie = { date: X.today(), done: 0 }; X.persist(); }
+        const r = W.seeded(W.dayKey() + ':fisch'), pool = X.fish.filter(f => f.q <= 4 && !f.abart);
+        return { f: pool[Math.floor(r() * pool.length)], st: m.flossie };
+    }
+    function renderFlossie() {
+        const rod = M.rod(), cur = M.rodInfo(), nx = M.rodInfo(rod + 1);
+        $('#fl-rod').innerHTML = '<div class="row" style="gap:.7rem;align-items:center">' + W.px('ic-angel', 48) + '<div><b>' + esc(cur.n) + '</b> <span class="badge">Stufe ' + rod + '</span><div class="small muted">' + esc(cur.d) + '</div></div></div>' +
+            (nx ? '<p class="small mt-2 mb-1">Nächste Stufe: <b>' + esc(nx.n) + '</b> – ' + esc(nx.d) + '</p><div class="costs"><span class="cost-chip' + (M.taler() < nx.taler ? ' is-short' : '') + '">' + W.px('taler') + ' ' + X.fmt(nx.taler) + '</span>' +
+                Object.keys(nx.mats).map(k => '<span class="cost-chip' + ((M.mats()[k] || 0) < nx.mats[k] ? ' is-short' : '') + '">' + W.px('mat-' + k) + ' ' + nx.mats[k] + '</span>').join('') + '</div>' +
+                '<button class="btn btn--primary btn--sm mt-2" type="button" id="fl-up"' + (M.canUpgradeRod() ? '' : ' disabled') + '>Angel verbessern</button>'
+                : '<p class="small mt-2 mb-0">Besser geht es nicht. Flossie ist neidisch.</p>');
+        const w = wish(), have = M.fishes()[w.f.id] || 0;
+        $('#fl-wish').innerHTML = '<b>Wunschfisch des Tages</b><div class="row mt-1" style="gap:.6rem;align-items:center">' + W.px('fish-' + w.f.id, 40) + '<div><b class="q' + w.f.q + '">' + esc(w.f.n) + '</b><div class="small muted">Flossie zahlt heute das Dreifache: ' + (w.f.v * 3) + ' ' + W.px('taler') + ' + eine kleine Überraschung.</div></div></div>' +
+            (w.st.done ? '<p class="small mt-1 mb-0">Erledigt – danke! Morgen will sie etwas anderes.</p>' : '<button class="btn btn--sm mt-2" type="button" id="fl-wishgo"' + (have ? '' : ' disabled') + '>' + (have ? 'Abgeben' : 'Noch keinen gefangen') + '</button>' +
+                '<p class="small muted mt-1 mb-0">Beisst bei: ' + X.fishSpots.filter(sp => sp.fish.includes(w.f.id)).map(sp => esc(sp.n)).join(', ') + '</p>');
+        const fs = M.fishes(), ids = X.fish.filter(f => fs[f.id]);
+        $('#fl-box').innerHTML = ids.length ? ids.map(f => '<div class="offer">' + W.fishCard(f.id, fs[f.id]) + '<div class="row" style="gap:.25rem;justify-content:center"><button class="btn btn--sm" type="button" data-fsell="' + f.id + '">−1 · ' + f.v + ' ' + W.px('taler') + '</button></div></div>').join('')
+            : '<p class="muted small" style="grid-column:1/-1">Noch keine Fische. Angelplätze siehst du auf der Weltkarte, wenn dein Sensor stark genug ist – der erste liegt gleich vor dem Heimathafen.</p>';
+        const total = ids.reduce((a, f) => a + fs[f.id] * f.v, 0);
+        $('#fl-sum').textContent = ids.length ? 'Gesamtwert: ' + X.fmt(total) + ' Taler' : '';
+        $('#fl-sellall').disabled = !ids.length;
+        $('#fl-trades').innerHTML = TRADES.map((t, i) => { const c = countQ(t.q); return '<div class="trade"><div><b>' + esc(t.t) + '</b><div class="small">' + t.n + '× <span class="q' + t.q + '">' + W.qName(t.q) + '</span>-Fisch → ' + esc(t.d) + '</div><div class="small muted">Du hast ' + c + '</div></div><button class="btn btn--sm" type="button" data-trade="' + i + '"' + (c >= t.n ? '' : ' disabled') + '>Tauschen</button></div>'; }).join('');
+        const got = X.fish.filter(f => M.caught(f.id)).length;
+        $('#fl-count').textContent = got + ' / ' + X.fish.length;
+        $('#fl-book').innerHTML = X.fish.map(f => M.caught(f.id) ? '<div class="fishbook__e" title="' + esc(f.d) + '">' + W.px('fish-' + f.id, 40) + '<b class="q' + f.q + '">' + esc(f.n) + '</b>' + (f.abart ? '<span class="small">Abart</span>' : '') + '</div>'
+            : '<div class="fishbook__e is-unknown">' + W.px('fish-' + f.id, 40) + '<b>???</b></div>').join('');
+        if (got === X.fish.length) X.egg('m-fischbuch');
+        const up = $('#fl-up'); if (up) up.addEventListener('click', () => { if (!page.at()) return; if (M.upgradeRod()) { X.beep(660, .1, 'triangle'); X.toast('Neue Angel: ' + M.rodInfo().n, 'Breitere Zonen, ruhigerer Zeiger – und tiefere Gewässer.', { iconHtml: W.px('ic-angel', 26) }); render(); } });
+        const wg = $('#fl-wishgo'); if (wg) wg.addEventListener('click', () => {
+            if (!page.at()) return; const w2 = wish(); if (w2.st.done || !(M.fishes()[w2.f.id] > 0)) return;
+            M.addFish(w2.f.id, -1); w2.st.done = 1; X.persist();
+            const lines = W.grant([{ type: 'taler', n: w2.f.v * 3 }].concat(W.loot({ mats: 2, rare: .15, bp: .25, bpT: 3 })));
+            X.toast('Flossie strahlt!', lines.join(' · '), { iconHtml: W.px('npc-flossie', 26) }); render();
+        });
+    }
+    $('#fl-box').addEventListener('click', e => { const b = e.target.closest('[data-fsell]'); if (!b || !page.at()) return; const f = M.fishInfo(b.dataset.fsell); if (!(M.fishes()[f.id] > 0)) return; M.addFish(f.id, -1); M.addTaler(f.v); X.beep(700, .05); render(); });
+    $('#fl-sellall').addEventListener('click', () => {
+        if (!page.at()) return; const fs = M.fishes(); let sum = 0;
+        X.fish.forEach(f => { const n = fs[f.id] || 0; if (n) { sum += n * f.v; M.addFish(f.id, -n); } });
+        if (sum) { const got = M.addTaler(sum); X.toast('Alles verkauft', '+' + got + ' Taler', { iconHtml: W.px('npc-flossie', 26) }); render(); }
+    });
+    $('#fl-trades').addEventListener('click', e => {
+        const b = e.target.closest('[data-trade]'); if (!b || !page.at()) return;
+        const t = TRADES[+b.dataset.trade]; if (countQ(t.q) < t.n) return;
+        takeQ(t.q, t.n); const lines = W.grant(t.get()); X.beep(880, .08);
+        X.toast('Getauscht: ' + t.t, lines.join(' · '), { iconHtml: W.px('npc-flossie', 26) }); render();
+    });
+    if (location.hash === '#fisch') setTimeout(() => $('#fisch').scrollIntoView({ block: 'start' }), 300);
+
+    function render() { page.redraw && page.redraw(); renderJoe(); renderFlossie(); renderOffers(); renderMats(); renderSell(); }
     render();
 });
 </script>

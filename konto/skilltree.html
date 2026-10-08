@@ -141,6 +141,9 @@
         .bp-list { display: grid; gap: .5rem; }
         .bp { display: grid; grid-template-columns: auto 1fr auto; gap: .35rem .8rem; align-items: center; padding: .6rem .8rem; background: var(--surface); box-shadow: 0 0 0 3px #000, 0 0 0 5px var(--border-strong); }
         .bp.is-locked { opacity: .55; }
+        .bp.is-unknown { background: repeating-linear-gradient(135deg, rgba(255,255,255,.02) 0 8px, transparent 8px 16px), var(--surface); }
+        .bp .costs { grid-column: 2 / 3; }
+        .bp__act { display: grid; justify-items: end; gap: .3rem; text-align: right; }
         .bp__icon { font-size: 1.6rem; }
         .bp__d { grid-column: 2 / -1; font-size: .78rem; color: var(--text-muted); }
         .easy-box { max-width: 640px; margin: 2rem auto; text-align: center; }
@@ -168,7 +171,7 @@
             <span class="eyebrow">Heimathafen · Werft</span>
             <h1 class="mb-0">Die Werft</h1>
             <p class="lead">Hier rüstest du deinen Erkundungs-Mech aus. Jedes Teil hat eine Seltenheit – von <span class="q1">Gewöhnlich</span> bis <span class="q6">Mythisch</span>.
-                Bauteile baust du aus Schrott, findest sie auf Reisen, gewinnst sie in der Arena oder kaufst sie in der Händlerbucht.</p>
+                Bauteile baust du nach Bauplänen aus Schrott und Materialien, findest sie auf Reisen, gewinnst sie in der Arena oder kaufst sie in der Händlerbucht.</p>
         </div>
         <span class="spacer"></span>
         <div class="card card--flat scrap" title="1 Schrott pro 4 XP"><span class="root-egg" data-egg="p-wurzel" data-egg-clicks="10" id="scrap-ic"></span><span id="scrap">0</span><span class="small muted">Schrott</span></div>
@@ -208,14 +211,22 @@
                 <span class="spacer"></span><span class="small muted" id="inv-count"></span>
             </div>
             <div class="inv-grid">
-                <div><div class="items" id="items"></div><h3 class="mt-3">Materialien</h3><div class="items" id="mats"></div></div>
+                <div><div class="items" id="items"></div><h3 class="mt-3">Materialien</h3><div class="items" id="mats"></div><h3 class="mt-3">Fänge <span class="small muted" id="rod-info"></span></h3><div class="items" id="fishes"></div></div>
                 <aside class="inv-side" id="detail"><p class="muted">Wähle ein Teil, um es anzusehen.</p></aside>
             </div>
         </section>
 
         <section data-panel="bauen" hidden>
-            <p class="muted">Baupläne schaltest du mit Leveln, Realitätskristallen, entdeckten Orten und gespielten Spielen frei. Gebaute Teile sind immer
-                <span class="q1">Gewöhnlich</span> – seltenere findest du in der Welt. Bauen geht nur in der Werft, also wenn dein Mech im Heimathafen liegt.</p>
+            <p class="muted">Am Anfang kennst du nur ein paar einfache Baupläne. Die übrigen sind über die Inseln von Sektaria verstreut: Reise hin und
+                <b>peil sie mit dem Sonar an</b>, wenn dein Mech dort vor Anker liegt. Manchmal treibt auch einer im Meer, liegt im Wrackriff oder in einer von Lucky Joes Kisten.
+                Gebaut wird aus Schrott und Materialien – gebaute Teile sind immer <span class="q1">Gewöhnlich</span>. Bauen und Pressen geht nur in der Werft, also im Heimathafen.</p>
+            <section class="card mb-3">
+                <div class="row"><h2 class="mb-0"><i data-px="ic-amboss"></i> Schrottpresse</h2><span class="spacer"></span><span class="small muted">Splitter und Nebelkerne gibt es nur draussen in der Welt.</span></div>
+                <p class="small muted mt-1">Hier wird aus losem Schrott das, was Baupläne wirklich brauchen.</p>
+                <div class="press" id="press"></div>
+            </section>
+            <div class="row mb-1"><h2 class="mb-0"><i data-px="bp"></i> Baupläne</h2><span class="spacer"></span><span class="badge badge--accent" id="bp-count"></span>
+                <label class="small"><input type="checkbox" id="bp-only"> nur bekannte</label></div>
             <div class="bp-list" id="blueprints"></div>
         </section>
 
@@ -396,7 +407,7 @@ XIRU.ready(function () {
         if (!M.installed('antrieb')) return 'antrieb';
         if (!M.installed('kern')) return 'kern';
         if (!m.testrun) return 'test';
-        if (Object.keys(m.islands).length) return 'fertig';
+        if (Object.keys(m.islands).length || (m.stats && m.stats.trips)) return 'fertig';
         if (!m.trep) return 'repair';
         return 'reise';
     }
@@ -407,8 +418,8 @@ XIRU.ready(function () {
         kern: ['4/7', 'Energie!', 'Ein Mech braucht einen Energiekern. Die Autobatterie reicht für den Anfang. (Die Nagelpistole kannst du auch gleich einbauen – die brauchst du später in der Arena.)', ''],
         test: ['5/7', 'Testlauf', 'Alles drin? Dann wirf den Motor an! Drück links auf <b>▶ Testlauf</b>.', ''],
         repair: ['6/7', 'Autsch – das Paddelrad', 'Siehst du den Rauch? Teile nutzen sich ab – besonders auf Reisen und in Kämpfen. Unter 40 % arbeiten sie nur halb so gut, bei 0 % fallen sie aus. Zum Reparieren musst du die losen Kabel wieder richtig verbinden. Normalerweise kostet das Schrott – diese erste Reparatur geht aufs Haus.', '<button class="btn btn--primary" id="t-repair">Gratis reparieren</button>'],
-        reise: ['7/7', 'Leinen los!', 'Dein Mech ist bereit. Auf der <b>Weltkarte</b> klickst du eine Insel an und brichst auf – der Werkzeugkasten und das Studio sind nah genug für dein Paddelrad. Unterwegs kann einiges passieren …', '<a class="btn btn--primary" href="../weltkarte.html#werkzeuge">Zur Weltkarte</a>'],
-        fertig: ['✓', 'Geschafft!', 'Deine erste Insel ist erreicht. Ab jetzt findest du Teile auf Reisen, verdienst Taler, kämpfst in der Arena und handelst in der Händlerbucht. Schrott bekommst du für jede XP. Viel Spass beim Basteln!', '<button class="btn btn--primary" id="t-done">Los geht\'s</button>']
+        reise: ['7/7', 'Leinen los!', 'Dein Mech ist bereit. Auf der <b>Weltkarte</b> klickst du eine Insel an und brichst auf. Je weiter eine Strecke, desto mehr <b>Reichweite</b> braucht sie – das Zentrum ist nah genug für dein Paddelrad. Von dort aus geht es weiter, notfalls mit Zwischenstopps. Unterwegs kann einiges passieren …', '<a class="btn btn--primary" href="../weltkarte.html#zentrum">Zur Weltkarte</a>'],
+        fertig: ['✓', 'Geschafft!', 'Deine erste Insel ist erreicht. Ab jetzt findest du Teile auf Reisen, verdienst Taler, kämpfst in der Arena und handelst in der Händlerbucht. Auf jeder Insel liegen verschollene <b>Baupläne</b> – peil sie mit dem Sonar an, wenn du dort vor Anker liegst. Schrott bekommst du für jede XP, in der Schrottpresse wird daraus Material. Viel Spass beim Basteln!', '<button class="btn btn--primary" id="t-done">Los geht\'s</button>']
     };
     function renderGuide() {
         const step = tutorialStep(), box = $('#guide');
@@ -542,6 +553,9 @@ XIRU.ready(function () {
         const mats = M.mats();
         $('#mats').innerHTML = Object.keys(mats).length ? XIRU.materials.filter(m => mats[m.id]).map(m => W.matCard(m.id, mats[m.id])).join('') : '<p class="muted small" style="grid-column:1/-1">Noch keine Materialien. Die gibt es auf Reisen, im Wrackriff und in der Nebelmine.</p>';
         $('#inv-count').textContent = M.items().length + '/' + M.INV_MAX + ' Plätze belegt';
+        const fsh = M.fishes(), fl = XIRU.fish.filter(f => fsh[f.id]);
+        $('#rod-info').innerHTML = '· ' + XIRU.pix.svg('ic-angel') + ' ' + esc(M.rodInfo().n) + ' (Stufe ' + M.rod() + ')';
+        $('#fishes').innerHTML = fl.length ? fl.map(f => W.fishCard(f.id, fsh[f.id])).join('') : '<p class="muted small" style="grid-column:1/-1">Noch keine Fische. Angelplätze siehst du auf der Weltkarte – Fische verkauft und tauscht Flossie in der Händlerbucht.</p>';
     }
     function showDetail(u) {
         const it = M.item(u); if (!it) { $('#detail').innerHTML = '<p class="muted">Wähle ein Teil, um es anzusehen.</p>'; selU = null; return; }
@@ -567,22 +581,53 @@ XIRU.ready(function () {
     });
     ['f-slot', 'f-q', 'f-sort'].forEach(id => $('#' + id).addEventListener('change', renderInv));
 
+    /* ── Schrottpresse ── */
+    function renderPress() {
+        const have = M.mats();
+        $('#press').innerHTML = (XIRU.pressRecipes || []).map(r => {
+            const m = M.mat(r.id);
+            return '<div class="press__item"><span>' + XIRU.pix.svg('mat-' + r.id, 36) + '</span><div><b>' + esc(m.n) + '</b> <span class="small muted">· ' + XIRU.fmt(have[r.id] || 0) + ' im Lager</span><div class="costs">' + W.costChips(M.pressCost(r.id, 1)) + '</div></div>' +
+                '<p class="small muted">' + esc(r.d) + '</p><div class="press__acts">' + [1, 5, 10].map(n => '<button class="btn btn--sm" type="button" data-press="' + r.id + '" data-n="' + n + '"' + (!atHome() || !M.canPress(r.id, n) ? ' disabled' : '') + '>×' + n + '</button>').join('') + '</div></div>';
+        }).join('');
+    }
+    $('#press').addEventListener('click', e => {
+        const b = e.target.closest('[data-press]'); if (!b) return;
+        if (!atHome()) { XIRU.toast('Die Presse steht in der Werft', 'Reise zuerst zurück in den Heimathafen.', { iconHtml: XIRU.pix.svg('z-anker', 26) }); return; }
+        const id = b.dataset.press, n = +b.dataset.n;
+        if (M.press(id, n)) { [196, 147, 262].forEach((f, i) => setTimeout(() => XIRU.beep(f, .09, 'square', .04), i * 80)); XIRU.toast('Gepresst: ' + n + '× ' + M.mat(id).n, 'Krrrrk – liegt bei den Materialien.', { iconHtml: XIRU.pix.svg('mat-' + id, 26) }); render(); }
+    });
+
     /* ── Baupläne ── */
     function renderBlueprints() {
-        $('#blueprints').innerHTML = XIRU.mechSlots.map(sl => '<h3 class="mt-2 mb-0">' + XIRU.pix.svg(SLOT_PX[sl.id], 22) + ' ' + sl.n + '</h3>' + XIRU.mechParts.filter(p => p.slot === sl.id).map(p => {
-            const avail = M.available(p), own = M.items().filter(x => x.id === p.id).length, starter = (XIRU.starterSet || []).includes(p.id);
-            let act;
-            if (starter) act = '<span class="small faint">Starter-Set</span>';
-            else if (!avail) act = '<span class="small faint">Gesperrt: ' + esc(M.reqText(p)) + '</span>';
-            else act = '<button class="btn btn--sm" type="button" data-build="' + p.id + '"' + (M.scrap() < p.cost || !atHome() || M.full() ? ' disabled' : '') + '>Bauen · ' + p.cost + ' ' + XIRU.pix.svg('schrott') + '</button>';
-            return '<div class="bp' + (!avail && !starter ? ' is-locked' : '') + '"><span class="bp__icon">' + XIRU.pix.svg(p.id, 40) + '</span><div><b>' + esc(p.n) + '</b> <span class="faint small">Stufe ' + p.t + '</span>' + (own ? ' <span class="badge">' + own + '× im Inventar</span>' : '') +
-                '<div class="statrow" style="margin:.25rem 0 0">' + W.statChips(p.s) + (p.rep ? '<span class="stat-chip">' + XIRU.pix.svg('w-schluessel') + ' −' + Math.round(p.rep * 100) + ' %</span>' : '') + W.fxChips(p.fx) + '</div></div><div>' + act + '</div><div class="bp__d">' + esc(p.d) + '</div></div>';
-        }).join('')).join('');
+        const only = $('#bp-only').checked, cnt = M.bpCount();
+        $('#bp-count').textContent = cnt.known + ' / ' + cnt.total + ' Baupläne bekannt';
+        $('#blueprints').innerHTML = XIRU.mechSlots.map(sl => {
+            const list = XIRU.mechParts.filter(p => p.slot === sl.id && (!only || M.knows(p.id)));
+            if (!list.length) return '';
+            return '<h3 class="mt-2 mb-0">' + XIRU.pix.svg(SLOT_PX[sl.id], 22) + ' ' + sl.n + '</h3>' + list.map(p => {
+                const own = M.items().filter(x => x.id === p.id).length, starter = (XIRU.starterSet || []).includes(p.id);
+                if (!M.knows(p.id)) {
+                    const isle = M.bpSpot(p.id), seen = isle && M.discovered(isle);
+                    return '<div class="bp is-unknown"><span class="bp__icon">' + XIRU.pix.svg(p.id, 40) + '</span><div><b>???</b> <span class="faint small">Stufe ' + p.t + ' · unbekannter Bauplan</span>' +
+                        '<div class="small muted mt-1">' + XIRU.pix.svg('s-radar') + ' Verschollen ' + (seen ? 'auf <b>' + esc(M.isle(isle).n) + '</b>' + (M.scanNeed(p.t) ? ' · Sonar braucht Sensor ' + M.scanNeed(p.t) : '') : 'auf einer Insel, die du noch nicht kennst') + '</div></div>' +
+                        '<div class="bp__act">' + (seen ? '<a class="btn btn--sm btn--ghost" href="../weltkarte.html#' + isle + '">Karte</a>' : '') + '</div></div>';
+                }
+                const r = M.recipe(p.id);
+                let act;
+                if (starter && M.state().tutorial < 1) act = '<span class="small faint">Starter-Set</span>';
+                else act = '<button class="btn btn--sm" type="button" data-build="' + p.id + '"' + (!atHome() || !M.canBuild(p.id) ? ' disabled' : '') + '>Bauen</button>';
+                return '<div class="bp"><span class="bp__icon">' + XIRU.pix.svg(p.id, 40) + '</span><div><b>' + esc(p.n) + '</b> <span class="faint small">Stufe ' + p.t + '</span>' + (own ? ' <span class="badge">' + own + '× im Inventar</span>' : '') +
+                    '<div class="statrow" style="margin:.25rem 0 0">' + W.statChips(p.s) + (p.rep ? '<span class="stat-chip">' + XIRU.pix.svg('w-schluessel') + ' −' + Math.round(p.rep * 100) + ' %</span>' : '') + W.fxChips(p.fx) + '</div>' +
+                    '<div class="costs">' + W.costChips(r) + '</div></div><div class="bp__act">' + act + '</div><div class="bp__d">' + esc(p.d) + '</div></div>';
+            }).join('');
+        }).join('');
     }
+    $('#bp-only').addEventListener('change', renderBlueprints);
     $('#blueprints').addEventListener('click', e => {
         const b = e.target.closest('[data-build]'); if (!b) return;
+        if (!atHome()) { XIRU.toast('Bauen geht nur in der Werft', 'Reise zuerst zurück in den Heimathafen.', { iconHtml: XIRU.pix.svg('z-anker', 26) }); return; }
         const it = M.build(b.dataset.build);
-        if (it) { XIRU.beep(440, .08); XIRU.toast('Gebaut: ' + M.part(it.id).n, 'Liegt jetzt im Inventar. Zum Einbauen: Mech → Bauplatz.', { iconHtml: XIRU.pix.svg('schrott', 26) }); render(); }
+        if (it) { XIRU.beep(440, .08); XIRU.toast('Gebaut: ' + M.part(it.id).n, 'Liegt jetzt im Inventar. Zum Einbauen: Mech → Bauplatz.', { iconHtml: XIRU.pix.svg(it.id, 26) }); render(); }
     });
 
     /* ── Reisen ── */
@@ -591,8 +636,8 @@ XIRU.ready(function () {
             const done = M.discovered(i.id), can = M.canReach(i.id), here = M.pos() === i.id;
             return '<div class="card isle' + (done ? ' is-done' : '') + '" style="--ic:' + (i.game ? '#22d3ee' : (XIRU.region(i.r) || {}).color) + '"><div class="row"><h3 class="mb-0">' + esc(i.n) + '</h3><span class="spacer"></span>' +
                 (here ? '<span class="badge badge--accent">hier</span>' : done ? '<span class="badge badge--success">entdeckt</span>' : '') + '</div>' +
-                '<p class="small">Erste Reise braucht: <strong>' + esc(M.islandReqText(i.id)) + '</strong></p>' +
-                (here ? '' : done || can ? '<p class="small muted mb-1">ca. ' + Math.round(M.travelSecs(i.id)) + ' s Reise</p><button class="btn btn--sm' + (done ? '' : ' btn--primary') + '" type="button" data-go="' + i.id + '">' + (done ? 'Hinreisen' : 'Expedition') + '</button>'
+                (here ? '' : '<p class="small">' + (done ? 'Von hier' : 'Erste Reise braucht') + ': <strong>' + esc(M.islandReqText(i.id)) + '</strong></p>') + (done && W.bpDots(i.id) ? '<p class="small mb-1">' + W.bpDots(i.id) + '</p>' : '') +
+                (here ? '' : can ? '<p class="small muted mb-1">ca. ' + Math.round(M.travelSecs(i.id)) + ' s Reise' + ((M.route(i.id) || []).length > 2 ? ' · ' + ((M.route(i.id) || []).length - 2) + ' Zwischenstopp(s)' : '') + '</p><button class="btn btn--sm' + (done ? '' : ' btn--primary') + '" type="button" data-go="' + i.id + '">' + (done ? 'Hinreisen' : 'Expedition') + '</button>'
                     : '<p class="small faint mb-0">Es fehlt: ' + esc(M.missing(i.id).join(' · ')) + '</p>') +
                 ' <a class="btn btn--sm btn--ghost" href="../weltkarte.html#' + i.id + '">Karte</a></div>';
         }).join('');
@@ -645,7 +690,7 @@ XIRU.ready(function () {
     XIRU.$$('[data-tab]').forEach(b => b.addEventListener('click', () => { showTab(b.dataset.tab); if (b.dataset.tab === 'inventar') renderInv(); }));
     function render() {
         W.here('konto', '#here', render);
-        renderStats(); renderSlots(); renderInv(); renderBlueprints(); renderIsles(); renderModules(); renderGuide();
+        renderStats(); renderSlots(); renderInv(); renderPress(); renderBlueprints(); renderIsles(); renderModules(); renderGuide();
         if (selU && M.item(selU)) showDetail(selU);
     }
     W.wallet('#wallet');

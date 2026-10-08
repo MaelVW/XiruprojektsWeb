@@ -76,7 +76,7 @@ XIRU.ready(function () {
     const dist = (a, b) => Math.abs(a % COLS - b % COLS) + Math.abs(Math.floor(a / COLS) - Math.floor(b / COLS));
     function loot(kind) {
         const S = Math.max(0, M.stats().S);
-        if (kind === 'kiste') return W.loot({ item: .6, maxT: 4, luck: S * .05, mats: 1, taler: [5, 15] });
+        if (kind === 'kiste') return W.loot({ item: .6, maxT: 4, luck: S * .05, mats: 1, taler: [5, 15], bp: .12, bpT: 4 });
         if (kind === 'muschel') return [{ type: 'taler', n: X.rand(10, 26) }];
         if (kind === 'kristall') return W.loot({ mats: 2, rare: .8 });
         return W.loot({ mats: 2, taler: [2, 6] });

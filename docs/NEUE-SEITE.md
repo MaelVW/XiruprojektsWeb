@@ -144,6 +144,12 @@ XIRU.ready(function () {
 Jedes Spiel: spielbar mit Tastatur **und** Maus/Touch, Pause beim Tab-Wechsel,
 Seitenleiste mit Steuerung + Rekord, sinnvolle Schwierigkeit, deutsche Texte.
 
+**Arcade-Automat:** `arcade.js` baut um die Spielspalte (Elternelement von `.game__stage`) automatisch einen Automaten:
+Marquee mit Spielnamen (aus `h1`), Lautsprechergitter, Bildschirm-Bezel (alles **vor** dem Spielfeld – HUD, Statusleisten – wandert mit hinein),
+Bedienpult mit Joystick + 4 Knöpfen (folgen Pfeiltasten/WASD, Leertaste, Z/Y/X/C, Enter), Münztür mit Credit-Zähler, Trittblech.
+Die Spiel-Knoten bleiben dieselben (nur verschoben), Farbe je Automat aus dem Namen (`--cab-h`). Alles, was nach dem Spielfeld steht,
+liegt auf dem Gehäuse. Auf Touch-Geräten ersetzt die `.touch-pad`-Steuerung das Deko-Pult. Stil: `assets/css/themes/arcade.css`.
+
 ## Realitätskristalle (Easter Eggs)
 
 Die Sammel-Belohnungen der Website heissen **Realitätskristalle** (kurz: Kristalle) –
@@ -183,6 +189,37 @@ erst nach dem ersten Besuch in Navigation, Suche und Weltkarte.
   Wichtigste API (`XIRU.mech`): `items() add(id, q) remove(u) equip(u) installed(slot) loadout() stats() ready() value(it)`,
   `scrap() taler() addTaler(n) spendTaler(n) mats() addMat(id, n) spendMats({…})`, `discovered(id) canReach(id) travelSecs(to) arrive(to) pos()`.
 - **Seltenheiten:** `XIRU.rarities[q]` (1 Gewöhnlich … 6 Mythisch, Faktor `m`). Werte eines Teils: `XIRU.mech.itemStats(it)`.
+- **Reichweite & Routen:** Reichweite hängt an der **Strecke**, nicht an der Insel: `M.legNeed(a, b)` = max(1, ⌈(Entfernung − 160) / 200⌉)
+  + `add` jedes schwierigen Gewässers, durch das die Strecke führt (`XIRU.seaZones` in site.js: Sturmsee, Nebelbank, Riffgürtel; `M.legZones(a, b)`).
+  `islands[].req` enthält nur noch E/S/P/A für die erste Reise (`{}` = muss entdeckt werden, `null` = von Anfang an bekannt; `M.baseReq(id)`).
+  `M.needR(to)` = kleinste Reichweite, mit der man (über bekannte, nicht geheime Inseln) hinkommt; `M.route(to)` = schnellste Route mit der
+  aktuellen Reichweite (`[Start, Stopps…, Ziel]` oder `null`); `M.legSecs(a, b)`, `M.travelSecs(to)` = ganze Reise inkl. `M.STOP` (3 s) je Zwischenstopp.
+  `M.req(id)` liefert `{ R: needR, …req }` (für Anzeigen), `M.missing(id)`/`canReach(id)`/`islandReqText(id)` beziehen sich auf den aktuellen Standort.
+  Reisen mit Zwischenstopps spielt `W.travel()` als eine Fahrt mit mehreren Etappen ab (`runVoyage({ stops })`); an jedem Stopp wird `M.arrive()` aufgerufen.
+- **Welt & Nebelwand:** Der Archipel (0…2400 × 0…1600) liegt in einer grösseren Welt `XIRU.mapArt.BOUNDS` (x −900 … 5000, y −800 … 2500).
+  Ausserhalb der Ellipse `CLR` (weltkarte-pixel.js) liegt eine Nebelwand (eigene, gröbere Pixel-Ebene `.pm-wall`, `fogWall()`). Im Osten dahinter:
+  das Festland **Mnemora** (`XIRU.mapArt.FESTLAND`, Form `tFest(x, y)`, Umriss `festPath()`; auf der Karte `g.wk-festland` mit Infofenster).
+  Es ist noch nicht erreichbar – Plan (Mael): später per Schiffsfahrt, dort Landreisen und andere Spieler treffen.
+  Seit 2026-10-09: `XIRU.mapArt.LANDS` = drei Landmassen als Dreieck um den Archipel (Mnemora Osten, `nordland`, `suedland` – die beiden noch
+  namenlos, `fog: .95` fast ganz verdeckt). `tLand(L, x, y)`, `landPath(L)`. Mnemora hat grobe Geografie (`FESTLAND.PLACES` Orte mit Hover/Infofenster,
+  `RIDGE` Speicherberge, `RIVER` Flashfluss, `LAKE` Bitbrunner See, `FOREST` Cachewald) – gerendert in `weltkarte-pixel.js` (Höhe, Stempel `MOUNT`).
+  Welt jetzt x −2700 … 5000, y −2600 … 3600. Bei Änderungen an Landformen/Inseln `VERSION` in weltkarte-pixel.js erhöhen (Kartencache).
+- **Angeln (wie Dredge):** Daten in site.js: `XIRU.rods` (Stufe 1–5 mit Kosten), `XIRU.fish` (18 Arten, `q`, `v`, `look` = Icon-Form, `abart`),
+  `XIRU.fishSpots` (Platz im Meer mit `near`-Insel, Sensor `s`, Angel-Stufe `tier`, Fischliste). API: `M.rod() rodInfo() upgradeRod() fishes() addFish(id, n)
+  caught(id) spotSeen(id) spotStock(id) useSpot(id) fishMissing(id)`, Daten `m.rod m.fish m.fishbook m.fishing`. Minispiel `XIRU.werft.fish(spotId)` (Rad mit
+  Zeiger, Silhouette bis zum Fang), Karte: `g.wk-spot` + Infofenster; Händlerin **Flossie** in `welt/markt.html#fisch` (Verkauf, Tauschbörse nach Seltenheit,
+  Angel-Upgrade, Wunschfisch des Tages, Sammelbuch). Icons: `fish-<id>`, `ic-angel`, `ic-spot`, `npc-flossie`.
+- **Lucky Joe – Öffnen:** Kiste wackelt → Glücksstreifen (`.jroll`) mit Silhouetten in Seltenheitsfarben bremst auf dem (vorher feststehenden) Gewinn →
+  Seltenheits-Treppe (Leuchten steigt Stufe für Stufe) → Enthüllung. „Überspringen“ springt ans Ende; bei Animationen aus sofort.
+- **Baupläne & Crafting:** Bekannt sind am Anfang nur `XIRU.starterBlueprints`; die übrigen liegen auf Inseln (`XIRU.blueprintSpots`, Insel → Teil-IDs)
+  und werden per **Sonar-Peilung** gefunden (`XIRU.werft.scan(isle)`, Knopf `W.scanButton(isle)`, Punkte `W.bpDots(isle)`; Pause je Insel 3 min,
+  Sensor-Bedarf `M.scanNeed(t)` = Stufe − 2) oder als Beute (`W.loot({ bp: Chance, bpT: Stufe })`, Reise-Ereignis Kartenrolle, Lucky Joe).
+  API: `knows(id) learnBp(id) randomBp(maxT) bpLeft(isle) bpSpot(id) bpCount()`. Gespeichert in `m.bp` (+ `m.bpv` Migration, `m.scan`).
+  **Rezepte:** `M.recipe(id)` → `{ scrap, mats }` – je Bauplatz zwei typische Materialien (`SIG` in core.js), ab Stufe 3 Chips, ab 4 Kristallsplitter,
+  Stufe 5 Nebelkern; eigenes Rezept per `recipe` am Teil. `canBuild(id) build(id)`. **Schrottpresse:** `XIRU.pressRecipes` (Schrott → Kabel, Zahnrad,
+  Altöl, Platine, Chip), `M.press(id, n) canPress() pressCost()`. Splitter/Nebelkern gibt es nur in der Welt. Anzeige der Kosten: `W.costChips(c)`.
+- **Lucky Joe** (`welt/markt.html#joe`): Wunderkisten (Tabelle `BOXES` dort: Gewicht, Art, Werte), Jackpot `m.joe.pot` (+10 % jedes Preises),
+  nach 5 Nieten sicher ein Bauteil (`m.joe.dry`), Gewinnchancen hängen sichtbar aus. Nur Spiel-Taler – nie echtes Geld.
 - **Gemeinsame Spiel-Bausteine:** `assets/js/werft.js` (`XIRU.werft`: Item-Karten, Beute `loot()/grant()`, Reise-Ladebildschirm `travel(to)`,
   Notruf `tow()`, Seitengerüst `islePage(id)` für `welt/*.html`) + `assets/css/welt.css`. Karte: `assets/js/weltkarte-art.js` (`XIRU.mapArt.svg()`),
   Mech-Grafik: `assets/js/mech-art.js` (`XIRU.mechArt.draw(f, run, loadout)`, Gegner per `loadoutOf({slot: [id, q, up]})`).
@@ -203,6 +240,8 @@ Weitere Cookies nur nach Rücksprache – sie gehen bei jedem Aufruf an den Serv
 ## Bereichs-Designs & leere Seiten
 
 - Bereiche dürfen ein eigenes Design haben: Klasse auf `<body>` (z. B. `theme-werft`), die die Farb-Variablen überschreibt.
+  Vorhanden: `theme-arcade` (Spielhalle), `theme-hardware`, `theme-studio`, `theme-ki` (KI-Labor: Nacht-Labor mit Neuronen-Netz, Laborglas-Karten,
+  Probenetiketten; `assets/css/themes/ki.css` nach `ki/ki.css` einbinden), `theme-werft`, `theme-pixel` (Spiel-Inseln).
 - `<html data-bare>`: Seite ohne Kopf, Fuss, Banner und Toasts – nur für den Liminal-Teil (`Why.html`, `why/`). Diese Seiten sind bewusst
   **nicht im Register**, geben **keine XP, Kristalle oder Besuche**. Hinein kommt man nur durch einen „Riss" (`XIRU.riss`, siehe core.js):
   Riss 1 = Weltkarte, unbekanntes Land ganz unten rechts (`data-u="5"`) 5× klicken · Riss 2 = 404-Seite, Laufwerksschlitz 4× · Riss 3 = Netzteil-Rechner, Anzeige 4×.

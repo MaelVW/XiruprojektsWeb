@@ -77,9 +77,11 @@
         for (const p of pool) { r -= 1 / p.t; if (r <= 0) { pick = p; break; } }
         return { id: pick.id, q: W.rollQ(o.luck, o.minQ, o.maxQ) };
     };
-    /* opts: { item: Chance 0–1, maxT, luck, minQ, maxQ, taler: [min,max], mats: Anzahl Materialwürfe, rare: Chance auf Splitter/Kern } */
+    /* opts: { item: Chance 0–1, maxT, luck, minQ, maxQ, taler: [min,max], mats: Anzahl Materialwürfe, rare: Chance auf Splitter/Kern,
+              bp: Chance auf einen unbekannten Bauplan, bpT: höchste Stufe dafür } */
     W.loot = function (o) {
         o = o || {}; const out = [];
+        if (o.bp && Math.random() < o.bp) { const id = M.randomBp(o.bpT || o.maxT || 3); if (id) out.push({ type: 'bp', id }); }
         if (o.taler) out.push({ type: 'taler', n: X.rand(o.taler[0], o.taler[1]) });
         for (let i = 0; i < (o.mats || 0); i++) {
             const roll = Math.random(), rare = o.rare || 0;
@@ -93,12 +95,246 @@
         return (list || []).map(e => {
             if (e.type === 'taler') { const n = M.addTaler(e.n); return PX('taler') + ' <b>' + n + ' Taler</b>'; }
             if (e.type === 'mat') { M.addMat(e.id, e.n); const m = M.mat(e.id); return PX('mat-' + e.id) + ' ' + e.n + '× ' + esc(m.n); }
+            if (e.type === 'bp') {
+                const p = M.part(e.id);
+                if (!p || !M.learnBp(e.id)) { const n = M.addTaler(15); return PX('bp') + ' ein Bauplan, den du schon kennst (Altpapier: +' + n + ' Taler)'; }
+                return PX('bp') + ' <b class="bp-new">Bauplan: ' + esc(p.n) + '</b>';
+            }
             if (e.type === 'item') {
                 const it = M.add(e.id, e.q); if (!it) return PX('inventar') + ' <i>Inventar voll – ein Teil ging verloren</i>';
                 const p = M.part(e.id); return PX(p.id) + ' <b class="q' + e.q + '">' + esc(p.n) + '</b> <span class="small q' + e.q + '">(' + W.qName(e.q) + ')</span>';
             }
             return '';
         }).filter(Boolean);
+    };
+
+    /* Rezept als Chips: Schrott + Materialien, fehlende rot markiert */
+    W.costChips = function (c) {
+        if (!c) return '';
+        const have = M.mats(), sc = M.scrap();
+        let h = '<span class="cost-chip' + (sc < c.scrap ? ' is-short' : '') + '" title="Schrott: ' + sc + ' vorhanden">' + PX('schrott') + ' ' + c.scrap + '</span>';
+        Object.keys(c.mats || {}).forEach(k => {
+            const m = M.mat(k), n = c.mats[k], got = have[k] || 0;
+            h += '<span class="cost-chip' + (got < n ? ' is-short' : '') + '" title="' + esc(m.n) + ': ' + got + ' vorhanden">' + PX('mat-' + k) + ' ' + n + '</span>';
+        });
+        return h;
+    };
+
+    /* ── Sonar-Peilung: Baupläne und Material auf einer Insel aufspüren ──
+       Der Radarstrahl dreht sich, Echos leuchten kurz auf. Mit 4 Greifer-Würfen
+       schnappt man sich, was man erwischt. Je besser der Sensor, desto länger
+       leuchten die Echos – ab Sensor 2 sieht man Seeminen, ab Sensor 3 Baupläne. */
+    W.bpDots = function (isle) {
+        const all = (X.blueprintSpots || {})[isle] || []; if (!all.length) return '';
+        const left = M.bpLeft(isle).length;
+        return '<span class="bp-dots" title="Baupläne auf dieser Insel: ' + (all.length - left) + ' von ' + all.length + ' gefunden">' + PX('bp') + ' ' +
+            all.map((id, i) => '<i class="' + (i < all.length - left ? 'is-found' : '') + '"></i>').join('') + '</span>';
+    };
+    W.scanButton = function (isle) {
+        const wait = M.scanWait(isle), left = M.bpLeft(isle).length;
+        return '<button class="btn btn--sm' + (left ? ' btn--primary' : '') + '" type="button" data-scan="' + isle + '"' + (wait ? ' disabled' : '') + '>' + PX('s-radar') + ' ' +
+            (wait ? 'Sonar lädt … ' + Math.ceil(wait / 60000) + ' min' : left ? 'Nach Bauplänen peilen' : 'Nach Material peilen') + '</button>';
+    };
+    W.scan = function (isle) {
+        return new Promise(resolve => {
+            if (M.pos() !== isle || M.scanWait(isle)) { resolve(null); return; }
+            const st = M.stats(), S = st.S, I = M.isle(isle);
+            const left = M.bpLeft(isle), bpId = left.find(id => M.scanNeed(M.part(id).t) <= S) || null;
+            const tooWeak = !bpId && left.length ? M.scanNeed(Math.min.apply(null, left.map(id => M.part(id).t))) : 0;
+            const N = 160, R = 70, vis = Math.min(2.4, .95 + S * .2), TIME = 16;
+            const rnd = X.rand, rare = I && I.req ? Math.min(.35, ((I.req.R || 0) + (I.req.S || 0)) * .04) : .02;
+            const blips = [];
+            const place = type => { let a, r, ok, n = 0; do { a = Math.random() * Math.PI * 2; r = 18 + Math.random() * (R - 24); ok = blips.every(b => Math.hypot(Math.cos(a) * r - Math.cos(b.a) * b.r, Math.sin(a) * r - Math.sin(b.a) * b.r) > 16); } while (!ok && ++n < 40); blips.push({ type, a, r, t: -9, got: false }); };
+            if (bpId) place('bp');
+            for (let i = 0, n = rnd(3, 4); i < n; i++) place('mat');
+            for (let i = 0, n = rnd(1, 2); i < n; i++) place('mine');
+            place('junk');
+            const m = X.modal('<div class="scan"><h2 class="mb-1">' + PX('s-radar', 26) + ' Sonar-Peilung · ' + esc(I ? I.n : '') + '</h2>' +
+                '<p class="small muted mb-2">Der Strahl dreht sich – Echos leuchten kurz auf. Klick sie an, solange sie leuchten. Du hast <b>4 Greifer-Würfe</b>.' +
+                (S >= 3 ? ' Dein Sensor erkennt Baupläne (gold) und Seeminen (rot).' : S >= 2 ? ' Dein Sensor erkennt Seeminen (rot) – Baupläne sehen aus wie Material.' : ' Dein Sensor ist schwach: Alle Echos sehen gleich aus.') + '</p>' +
+                '<div class="scan__wrap"><canvas class="scan__cv" width="' + N * 2 + '" height="' + N * 2 + '" aria-label="Radarschirm"></canvas></div>' +
+                '<div class="scan__hud"><span id="sc-left">Würfe: 4</span><span id="sc-time">' + TIME + ' s</span></div><div class="scan__log small" id="sc-log"></div>' +
+                '<div class="row mt-2"><button class="btn btn--sm btn--ghost" type="button" data-close>Abbrechen</button></div></div>', { onClose: () => finish(true) });
+            const cv = m.el.querySelector('canvas'), ctx = cv.getContext('2d');
+            ctx.imageSmoothingEnabled = false;
+            const t0 = performance.now(); let raf = 0, throws = 4, ended = false, sweep = 0;
+            const got = [];
+            M.scanUsed(isle);
+            const pos = b => ({ x: N / 2 + Math.cos(b.a) * b.r, y: N / 2 + Math.sin(b.a) * b.r });
+            const col = b => b.type === 'mine' && S >= 2 ? '#ff4d4d' : b.type === 'bp' && S >= 3 ? '#ffd23f' : '#5dff8f';
+            function draw(now) {
+                const t = (now - t0) / 1000, rest = Math.max(0, TIME - t);
+                sweep = (t * Math.PI * 2 / 2.4) % (Math.PI * 2);
+                ctx.setTransform(2, 0, 0, 2, 0, 0);
+                ctx.fillStyle = '#031208'; ctx.fillRect(0, 0, N, N);
+                ctx.strokeStyle = '#0f4a24'; ctx.lineWidth = 1;
+                [R, R * .66, R * .33].forEach(r => { ctx.beginPath(); ctx.arc(N / 2, N / 2, r, 0, Math.PI * 2); ctx.stroke(); });
+                ctx.beginPath(); ctx.moveTo(N / 2 - R, N / 2); ctx.lineTo(N / 2 + R, N / 2); ctx.moveTo(N / 2, N / 2 - R); ctx.lineTo(N / 2, N / 2 + R); ctx.stroke();
+                // Strahl mit Nachleuchten
+                for (let i = 0; i < 26; i++) {
+                    const a = sweep - i * .03; ctx.strokeStyle = 'rgba(93,255,143,' + (.5 - i * .018).toFixed(3) + ')';
+                    ctx.beginPath(); ctx.moveTo(N / 2, N / 2); ctx.lineTo(N / 2 + Math.cos(a) * R, N / 2 + Math.sin(a) * R); ctx.stroke();
+                }
+                blips.forEach(b => {
+                    const d = ((sweep - b.a) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+                    if (d < .08 && t - b.t > .5) b.t = t;
+                    const age = t - b.t; if (b.got || age > vis) return;
+                    const p = pos(b), al = 1 - age / vis, c = col(b), sz = b.type === 'bp' ? 5 : 4;
+                    ctx.globalAlpha = al; ctx.fillStyle = c;
+                    ctx.fillRect(Math.round(p.x - sz / 2), Math.round(p.y - sz / 2), sz, sz);
+                    ctx.globalAlpha = al * .35; ctx.fillRect(Math.round(p.x - sz / 2) - 2, Math.round(p.y - sz / 2) - 2, sz + 4, sz + 4);
+                    ctx.globalAlpha = 1;
+                });
+                // Rand
+                ctx.strokeStyle = '#1f8a45'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(N / 2, N / 2, R + 2, 0, Math.PI * 2); ctx.stroke();
+                const te = m.el.querySelector('#sc-time'); if (te) te.textContent = Math.ceil(rest) + ' s';
+                if (rest <= 0) { finish(); return; }
+                raf = requestAnimationFrame(draw);
+            }
+            raf = requestAnimationFrame(draw);
+            const log = h => { const l = m.el.querySelector('#sc-log'); if (l) l.insertAdjacentHTML('afterbegin', '<div>' + h + '</div>'); };
+            cv.addEventListener('pointerdown', e => {
+                if (ended || throws <= 0) return;
+                const r = cv.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * N, y = (e.clientY - r.top) / r.height * N;
+                const t = (performance.now() - t0) / 1000;
+                throws--; m.el.querySelector('#sc-left').textContent = 'Würfe: ' + throws;
+                const hit = blips.filter(b => !b.got && t - b.t <= vis).map(b => ({ b, d: Math.hypot(pos(b).x - x, pos(b).y - y) })).filter(o => o.d < 11).sort((a, b) => a.d - b.d)[0];
+                if (!hit) { X.beep(160, .08, 'square', .03); log('Daneben – nur Wasser.'); }
+                else {
+                    const b = hit.b; b.got = true;
+                    if (b.type === 'bp') { got.push({ type: 'bp', id: bpId }); X.beep(988, .12, 'triangle'); log(PX('bp') + ' <b>Etwas Papierenes!</b>'); }
+                    else if (b.type === 'mat') { got.push.apply(got, W.loot({ mats: 1, rare })); X.beep(660, .06); log(PX('mat-zahnrad') + ' Material am Haken.'); }
+                    else if (b.type === 'mine') { const sen = M.installed('sensor') || M.installed('rahmen'); const dmg = sen ? M.damage(sen.u, X.rand(8, 15)) : 0; X.beep(110, .25, 'sawtooth'); log(PX('ev-sturm') + ' <b>Seemine!</b> ' + (sen ? esc(sen.n) + ' −' + dmg + ' %' : 'Bumm.')); }
+                    else { X.beep(330, .06); log('Ein alter Stiefel. Weg damit.'); }
+                }
+                if (throws <= 0 || blips.every(b => b.got || b.type !== 'bp' && b.type !== 'mat')) setTimeout(finish, 500);
+            });
+            function finish(closed) {
+                if (ended) return; ended = true; cancelAnimationFrame(raf);
+                const lines = W.grant(got);
+                if (!closed) m.close();
+                const msg = lines.length ? lines.join('<br>') : 'Diesmal nichts Brauchbares.';
+                const extra = tooWeak ? '<p class="small muted mt-1">Dein Sonar spürt hier noch einen Bauplan, kommt aber nicht ran. Sensor ' + tooWeak + ' nötig (du hast ' + S + ').</p>' : '';
+                if (!closed || got.length) X.modal('<h2>' + PX('s-radar', 26) + ' Peilung beendet</h2><p>' + msg + '</p>' + extra + '<div class="row"><button class="btn btn--primary" type="button" data-close>Weiter</button></div>');
+                resolve({ got, lines });
+            }
+        });
+    };
+
+    /* ── Angeln (wie in Dredge) ───────────────────────────────────────
+       Auswerfen → die Pose tanzt → Biss! → am Rad kreist ein Zeiger: drück Leertaste/Klick,
+       wenn er in einer hellen Zone steht. Jeder Treffer holt die Schnur ein Stück ein,
+       Danebengreifen kostet Zeit. Seltene Fische brauchen mehr Treffer, drehen schneller und
+       ab Episch die Richtung. Eine bessere Angel macht die Zonen breiter und den Zeiger ruhiger.
+       Was am Haken hängt, steht beim Auswerfen fest und bleibt bis zum Schluss eine Silhouette. */
+    const FISH_W = [0, 100, 55, 28, 13, 5, 1.5];
+    W.fishCard = (id, n) => { const f = M.fishInfo(id); return f ? '<div class="item item--mat" data-q="' + f.q + '" title="' + esc(f.d) + '"><span class="item__icon">' + PX('fish-' + id, 36) + '</span><span class="item__name">' + esc(f.n) + '</span><span class="item__count">' + X.fmt(n) + '×</span></div>' : ''; };
+    function rollCatch(sp) {
+        const r = Math.random(), luck = M.stats().fx.luck || 0;
+        if (r < .02 && sp.tier >= 2) { const id = M.randomBp(Math.min(5, sp.tier + 1)); if (id) return { type: 'bp', id, q: Math.min(6, M.part(id).t + 1), hits: 3, icon: 'bp' }; }
+        if (r < .10) { const pt = W.rollPart({ maxT: Math.min(5, sp.tier + 1), luck: .1 * sp.tier }); return { type: 'item', id: pt.id, q: pt.q, hits: 2 + Math.ceil(pt.q / 2), icon: pt.id }; }
+        if (r < .14) return { type: 'taler', n: X.rand(5, 15) * sp.tier, q: 1, hits: 2, icon: 'ev-kiste' };
+        if (r < .26) { const e = W.loot({ mats: 1, rare: .06 * sp.tier })[0]; return { type: 'mat', id: e.id, n: e.n, q: e.id === 'nebelkern' ? 5 : e.id === 'splitter' ? 3 : 1, hits: 2, icon: 'mat-' + e.id }; }
+        const pool = sp.fish.map(id => M.fishInfo(id)).filter(Boolean), w = pool.map(f => FISH_W[f.q] * (1 + luck * (f.q - 1) * .4));
+        let x = Math.random() * w.reduce((a, b) => a + b, 0), f = pool[0];
+        for (let i = 0; i < pool.length; i++) { x -= w[i]; if (x <= 0) { f = pool[i]; break; } }
+        return { type: 'fish', id: f.id, q: f.q, hits: [0, 2, 3, 3, 4, 5, 6][f.q], icon: 'fish-' + f.id };
+    }
+    function landCatch(c) {
+        if (c.type === 'fish') { M.addFish(c.id, 1); const f = M.fishInfo(c.id); return '<b class="q' + f.q + '">' + esc(f.n) + '</b> <span class="small q' + f.q + '">(' + W.qName(f.q) + (f.abart ? ', Abart' : '') + ')</span> · ' + f.v + ' ' + PX('taler') + ' Wert'; }
+        return W.grant([c.type === 'mat' ? { type: 'mat', id: c.id, n: c.n } : c.type === 'taler' ? { type: 'taler', n: c.n } : c.type === 'bp' ? { type: 'bp', id: c.id } : { type: 'item', id: c.id, q: c.q }]).join(', ');
+    }
+    W.fish = function (spotId) {
+        return new Promise(resolve => {
+            const sp = M.spot(spotId), miss = M.fishMissing(spotId);
+            if (!sp || miss.length) { X.toast('Hier kannst du gerade nicht angeln', miss.join(' · '), { iconHtml: PX('ic-angel', 26), type: 'error' }); resolve(null); return; }
+            M.useSpot(spotId);
+            const c = rollCatch(sp), rod = M.rod(), anim = X.setting('anim') !== false;
+            const N = 120, R = 46, speed = Math.max(90, 120 + c.q * 34 - rod * 14), width = Math.max(14, 44 - c.q * 5 + rod * 6), zonesN = c.q >= 4 ? 2 : 1;
+            const TIME = 8 + c.hits * 1.6;
+            const m = X.modal('<div class="fishing"><h2 class="mb-1">' + PX('ic-angel', 26) + ' ' + esc(sp.n) + '</h2>' +
+                '<p class="small muted mb-2" id="fi-say">Du wirfst die ' + esc(M.rodInfo().n) + ' aus …</p>' +
+                '<div class="fishing__stage"><canvas class="fishing__cv" width="' + N * 2 + '" height="' + N * 2 + '" aria-label="Angel-Rad"></canvas>' +
+                '<div class="fishing__catch" style="--qc:var(--q' + c.q + ')">' + PX(c.icon, 64) + '</div></div>' +
+                '<div class="fishing__bars"><span>Schnur</span><div class="bar"><div class="bar__fill" id="fi-line" style="width:0%"></div></div><span>Zeit</span><div class="bar"><div class="bar__fill fishing__time" id="fi-time" style="width:100%"></div></div></div>' +
+                '<div class="row mt-2" style="justify-content:center"><button class="btn btn--primary" type="button" id="fi-reel" disabled>Einholen <kbd>Leertaste</kbd></button><button class="btn btn--ghost" type="button" data-close>Abbrechen</button></div></div>',
+                { onClose: () => end(false, true) });
+            const el = m.el, cv = el.querySelector('canvas'), ctx = cv.getContext('2d'), say = h => { el.querySelector('#fi-say').innerHTML = h; };
+            let phase = 0, ang = 0, dir = 1, hits = 0, left = TIME, last = 0, raf = 0, done = false, zones = [], flash = 0;
+            const newZones = () => { zones = []; for (let i = 0; i < zonesN; i++) { let a, n = 0; do { a = Math.random() * 360; } while (n++ < 20 && (zones.some(z => Math.abs(((a - z + 540) % 360) - 180) < width * 1.6) || Math.abs(((a - ang + 540) % 360) - 180) < 50)); zones.push(a); } };
+            function draw() {
+                ctx.setTransform(2, 0, 0, 2, 0, 0); ctx.clearRect(0, 0, N, N);
+                ctx.fillStyle = '#071526'; ctx.beginPath(); ctx.arc(N / 2, N / 2, R + 14, 0, Math.PI * 2); ctx.fill();
+                ctx.lineWidth = 14; ctx.strokeStyle = '#13243a'; ctx.beginPath(); ctx.arc(N / 2, N / 2, R, 0, Math.PI * 2); ctx.stroke();
+                if (phase === 2) zones.forEach(z => { ctx.strokeStyle = flash > 0 ? '#ffffff' : '#5dff8f'; ctx.beginPath(); ctx.arc(N / 2, N / 2, R, (z - width / 2) * Math.PI / 180, (z + width / 2) * Math.PI / 180); ctx.stroke(); });
+                ctx.lineWidth = 2; ctx.strokeStyle = '#000'; [R - 7, R + 7].forEach(r => { ctx.beginPath(); ctx.arc(N / 2, N / 2, r, 0, Math.PI * 2); ctx.stroke(); });
+                if (phase === 2) {   // Zeiger
+                    const a = ang * Math.PI / 180;
+                    ctx.lineWidth = 4; ctx.strokeStyle = '#fde68a'; ctx.beginPath(); ctx.moveTo(N / 2 + Math.cos(a) * 18, N / 2 + Math.sin(a) * 18); ctx.lineTo(N / 2 + Math.cos(a) * (R + 9), N / 2 + Math.sin(a) * (R + 9)); ctx.stroke();
+                    ctx.fillStyle = '#fde68a'; ctx.fillRect(Math.round(N / 2 + Math.cos(a) * (R + 9)) - 3, Math.round(N / 2 + Math.sin(a) * (R + 9)) - 3, 6, 6);
+                }
+            }
+            const inZone = () => zones.findIndex(z => Math.abs(((ang - z + 540) % 360) - 180) <= width / 2 + 2);
+            function frame(now) {
+                if (done) return;
+                const dt = Math.min(.05, (now - (last || now)) / 1000); last = now;
+                if (phase === 2) {
+                    ang = (ang + dir * speed * dt + 360) % 360; left -= dt; flash -= dt;
+                    el.querySelector('#fi-time').style.width = Math.max(0, left / TIME * 100) + '%';
+                    if (left <= 0) { lose(); return; }
+                }
+                draw(); raf = requestAnimationFrame(frame);
+            }
+            function reel() {
+                if (phase !== 2 || done) return;
+                const z = inZone();
+                if (z >= 0) {
+                    hits++; flash = .12; X.beep(520 + hits * 70, .06, 'square', .04);
+                    el.querySelector('#fi-line').style.width = (hits / c.hits * 100) + '%';
+                    if (hits >= c.hits) { win(); return; }
+                    if (c.q >= 4) dir = -dir;
+                    newZones();
+                } else { left -= 1.5; X.beep(150, .1, 'sawtooth', .03); cv.classList.remove('is-miss'); void cv.offsetWidth; cv.classList.add('is-miss'); }
+            }
+            function win() {
+                phase = 3; const html = landCatch(c);
+                el.querySelector('.fishing__catch').classList.add('is-landed');
+                [659, 784, 1046].forEach((f, i) => setTimeout(() => X.beep(f, .1, 'triangle', .05), i * 90));
+                if (c.q >= 5) X.confetti(90);
+                say(PX('st-R') + ' <b>Gefangen!</b> ' + html);
+                finishButtons(true, html);
+            }
+            function lose() {
+                phase = 3; X.beep(130, .3, 'sawtooth', .04);
+                el.querySelector('.fishing__catch').classList.add('is-gone');
+                say(PX('ev-sturm') + ' <b>Die Schnur ist schlaff.</b> ' + X.pick(['Weg ist er.', 'Der war zu schnell.', 'Nur ein paar Blasen bleiben zurück.']));
+                finishButtons(false, '');
+            }
+            function finishButtons(ok, html) {
+                cancelAnimationFrame(raf); draw();
+                const row = el.querySelector('.row'), more = M.fishMissing(spotId).length === 0;
+                row.innerHTML = (more ? '<button class="btn btn--primary" type="button" id="fi-again">Nochmal auswerfen · ' + M.spotStock(spotId) + ' übrig</button>' : '<span class="small muted">' + esc(M.fishMissing(spotId).join(' · ')) + '</span>') + '<button class="btn" type="button" id="fi-done">Fertig</button>';
+                row.querySelector('#fi-done').addEventListener('click', () => { end(ok); m.close(); });
+                const ag = row.querySelector('#fi-again'); if (ag) ag.addEventListener('click', () => { end(ok); m.close(); W.fish(spotId).then(resolve2 => resolve2); });
+                result = { ok, html, c };
+            }
+            let result = null;
+            function end(ok, closed) { if (done) return; done = true; cancelAnimationFrame(raf); removeEventListener('keydown', onKey); resolve(result || { ok: false }); }
+            const onKey = e => { if ((e.key === ' ' || e.key === 'Enter') && phase === 2) { e.preventDefault(); reel(); } };
+            addEventListener('keydown', onKey);
+            cv.addEventListener('pointerdown', e => { e.preventDefault(); reel(); });
+            el.querySelector('#fi-reel').addEventListener('click', reel);
+            // Auswerfen und Biss abwarten
+            phase = 1; draw(); raf = requestAnimationFrame(frame);
+            X.beep(300, .08, 'triangle', .03);
+            setTimeout(() => { if (done) return; say('Die Pose tanzt auf den Wellen …'); }, 500);
+            setTimeout(() => {
+                if (done) return;
+                phase = 2; newZones(); el.querySelector('#fi-reel').disabled = false; el.querySelector('#fi-reel').focus();
+                say('<b>Biss!</b> Drück, wenn der Zeiger in einer grünen Zone steht – ' + c.hits + ' Treffer' + (c.q >= 4 ? ', er wechselt die Richtung' : '') + '.');
+                X.beep(880, .07, 'square', .04); X.beep(990, .07, 'square', .04);
+            }, anim ? 1100 + Math.random() * 1500 : 300);
+        });
     };
 
     /* ── Wo steht der Mech? ───────────────────────────────────────────── */
@@ -110,11 +346,13 @@
             const pos = M.pos(), at = pos === isle;
             el.className = 'here' + (at ? '' : ' here--away');
             el.innerHTML = at
-                ? '<span>' + PX('z-anker', 18) + ' Dein Mech liegt hier vor Anker.</span><span class="small muted">' + (M.ready() ? 'Fahrbereit' : 'Nicht fahrbereit – zur Werft im Heimathafen') + '</span>'
+                ? '<span>' + PX('z-anker', 18) + ' Dein Mech liegt hier vor Anker.</span>' + W.bpDots(isle) + '<span class="spacer"></span>' + ((X.blueprintSpots || {})[isle] ? W.scanButton(isle) : '') + '<span class="small muted">' + (M.ready() ? 'Fahrbereit' : 'Nicht fahrbereit – zur Werft im Heimathafen') + '</span>'
                 : '<span>' + PX('z-kompass', 18) + ' Dein Mech ist gerade in <b>' + esc(W.isleName(pos)) + '</b>. Um hier etwas zu tun, musst du herreisen.</span>' +
                   '<button class="btn btn--primary btn--sm" type="button" data-go-here>' + PX('ev-schiff') + ' Hierher reisen (' + Math.round(M.travelSecs(isle)) + ' s)</button>';
             const b = el.querySelector('[data-go-here]');
             if (b) b.addEventListener('click', () => W.travel(isle).then(r => { if (r && r.arrived) { draw(); if (onArrive) onArrive(); } }));
+            const sc = el.querySelector('[data-scan]');
+            if (sc) sc.addEventListener('click', () => W.scan(isle).then(() => { draw(); if (onArrive) onArrive(); }));
             return at;
         };
         return draw();
@@ -159,9 +397,10 @@
     ];
     const EVENTS = [
         { w: 5, run(st) { const id = X.pick(['kabel', 'zahnrad', 'oel', 'platine']), n = X.rand(1, 3); M.addMat(id, n); const m = M.mat(id); return PX('ev-treibgut') + ' <b>Treibgut!</b> Du fischst ' + n + '× ' + m.n + ' aus dem Wasser.'; } },
-        { w: 2, run(st) { const l = W.grant(W.loot({ item: .55, maxT: 3, mats: 1, taler: [3, 12] })); return PX('ev-kiste') + ' <b>Eine treibende Kiste!</b> Darin: ' + l.join(', ') + '.'; } },
+        { w: 2, run(st) { const l = W.grant(W.loot({ item: .55, maxT: 3, mats: 1, taler: [3, 12], bp: .1, bpT: 2 })); return PX('ev-kiste') + ' <b>Eine treibende Kiste!</b> Darin: ' + l.join(', ') + '.'; } },
         { w: 3, run(st) { const rep = M.wear(2, Math.round(11 * (1 - Math.min(.9, st.fx.storm || 0))), ['antrieb', 'rahmen', 'panzer']); return PX('ev-sturm') + ' <b>Sturm!</b> ' + (rep.length ? 'Schaden: ' + rep.map(r => esc(r.part.n) + ' −' + r.dmg + ' %').join(', ') + '.' : 'Deine Panzerung hält alles ab.'); } },
         { w: 1.4, run() { X.egg('m-flaschenpost'); return PX('ev-flasche') + ' <b>Flaschenpost:</b> „' + X.pick(BOTTLE) + '“'; } },
+        { w: .9, run(st) { const id = M.randomBp(st.S >= 3 ? 3 : 2); if (!id) return PX('ev-flasche') + ' <b>Eine Kartenrolle</b> treibt vorbei – leider völlig aufgeweicht.'; M.learnBp(id); return PX('bp') + ' <b>Eine wasserdichte Kartenrolle!</b> Darin: der Bauplan für <b class="bp-new">' + esc(M.part(id).n) + '</b>.'; } },
         { w: 2, run() { const n = M.addTaler(X.rand(4, 14)); return PX('ev-schiff') + ' <b>Ein Händlerschiff</b> kauft dir alte Schrauben ab: +' + n + ' ' + PX('taler'); } },
         { w: 2, run(st) { if (st.S >= 3) { X.addXP(6, 'Nebelbank'); return PX('ev-nebel') + ' <b>Nebelbank.</b> Dein Sensor erkennt Umrisse einer fernen Küste. +6 XP'; } return PX('ev-nebel') + ' <b>Nebelbank.</b> Der Sensor rauscht. Man sieht die eigenen Paddel kaum.'; } },
         { w: 1.4, run() { X.addXP(4, 'Wal'); return PX('ev-wal') + ' <b>Ein Wal</b> begleitet dich ein Stück und bläst eine Fontäne. +4 XP'; } },
@@ -170,11 +409,12 @@
         { w: 1.5, run() { return PX('ev-sonne') + ' <b>Spiegelglatte See.</b> Der Mech brummt zufrieden vor sich hin.'; } }
     ];
     const pickEvent = () => { let r = Math.random() * EVENTS.reduce((a, e) => a + e.w, 0); for (const e of EVENTS) { r -= e.w; if (r <= 0) return e; } return EVENTS[0]; };
-    const TIPS = ['Tipp: Ein besserer Antrieb verkürzt jede Reise.', 'Tipp: Zubehör wie der Messingkompass macht dich schneller.', 'Tipp: Panzerung schützt vor Sturmschäden.', 'Tipp: Mit Sturmlaterne und Funkgerät erlebst du unterwegs mehr.', 'Tipp: Kaputte Teile repariert die Werft im Heimathafen – oder die Funkenschmiede.'];
+    const TIPS = ['Tipp: Zu weit für eine Fahrt? Dein Mech plant eine Route mit Zwischenstopps über Inseln, die du schon kennst.', 'Tipp: Sturmsee, Nebelbank und Riffgürtel kosten eine Stufe mehr Reichweite.', 'Tipp: Auf jeder Insel liegen verschollene Baupläne. Peil sie mit dem Sonar an, wenn dein Mech dort vor Anker liegt.', 'Tipp: In der Werft presst du Schrott zu Kabeln, Zahnrädern und Platinen.', 'Tipp: Ein besserer Antrieb verkürzt jede Reise.', 'Tipp: Zubehör wie der Messingkompass macht dich schneller.', 'Tipp: Panzerung schützt vor Sturmschäden.', 'Tipp: Mit Sturmlaterne und Funkgerät erlebst du unterwegs mehr.', 'Tipp: Kaputte Teile repariert die Werft im Heimathafen – oder die Funkenschmiede.'];
 
-    function voyageView(from, to, label) {
-        const A = M.isle(from), B = M.isle(to), pad = 230;
-        let x0 = Math.min(A.x, B.x) - pad, x1 = Math.max(A.x, B.x) + pad, y0 = Math.min(A.y, B.y) - pad, y1 = Math.max(A.y, B.y) + pad;
+    function voyageView(stops, label) {
+        const pts = stops.map(id => M.isle(id)), pad = 230;
+        let x0 = Math.min.apply(null, pts.map(p => p.x)) - pad, x1 = Math.max.apply(null, pts.map(p => p.x)) + pad;
+        let y0 = Math.min.apply(null, pts.map(p => p.y)) - pad, y1 = Math.max.apply(null, pts.map(p => p.y)) + pad;
         const ar = innerWidth / Math.max(320, innerHeight - 190);   // Kartenbereich etwa im Bildschirmformat
         let w = x1 - x0, h = y1 - y0;
         if (w / h < ar) { const nw = h * ar; x0 -= (nw - w) / 2; w = nw; } else { const nh = w / ar; y0 -= (nh - h) / 2; h = nh; }
@@ -189,9 +429,13 @@
         document.body.style.overflow = 'hidden';
         root.querySelector('h2').textContent = label;
         root.querySelector('.voyage__tip').textContent = X.pick(TIPS);
-        // Die Pixel-Karte von Sektaria als Ladebildschirm, mit Route und Mech-Figur
+        // Die Pixel-Karte von Sektaria als Ladebildschirm, mit Route (je Etappe ein Pfad), Stopps und Mech-Figur
         const ctl = X.mapPix.mount(root.querySelector('.voyage__map'), { discovered: id => M.discovered(id), visitedSecret, unknown: false, view: [x0, y0, w, h], fit: 'cover' });
-        ctl.layer('route').innerHTML = '<path class="voyage__route" d="' + X.mapArt.route(from, to) + '"/><path class="voyage__done" d=""/>';
+        let r = '';
+        for (let i = 1; i < stops.length; i++) r += '<path class="voyage__route" data-leg="' + (i - 1) + '" d="' + X.mapArt.route(stops[i - 1], stops[i]) + '"/>';
+        for (let i = 1; i < stops.length; i++) r += '<path class="voyage__done" data-leg="' + (i - 1) + '" d=""/>';
+        stops.slice(1, -1).forEach(id => { const I = M.isle(id); r += '<rect class="voyage__stop" x="' + (I.x - 12) + '" y="' + (I.y + I.s * .45 - 12) + '" width="24" height="24"/>'; });
+        ctl.layer('route').innerHTML = r;
         root._ctl = ctl;
         return root;
     }
@@ -201,41 +445,70 @@
         return '<g transform="translate(-40 -70) scale(.34)">' + X.mechArt.draw(f, run).replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '') + '</g>';
     }
 
-    /* Läuft eine Reise ab: Mech folgt der Route, Ereignisse unterwegs, am Ende Ankunft */
-    function runVoyage(from, to, o) {
+    /* Läuft eine Reise ab: Mech folgt der Route Etappe für Etappe (dazwischen je M.STOP Sekunden
+       Zwischenstopp), Ereignisse unterwegs, am Ende Ankunft.
+       o: { stops: [Start, …, Ziel], secs (nur Schlepper), label, page, tug, onArrive() } */
+    function runVoyage(o) {
         return new Promise(resolve => {
-            const secs = o.secs, root = voyageView(from, to, o.label);
-            const ctl = root._ctl, path = root.querySelector('.voyage__route'), done = root.querySelector('.voyage__done'), PS = ctl.S;
+            const stops = o.stops, from = stops[0], to = stops[stops.length - 1], root = voyageView(stops, o.label);
+            const ctl = root._ctl, PS = ctl.S, legs = [];
+            for (let i = 1; i < stops.length; i++) {
+                const path = root.querySelector('.voyage__route[data-leg="' + (i - 1) + '"]');
+                legs.push({ a: stops[i - 1], b: stops[i], path, done: root.querySelector('.voyage__done[data-leg="' + (i - 1) + '"]'), len: path.getTotalLength(), secs: o.secs || M.legSecs(stops[i - 1], stops[i]) });
+            }
+            // Zeitplan: Etappe, Stopp, Etappe, …
+            const plan = []; let T = 0;
+            legs.forEach((L, i) => { plan.push({ leg: i, t0: T, secs: L.secs }); T += L.secs; if (i < legs.length - 1) { plan.push({ stop: i, t0: T, secs: M.STOP }); T += M.STOP; } });
             const tok = document.createElement('canvas'); tok.width = 44; tok.height = 44; ctl.place(tok, 0, 0, 44 * PS, 44 * PS, 'voyage__mech');
             if (o.tug) X.mapPix.sprite(mechToken(0, false, true), [-36, -30, 72, 44], 24, 15).then(sp => { if (sp) { tok.width = 24; tok.height = 15; tok.getContext('2d').drawImage(sp, 0, 0); tok.style.width = 24 * PS + 'px'; tok.style.height = 15 * PS + 'px'; } });
-            const len = path.getTotalLength(), bar = root.querySelector('.voyage__progress i'), log = root.querySelector('.voyage__log'), timeEl = root.querySelector('.voyage__time');
+            const bar = root.querySelector('.voyage__progress i'), log = root.querySelector('.voyage__log'), timeEl = root.querySelector('.voyage__time');
             const calm = X.setting('anim') === false;
-            let p = 0, speed = 1, last = performance.now(), tokT = 0;
+            let t = 0, speed = 1, last = performance.now(), tokT = 0, seg = -1, lastPt = null;
             const st = M.stats(), events = [];
-            if (!o.tug) {
-                const n = Math.min(4, Math.round((.5 + M.dist(from, to) / 600) * (1 + (st.fx.events || 0)) + Math.random() * .6));
-                for (let i = 0; i < n; i++) events.push({ at: .14 + (i + Math.random() * .7) / n * .74, ev: pickEvent() });
-            }
+            if (!o.tug) legs.forEach((L, li) => {
+                const n = Math.min(4, Math.round((.5 + M.dist(L.a, L.b) / 600) * (1 + (st.fx.events || 0)) + Math.random() * .6));
+                for (let i = 0; i < n; i++) events.push({ leg: li, at: .14 + (i + Math.random() * .7) / n * .74, ev: pickEvent() });
+            });
             const say = html => { const li = document.createElement('li'); li.innerHTML = html; log.appendChild(li); log.scrollTop = log.scrollHeight; };
-            say(o.tug ? PX('ev-schiff') + ' Der Schlepper hat dich am Haken. Ab nach Hause!' : PX('z-anker') + ' Leinen los in <b>' + esc(W.isleName(from)) + '</b>. Ziel: <b>' + esc(W.isleName(to)) + '</b> · ' + Math.round(M.dist(from, to) / 10) + ' Seemeilen.');
+            say(o.tug ? PX('ev-schiff') + ' Der Schlepper hat dich am Haken. Ab nach Hause!' : PX('z-anker') + ' Leinen los in <b>' + esc(W.isleName(from)) + '</b>. Ziel: <b>' + esc(W.isleName(to)) + '</b>' +
+                (stops.length > 2 ? ' über ' + stops.slice(1, -1).map(id => '<b>' + esc(W.isleName(id)) + '</b>').join(', ') + ' (' + (stops.length - 2) + ' Zwischenstopp' + (stops.length > 3 ? 's' : '') + ')' : ' · ' + Math.round(M.dist(from, to) / 10) + ' Seemeilen') + '.');
+            const zones = []; legs.forEach(L => M.legZones(L.a, L.b).forEach(z => { if (!zones.includes(z)) zones.push(z); }));
+            if (!o.tug && zones.length) say(PX('ev-sturm') + ' Achtung, schwierige Gewässer: ' + zones.map(z => '<b>' + esc(z.n) + '</b>').join(', ') + '.');
             const fast = root.querySelector('[data-fast]');
             fast.addEventListener('click', () => { speed = speed === 1 ? 3 : 1; fast.setAttribute('aria-pressed', speed === 3); fast.classList.toggle('btn--primary', speed === 3); });
             [196, 247, 294].forEach((fq, i) => setTimeout(() => X.beep(fq, .15, 'triangle', .04), 200 + i * 300));
-            function frame(now) {
-                const dt = Math.min(.1, (now - last) / 1000); last = now;
-                p = Math.min(1, p + dt * speed / secs);
-                const pt = path.getPointAtLength(p * len), ahead = path.getPointAtLength(Math.min(len, p * len + 2));
-                const flip = ahead.x < pt.x ? -1 : 1, bob = calm ? 0 : Math.sin(now / 260) * 3;
-                tokT += dt;
-                if (!o.tug && (tokT > .2 || !tok.dataset.on)) { tokT = 0; tok.dataset.on = 1; X.mapPix.mechSprite(tok, now / 1000); }
-                const tw = parseFloat(tok.style.width), th = parseFloat(tok.style.height);
+            function placeTok(pt, flip, now) {
+                const bob = calm ? 0 : Math.sin(now / 260) * 3, tw = parseFloat(tok.style.width), th = parseFloat(tok.style.height);
                 tok.style.left = (Math.round((pt.x - tw / 2) / PS) * PS) + 'px'; tok.style.top = (Math.round((pt.y - th * .86 + bob) / PS) * PS) + 'px';
                 tok.style.transform = flip < 0 ? 'scaleX(-1)' : '';
-                done.setAttribute('d', path.getAttribute('d')); done.style.strokeDasharray = (p * len) + ' ' + len;
-                bar.style.width = (p * 100).toFixed(1) + '%';
-                timeEl.textContent = 'noch ' + Math.max(0, Math.ceil((1 - p) * secs / speed)) + ' s';
-                while (events.length && events[0].at <= p) { const e = events.shift(); try { say(e.ev.run(st)); X.beep(523, .06, 'sine', .04); } catch (err) { console.error(err); } }
-                if (p < 1) return requestAnimationFrame(frame);
+            }
+            function frame(now) {
+                const dt = Math.min(.1, (now - last) / 1000); last = now;
+                t = Math.min(T, t + dt * speed);
+                let k = plan.length - 1; while (k > 0 && plan[k].t0 > t) k--;
+                const P = plan[k];
+                if (k !== seg) {   // neuer Abschnitt
+                    if (P.stop != null) {
+                        const at = legs[P.stop].b, res = M.arrive(at);
+                        X.beep(440, .08, 'square', .035); X.beep(554, .08, 'square', .035);
+                        say(PX('z-anker') + ' <b>Zwischenstopp in ' + esc(W.isleName(at)) + '.</b> ' + X.pick(['Proviant fassen, Schrauben nachziehen …', 'Kurz durchschnaufen, Kurs prüfen …', 'Der Mech tankt Sonne …', 'Ein Hafenarbeiter winkt dir zu.']) +
+                            (res && res.report && res.report.length ? ' (Abnutzung: ' + res.report.map(r => esc(r.part.n) + ' −' + r.dmg + ' %').join(', ') + ')' : ''));
+                    }
+                    seg = k;
+                }
+                tokT += dt;
+                if (!o.tug && (tokT > .2 || !tok.dataset.on)) { tokT = 0; tok.dataset.on = 1; X.mapPix.mechSprite(tok, now / 1000); }
+                if (P.leg != null) {
+                    const L = legs[P.leg], p = Math.min(1, (t - P.t0) / P.secs);
+                    const pt = L.path.getPointAtLength(p * L.len), ahead = L.path.getPointAtLength(Math.min(L.len, p * L.len + 2));
+                    placeTok(pt, ahead.x < pt.x ? -1 : 1, now); lastPt = pt;
+                    legs.forEach((M2, i) => { if (i < P.leg) { M2.done.setAttribute('d', M2.path.getAttribute('d')); M2.done.style.strokeDasharray = 'none'; } });
+                    L.done.setAttribute('d', L.path.getAttribute('d')); L.done.style.strokeDasharray = (p * L.len) + ' ' + L.len;
+                    while (events.length && events[0].leg === P.leg && events[0].at <= p) { const e = events.shift(); try { say(e.ev.run(st)); X.beep(523, .06, 'sine', .04); } catch (err) { console.error(err); } }
+                } else if (lastPt) placeTok(lastPt, 1, now);
+                bar.style.width = (t / T * 100).toFixed(1) + '%';
+                timeEl.textContent = P.stop != null ? 'Zwischenstopp · noch ' + Math.max(0, Math.ceil((T - t) / speed)) + ' s' : 'noch ' + Math.max(0, Math.ceil((T - t) / speed)) + ' s';
+                if (t < T) return requestAnimationFrame(frame);
                 arrive();
             }
             function arrive() {
@@ -268,16 +541,19 @@
             const t = m.el.querySelector('[data-tow]'); if (t) t.addEventListener('click', () => { m.close(); W.tow(); });
             return Promise.resolve({ arrived: false });
         }
-        if (!M.discovered(to) && !M.canReach(to)) {
-            X.modal('<h2>' + esc(isle.n) + ' liegt im Nebel</h2><p class="muted">Für die erste Reise dorthin braucht dein Mech: <b>' + esc(M.islandReqText(to)) + '</b>.</p><p class="small">Es fehlt: ' + esc(M.missing(to).join(' · ')) + '</p>' +
+        const stops = M.canReach(to) ? M.route(to) : null;
+        if (!stops) {
+            const fog = !M.discovered(to);
+            X.modal('<h2>' + esc(isle.n) + (fog ? ' liegt im Nebel' : ' ist zu weit weg') + '</h2><p class="muted">' + (fog ? 'Für die erste Reise dorthin braucht dein Mech: ' : 'Von ' + esc(W.isleName(from)) + ' aus braucht dein Mech: ') + '<b>' + esc(M.islandReqText(to)) + '</b>.</p>' +
+                '<p class="small">Es fehlt: ' + esc(M.missing(to).join(' · ')) + '</p><p class="small muted">Je weiter die Strecke, desto mehr Reichweite braucht sie. Reicht sie nicht für die direkte Fahrt, plant dein Mech eine Route mit Zwischenstopps über Inseln, die du schon kennst.</p>' +
                 '<div class="row"><a class="btn btn--primary" href="' + X.url('konto/skilltree.html') + '">Zur Werft</a><button class="btn" type="button" data-close>OK</button></div>');
             return Promise.resolve({ arrived: false });
         }
         const first = !M.discovered(to);
-        return runVoyage(from, to, { secs: M.travelSecs(to), label: (first ? 'Expedition nach ' : 'Unterwegs nach ') + isle.n, page: o.page, onArrive: () => M.arrive(to) });
+        return runVoyage({ stops, label: (first ? 'Expedition nach ' : 'Unterwegs nach ') + isle.n + (stops.length > 2 ? ' · ' + (stops.length - 2) + ' Zwischenstopp' + (stops.length > 3 ? 's' : '') : ''), page: o.page, onArrive: () => M.arrive(to) });
     };
     W.tow = function () {
         const from = M.pos(); if (from === 'konto') return Promise.resolve({ arrived: true });
-        return runVoyage(from, 'konto', { secs: 6, tug: true, label: 'Notruf: Schlepper bringt dich heim', onArrive: () => { M.tow(); const n = Math.min(M.taler(), 10); if (n) M.spendTaler(n); return { report: [], first: false, cost: n }; } });
+        return runVoyage({ stops: [from, 'konto'], secs: 6, tug: true, label: 'Notruf: Schlepper bringt dich heim', onArrive: () => { M.tow(); const n = Math.min(M.taler(), 10); if (n) M.spendTaler(n); return { report: [], first: false, cost: n }; } });
     };
 })();

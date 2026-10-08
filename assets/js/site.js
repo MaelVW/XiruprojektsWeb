@@ -299,8 +299,10 @@ XIRU.skills = [
 ];
 
 /* ── Werft: der Erkundungs-Mech ───────────────────────────────────────────
-   Bauteile (Baupläne) schaltet man über Level, Realitätskristalle, entdeckte
-   Orte und gespielte Spiele frei und baut sie mit Schrott (1 Schrott pro 4 XP).
+   Baupläne findet man auf den Inseln der Weltkarte (XIRU.blueprintSpots, Sonar-
+   Peilung vor Ort) oder als Beute. Gebaut wird in der Werft aus Schrott (1 Schrott
+   pro 4 XP) und Materialien (Rezept je Bauplatz und Stufe, siehe XIRU.mech.recipe).
+   req ist nur noch historisch (Version 1) und wird nicht mehr geprüft.
    Jedes gebaute oder gefundene Teil ist ein Gegenstand im Inventar – mit
    Seltenheit (q 1–6), Zustand (0–100 %) und Aufwertung (+0 bis +5).
    Werte: R Reichweite · E Energie · S Sensor · P Panzerung · A Angriff
@@ -387,6 +389,24 @@ XIRU.mechParts = [
 ];
 /* Startausrüstung (Tutorial): klar erkennbares Anfänger-Set, alles Gewöhnlich */
 XIRU.starterSet = ['r-schrott', 'a-paddel', 'k-batterie', 'f-nagel'];
+/* Baupläne, die man von Anfang an kennt: das Starter-Set + je ein Stufe-1-Teil für die übrigen Plätze */
+XIRU.starterBlueprints = ['r-schrott', 'a-paddel', 'k-batterie', 'f-nagel', 's-antenne', 'w-schluessel', 'p-blech', 'z-laterne'];
+/* Wo liegen die übrigen Baupläne? Je weiter weg die Insel, desto besser die Pläne.
+   Gefunden werden sie mit der Sonar-Peilung, wenn der Mech dort vor Anker liegt. */
+XIRU.blueprintSpots = {
+    zentrum:   ['a-segel', 'k-solar', 'z-kompass'],
+    werkzeuge: ['r-alu', 'w-schweiss', 'w-greifer', 'w-bohrer'],
+    studio:    ['k-diskette', 's-radar', 'k-cd'],
+    arcade:    ['f-loet', 'f-laser', 'z-sparschwein'],
+    hardware:  ['p-ram', 'r-titan', 's-hdd', 'a-schraube'],
+    markt:     ['a-raupe', 'z-anker', 'z-funk'],
+    schmiede:  ['r-carbon', 'p-tower', 'f-bohr'],
+    mixer:     ['s-sonar', 'p-schild', 'f-tesla'],
+    ki:        ['a-duesen', 'k-kristall', 's-prisma'],
+    wrack:     ['z-kleeblatt', 'a-beine', 'w-nano'],
+    arena:     ['r-kristall', 'f-klinge', 'p-kristall'],
+    mine:      ['a-hover', 's-auge', 'k-fusion', 'r-obsidian']
+};
 
 /* Materialien (Beute, Handel, Schmiede) – v = Wert in Talern */
 XIRU.materials = [
@@ -398,10 +418,23 @@ XIRU.materials = [
     { id: 'splitter',  n: 'Kristallsplitter', i: '💠', v: 25, d: 'Ein Bruchstück eines Realitätskristalls.' },
     { id: 'nebelkern', n: 'Nebelkern',        i: '🌀', v: 80, d: 'Verdichteter Nebel. Kalt und schwer.' }
 ];
+/* Schrottpresse in der Werft: Schrott (und einfache Materialien) zu Bauteil-Materialien verarbeiten.
+   Kristallsplitter und Nebelkerne lassen sich nicht pressen – die gibt es nur draussen in der Welt. */
+XIRU.pressRecipes = [
+    { id: 'kabel',   scrap: 6,  d: 'Altes Gerät ausweiden, Kupfer ziehen.' },
+    { id: 'zahnrad', scrap: 8,  d: 'Blech stanzen, Zähne feilen.' },
+    { id: 'oel',     scrap: 10, d: 'Lager auspressen. Riecht.' },
+    { id: 'platine', scrap: 14, mats: { kabel: 2 }, d: 'Leiterbahnen ätzen, Kabel anlöten.' },
+    { id: 'chip',    scrap: 24, mats: { platine: 1, kabel: 2 }, d: 'Feinarbeit unter der Lupe.' }
+];
 
-/* ── Inseln der Weltkarte (Karte 2400 × 1600) ─────────────────────────────
+/* ── Inseln der Weltkarte (Archipel 2400 × 1600, rundherum Nebel) ─────────
    Inhalts-Inseln gehören zu einer Region (r). Spiel-Inseln (game: true) haben
-   eine eigene Seite unter welt/. req = Mech-Werte für die erste Reise dorthin.
+   eine eigene Seite unter welt/.
+   req = weitere Mech-Werte (E, S, P, A) für die erste Reise dorthin; null = von Anfang an bekannt.
+   Die nötige REICHWEITE hängt nicht an der Insel, sondern an der Strecke: je weiter
+   vom aktuellen Standort des Mechs, desto mehr (XIRU.mech.legNeed). Reicht sie nicht,
+   plant der Mech eine Route mit Zwischenstopps über bekannte Inseln.
    b = Gebäude: [Name, Seite, Pixel-Icon aus assets/js/pixel-icons.js]
    ------------------------------------------------------------------------- */
 XIRU.islands = [
@@ -409,30 +442,84 @@ XIRU.islands = [
       b: [['Werft', 'konto/skilltree.html', 'z-anker'], ['Kapitänshaus', 'konto/profil.html', 'npc-otto'], ['Kristallsammlung', 'konto/sammlung.html', 'k-kristall'], ['Hafenamt', 'konto/einstellungen.html', 'mat-zahnrad']] },
     { id: 'zentrum',   r: 'zentrum',   n: 'Zentrum',         x: 1190, y: 720,  s: 122, art: 'zentrum',  req: null,
       b: [['Marktplatz', 'index.html', 'z-kompass'], ['Kartenturm', 'weltkarte.html', 'st-R'], ['Bibliothek', 'suche.html', 's-hdd'], ['Rathaus', 'hilfe.html', 'npc-frieda']] },
-    { id: 'werkzeuge', r: 'werkzeuge', n: 'Werkzeugkasten',  x: 640,  y: 1110, s: 104, art: 'werkstatt', req: { R: 1 },
+    { id: 'werkzeuge', r: 'werkzeuge', n: 'Werkzeugkasten',  x: 640,  y: 1110, s: 104, art: 'werkstatt', req: {},
       b: [['Werkzeugschuppen', 'werkzeuge/index.html', 'w-schluessel']] },
-    { id: 'studio',    r: 'studio',    n: 'Studio',          x: 985,  y: 385,  s: 110, art: 'studio',   req: { R: 1 },
+    { id: 'studio',    r: 'studio',    n: 'Studio',          x: 985,  y: 385,  s: 110, art: 'studio',   req: {},
       b: [['Filmstudio', 'studio/index.html', 'k-cd'], ['Floppy-Hub-Halle', 'studio/floppy-hub.html', 'k-diskette']] },
-    { id: 'arcade',    r: 'arcade',    n: 'Spielhalle',      x: 1560, y: 470,  s: 126, art: 'arcade',   req: { R: 2 },
+    { id: 'arcade',    r: 'arcade',    n: 'Spielhalle',      x: 1560, y: 470,  s: 126, art: 'arcade',   req: {},
       b: [['Neon-Halle', 'arcade/index.html', 'ic-joystick'], ['PIXMAG-Verlies', 'arcade/dungeon.html', 'f-klinge']] },
-    { id: 'hardware',  r: 'hardware',  n: 'Hardware-Archiv', x: 560,  y: 650,  s: 126, art: 'archiv',   req: { R: 2, S: 1 },
+    { id: 'hardware',  r: 'hardware',  n: 'Hardware-Archiv', x: 560,  y: 650,  s: 126, art: 'archiv',   req: { S: 1 },
       b: [['Archivturm', 'hardware/index.html', 'mat-chip'], ['Code-Bibliothek', 'hardware/code/index.html', 'mat-platine']] },
-    { id: 'mixer',     r: 'mixer',     n: 'Mixer-Studio',    x: 1430, y: 1170, s: 108, art: 'mixer',    req: { R: 3, E: 2 },
+    { id: 'mixer',     r: 'mixer',     n: 'Mixer-Studio',    x: 1430, y: 1170, s: 108, art: 'mixer',    req: { E: 2 },
       b: [['Klangturm', 'mixer/index.html', 'ic-note']] },
-    { id: 'ki',        r: 'ki',        n: 'KI-Labor',        x: 1880, y: 900,  s: 120, art: 'labor',    req: { R: 3, E: 3, S: 2 },
+    { id: 'ki',        r: 'ki',        n: 'KI-Labor',        x: 1880, y: 900,  s: 120, art: 'labor',    req: { E: 3, S: 2 },
       b: [['Observatorium', 'ki/index.html', 'k-fusion'], ['Taverne', 'ki/taverne.html', 'ic-krug']] },
     { id: 'geheim',    r: 'geheim',    n: '???',             x: 250,  y: 1390, s: 92,  art: 'ruinen',   req: null, secret: true, b: [] },
-    { id: 'markt',     r: 'meer', game: true, n: 'Händlerbucht',   x: 1520, y: 790,  s: 86, art: 'markt',    req: { R: 2 },
-      b: [['Basar', 'welt/markt.html', 'taler']], d: 'Händler aus allen Ecken von Sektaria: Bauteile kaufen, verkaufen, tauschen.' },
-    { id: 'schmiede',  r: 'meer', game: true, n: 'Funkenschmiede', x: 800,  y: 1390, s: 82, art: 'schmiede', req: { R: 2, E: 2 },
+    { id: 'markt',     r: 'meer', game: true, n: 'Händlerbucht',   x: 1520, y: 790,  s: 86, art: 'markt',    req: {},
+      b: [['Basar', 'welt/markt.html', 'taler'], ['Lucky Joes Glücksbude', 'welt/markt.html#joe', 'npc-joe'], ['Flossies Fischstand', 'welt/markt.html#fisch', 'npc-flossie']], d: 'Händler aus allen Ecken von Sektaria: Bauteile kaufen, verkaufen, tauschen – und bei Lucky Joe das Glück herausfordern.' },
+    { id: 'schmiede',  r: 'meer', game: true, n: 'Funkenschmiede', x: 800,  y: 1390, s: 82, art: 'schmiede', req: { E: 2 },
       b: [['Esse', 'welt/schmiede.html', 'ic-amboss']], d: 'Hier werden Teile aufgewertet, zerlegt und verschmolzen.' },
-    { id: 'wrack',     r: 'meer', game: true, n: 'Wrackriff',      x: 1930, y: 1370, s: 84, art: 'wrack',    req: { R: 3, S: 2 },
+    { id: 'wrack',     r: 'meer', game: true, n: 'Wrackriff',      x: 1930, y: 1370, s: 84, art: 'wrack',    req: { S: 2 },
       b: [['Tauchplatz', 'welt/wrack.html', 'npc-muschel']], d: 'Ein Riff voller gesunkener Frachter. Mit Sonar findet man Schätze.' },
-    { id: 'arena',     r: 'meer', game: true, n: 'Schrott-Arena',  x: 2080, y: 560,  s: 98, art: 'arena',    req: { R: 3, P: 2, A: 3 },
+    { id: 'arena',     r: 'meer', game: true, n: 'Schrott-Arena',  x: 2080, y: 560,  s: 98, art: 'arena',    req: { P: 2, A: 3 },
       b: [['Kampfring', 'welt/arena.html', 'st-A']], d: 'Mechs aus ganz Sektaria treten hier gegeneinander an.' },
-    { id: 'mine',      r: 'meer', game: true, n: 'Nebelmine',      x: 330,  y: 300,  s: 100, art: 'mine',     req: { R: 4, E: 3, S: 3 },
+    { id: 'mine',      r: 'meer', game: true, n: 'Nebelmine',      x: 330,  y: 300,  s: 100, art: 'mine',     req: { E: 3, S: 3 },
       b: [['Stollen', 'welt/mine.html', 'npc-kiesel']], d: 'Tief im Berg wachsen Kristallsplitter und Nebelkerne.' }
 ];
+/* Schwierige Gewässer: Strecken, die hindurchführen (oder dort enden), brauchen mehr Reichweite */
+XIRU.seaZones = [
+    { id: 'sturmsee',  n: 'Sturmsee',   x: 2150, y: 470,  r: 300, add: 1, d: 'Peitschende Wellen rund um die Schrott-Arena.' },
+    { id: 'nebelbank', n: 'Nebelbank',  x: 330,  y: 280,  r: 310, add: 1, d: 'Dichter, kalter Nebel vor der Nebelmine.' },
+    { id: 'riffe',     n: 'Riffgürtel', x: 1960, y: 1400, r: 250, add: 1, d: 'Scharfe Riffe und Wracks unter der Oberfläche.' }
+];
+/* ── Angeln (wie in Dredge) ──────────────────────────────────────────────
+   Angelplätze liegen im Meer nahe einer Insel (near). Man sieht sie erst ab einem
+   Sensor-Wert (s) und angelt dort, wenn der Mech auf der Nachbarinsel vor Anker liegt
+   und die Angel stark genug ist (tier). Jeder Platz hat einen kleinen Vorrat, der
+   langsam nachwächst. Fische (q = Seltenheit, v = Wert in Talern) kauft und tauscht
+   Fischerin Flossie in der Händlerbucht; sie verbessert auch die Angel.
+   look: Pixel-Form des Fisch-Icons (fish-<id>), abart: mutierter Fisch aus dem Nebel
+   ------------------------------------------------------------------------- */
+XIRU.rods = [
+    null,
+    { n: 'Bambusrute',    d: 'Biegt sich bei jedem Hering, als ginge es um ihr Leben.' },
+    { n: 'Teleskoprute',  d: 'Ausziehbar aus einer alten Zimmerantenne. Reicht bis ins Mittelwasser.', taler: 120,  mats: { kabel: 4, zahnrad: 2 } },
+    { n: 'Karbonrute',    d: 'Leicht, steif und mit Festplatten-Rolle. Für tiefe Gräben.',             taler: 380,  mats: { platine: 3, oel: 3 } },
+    { n: 'Tiefseewinde',  d: 'Eine Winde mit Seilzug und Druckausgleich. Holt alles hoch.',          taler: 900,  mats: { chip: 3, splitter: 2 } },
+    { n: 'Nebelharpune',  d: 'Sie trifft, was im Nebel schwimmt – auch Dinge, die es nicht geben dürfte.', taler: 2200, mats: { splitter: 6, nebelkern: 1 } }
+];
+XIRU.fish = [
+    { id: 'hering',          n: 'Hering',            q: 1, v: 4,   look: 'fisch',   d: 'Silbrig, häufig, zuverlässig. Das Rückgrat jeder Fischsuppe.' },
+    { id: 'sardine',         n: 'Sardine',           q: 1, v: 3,   look: 'fisch',   d: 'Kommt nie allein und mag es eng.' },
+    { id: 'makrele',         n: 'Makrele',           q: 1, v: 5,   look: 'fisch',   d: 'Schnell, gestreift und immer hungrig.' },
+    { id: 'dorsch',          n: 'Dorsch',            q: 2, v: 8,   look: 'fisch',   d: 'Brummt am Grund vor sich hin.' },
+    { id: 'aal',             n: 'Aal',               q: 2, v: 9,   look: 'aal',     d: 'Glitschig. Will nicht auf das Foto.' },
+    { id: 'diskettenbarsch', n: 'Diskettenbarsch',   q: 2, v: 12,  look: 'fisch',   d: 'Eckig, blau, speichert genau 1,44 MB Fischgedanken.' },
+    { id: 'pixelkarpfen',    n: 'Pixelkarpfen',      q: 3, v: 20,  look: 'fisch',   d: 'Bei genauem Hinsehen besteht er aus lauter kleinen Quadraten.' },
+    { id: 'kugelfisch',      n: 'Kugelfisch',        q: 3, v: 18,  look: 'rund',    d: 'Bläst sich auf, wenn er sich ärgert. Also immer.' },
+    { id: 'rochen',          n: 'Rochen',            q: 3, v: 22,  look: 'rochen',  d: 'Gleitet wie ein Drachen durchs Wasser.' },
+    { id: 'laternenfisch',   n: 'Laternenfisch',     q: 3, v: 24,  look: 'tief',    d: 'Trägt seine eigene Nachttischlampe mit sich herum.' },
+    { id: 'thun',            n: 'Blauflossen-Thun',  q: 4, v: 42,  look: 'fisch',   d: 'Ein Muskelpaket mit Flossen. Zieht wie ein Schlepper.' },
+    { id: 'kabelaal',        n: 'Kabelaal',          q: 4, v: 46,  look: 'aal',     d: 'Lebt in alten Seekabeln. Leicht elektrisch. Nicht ablecken.' },
+    { id: 'schwertfisch',    n: 'Schwertfisch',      q: 4, v: 50,  look: 'schwert', d: 'Ficht mit jeder Welle.' },
+    { id: 'seeteufel',       n: 'Seeteufel',         q: 4, v: 54,  look: 'tief',    d: 'Mehr Maul als Fisch.' },
+    { id: 'nebelhai',        n: 'Nebelhai',          q: 5, v: 120, look: 'hai',     d: 'Taucht aus dem Nebel auf und verschwindet wieder darin.' },
+    { id: 'kristallkarpfen', n: 'Kristallkarpfen',   q: 5, v: 160, look: 'fisch',   d: 'Seine Schuppen sind winzige Realitätskristalle.' },
+    { id: 'glitchforelle',   n: 'Glitchforelle',     q: 5, v: 150, look: 'fisch',   abart: true, d: 'Eine Abart aus dem Nebel. Flimmert, als würde sie gleich abstürzen.' },
+    { id: 'leviathan',       n: 'Leviathan-Larve',   q: 6, v: 480, look: 'aal',     abart: true, d: 'Noch klein. Noch.' }
+];
+XIRU.fishSpots = [
+    { id: 'hafenbecken',  n: 'Hafenbecken',     x: 1185, y: 1135, near: 'konto',     s: 0, tier: 1, fish: ['hering', 'sardine', 'makrele'],                     d: 'Ruhiges Wasser gleich vor der Werft. Hier fängt jeder an.' },
+    { id: 'kelpwald',     n: 'Kelpwald',        x: 455,  y: 975,  near: 'werkzeuge', s: 1, tier: 1, fish: ['makrele', 'dorsch', 'aal', 'kugelfisch'],           d: 'Ein Wald aus Seetang, in dem sich alte Werkzeuge verfangen.' },
+    { id: 'spiegelsee',   n: 'Spiegelbucht',    x: 790,  y: 300,  near: 'studio',    s: 1, tier: 2, fish: ['diskettenbarsch', 'pixelkarpfen', 'aal'],           d: 'So glatt, dass sich das Studio darin spiegelt.' },
+    { id: 'neonriff',     n: 'Neonriff',        x: 1745, y: 400,  near: 'arcade',    s: 2, tier: 2, fish: ['pixelkarpfen', 'kugelfisch', 'rochen', 'laternenfisch'], d: 'Die Lichter der Spielhalle färben das Riff bunt.' },
+    { id: 'kabelgraben',  n: 'Kabelgraben',     x: 1690, y: 1035, near: 'ki',        s: 2, tier: 3, fish: ['kabelaal', 'laternenfisch', 'schwertfisch', 'thun'], d: 'Ein Graben voller Seekabel. Es knistert im Wasser.' },
+    { id: 'wrackfeld',    n: 'Wrackfeld',       x: 1700, y: 1430, near: 'wrack',     s: 3, tier: 3, fish: ['seeteufel', 'rochen', 'thun', 'kabelaal'],          d: 'Zwischen den Wracks verstecken sich Fische – und Bauteile.' },
+    { id: 'drachengrund', n: 'Drachengrund',    x: 520,  y: 1300, near: 'schmiede',  s: 3, tier: 4, fish: ['seeteufel', 'nebelhai', 'schwertfisch', 'glitchforelle'], d: 'Hier soll der Seedrache schlafen. Das Wasser ist warm.' },
+    { id: 'sturmtiefe',   n: 'Sturmtiefe',      x: 2210, y: 780,  near: 'arena',     s: 4, tier: 4, fish: ['thun', 'schwertfisch', 'nebelhai', 'kristallkarpfen'], d: 'Unter der Sturmsee liegt ein tiefer, stiller Schlund.' },
+    { id: 'nebelstrudel', n: 'Nebelstrudel',    x: 565,  y: 235,  near: 'mine',      s: 4, tier: 5, fish: ['nebelhai', 'glitchforelle', 'kristallkarpfen', 'leviathan'], d: 'Ein Strudel aus Nebel und Wasser. Was hier anbeisst, kennt kein Buch.' }
+];
+
 /* Kompatibilität: Mech-Werte für die erste Reise je Insel/Region */
 XIRU.islandReq = {};
 XIRU.islands.forEach(i => { XIRU.islandReq[i.id] = i.req; });
@@ -738,7 +825,16 @@ XIRU.eggs.push(
     { id: 'm-bergbau',    pg: 'welt/mine.html',     n: 'Glück auf!',       h: 'Bring eine Schicht in der Nebelmine zu Ende.', x: 25, r: 1, m: 'Die Lore ist voll.' },
     { id: 'm-legendaer',  pg: 'konto/skilltree.html', n: 'Goldglanz',      h: 'Besitze ein legendäres Bauteil.', x: 60, r: 3, m: 'Es leuchtet golden in der Werft.' },
     { id: 'm-mythisch',   pg: 'konto/skilltree.html', n: 'Mythos',         h: 'Besitze ein mythisches Bauteil.', x: 120, r: 3, m: 'Manche sagen, es sei nur eine Legende.' },
-    { id: 'm-weltreise',  pg: 'weltkarte.html',     n: 'Weltreisende:r',   h: 'Besuche mit dem Mech jede Insel – auch die Spiel-Inseln.', x: 100, r: 3, m: 'Der Archipel hat keine Geheimnisse mehr vor dir. Fast.' },
-    { id: 'm-flaschenpost', pg: 'weltkarte.html',   n: 'Flaschenpost',     h: 'Fisch unterwegs eine Flaschenpost aus dem Meer.', x: 20, r: 1, m: 'Jemand da draussen denkt an dich.' }
+    { id: 'm-weltreise',  pg: 'weltkarte.html',     n: 'Weltreisende:r',   h: 'Besuche mit dem Mech jede Insel – auch die Spiel-Inseln.', x: 100, r: 3, m: 'Sektaria hat keine Geheimnisse mehr vor dir. Fast.' },
+    { id: 'm-flaschenpost', pg: 'weltkarte.html',   n: 'Flaschenpost',     h: 'Fisch unterwegs eine Flaschenpost aus dem Meer.', x: 20, r: 1, m: 'Jemand da draussen denkt an dich.' },
+    { id: 'm-bauplan',    pg: 'weltkarte.html',     n: 'Blaupause',        h: 'Finde auf einer Insel einen verschollenen Bauplan.', x: 30, r: 1, m: 'Vergilbt, voller Kaffeeflecken – und unbezahlbar.' },
+    { id: 'm-bauplaene',  pg: 'konto/skilltree.html', n: 'Chefkonstrukteur:in', h: 'Sammle jeden Bauplan von Sektaria.', x: 200, r: 4, m: 'Die Werft hat jetzt ein Archiv, um das sie jede Insel beneidet.' },
+    { id: 'm-presse',     pg: 'konto/skilltree.html', n: 'Unter Druck',    h: 'Press in der Werft Schrott zu Material.', x: 15, r: 1, m: 'Krrrrk. Ein Zahnrad. Schön.' },
+    { id: 'm-glueck',     pg: 'welt/markt.html',    n: 'Glückspilz?',      h: 'Öffne bei Lucky Joe eine Wunderkiste.', x: 20, r: 1, m: 'Joe zwinkert. Das Haus gewinnt immer. Meistens.' },
+    { id: 'm-jackpot',    pg: 'welt/markt.html',    n: 'Jackpot!',         h: 'Knack bei Lucky Joe den Jackpot.', x: 80, r: 3, m: 'Joe wird blass. Dann lacht er. Dann wird er wieder blass.' },
+    { id: 'm-angler',     pg: 'weltkarte.html',     n: 'Petri Heil',       h: 'Fang deinen ersten Fisch.', x: 20, r: 1, m: 'Er zappelt. Du jubelst. Alle sind glücklich (ausser dem Fisch).' },
+    { id: 'm-abart',      pg: 'weltkarte.html',     n: 'Das ist kein Fisch', h: 'Zieh eine Abart aus dem Nebel an Land.', x: 60, r: 3, m: 'Er flimmert. Er blinzelt. Mit zu vielen Augen.' },
+    { id: 'm-leviathan',  pg: 'weltkarte.html',     n: 'Ein sehr kleiner Gott', h: 'Fang die Leviathan-Larve.', x: 150, r: 4, m: 'Flossie wird sie nicht kaufen wollen. Oder doch?' },
+    { id: 'm-fischbuch',  pg: 'welt/markt.html',    n: 'Ichthyologe',      h: 'Füll Flossies Sammelbuch mit allen Fischarten.', x: 120, r: 3, m: 'Flossie schenkt dir ein feuchtes Händeschütteln.' }
     /* EGGS:ENDE */
 );

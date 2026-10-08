@@ -223,6 +223,13 @@ XIRU.ready(function () {
                     mat: keep(m.mat, k => !!XIRU.mech.mat(k), v => int(v, 0, 99999)),
                     taler: int(m.taler, 0, 10000000),
                     pos: isles.has(m.pos) && XIRU.mech.isle(m.pos) ? m.pos : 'konto',
+                    bp: keep(m.bp, k => parts.has(k), num), bpv: int(m.bpv, 0, 1),
+                    scan: keep(m.scan, k => isles.has(k), num),
+                    rod: int(m.rod, 1, Math.max(1, (XIRU.rods || []).length - 1)),
+                    fish: keep(m.fish, k => !!XIRU.mech.fishInfo(k), v => int(v, 0, 99999)),
+                    fishbook: keep(m.fishbook, k => !!XIRU.mech.fishInfo(k), num),
+                    fishing: keep(m.fishing, k => !!XIRU.mech.spot(k), v => v && typeof v === 'object' ? { n: int(v.n, 0, 9), t: num(v.t) } : undefined),
+                    joe: { n: int(m.joe && m.joe.n, 0, 1e7), best: int(m.joe && m.joe.best, 0, 1e7), dry: int(m.joe && m.joe.dry, 0, 99), pot: int(m.joe && m.joe.pot, 250, 1e7) },
                     arena: { rank: int(m.arena && m.arena.rank, 0, 12), wins: int(m.arena && m.arena.wins, 0, 1e6), losses: int(m.arena && m.arena.losses, 0, 1e6) },
                     stats: { trips: int(m.stats && m.stats.trips, 0, 1e7), km: int(m.stats && m.stats.km, 0, 1e9) }
                 });

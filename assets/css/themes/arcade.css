@@ -93,53 +93,224 @@ body.theme-arcade {
 .theme-arcade kbd { background: #1d1230; border-color: #4a2c78; color: #fff; }
 .theme-arcade .stat__value { color: var(--neon-yellow); text-shadow: 0 0 10px rgba(255, 225, 77, .55); }
 
-/* ── Automaten-Gehäuse um Spielfeld, HUD und Touch-Steuerung ──────────── */
+/* ── Arcade-Automat um Spielfeld, HUD und Steuerung (Aufbau: arcade.js) ───
+   .cabinet            Gehäuse mit Seitenwangen (Seiten-Art) und T-Leiste
+     .cab__marquee     beleuchtetes Titelschild mit Glühbirnen
+     .cab__grill       Lautsprechergitter
+     .cab__screen      Bezel: HUD + Bildschirm (.game__stage) + Typenschild
+     .cab__deck        Bedienpult: Joystick, 4 Knöpfe, 1P-Start (folgt der Tastatur)
+     …                 weitere Spiel-Elemente (Knöpfe, Log) liegen auf dem Gehäuse
+     .cab__door        Münztür mit zwei Münzschlitzen und Credit-Anzeige
+     .cab__kick        Trittblech
+   --cab-h: Farbton pro Automat (aus dem Spielnamen) */
 .theme-arcade .cabinet {
-    position: relative;
-    padding: 0 clamp(.6rem, 2.2vw, 1.4rem) clamp(.8rem, 2vw, 1.2rem);
-    border-radius: 18px 18px 10px 10px;
+    --cab-h: 320;
+    --cab-c: hsl(var(--cab-h) 100% 62%);
+    --cab-c2: hsl(calc(var(--cab-h) + 150) 100% 60%);
+    --cab-side: clamp(10px, 1.6vw, 18px);
+    position: relative; isolation: isolate;
+    display: flex; flex-direction: column; gap: 0;
+    padding: 0 calc(var(--cab-side) + clamp(.5rem, 1.6vw, 1rem)) 0;
+    border-radius: 14px 14px 6px 6px;
     background:
-        linear-gradient(90deg, rgba(255, 79, 176, .22) 0 6px, transparent 6px calc(100% - 6px), rgba(51, 240, 255, .22) calc(100% - 6px)),
-        repeating-linear-gradient(135deg, rgba(155, 92, 255, .10) 0 14px, transparent 14px 28px),
-        linear-gradient(180deg, #1c1030, #0d0717 70%, #07040c);
+        radial-gradient(120% 60% at 50% 0%, hsl(var(--cab-h) 60% 18% / .55), transparent 70%),
+        linear-gradient(180deg, #1a0f2b, #0c0716 55%, #07040c);
     border: 3px solid #000;
     box-shadow:
-        0 0 0 2px rgba(255, 79, 176, .55),            /* T-Leiste rundherum */
-        0 0 26px -6px rgba(255, 79, 176, .7),
-        0 30px 50px -24px #000;
+        0 0 0 2px hsl(var(--cab-h) 90% 55% / .7),        /* T-Leiste rundherum */
+        0 0 30px -6px hsl(var(--cab-h) 100% 60% / .6),
+        0 40px 60px -30px #000;
 }
-.theme-arcade .cabinet::before {                  /* Marquee: beleuchtetes Schild oben */
-    content: "★ Xiru Arcade ★";
-    display: block; margin: 0 calc(-1 * clamp(.6rem, 2.2vw, 1.4rem)) .9rem;
-    padding: .55rem 1rem; border-radius: 15px 15px 0 0;
-    text-align: center; text-transform: uppercase; letter-spacing: .22em; font-weight: 900;
-    font-size: clamp(.85rem, 2.4vw, 1.15rem); color: #fff6d2;
+.theme-arcade .cabinet > * { position: relative; z-index: 1; }
+/* Seitenwangen mit Seiten-Art: Neon-Streifen, Dreiecke und Pixel */
+.theme-arcade .cabinet::before, .theme-arcade .cabinet::after {
+    content: ""; position: absolute; top: 0; bottom: 0; width: var(--cab-side); z-index: 0;
     background:
-        radial-gradient(120% 140% at 50% 120%, rgba(255, 225, 77, .35), transparent 60%),
-        linear-gradient(180deg, #3a1a5c, #1a0c2c);
-    border-bottom: 3px solid #000;
-    box-shadow: inset 0 -2px 0 rgba(255, 225, 77, .35), inset 0 0 22px rgba(255, 79, 176, .35);
-    text-shadow: 0 0 2px #fff, 0 0 8px var(--neon-yellow), 0 0 20px rgba(255, 179, 71, .8);
-    overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+        linear-gradient(180deg, transparent 0 12%, var(--cab-c) 12% 13.2%, transparent 13.2% 40%, var(--cab-c2) 40% 41.2%, transparent 41.2% 74%, var(--cab-c) 74% 75.2%, transparent 75.2%),
+        repeating-linear-gradient(180deg, hsl(var(--cab-h) 60% 30% / .55) 0 6px, transparent 6px 18px),
+        linear-gradient(90deg, #120a1f, #24163a 50%, #120a1f);
+    box-shadow: inset 0 0 0 2px #000;
 }
-.theme-arcade .cabinet[data-marquee]::before { content: "★ " attr(data-marquee) " ★"; }
-.theme-arcade .cabinet .game__hud {
-    background: #05030a; border: 2px solid #000; border-radius: 8px; padding: .45rem .75rem;
+.theme-arcade .cabinet::before { left: 0; border-radius: 12px 0 0 4px; }
+.theme-arcade .cabinet::after { right: 0; border-radius: 0 12px 4px 0; transform: scaleX(-1); }
+
+/* Marquee: hinterleuchtetes Schild, ragt über das Gehäuse hinaus */
+.theme-arcade .cab__marquee {
+    display: flex; align-items: center; justify-content: center; gap: .8rem;
+    margin: -3px calc(-1 * (var(--cab-side) + clamp(.5rem, 1.6vw, 1rem)) - 8px) 0;
+    padding: .7rem 1rem .75rem;
+    border: 3px solid #000; border-radius: 12px 12px 4px 4px;
+    background:
+        radial-gradient(70% 140% at 50% 50%, hsl(var(--cab-h) 100% 70% / .55), transparent 70%),
+        repeating-linear-gradient(90deg, rgba(255, 255, 255, .05) 0 2px, transparent 2px 9px),
+        linear-gradient(180deg, hsl(var(--cab-h) 70% 30%), hsl(var(--cab-h) 70% 14%));
+    box-shadow:
+        inset 0 0 0 2px hsl(var(--cab-h) 100% 75% / .35),
+        inset 0 0 30px hsl(var(--cab-h) 100% 60% / .45),
+        0 0 28px -4px hsl(var(--cab-h) 100% 60% / .8),
+        0 6px 0 #000;
+}
+.theme-arcade .cab__marquee b {
+    min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    font-family: var(--mono); font-weight: 900; text-transform: uppercase;
+    font-size: clamp(1rem, 3vw, 1.7rem); letter-spacing: .16em; line-height: 1.1;
+    color: #fffbe6;
+    text-shadow: 3px 3px 0 #000, 0 0 3px #fff, 0 0 12px var(--neon-yellow), 0 0 26px hsl(var(--cab-h) 100% 60%);
+}
+.theme-arcade .cab__bulbs {
+    flex: 0 0 auto; width: clamp(28px, 6vw, 60px); height: 10px;
+    background: radial-gradient(circle 4px, #fff6c2 0 2px, var(--neon-yellow) 3px, transparent 4.5px) 0 50% / 12px 10px repeat-x;
+    filter: drop-shadow(0 0 4px var(--neon-yellow));
+    animation: cabBulbs 1.2s steps(2) infinite;
+}
+.theme-arcade .cab__bulbs:last-child { animation-delay: .6s; }
+@keyframes cabBulbs { 50% { opacity: .35; } }
+
+/* Lautsprechergitter */
+.theme-arcade .cab__grill {
+    height: 16px; margin: 10px 18%;
+    border-radius: 3px;
+    background: radial-gradient(circle 2px, #000 0 1.6px, transparent 2px) 0 0 / 7px 7px, #1b1129;
+    box-shadow: inset 0 0 0 2px #000, 0 1px 0 rgba(255, 255, 255, .06);
+}
+
+/* Bezel: schwarz glänzender Rahmen um HUD und Bildschirm */
+.theme-arcade .cab__screen {
+    padding: clamp(.6rem, 1.6vw, 1rem);
+    border-radius: 16px;
+    background:
+        linear-gradient(160deg, rgba(255, 255, 255, .07), transparent 28%),
+        linear-gradient(180deg, #0d0a14, #040307);
+    border: 3px solid #000;
+    box-shadow:
+        inset 0 0 0 2px hsl(var(--cab-h) 70% 45% / .35),
+        inset 0 10px 24px rgba(0, 0, 0, .8),
+        0 0 0 4px #160d24;
+}
+.theme-arcade .cab__screen .game__hud, .theme-arcade .cab__screen .dgn-hud, .theme-arcade .cab__screen .mn-bar {
+    background: #05030a; border: 2px solid #000; border-radius: 6px; padding: .45rem .75rem; margin-bottom: .6rem;
     box-shadow: inset 0 0 12px rgba(51, 240, 255, .18), 0 0 0 1px rgba(51, 240, 255, .25);
     font-family: var(--mono); color: var(--neon-yellow); text-shadow: 0 0 6px rgba(255, 225, 77, .5);
 }
-.theme-arcade .cabinet .game__hud span { color: var(--neon-cyan); text-shadow: none; }
-.theme-arcade .cabinet .game__stage {
-    border: 0; border-radius: 10px;
-    box-shadow: 0 0 0 10px #050208, 0 0 0 12px #000, 0 0 0 13px rgba(155, 92, 255, .45), inset 0 0 40px rgba(0, 0, 0, .8);
-    margin: 13px 13px 13px;
+.theme-arcade .cab__screen .game__hud span { color: var(--neon-cyan); text-shadow: none; }
+.theme-arcade .cab__screen .game__stage {
+    border: 0; border-radius: 14px / 18px;
+    box-shadow:
+        0 0 0 3px #000,
+        0 0 0 5px #1d1430,
+        0 0 26px -2px hsl(var(--cab-h) 100% 60% / .45),
+        inset 0 0 50px rgba(0, 0, 0, .85);
 }
-.theme-arcade .cabinet .game__stage::after {     /* Glasscheibe: leichte Spiegelung + Scanlines */
+.theme-arcade .cab__screen .game__stage::after {     /* Röhre: Wölbung, Spiegelung und Scanlines */
     content: ""; position: absolute; inset: 0; z-index: 6; pointer-events: none; border-radius: inherit;
     background:
-        linear-gradient(125deg, rgba(255, 255, 255, .07) 0 18%, transparent 30% 100%),
-        repeating-linear-gradient(0deg, rgba(0, 0, 0, .12) 0 1px, transparent 1px 3px);
+        radial-gradient(120% 120% at 50% 50%, transparent 62%, rgba(0, 0, 0, .55) 100%),
+        linear-gradient(125deg, rgba(255, 255, 255, .08) 0 16%, transparent 28% 100%),
+        repeating-linear-gradient(0deg, rgba(0, 0, 0, .14) 0 1px, transparent 1px 3px);
 }
+.theme-arcade .cab__label {
+    display: flex; justify-content: space-between; gap: 1rem; margin-top: .55rem; padding: 0 .3rem;
+    font-family: var(--mono); font-size: .62rem; letter-spacing: .2em; text-transform: uppercase; color: #6f5d92;
+}
+.theme-arcade .cab__label span:first-child { color: hsl(var(--cab-h) 80% 70%); }
+
+/* Bedienpult: schräge Platte, ragt etwas vor */
+.theme-arcade .cab__deck {
+    display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: clamp(.8rem, 3vw, 2.4rem);
+    margin: 14px calc(-1 * (var(--cab-side) + clamp(.5rem, 1.6vw, 1rem)) - 6px) 0;
+    padding: 1.1rem clamp(1.2rem, 5vw, 3.2rem) 1.2rem;
+    border: 3px solid #000; border-radius: 8px 8px 4px 4px;
+    background:
+        radial-gradient(60% 120% at 50% 0%, hsl(var(--cab-h) 100% 60% / .1), transparent 70%),
+        linear-gradient(180deg, #2a1c42, #170e27 60%, #0e0819);
+    box-shadow: inset 0 2px 0 rgba(255, 255, 255, .1), inset 0 -10px 0 rgba(0, 0, 0, .35), 0 8px 0 #000, 0 0 0 2px hsl(var(--cab-h) 90% 55% / .5);
+}
+.theme-arcade .cab__stick { position: relative; width: 64px; height: 64px; --sx: 0; --sy: 0; }
+.theme-arcade .cab__base {
+    position: absolute; left: 50%; top: 50%; width: 56px; height: 56px; transform: translate(-50%, -50%);
+    border-radius: 50%; background: radial-gradient(circle, #050308 0 30%, #241a33 31% 60%, #0a0610 61%);
+    box-shadow: inset 0 0 0 2px #000, 0 2px 0 rgba(255, 255, 255, .08);
+}
+.theme-arcade .cab__shaft {
+    position: absolute; left: 50%; top: 50%; width: 8px; height: 30px; z-index: 1;
+    background: linear-gradient(90deg, #555, #ddd 45%, #666);
+    border-radius: 4px; transform-origin: 50% 100%;
+    transform: translate(-50%, -100%) rotate(calc(var(--sx) * 24deg)) scaleY(calc(1 - (var(--sy) * var(--sy)) * .25));
+    transition: transform .06s;
+}
+.theme-arcade .cab__ball {
+    position: absolute; left: 50%; top: 50%; width: 30px; height: 30px; z-index: 2;
+    border-radius: 50%; border: 2px solid #000;
+    background: radial-gradient(circle at 35% 30%, #fff 0 8%, var(--cab-c) 30%, hsl(var(--cab-h) 80% 30%) 100%);
+    box-shadow: 0 0 14px -2px var(--cab-c);
+    transform: translate(calc(-50% + var(--sx) * 12px), calc(-50% - 26px + var(--sy) * 10px));
+    transition: transform .06s;
+}
+.theme-arcade .cab__btns { display: grid; grid-template-columns: repeat(4, auto); justify-content: center; gap: clamp(.4rem, 1.6vw, 1rem); }
+.theme-arcade .cab__btns i, .theme-arcade .cab__start i {
+    display: block; width: 34px; height: 34px; border-radius: 50%; border: 2px solid #000;
+    --b: var(--neon-pink);
+    background: radial-gradient(circle at 35% 30%, #fff 0 7%, var(--b) 28%, color-mix(in srgb, var(--b) 45%, #000) 100%);
+    box-shadow: 0 5px 0 color-mix(in srgb, var(--b) 30%, #000), 0 0 14px -4px var(--b);
+    transition: transform .05s, box-shadow .05s, filter .05s;
+}
+.theme-arcade .cab__btns i:nth-child(2) { --b: var(--neon-cyan); transform: translateY(-8px); }
+.theme-arcade .cab__btns i:nth-child(3) { --b: var(--neon-yellow); transform: translateY(-8px); }
+.theme-arcade .cab__btns i:nth-child(4) { --b: #5dff8f; }
+.theme-arcade .cab__btns i.is-down, .theme-arcade .cab__start.is-down i {
+    box-shadow: 0 1px 0 color-mix(in srgb, var(--b) 30%, #000), 0 0 26px 2px var(--b); filter: brightness(1.35);
+    translate: 0 4px;
+}
+.theme-arcade .cab__start { display: grid; justify-items: center; gap: .35rem; }
+.theme-arcade .cab__start i { width: 22px; height: 22px; --b: #fff; animation: cabBlink 1.4s steps(2) infinite; }
+.theme-arcade .cab__start small, .theme-arcade .cab__slot small {
+    font-family: var(--mono); font-size: .58rem; letter-spacing: .14em; text-transform: uppercase; color: #a493c6; white-space: nowrap;
+}
+@keyframes cabBlink { 50% { filter: brightness(.55); } }
+
+/* Spiel-Elemente, die auf dem Gehäuse liegen (Knöpfe, Log, Touch-Steuerung) */
+.theme-arcade .cabinet > :not([class^="cab__"]):not(.touch-pad) { margin-top: .8rem; }
+.theme-arcade .cabinet .touch-pad { margin-top: .9rem; }
+
+/* Münztür */
+.theme-arcade .cab__door {
+    display: flex; justify-content: center; align-items: center; gap: clamp(1rem, 4vw, 2.6rem);
+    margin: 1.2rem auto 0; padding: .9rem 1.4rem;
+    width: min(100%, 440px);
+    border: 3px solid #000; border-radius: 6px;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, .05), transparent 30%),
+        repeating-linear-gradient(90deg, #141017 0 3px, #1a151f 3px 6px);
+    box-shadow: inset 0 0 0 2px #2c2238, 0 3px 0 #000;
+}
+.theme-arcade .cab__slot { display: grid; justify-items: center; gap: .35rem; cursor: pointer; outline-offset: 4px; }
+.theme-arcade .cab__slot i {
+    display: block; width: 30px; height: 42px; border-radius: 4px; position: relative;
+    background: linear-gradient(180deg, #ff4a4a, #b31919);
+    border: 2px solid #000;
+    box-shadow: 0 0 16px -2px rgba(255, 70, 70, .85), inset 0 0 0 3px rgba(255, 255, 255, .15);
+    animation: cabBlink 2.2s steps(2) infinite;
+}
+.theme-arcade .cab__slot i::after {             /* der Schlitz */
+    content: ""; position: absolute; left: 50%; top: 7px; bottom: 7px; width: 4px; transform: translateX(-50%);
+    background: #1a0000; border-radius: 2px;
+}
+.theme-arcade .cab__slot:hover i { filter: brightness(1.25); }
+.theme-arcade .cab__slot.is-coin i { animation: cabCoin .35s steps(3); }
+@keyframes cabCoin { 30% { transform: translateY(2px); filter: brightness(1.8); } }
+.theme-arcade .cab__credit {
+    font-family: var(--mono); font-size: .75rem; letter-spacing: .16em; text-transform: uppercase; color: #ff7a7a;
+    padding: .3rem .55rem; background: #090306; border: 2px solid #000; border-radius: 3px;
+    text-shadow: 0 0 6px rgba(255, 70, 70, .8);
+}
+.theme-arcade .cab__credit b { color: #ffd3d3; }
+.theme-arcade .cab__kick {
+    height: 22px; margin: 1rem calc(-1 * (var(--cab-side) + clamp(.5rem, 1.6vw, 1rem))) 0;
+    border-top: 3px solid #000; border-radius: 0 0 4px 4px;
+    background: repeating-linear-gradient(90deg, #2b2b33 0 10px, #1d1d24 10px 20px);
+    box-shadow: inset 0 3px 0 rgba(255, 255, 255, .07);
+}
+
 .theme-arcade .game__overlay h2 {
     color: #ffe9f6; text-shadow: 0 0 2px #fff, 0 0 10px var(--neon-pink), 0 0 26px rgba(255, 79, 176, .7);
 }
@@ -157,10 +328,20 @@ body.theme-arcade {
 }
 .theme-arcade .cabinet .touch-pad button:active { transform: translateY(3px); box-shadow: 0 1px 0 #000; }
 
+/* Auf Touch-Geräten ersetzt die echte Touch-Steuerung das Deko-Pult */
+@media (hover: none), (pointer: coarse) { .theme-arcade .cab__deck { display: none; } }
 @media (max-width: 560px) {
-    .theme-arcade .cabinet { border-radius: 12px 12px 8px 8px; }
-    .theme-arcade .cabinet::before { letter-spacing: .12em; border-radius: 10px 10px 0 0; }
-    .theme-arcade .cabinet .game__stage { box-shadow: 0 0 0 6px #050208, 0 0 0 8px #000, 0 0 0 9px rgba(155, 92, 255, .45); margin: 9px; }
+    .theme-arcade .cabinet { --cab-side: 7px; padding-left: calc(var(--cab-side) + .35rem); padding-right: calc(var(--cab-side) + .35rem); }
+    .theme-arcade .cab__marquee, .theme-arcade .cab__deck { margin-left: calc(-1 * (var(--cab-side) + .35rem) - 4px); margin-right: calc(-1 * (var(--cab-side) + .35rem) - 4px); }
+    .theme-arcade .cab__kick { margin-left: calc(-1 * (var(--cab-side) + .35rem)); margin-right: calc(-1 * (var(--cab-side) + .35rem)); }
+    .theme-arcade .cab__marquee b { letter-spacing: .08em; }
+    .theme-arcade .cab__grill { margin: 7px 12%; height: 12px; }
+    .theme-arcade .cab__screen { padding: .45rem; border-radius: 10px; }
+    .theme-arcade .cab__label { display: none; }
+    .theme-arcade .cab__door { padding: .6rem .8rem; gap: .8rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .theme-arcade .cab__bulbs, .theme-arcade .cab__start i, .theme-arcade .cab__slot i { animation: none; }
 }
 
 /* Flackern wie eine alte Neonröhre (aus bei „Animationen aus" und reduzierter Bewegung) */

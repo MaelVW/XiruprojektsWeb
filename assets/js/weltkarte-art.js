@@ -9,12 +9,61 @@
      opts.labels           Inselnamen zeigen (Standard: true)
      opts.unknown          unbekannte Länder im Nebel zeigen (Standard: true)
    XIRU.mapArt.W / H, XIRU.mapArt.route(from, to) → Pfad-Daten (geschwungene Seeroute)
+   XIRU.mapArt.BOUNDS  → die ganze Welt { x, y, w, h }: der Archipel (0…W × 0…H) liegt mitten in der Nebelsee
+   XIRU.mapArt.LANDS    → die grossen Landmassen hinter der Nebelwand, als Dreieck um den Archipel:
+                          Mnemora im Osten (benannt, mit groben Orten), dazu ein Land im Norden und eins im Südwesten (noch namenlos, ganz im Nebel).
+                          tLand(land, x, y) < 1 = Land · landPath(land) = Umriss
+   XIRU.mapArt.FESTLAND = LANDS[0] (Mnemora) mit PLACES (Orte), RIDGE (Gebirgskamm), RIVER (Fluss), LAKE (See); tFest/festPath für Mnemora
    Jede Insel ist eine <g class="wk-isle" data-isle="id">, unbekannte Länder <g class="wk-unknown" data-u="n">,
    der Seedrache <g class="wk-dragon">. Alles in einer Datei, damit beide Ansichten gleich aussehen.
    ========================================================================== */
 (function () {
     'use strict';
     const W = 2400, H = 1600;
+    const BOUNDS = { x: -2700, y: -2600, w: 7700, h: 6200 };
+    /* Landmassen hinter der Nebelwand: Hauptkörper (x, y, rx, ry) + optionale Halbinsel (px, py, prx, pry) */
+    const LANDS = [
+        { id: 'mnemora', n: 'Mnemora', art: 'festland', x: 4000, y: 860, rx: 760, ry: 1380, px: 3300, py: 1280, prx: 360, pry: 210, ph: [1.3, 4.1, 2.2, 5.5], fog: .6 },
+        { id: 'nordland', n: null, art: 'tundra', x: 1100, y: -1650, rx: 1250, ry: 520, px: 300, py: -1250, prx: 380, pry: 220, ph: [2.6, .7, 3.9, 1.8], fog: .95 },
+        { id: 'suedland', n: null, art: 'wueste', x: -1500, y: 2550, rx: 820, ry: 640, px: -820, py: 2150, prx: 300, pry: 240, ph: [5.1, 2.3, .4, 4.4], fog: .95 }
+    ];
+    function tLand(L, x, y) {
+        const dx = (x - L.x) / L.rx, dy = (y - L.y) / L.ry, a = Math.atan2(dy, dx);
+        const k = 1 + .12 * Math.sin(2 * a + L.ph[0]) + .09 * Math.sin(3 * a + L.ph[1]) + .06 * Math.sin(5 * a + L.ph[2]) + .04 * Math.sin(11 * a + L.ph[3]);
+        const t = Math.hypot(dx, dy) / k;
+        if (!L.prx) return t;
+        const pa = Math.atan2(y - L.py, x - L.px), pk = 1 + .1 * Math.sin(3 * pa + 2) + .06 * Math.sin(7 * pa + 1);
+        return Math.min(t, Math.hypot((x - L.px) / L.prx, (y - L.py) / L.pry) / pk);
+    }
+    function landPath(L) {
+        const pts = [];
+        for (let i = 0; i < 180; i++) {
+            const a = i / 180 * Math.PI * 2; let lo = 0, hi = 2800;
+            for (let j = 0; j < 22; j++) { const m = (lo + hi) / 2; if (tLand(L, L.x + Math.cos(a) * m, L.y + Math.sin(a) * m) < 1) lo = m; else hi = m; }
+            pts.push([L.x + Math.cos(a) * lo, L.y + Math.sin(a) * lo]);
+        }
+        return 'M' + pts.map(p => Math.round(p[0]) + ' ' + Math.round(p[1])).join(' L') + 'Z';
+    }
+    /* Mnemora: grobe Geografie – noch Gerüchte von Seefahrern */
+    const FESTLAND = Object.assign(LANDS[0], {
+        RIDGE: [[3880, -260], [3960, 180], [4080, 560], [4120, 900], [4240, 1260], [4330, 1600]],
+        RIVER: [[4060, 760], [3930, 960], [3760, 1140], [3640, 1380], [3560, 1640], [3600, 1900], [3660, 2190]],
+        LAKE: { x: 3540, y: 1640, rx: 130, ry: 85 },
+        FOREST: { x: 3600, y: 560, rx: 330, ry: 420 },
+        PLACES: [
+            { id: 'port',     n: 'Port Puffer',        x: 2995, y: 1300, t: 'hafen',  d: 'Die Hafenstadt am Ende der grossen Überfahrt. Hier legen die Schiffe aus Sektaria an.' },
+            { id: 'registra', n: 'Registra',           x: 3700, y: 1235, t: 'stadt',  d: 'Die Hauptstadt. Man sagt, hier treffen sich Reisende aus allen Ecken der Welt.' },
+            { id: 'cache',    n: 'Cachewald',          x: 3600, y: 560,  t: 'wald',   d: 'Ein uralter Wald, der sich an alles erinnert, was in ihm passiert ist.' },
+            { id: 'kernel',   n: 'Kernelgipfel',       x: 4080, y: 560,  t: 'berg',   d: 'Der höchste Berg der Speicherberge. Auf dem Gipfel soll es nie Nacht werden.' },
+            { id: 'speicher', n: 'Speicherberge',      x: 4180, y: 1080, t: 'berg',   d: 'Ein Gebirge, das Mnemora von Nord nach Süd teilt.' },
+            { id: 'bitbrunn', n: 'Bitbrunner See',     x: 3540, y: 1640, t: 'see',    d: 'Ein stiller See, gespeist vom Flashfluss. Das Wasser ist erstaunlich warm.' },
+            { id: 'cluster',  n: 'Clustersteppe',      x: 4400, y: 1480, t: 'steppe', d: 'Weites Grasland östlich der Berge. Wer hier reist, braucht gute Beine.' },
+            { id: 'altrom',   n: 'Ruinen von Alt-ROM', x: 4300, y: 1930, t: 'ruine',  d: 'Steinerne Reste einer Stadt, die nur gelesen, aber nie beschrieben werden konnte.' },
+            { id: 'frostkap', n: 'Frostkap',           x: 3990, y: -420, t: 'kap',    d: 'Die eisige Nordspitze. Von hier soll man bei klarem Wetter bis Sektaria sehen.' }
+        ]
+    });
+    const tFest = (x, y) => tLand(LANDS[0], x, y);
+    const festPath = () => landPath(LANDS[0]);
     const hash = s => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
     const rng = seed => { let s = seed % 2147483647 || 1; return () => (s = (s * 16807) % 2147483647, (s - 1) / 2147483646); };
     const f1 = n => Math.round(n * 10) / 10;
@@ -382,5 +431,5 @@
         document.head.appendChild(st);
     }
 
-    window.XIRU.mapArt = { W, H, svg, route, css, coast, hash, rng, LM, dragon, kraken, whale, compass, scaleBar, UNKNOWN, NAME: 'Sektaria' };
+    window.XIRU.mapArt = { W, H, BOUNDS, LANDS, tLand, landPath, FESTLAND, tFest, festPath, svg, route, css, coast, hash, rng, LM, dragon, kraken, whale, compass, scaleBar, UNKNOWN, NAME: 'Sektaria' };
 })();

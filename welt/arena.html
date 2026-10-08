@@ -206,7 +206,7 @@ XIRU.ready(function () {
             if (win) {
                 a.wins++; X.egg('m-arena');
                 const rr = Math.max(0, rank), rep = rank >= 0 && !first;
-                lines = W.grant(W.loot({ taler: rank < 0 ? [6, 14] : [Math.round((15 + rr * 14) * (rep ? .5 : 1)), Math.round((25 + rr * 18) * (rep ? .5 : 1))], item: rank < 0 ? .15 : rep ? .2 + rr * .02 : 0, maxT: Math.min(5, 1 + Math.ceil(rr / 2.5)), luck: rr * .08, mats: 1 + Math.floor(rr / 3), rare: rr * .03 }));
+                lines = W.grant(W.loot({ taler: rank < 0 ? [6, 14] : [Math.round((15 + rr * 14) * (rep ? .5 : 1)), Math.round((25 + rr * 18) * (rep ? .5 : 1))], item: rank < 0 ? .15 : rep ? .2 + rr * .02 : 0, maxT: Math.min(5, 1 + Math.ceil(rr / 2.5)), luck: rr * .08, mats: 1 + Math.floor(rr / 3), rare: rr * .03, bp: rank < 0 || rep ? 0 : .12 + rr * .02, bpT: Math.min(5, 2 + Math.ceil(rr / 3)) }));
                 if (first) {
                     a.rank = rank + 1;
                     const q = champ ? 6 : Math.min(5, 1 + Math.floor((rank + 1) / 2.4)), p = W.rollPart({ maxT: Math.min(5, 1 + Math.ceil((rank + 1) / 2.5)), minQ: q, maxQ: q });

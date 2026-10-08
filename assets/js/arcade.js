@@ -171,7 +171,10 @@
     // vom body lesen: Bereichs-Designs (z. B. theme-arcade) überschreiben die Farben dort
     G.css = name => getComputedStyle(document.body || document.documentElement).getPropertyValue(name).trim();
 
-    /* Spielhallen-Design: Spielbereich (HUD + Bildschirm + Knöpfe) als Automaten-Gehäuse mit Marquee */
+    /* Spielhallen-Design: der Spielbereich wird zu einem echten Arcade-Automaten –
+       beleuchtetes Marquee oben, Bildschirm im Bezel, Bedienpult mit Joystick und
+       Knöpfen (reagieren auf die Tastatur) und Münztür unten. Die Spiel-Elemente
+       selbst bleiben dieselben Knoten, sie werden nur in den Bildschirm gehängt. */
     function cabinet() {
         if (!document.body.classList.contains('theme-arcade')) return;
         const stage = document.querySelector('.game .game__stage');
@@ -179,7 +182,80 @@
         if (!box || box.classList.contains('game') || box.classList.contains('cabinet')) return;
         box.classList.add('cabinet');
         const h1 = document.querySelector('.page-head h1');
-        if (h1) box.setAttribute('data-marquee', h1.textContent.trim());
+        const title = h1 ? h1.textContent.trim() : 'Xiru Arcade';
+        box.setAttribute('data-marquee', title);
+        // eigene Farbe pro Automat, aus dem Namen abgeleitet
+        let h = 0; for (const ch of title) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+        box.style.setProperty('--cab-h', [320, 190, 275, 150, 350, 205, 295, 170, 15][h % 9]);
+
+        const mk = (cls, html) => { const d = document.createElement('div'); d.className = cls; if (html) d.innerHTML = html; return d; };
+        const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+        const marquee = mk('cab__marquee', '<span class="cab__bulbs" aria-hidden="true"></span><b>' + esc(title) + '</b><span class="cab__bulbs" aria-hidden="true"></span>');
+        const grill = mk('cab__grill'); grill.setAttribute('aria-hidden', 'true');
+        const screen = mk('cab__screen');
+        // alles vor dem Spielfeld (HUD, Statusleisten) kommt mit in den Bildschirm
+        const head = []; for (let el = box.firstElementChild; el && el !== stage; el = el.nextElementSibling) head.push(el);
+        box.insertBefore(marquee, box.firstChild);
+        box.insertBefore(grill, marquee.nextSibling);
+        box.insertBefore(screen, grill.nextSibling);
+        head.forEach(el => screen.appendChild(el));
+        screen.appendChild(stage);
+        screen.appendChild(mk('cab__label', '<span>Xiru Arcade</span><span>1 Spieler · ' + new Date().getFullYear() + '</span>'));
+
+        const deck = mk('cab__deck',
+            '<div class="cab__stick"><i class="cab__ball"></i><i class="cab__shaft"></i><i class="cab__base"></i></div>' +
+            '<div class="cab__btns"><i data-b="1"></i><i data-b="2"></i><i data-b="3"></i><i data-b="4"></i></div>' +
+            '<div class="cab__start"><i></i><small>1P Start</small></div>');
+        deck.setAttribute('aria-hidden', 'true');
+        box.insertBefore(deck, screen.nextSibling);
+
+        const door = mk('cab__door',
+            '<div class="cab__slot"><i></i><small>Insert Coin</small></div>' +
+            '<div class="cab__credit">Credit <b>00</b></div>' +
+            '<div class="cab__slot"><i></i><small>1 Kristall</small></div>');
+        door.querySelectorAll('.cab__slot').forEach(s => { s.setAttribute('role', 'button'); s.tabIndex = 0; s.title = 'Münze einwerfen'; });
+        box.appendChild(door);
+        box.appendChild(mk('cab__kick'));
+
+        // Münzen einwerfen: rein dekorativ, aber mit Klang
+        let credits = 0;
+        const credEl = door.querySelector('.cab__credit b');
+        const coin = e => {
+            if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') return;
+            e.preventDefault();
+            credits = Math.min(99, credits + 1); credEl.textContent = String(credits).padStart(2, '0');
+            e.currentTarget.classList.remove('is-coin'); void e.currentTarget.offsetWidth; e.currentTarget.classList.add('is-coin');
+            if (G.sfx && G.sfx.coin) G.sfx.coin();
+        };
+        door.querySelectorAll('.cab__slot').forEach(s => { s.addEventListener('click', coin); s.addEventListener('keydown', coin); });
+
+        // Joystick und Knöpfe bewegen sich mit der Tastatur
+        const stick = deck.querySelector('.cab__stick'), btns = deck.querySelectorAll('.cab__btns i'), start = deck.querySelector('.cab__start');
+        const DIR = { ArrowUp: [0, -1], w: [0, -1], W: [0, -1], ArrowDown: [0, 1], s: [0, 1], S: [0, 1], ArrowLeft: [-1, 0], a: [-1, 0], A: [-1, 0], ArrowRight: [1, 0], d: [1, 0], D: [1, 0] };
+        const BTN = { ' ': 0, z: 1, Z: 1, y: 1, Y: 1, x: 2, X: 2, Shift: 3, c: 3, C: 3 };
+        const held = new Set();
+        const updStick = () => {
+            let dx = 0, dy = 0;
+            held.forEach(k => { if (DIR[k]) { dx += DIR[k][0]; dy += DIR[k][1]; } });
+            stick.style.setProperty('--sx', Math.max(-1, Math.min(1, dx)));
+            stick.style.setProperty('--sy', Math.max(-1, Math.min(1, dy)));
+        };
+        addEventListener('keydown', e => {
+            if (e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+            held.add(e.key); updStick();
+            if (BTN[e.key] != null) btns[BTN[e.key]].classList.add('is-down');
+            if (e.key === 'Enter') start.classList.add('is-down');
+        });
+        addEventListener('keyup', e => {
+            held.delete(e.key); updStick();
+            if (BTN[e.key] != null) btns[BTN[e.key]].classList.remove('is-down');
+            if (e.key === 'Enter') start.classList.remove('is-down');
+        });
+        addEventListener('blur', () => { held.clear(); updStick(); btns.forEach(b => b.classList.remove('is-down')); });
+        // Mausklicks ins Spielfeld drücken den ersten Knopf
+        stage.addEventListener('pointerdown', () => btns[0].classList.add('is-down'));
+        addEventListener('pointerup', () => btns[0].classList.remove('is-down'));
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', cabinet); else cabinet();
 })();

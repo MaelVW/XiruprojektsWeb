@@ -1,0 +1,156 @@
+/* ==========================================================================
+   Bereichs-Design KI-Labor – Nacht-Labor der Gedanken (body.theme-ki)
+   Tiefes Tinten-Violett, ein leuchtendes Neuronen-Netz an der Wand, aufsteigende
+   Bläschen, Karten wie Laborglas mit Rand und Füllstand, Etiketten wie handbeschriftete
+   Probenaufkleber. Farben: Trank-Grün (Online/Aktion), Violett (KI), Lampen-Bernstein.
+   Wird auf allen Seiten unter ki/ nach main.css und ki.css eingebunden. Immer dunkel.
+   Animationen: dezent; aus bei „Animationen aus" und prefers-reduced-motion (main.css).
+   ========================================================================== */
+body.theme-ki {
+    --bg: #0b0918; --bg-2: #0f0c22; --surface: rgba(24, 19, 48, .78); --surface-2: rgba(32, 25, 62, .8); --surface-3: #2a2152;
+    --border: #2d2556; --border-strong: #4a3d86;
+    --text: #f1edff; --text-muted: #b9b0dc; --text-faint: #8a80b4;
+    --accent: #7dffb8; --accent-2: #b48cff; --accent-ink: #04150d;
+    --success: #7dffb8; --warning: #ffc46b; --danger: #ff6b8b;
+    --rc: #7dffb8; --rc-raw: #7dffb8;
+    --ki-green: #7dffb8; --ki-violet: #b48cff; --ki-amber: #ffc46b;
+    --glow: 0 0 0 1px rgba(125, 255, 184, .4), 0 0 26px -6px rgba(125, 255, 184, .55);
+    color-scheme: dark;
+    background-color: var(--bg);
+    /* Neuronen-Netz: Knoten mit Synapsen, dazu zwei Lichtkegel von Laborlampen */
+    background-image:
+        radial-gradient(900px 520px at 85% -12%, rgba(180, 140, 255, .18), transparent 65%),
+        radial-gradient(700px 480px at 0% 30%, rgba(125, 255, 184, .08), transparent 70%),
+        radial-gradient(600px 400px at 60% 110%, rgba(255, 196, 107, .07), transparent 70%),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='280' viewBox='0 0 280 280'%3E%3Cg fill='none' stroke-width='1.2' stroke-linecap='round'%3E%3Cpath d='M30 40C70 30 90 80 132 70S200 30 238 58' stroke='%23b48cff' stroke-opacity='.26'/%3E%3Cpath d='M132 70c-10 40 30 60 20 104s-60 40-84 70' stroke='%23b48cff' stroke-opacity='.2'/%3E%3Cpath d='M30 40c10 50-10 90 18 130' stroke='%237dffb8' stroke-opacity='.16'/%3E%3Cpath d='M152 174c40-6 60 20 96 10' stroke='%237dffb8' stroke-opacity='.2'/%3E%3Cpath d='M238 58c10 40-20 70 10 126' stroke='%23b48cff' stroke-opacity='.16'/%3E%3Cpath d='M48 170c30 0 60 10 104 4' stroke='%23ffc46b' stroke-opacity='.12'/%3E%3Cpath d='M248 184c-20 30 0 60-30 90' stroke='%23b48cff' stroke-opacity='.14'/%3E%3C/g%3E%3Cg%3E%3Ccircle cx='30' cy='40' r='3.2' fill='%23b48cff' fill-opacity='.7'/%3E%3Ccircle cx='132' cy='70' r='4.2' fill='%237dffb8' fill-opacity='.7'/%3E%3Ccircle cx='238' cy='58' r='3' fill='%23b48cff' fill-opacity='.6'/%3E%3Ccircle cx='152' cy='174' r='3.6' fill='%23b48cff' fill-opacity='.65'/%3E%3Ccircle cx='48' cy='170' r='2.8' fill='%23ffc46b' fill-opacity='.55'/%3E%3Ccircle cx='248' cy='184' r='3.2' fill='%237dffb8' fill-opacity='.55'/%3E%3Ccircle cx='68' cy='244' r='2.6' fill='%23b48cff' fill-opacity='.5'/%3E%3C/g%3E%3Cg fill='none' stroke-width='1'%3E%3Ccircle cx='132' cy='70' r='9' stroke='%237dffb8' stroke-opacity='.18'/%3E%3Ccircle cx='152' cy='174' r='8' stroke='%23b48cff' stroke-opacity='.18'/%3E%3C/g%3E%3C/svg%3E"),
+        linear-gradient(180deg, #0c0a1c, #0a0817 60%, #08061a);
+    background-size: auto, auto, auto, 280px 280px, auto;
+    background-attachment: fixed;
+}
+/* Aufsteigende Bläschen über der ganzen Seite (sehr dezent) */
+body.theme-ki::before {
+    content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    background-image:
+        radial-gradient(circle at 20% 30%, rgba(125, 255, 184, .35) 0 2px, transparent 3px),
+        radial-gradient(circle at 70% 60%, rgba(180, 140, 255, .32) 0 3px, transparent 4px),
+        radial-gradient(circle at 45% 85%, rgba(125, 255, 184, .25) 0 1.5px, transparent 2.5px),
+        radial-gradient(circle at 85% 15%, rgba(255, 196, 107, .28) 0 2px, transparent 3px);
+    background-size: 340px 420px, 420px 520px, 260px 360px, 500px 460px;
+    opacity: .7;
+    animation: kiBubbles 40s linear infinite;
+}
+@keyframes kiBubbles {
+    from { background-position: 0 0, 0 0, 0 0, 0 0; }
+    to   { background-position: 20px -420px, -30px -520px, 10px -360px, -20px -460px; }
+}
+
+/* ── Kopf: violett-grüne Linie wie ein Messstreifen ────────────────────── */
+.theme-ki .site-header {
+    background: color-mix(in srgb, #0b0918 86%, transparent);
+    border-bottom: 1px solid transparent;
+    border-image: linear-gradient(90deg, transparent, var(--ki-violet) 20%, var(--ki-green) 60%, var(--ki-amber) 85%, transparent) 1;
+    box-shadow: 0 10px 30px -18px rgba(180, 140, 255, .8);
+}
+.theme-ki .brand__logo { filter: drop-shadow(0 0 5px rgba(180, 140, 255, .8)); }
+
+/* ── Überschriften: leuchtende Tinte ──────────────────────────────────── */
+.theme-ki h1 {
+    background: linear-gradient(100deg, #f6f1ff 0%, var(--ki-violet) 40%, var(--ki-green) 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 0 14px rgba(180, 140, 255, .35));
+}
+.theme-ki h2 { color: #efe8ff; }
+.theme-ki h2::after {                       /* kleiner Messstrich unter Abschnittstiteln */
+    content: ""; display: block; width: 46px; height: 3px; margin-top: .4rem; border-radius: 3px;
+    background: linear-gradient(90deg, var(--ki-green), var(--ki-violet));
+}
+.theme-ki .card h2::after, .theme-ki .tile h2::after, .theme-ki .game__overlay h2::after { display: none; }
+.theme-ki .card h3 { color: var(--ki-green); letter-spacing: .01em; }
+/* Probenetikett: kleine Aufkleber mit Mono-Schrift */
+.theme-ki .page-head .eyebrow {
+    display: inline-block; padding: .2rem .6rem .22rem; border-radius: 4px;
+    font-family: var(--mono, ui-monospace, Consolas, monospace); font-size: .72rem; letter-spacing: .14em; text-transform: uppercase;
+    color: #2a1a00; background: linear-gradient(180deg, #ffe0a6, var(--ki-amber));
+    box-shadow: 0 2px 0 rgba(0, 0, 0, .4), 0 0 18px -6px var(--ki-amber);
+    transform: rotate(-1.5deg);
+}
+.theme-ki .ki-label { color: var(--ki-violet); font-family: var(--mono, ui-monospace, Consolas, monospace); letter-spacing: .12em; }
+
+/* ── Laborglas: Karten mit Glasrand oben und Füllstand unten ──────────── */
+.theme-ki .card, .theme-ki .tile {
+    border: 1px solid rgba(180, 140, 255, .24);
+    border-radius: 18px;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, .07), transparent 14px),
+        linear-gradient(0deg, rgba(125, 255, 184, .06), transparent 38%),
+        linear-gradient(160deg, rgba(36, 28, 72, .92), rgba(18, 14, 38, .94));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12), inset 0 -1px 0 rgba(125, 255, 184, .14), 0 18px 40px -24px #000;
+    backdrop-filter: blur(4px);
+}
+.theme-ki .card--accent {
+    border-color: rgba(125, 255, 184, .45);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14), 0 0 0 1px rgba(125, 255, 184, .12), 0 0 34px -10px rgba(125, 255, 184, .45);
+}
+.theme-ki .tile { transition: transform .2s var(--ease), border-color .2s, box-shadow .2s; }
+.theme-ki .tile:hover {
+    border-color: rgba(125, 255, 184, .6);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14), 0 0 0 1px rgba(125, 255, 184, .25), 0 0 30px -6px rgba(125, 255, 184, .5), 0 20px 40px -24px #000;
+}
+.theme-ki .tile__icon {
+    filter: drop-shadow(0 0 8px rgba(180, 140, 255, .6));
+}
+
+/* ── Knöpfe, Chips, Eingaben ──────────────────────────────────────────── */
+.theme-ki .btn--primary {
+    background: linear-gradient(180deg, #a6ffd0, var(--ki-green)); color: var(--accent-ink); border-color: transparent;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .6), 0 0 18px -4px rgba(125, 255, 184, .7);
+}
+.theme-ki .btn--primary:hover { background: linear-gradient(180deg, #c6ffe2, #95ffc7); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7), 0 0 26px -2px rgba(125, 255, 184, .8); }
+.theme-ki .chip { border-radius: 99px; }
+.theme-ki .chip.is-active, .theme-ki .chip[aria-pressed="true"] {
+    background: rgba(125, 255, 184, .14); color: #dfffee; border-color: var(--ki-green);
+    box-shadow: 0 0 14px -4px rgba(125, 255, 184, .7);
+}
+.theme-ki .input, .theme-ki .select, .theme-ki .textarea,
+.theme-ki .field input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]), .theme-ki .field select, .theme-ki .field textarea {
+    background: rgba(10, 8, 24, .8); border-color: #362c66; border-radius: 12px;
+}
+.theme-ki .input:focus, .theme-ki .select:focus, .theme-ki .textarea:focus,
+.theme-ki .field input:focus, .theme-ki .field select:focus, .theme-ki .field textarea:focus {
+    border-color: var(--ki-violet); box-shadow: 0 0 0 3px rgba(180, 140, 255, .22);
+}
+.theme-ki kbd { background: #1c1638; border-color: #4a3d86; color: #fff; }
+.theme-ki .callout {
+    border-radius: 14px; border-left-color: var(--ki-violet);
+    background: linear-gradient(90deg, rgba(180, 140, 255, .1), rgba(24, 19, 48, .8) 40%);
+}
+
+/* ── Chat: KI-Blasen violett, eigene Blasen trankgrün ─────────────────── */
+.theme-ki .chat {
+    background:
+        radial-gradient(circle, rgba(180, 140, 255, .07) 1px, transparent 1.5px) 0 0 / 18px 18px,
+        rgba(9, 7, 22, .85);
+    border-color: #2d2556; border-radius: 18px;
+    box-shadow: inset 0 0 40px rgba(0, 0, 0, .5);
+}
+.theme-ki .msg__avatar {
+    background: radial-gradient(circle at 35% 30%, #3a2c74, #17112f);
+    border-color: rgba(180, 140, 255, .55);
+    box-shadow: 0 0 0 3px rgba(180, 140, 255, .12), 0 0 16px -4px var(--ki-violet);
+}
+.theme-ki .msg__bubble {
+    background: linear-gradient(160deg, rgba(48, 36, 96, .85), rgba(28, 22, 58, .9));
+    border-color: rgba(180, 140, 255, .32);
+}
+.theme-ki .msg--user .msg__avatar { border-color: rgba(125, 255, 184, .55); box-shadow: 0 0 0 3px rgba(125, 255, 184, .1); }
+.theme-ki .msg--user .msg__bubble {
+    background: linear-gradient(160deg, rgba(36, 92, 70, .7), rgba(20, 52, 42, .8));
+    border-color: rgba(125, 255, 184, .4);
+}
+.theme-ki .ki-output {
+    background: rgba(9, 7, 22, .85); border-color: #2d2556; border-radius: 16px;
+    box-shadow: inset 0 0 30px rgba(0, 0, 0, .45);
+}
+.theme-ki .ki-output.is-busy { border-color: var(--ki-green); box-shadow: 0 0 0 1px rgba(125, 255, 184, .3), 0 0 30px -8px rgba(125, 255, 184, .6); }
+
+@media (prefers-reduced-motion: reduce) { body.theme-ki::before { animation: none; } }

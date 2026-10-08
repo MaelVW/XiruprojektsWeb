@@ -63,6 +63,19 @@ XIRU.pages = [
     { p: 'hardware/builds.html',           t: 'Beispiel-Builds',     r: 'hardware', d: 'Zusammenstellungen für jedes Budget.', nav: true },
     { p: 'hardware/zeitleiste.html',       t: 'Zeitleiste',          r: 'hardware', d: 'Hardware-Geschichte zum Durchscrollen.', nav: true },
     { p: 'hardware/sockel.html',           t: 'Sockel-Kompatibilität', r: 'hardware', d: 'Welche CPU passt auf welches Board?', nav: true },
+    { p: 'hardware/code/index.html',       t: 'Code-Bibliothek',     r: 'hardware', d: 'Programmiersprachen lernen – Kurse und Cheat-Sheets als Word.', nav: true },
+    { p: 'hardware/code/csharp.html',      t: 'C# lernen',           r: 'hardware', d: 'Kurs und Cheat-Sheet: die Sprache für Spiele und die Schule.' },
+    { p: 'hardware/code/python.html',      t: 'Python lernen',       r: 'hardware', d: 'Kurs und Cheat-Sheet: leicht lesbar, stark bei KI und Skripten.' },
+    { p: 'hardware/code/html.html',        t: 'HTML lernen',         r: 'hardware', d: 'Kurs mit Live-Vorschau: das Skelett jeder Website.' },
+    { p: 'hardware/code/css.html',         t: 'CSS lernen',          r: 'hardware', d: 'Kurs mit Live-Vorschau: Farben, Abstände, Flexbox und Grid.' },
+    { p: 'hardware/code/javascript.html',  t: 'JavaScript lernen',   r: 'hardware', d: 'Kurs mit Live-Ausführung: so werden Websites lebendig.' },
+    { p: 'hardware/code/sql.html',         t: 'SQL lernen',          r: 'hardware', d: 'Kurs und Cheat-Sheet: Datenbanken abfragen und ändern.' },
+    { p: 'hardware/code/git.html',         t: 'Git lernen',          r: 'hardware', d: 'Kurs und Cheat-Sheet: Versionen speichern, Branches, GitHub.' },
+    { p: 'hardware/code/java.html', t: 'Java lernen', r: 'hardware', d: 'Kurs und Cheat-Sheet: Android, Minecraft-Mods und Server.' },
+    { p: 'hardware/code/cpp.html', t: 'C++ lernen', r: 'hardware', d: 'Kurs und Cheat-Sheet: schnell und hardwarenah.' },
+    { p: 'hardware/code/lua.html', t: 'Lua lernen', r: 'hardware', d: 'Kurs und Cheat-Sheet: die Skriptsprache von Roblox.' },
+    { p: 'hardware/code/powershell.html', t: 'PowerShell lernen', r: 'hardware', d: 'Kurs und Cheat-Sheet: Windows automatisieren wie Floppy Hub.' },
+    { p: 'hardware/code/bash.html', t: 'Bash lernen', r: 'hardware', d: 'Kurs und Cheat-Sheet: Linux, macOS und Raspberry Pi steuern.' },
     /* GEN:HW START – automatisch erzeugt von tools/build_hardware.py, nicht von Hand ändern */
     { p: 'hardware/cpu/ryzen-7-1800x.html', t: "Ryzen 7 1800X", r: 'hardware', d: "Prozessor · 8 Kerne · 2017", hw: 'cpu' },
     { p: 'hardware/cpu/ryzen-5-5600x.html', t: "Ryzen 5 5600X", r: 'hardware', d: "Prozessor · 6 Kerne · 2020", hw: 'cpu' },
@@ -189,6 +202,7 @@ XIRU.pages = [
     { p: 'ki/kartenschmiede.html',   t: 'Kartenschmiede',    r: 'ki', d: 'Welten und Dungeons generieren.', nav: true },
     { p: 'ki/bildwerk.html',         t: 'Bildwerk',          r: 'ki', d: 'Bilder aus Text erzeugen.', nav: true },
     { p: 'ki/taverne.html',          t: 'Taverne',           r: 'ki', d: 'Plaudere mit Figuren aus dem Dungeon.', nav: true },
+    { p: 'ki/code-tutor.html',           t: 'Code-Tutor',          r: 'ki', d: 'Erklärt Code, findet Fehler, stellt Übungen – mit KI oder offline.', nav: true },
     { p: 'ki/hardware-berater.html', t: 'Hardware-Berater',  r: 'ki', d: 'Kaufberatung mit dem Archiv als Wissen.', nav: true },
     { p: 'ki/textwerk.html',         t: 'Textwerk',          r: 'ki', d: 'Zusammenfassen, übersetzen, umformulieren.', nav: true },
     { p: 'ki/orakel.html',           t: 'Orakel',            r: 'ki', d: 'Stelle eine Frage. Erhalte ein Rätsel.', skill: 'm3' },
@@ -613,6 +627,12 @@ XIRU.eggs.push(
     { id: 't-passwort-256',    pg: 'werkzeuge/passwort.html', n: 'Quantensicher', h: 'Erzeuge ein Passwort mit mindestens 256 Bit Stärke.', x: 25, r: 1, m: 'Das knackt niemand. Auch nicht in 1000 Jahren.' },
     { id: 't-passwort-klassiker', pg: 'werkzeuge/passwort.html', n: 'Ein Klassiker', h: 'Prüf ein Passwort, das du besser nie benutzen solltest.', x: 15, r: 1, m: 'Das steht auf jeder Liste der schlechtesten Passwörter.' },
     { id: 't-werkzeuge-hammer', pg: 'werkzeuge/index.html', n: 'Der Hammer', h: 'Such im Werkzeugkasten nach dem einfachsten Werkzeug von allen.', x: 15, r: 1, m: 'Wenn du einen Hammer hast, sieht alles aus wie ein Nagel.' },
-    { id: 't-werkzeuge-alle',  pg: 'werkzeuge/index.html', n: 'Werkzeugmeister', h: 'Probier jedes Werkzeug im Werkzeugkasten aus.', x: 50, r: 3, m: 'Der Kasten ist komplett.' }
+    { id: 't-werkzeuge-alle',  pg: 'werkzeuge/index.html', n: 'Werkzeugmeister', h: 'Probier jedes Werkzeug im Werkzeugkasten aus.', x: 50, r: 3, m: 'Der Kasten ist komplett.' },
+    { id: 'b-tour',       pg: 'index.html',  n: 'Fremdenführer',   h: 'Lass dir von der Startseite die Welt zeigen.', x: 15, r: 1, m: 'Jetzt kennst du dich aus. Fast.' },
+    /* Code-Bibliothek */
+    { id: 'k-code-tutor', pg: 'ki/code-tutor.html',       n: 'Nachhilfe',        h: 'Lass dir vom Code-Tutor etwas erklären.', x: 20, r: 1, m: 'Fragen ist der schnellste Weg zum Können.' },
+    { id: 'c-lektion',    pg: 'hardware/code/index.html', n: 'Hallo Welt',       h: 'Schliess in der Code-Bibliothek eine Lektion ab.', x: 20, r: 1, m: 'Jede Programmiererin, jeder Programmierer hat so angefangen.' },
+    { id: 'c-cheatsheet', pg: 'hardware/code/index.html', n: 'Spickzettel',      h: 'Nimm dir ein Cheat-Sheet mit nach Hause.', x: 25, r: 1, m: 'Erlaubter Spickzettel. Der beste.' },
+    { id: 'c-kurs',       pg: 'hardware/code/index.html', n: 'Absolvent',        h: 'Bring einen ganzen Kurs zu Ende.', x: 80, r: 2, m: 'Zertifikat? Gibt es nicht. Aber Respekt.' }
     /* EGGS:ENDE */
 );

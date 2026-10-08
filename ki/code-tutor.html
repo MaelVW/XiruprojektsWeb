@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code-Tutor · Xiruprojekts</title>
+    <meta name="description" content="Der Code-Tutor erklärt Code, beantwortet Programmierfragen, findet Fehler und stellt Übungsaufgaben – mit KI oder offline aus der Code-Bibliothek.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="ki.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/ai.js"></script>
+    <script src="../hardware/code/js/code.js"></script>
+    <script src="../hardware/code/data/csharp.js"></script>
+    <script src="../hardware/code/data/python.js"></script>
+    <script src="../hardware/code/data/html.js"></script>
+    <script src="../hardware/code/data/css.js"></script>
+    <script src="../hardware/code/data/javascript.js"></script>
+    <script src="../hardware/code/data/sql.js"></script>
+    <script src="../hardware/code/data/git.js"></script>
+    <script src="../hardware/code/data/java.js"></script>
+    <script src="../hardware/code/data/cpp.js"></script>
+    <script src="../hardware/code/data/lua.js"></script>
+    <script src="../hardware/code/data/powershell.js"></script>
+    <script src="../hardware/code/data/bash.js"></script>
+    <style>
+        .tutor-modes { display: grid; grid-template-columns: repeat(4, 1fr); gap: .5rem; margin-bottom: 1rem; }
+        @media (max-width: 640px) { .tutor-modes { grid-template-columns: 1fr 1fr; } }
+        .tutor-mode { display: grid; gap: .15rem; text-align: left; padding: .7rem .85rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text-muted); font: inherit; cursor: pointer; transition: border-color .2s, color .2s; }
+        .tutor-mode b { color: var(--text); font-size: .95rem; }
+        .tutor-mode small { font-size: .75rem; }
+        .tutor-mode[aria-pressed="true"] { border-color: var(--rc); box-shadow: inset 0 0 0 1px var(--rc); background: color-mix(in srgb, var(--rc) 8%, var(--surface)); }
+        .tutor-input { width: 100%; min-height: 190px; font: .9rem/1.6 var(--mono); tab-size: 4; font-variant-ligatures: none; }
+        .tutor-bar { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin: .75rem 0 1rem; }
+        .tutor-bar select { width: auto; }
+        .tutor-out { min-height: 160px; }
+        .tutor-out pre { background: #070a12; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); padding: .8rem 1rem; overflow-x: auto; }
+        .tutor-out code { font-variant-ligatures: none; }
+        .tutor-hist { list-style: none; margin: 0; padding: 0; display: grid; gap: .4rem; }
+        .tutor-hist button { width: 100%; text-align: left; padding: .5rem .7rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-2); color: var(--text-muted); font: .82rem/1.4 var(--font); cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .tutor-hist button:hover { color: var(--text); border-color: var(--border-strong); }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">✦ KI-Labor</span>
+        <h1>Code-Tutor</h1>
+        <p class="lead">Füge Code ein oder stell eine Frage – der Tutor erklärt Schritt für Schritt, sucht Fehler oder stellt dir eine Übungsaufgabe.
+            Ohne KI-Dienst antwortet er offline aus der <a href="../hardware/code/index.html">Code-Bibliothek</a>.</p>
+    </header>
+    <div class="ki-top">
+        <div id="ai-status"></div>
+        <a class="btn btn--sm" href="../hardware/code/index.html">⌨ Zur Code-Bibliothek</a>
+    </div>
+
+    <div class="ki-layout ki-layout--wide-side">
+        <section>
+            <div class="tutor-modes" role="group" aria-label="Was soll der Tutor tun?">
+                <button class="tutor-mode" type="button" data-mode="erklaeren" aria-pressed="true"><b>🔍 Erklären</b><small>Was macht dieser Code?</small></button>
+                <button class="tutor-mode" type="button" data-mode="frage" aria-pressed="false"><b>💬 Frage</b><small>Begriff oder Problem</small></button>
+                <button class="tutor-mode" type="button" data-mode="fehler" aria-pressed="false"><b>🐞 Fehler finden</b><small>Warum läuft das nicht?</small></button>
+                <button class="tutor-mode" type="button" data-mode="aufgabe" aria-pressed="false"><b>🎯 Aufgabe</b><small>Etwas zum Üben</small></button>
+            </div>
+            <label class="ki-label" for="q" id="q-label">Code oder Frage</label>
+            <textarea class="textarea tutor-input" id="q" spellcheck="false"></textarea>
+            <div class="tutor-bar">
+                <label class="small muted" for="lang">Sprache</label>
+                <select class="input" id="lang"><option value="">Automatisch erkennen</option></select>
+                <button class="btn btn--primary" type="button" id="go">Los</button>
+                <button class="btn btn--ghost" type="button" id="stop" hidden>Stopp</button>
+                <button class="btn btn--ghost" type="button" id="example">Beispiel einfügen</button>
+            </div>
+            <div class="ki-output tutor-out ai-md" id="out" data-empty="Hier erscheint die Antwort des Tutors."></div>
+            <div class="row mt-2" id="links"></div>
+        </section>
+        <aside class="ki-side">
+            <div class="card">
+                <h3>So hilft der Tutor</h3>
+                <ul class="small muted mb-0">
+                    <li><strong>Erklären:</strong> Code einfügen, Zeile für Zeile verstehen.</li>
+                    <li><strong>Frage:</strong> „Was ist ein Array?“, „Wann for, wann while?“</li>
+                    <li><strong>Fehler finden:</strong> Code, der nicht läuft – mit Korrektur.</li>
+                    <li><strong>Aufgabe:</strong> eine Übung passend zu deinem Thema.</li>
+                </ul>
+                <p class="small faint mt-2 mb-0">Online-Antworten stammen von einer KI und können Fehler enthalten. Dein Code wird nur an den Dienst geschickt, den du im KI-Labor eingerichtet hast.</p>
+            </div>
+            <div class="card">
+                <h3>Zuletzt gefragt</h3>
+                <ul class="tutor-hist" id="hist"></ul>
+            </div>
+        </aside>
+    </div>
+</main>
+<script>
+XIRU.ready(function () {
+    const $ = XIRU.$, AI = XIRU.ai, esc = XIRU.esc, LANGS = XIRU_CODE.list;
+    const SAVE = 'code-tutor';
+    const store = XIRU.load(SAVE, { hist: [] }) || { hist: [] };
+    let mode = 'erklaeren', ctl = null;
+    AI.ui.status('#ai-status', { offlineText: 'Begriffe & Fehlersuche aus der Code-Bibliothek' });
+    $('#lang').insertAdjacentHTML('beforeend', LANGS.map(l => '<option value="' + l.id + '">' + esc(l.n) + '</option>').join(''));
+
+    const PH = {
+        erklaeren: 'Füge hier Code ein, z. B.\nfor (int i = 0; i < 3; i++)\n{\n    Console.WriteLine(i);\n}',
+        frage: 'Stell deine Frage, z. B. „Was ist der Unterschied zwischen == und ===?“',
+        fehler: 'Füge Code ein, der nicht funktioniert …',
+        aufgabe: 'Wozu möchtest du üben? z. B. „Schleifen“, „Listen“, „Formulare“ – oder leer lassen.'
+    };
+    const EXAMPLES = {
+        erklaeren: { lang: 'python', text: 'zahlen = [3, 1, 2]\nfor x in sorted(zahlen):\n    if x % 2 == 0:\n        print(x, "ist gerade")\n    else:\n        print(x, "ist ungerade")' },
+        frage: { lang: 'csharp', text: 'Was ist der Unterschied zwischen int und double?' },
+        fehler: { lang: 'csharp', text: 'int x = 3\nif (x > 1)\n{\n    Console.WriteLine("gross")\n}' },
+        aufgabe: { lang: 'javascript', text: 'Schleifen und Arrays' }
+    };
+    function setMode(m) {
+        mode = m;
+        XIRU.$$('.tutor-mode').forEach(b => b.setAttribute('aria-pressed', b.dataset.mode === m));
+        $('#q').placeholder = PH[m];
+        $('#q-label').textContent = m === 'frage' ? 'Deine Frage' : m === 'aufgabe' ? 'Thema (optional)' : 'Dein Code';
+        $('#go').textContent = { erklaeren: 'Erklären lassen', frage: 'Fragen', fehler: 'Fehler suchen', aufgabe: 'Aufgabe stellen' }[m];
+    }
+    XIRU.$$('.tutor-mode').forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
+    setMode('erklaeren');
+    $('#example').addEventListener('click', () => { const e = EXAMPLES[mode]; $('#q').value = e.text; $('#lang').value = e.lang; });
+    $('#q').addEventListener('keydown', e => {
+        if (e.key === 'Tab') { e.preventDefault(); const t = e.target, p = t.selectionStart; t.setRangeText('    ', p, t.selectionEnd, 'end'); }
+        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); run(); }
+    });
+
+    /* ── Sprache erkennen ── */
+    function detect(t) {
+        const rules = [
+            ['sql', /\b(SELECT|INSERT INTO|UPDATE|DELETE FROM|CREATE TABLE)\b/i], ['git', /^\s*git\s+\w+/m],
+            ['powershell', /\b(Get|Set|Write|Read|Test|New|Remove)-[A-Z]\w+|\$_\b|-eq\b|-gt\b/], ['bash', /^#!\/bin\/(ba)?sh|\b(fi|done|esac)\s*$|\becho\s+"\$/m],
+            ['lua', /\blocal\s+\w+\s*=|\bthen\s*$|\bend\s*$|~=|ipairs\(/m], ['java', /System\.out\.println|public static void main|ArrayList</],
+            ['cpp', /#include\s*<|std::|cout\s*<</],
+            ['html', /<\/?(html|body|div|p|h[1-6]|a|img|ul|li|form|input|table)\b/i],
+            ['csharp', /Console\.|static void|\bstring\s+\w+\s*=|\bint\s+\w+\s*=|using System|\bnew List</],
+            ['python', /\bdef \w+\(|\belif\b|\bprint\(|:\s*$|\bimport \w+$/m],
+            ['javascript', /\b(const|let)\s+\w+\s*=|=>|console\.log|document\.|function\s+\w+\(/],
+            ['css', /[.#]?[\w-]+\s*\{[^}]*:[^}]*;/]
+        ];
+        for (const [id, re] of rules) if (re.test(t)) return id;
+        const low = t.toLowerCase();
+        const named = LANGS.find(l => low.includes(l.n.toLowerCase()) || (l.id === 'csharp' && /c#|c sharp/.test(low)));
+        return named ? named.id : '';
+    }
+
+    /* ── Offline: Begriffe aus den Cheat-Sheets ── */
+    function findTerms(text, langId) {
+        const low = text.toLowerCase(), hits = [];
+        LANGS.filter(l => !langId || l.id === langId).forEach(l => l.sheet.forEach(g => g.items.forEach(it => {
+            const keys = it[0].toLowerCase().split(/\s*\/\s*|\s+…\s+|\s+bis\s+/).map(k => k.replace(/[<>]/g, '').trim()).filter(k => k.length > 1);
+            let score = 0;
+            // Wörter nur als ganze Wörter zählen (sonst steckt „int“ in „print“)
+            keys.forEach(k => { const hit = /^[\w.]+$/.test(k) ? new RegExp('(^|[^\\w.])' + k.replace(/\./g, '\\.') + '($|[^\\w])').test(low) : low.includes(k); if (hit) score += k.length > 3 ? 3 : 1; });
+            if (score) hits.push({ l, it, score });
+        })));
+        return hits.sort((a, b) => b.score - a.score).slice(0, 6);
+    }
+    function termsMd(hits) {
+        return hits.map(h => '- **' + h.it[0] + '** (' + h.l.n + ') – ' + h.it[2] + (h.it[1] && h.it[1] !== '–' ? '\n\n```\n' + h.it[1] + '\n```' : '')).join('\n');
+    }
+    /* ── Offline: einfache Fehlerprüfung ── */
+    function lint(code, lang) {
+        const out = [], lines = code.split('\n');
+        const pairs = { '(': ')', '[': ']', '{': '}' }, stack = [];
+        let inStr = null;
+        for (const ch of code.replace(/\/\/.*$|#.*$/gm, '')) {
+            if (inStr) { if (ch === inStr) inStr = null; continue; }
+            if (ch === '"' || ch === "'") { inStr = ch; continue; }
+            if (pairs[ch]) stack.push(ch);
+            else if (Object.values(pairs).includes(ch)) { if (pairs[stack.pop()] !== ch) { out.push('Klammern passen nicht zusammen: zu viele schliessende „' + ch + '“.'); break; } }
+        }
+        if (stack.length) out.push('Es fehlt mindestens eine schliessende Klammer für „' + stack[stack.length - 1] + '“.');
+        if (inStr) out.push('Ein Text in Anführungszeichen wird nicht geschlossen.');
+        lines.forEach((ln, i) => {
+            const t = ln.trim(), n = i + 1;
+            if (!t || /^(\/\/|#|\/\*|\*)/.test(t)) return;
+            if (lang === 'csharp' || lang === 'javascript') {
+                if (lang === 'csharp' && !/[;{}]$|^(if|else|for|foreach|while|switch|class|static|public|private|using|namespace|case|default|do|try|catch|finally)\b|^\[|,$|\($|^\/\//.test(t)) out.push('Zeile ' + n + ': Fehlt hier ein Semikolon `;` am Ende? → `' + t + ';`');
+                if (/[^=!<>]==[^=]/.test(t) && lang === 'javascript') out.push('Zeile ' + n + ': `==` vergleicht locker – meist ist `===` gemeint.');
+                if (/\bif\s*\(.*[^=!<>]=[^=].*\)/.test(t)) out.push('Zeile ' + n + ': In der Bedingung steht `=` (Zuweisung). Zum Vergleichen braucht es `==`' + (lang === 'javascript' ? ' bzw. `===`' : '') + '.');
+            }
+            if (lang === 'python') {
+                if (/^(if|elif|else|for|while|def|class|try|except|finally|with)\b/.test(t) && !/:\s*(#.*)?$/.test(t)) out.push('Zeile ' + n + ': Nach `' + t.split(/[\s(:]/)[0] + '` fehlt der Doppelpunkt `:`.');
+                if (/^\s*\t/.test(ln) && /^ +/.test(code.split('\n').find(x => /^ +\S/.test(x)) || '')) out.push('Zeile ' + n + ': Tabs und Leerzeichen gemischt – nimm überall 4 Leerzeichen.');
+                if (/\b(true|false|null)\b/.test(t)) out.push('Zeile ' + n + ': In Python schreibt man `True`, `False` und `None` gross.');
+            }
+            if (lang === 'sql' && /^(UPDATE|DELETE)\b/i.test(t) && !/\bWHERE\b/i.test(code)) out.push('Zeile ' + n + ': `' + t.split(' ')[0].toUpperCase() + '` ohne `WHERE` trifft **alle** Zeilen!');
+        });
+        if (lang === 'html') {
+            const open = [], VOID = /^(br|img|input|meta|link|hr|source|area|col|embed|wbr)$/i;
+            (code.match(/<\/?[a-zA-Z][\w-]*[^>]*>/g) || []).forEach(tag => {
+                const name = (tag.match(/<\/?([\w-]+)/) || [])[1].toLowerCase();
+                if (VOID.test(name) || /\/>$/.test(tag)) return;
+                if (tag[1] === '/') { if (open[open.length - 1] === name) open.pop(); else out.push('Das End-Tag `</' + name + '>` passt nicht – offen ist gerade `<' + (open[open.length - 1] || '–') + '>`.'); }
+                else open.push(name);
+            });
+            open.forEach(n => out.push('Das Tag `<' + n + '>` wird nie geschlossen.'));
+            if (/<img(?![^>]*\balt=)/i.test(code)) out.push('Ein `<img>` hat kein `alt` – wichtig für Screenreader.');
+        }
+        return [...new Set(out)].slice(0, 8);
+    }
+    const TASKS = {
+        csharp: ['Schreibe ein Programm, das nach deinem Namen fragt und „Hallo, <Name>!“ ausgibt.', 'Lies zwei Zahlen ein und gib die grössere aus.', 'Gib mit einer for-Schleife die Zahlen von 10 bis 1 rückwärts aus.', 'Schreibe eine Methode `IstGerade(int x)`, die true oder false zurückgibt.'],
+        python: ['Frag nach einem Alter und gib aus, wie viele Jahre es noch bis 100 sind.', 'Erstelle eine Liste mit 5 Zahlen und gib die Summe und den Durchschnitt aus.', 'Schreibe eine Funktion, die prüft, ob ein Wort ein Palindrom ist (z. B. „otto“).'],
+        html: ['Baue eine Steckbrief-Seite mit Überschrift, Bild (mit alt) und einer Liste deiner Hobbys.', 'Erstelle ein Formular mit Name, E-Mail und einem Senden-Knopf – jedes Feld mit label.', 'Baue eine Tabelle mit drei Lieblingsspielen und ihrem Erscheinungsjahr.'],
+        css: ['Gestalte einen Knopf, der beim Überfahren grösser wird und die Farbe wechselt.', 'Ordne drei Karten mit Flexbox nebeneinander an, mit Abstand dazwischen.', 'Baue ein Raster mit Grid: 3 Spalten auf dem Computer, 1 Spalte auf dem Handy.'],
+        javascript: ['Zähle mit einer Schleife von 1 bis 20 und gib bei Vielfachen von 3 „Fizz“ aus.', 'Schreibe eine Funktion, die aus einem Array die grösste Zahl findet.', 'Filtere aus einer Liste von Namen alle, die mit „T“ beginnen.'],
+        sql: ['Gib alle Spieler mit Level über 5 aus, sortiert nach Level absteigend.', 'Zähle, wie viele Spieler es pro Land gibt.', 'Ändere das Level des Spielers mit der id 3 auf 10 – mit WHERE!'],
+        git: ['Leg ein neues Repository an, erstelle eine Datei und mach deinen ersten Commit.', 'Erstelle einen Branch „test“, ändere dort etwas und führe ihn zurück in main.'],
+        java: ['Schreibe ein Programm, das mit einem Scanner zwei Zahlen einliest und ihre Summe ausgibt.', 'Baue eine Klasse Spieler mit Name und Punkten und einer Methode, die Punkte hinzufügt.'],
+        cpp: ['Lies Zahlen ein, bis 0 kommt, und gib dann den Durchschnitt aus.', 'Schreibe eine Funktion, die per Referenz zwei Variablen vertauscht.'],
+        lua: ['Erstelle eine Tabelle mit 5 Gegenständen und gib sie mit ipairs nummeriert aus.', 'Roblox: Lass ein Part bei Berührung die Farbe wechseln.'],
+        powershell: ['Liste alle .txt-Dateien im Ordner auf, sortiert nach Grösse.', 'Frag mit Read-Host nach einem Ordner und zeig an, ob er existiert (Test-Path).'],
+        bash: ['Schreib ein Skript, das nach deinem Namen fragt und dich begrüsst.', 'Zähle alle Zeilen in einer Datei, die das Wort „Fehler“ enthalten.']
+    };
+    function offlineAnswer(text, langId) {
+        const l = LANGS.find(x => x.id === langId);
+        const note = '\n\n_Offline-Antwort aus der Code-Bibliothek. Für Erklärungen Schritt für Schritt richte im KI-Labor einen kostenlosen KI-Dienst ein._';
+        if (mode === 'aufgabe') {
+            const pool = (langId && TASKS[langId]) || [].concat(...Object.values(TASKS));
+            const lesson = l ? XIRU.pick(l.lessons) : null;
+            return '### 🎯 Deine Aufgabe' + (l ? ' (' + l.n + ')' : '') + '\n\n' + XIRU.pick(pool) +
+                (lesson ? '\n\n**Tipp:** Schau dir die Lektion „' + lesson.t + '“ an – dort steht alles, was du brauchst.' : '') + note;
+        }
+        if (mode === 'fehler') {
+            const errs = lint(text, langId);
+            return (errs.length ? '### 🐞 Mögliche Fehler\n\n' + errs.map((e, i) => (i + 1) + '. ' + e).join('\n') : '### 🐞 Keine typischen Fehler gefunden\n\nDie Offline-Prüfung kennt nur häufige Stolpersteine (Klammern, Semikolons, Doppelpunkte, Tags). Prüf auch Gross-/Kleinschreibung und Variablennamen.') + note;
+        }
+        const hits = findTerms(text, langId);
+        if (!hits.length) return 'Dazu habe ich offline nichts in den Cheat-Sheets gefunden. Versuch es mit einem Begriff wie „Schleife“, „Array“ oder „if“ – oder richte einen KI-Dienst ein.' + note;
+        return (mode === 'erklaeren' ? '### 🔍 Diese Begriffe stecken in deinem Code' : '### 💬 Das sagt die Code-Bibliothek') + '\n\n' + termsMd(hits) + note;
+    }
+
+    /* ── Online-Anfrage ── */
+    const SYSTEM = 'Du bist der Code-Tutor von Xiruprojekts, einer Lern- und Spielwebsite. Antworte immer auf Deutsch in Schweizer Rechtschreibung (ss statt ß), freundlich und in Du-Form, ' +
+        'für Lernende (Berufsfachschule Informatik, Einsteiger). Erkläre einfach, genau und in kurzen Abschnitten. Codebeispiele immer in ```-Blöcken. Erfinde keine Funktionen; wenn etwas unklar ist, sag es ehrlich.';
+    function prompt(text, l) {
+        const ln = l ? l.n : 'Programmier';
+        if (mode === 'erklaeren') return 'Erkläre diesen ' + ln + '-Code Schritt für Schritt (Abschnitt für Abschnitt). Nenne am Ende die 3 wichtigsten Begriffe.\n\n```\n' + text + '\n```';
+        if (mode === 'fehler') return 'Finde die Fehler in diesem ' + ln + '-Code. Liste sie nummeriert mit Zeile, Grund und Korrektur. Zeig danach den ganzen korrigierten Code.\n\n```\n' + text + '\n```';
+        if (mode === 'aufgabe') return 'Stell mir eine kleine Übungsaufgabe für ' + (l ? l.n : 'Programmier-Einsteiger') + (text ? ' zum Thema: ' + text : '') + '. Gib zuerst die Aufgabe und einen Tipp. Schreib dann eine Zeile mit --- und darunter eine mögliche Lösung.';
+        return (l ? '(Sprache: ' + l.n + ') ' : '') + text;
+    }
+    async function run() {
+        const text = $('#q').value.trim();
+        if (!text && mode !== 'aufgabe') { $('#q').focus(); return; }
+        const langId = $('#lang').value || detect(text), l = LANGS.find(x => x.id === langId);
+        const out = $('#out');
+        out.innerHTML = ''; out.classList.add('is-busy');
+        $('#go').hidden = true; $('#stop').hidden = false;
+        ctl = new AbortController();
+        const s = AI.ui.stream(out);
+        let answer;
+        try {
+            answer = await AI.chat([{ role: 'user', content: prompt(text, l) }], { system: SYSTEM, temperature: .3, maxTokens: 900, onToken: x => s.push(x), signal: ctl.signal, offline: () => offlineAnswer(text, langId) });
+        } catch (e) {
+            answer = e.code === 'abort' ? '_Abgebrochen._' : offlineAnswer(text, langId);
+        }
+        await s.end(answer);
+        out.classList.remove('is-busy');
+        $('#go').hidden = false; $('#stop').hidden = true;
+        $('#links').innerHTML = l ? '<a class="btn btn--sm" href="../hardware/code/' + l.id + '.html">📘 ' + esc(l.n) + '-Kurs</a><a class="btn btn--sm btn--ghost" href="../hardware/code/' + l.id + '.html#cheatsheet">📄 ' + esc(l.n) + '-Cheat-Sheet</a>' : '';
+        store.hist = [{ mode, lang: langId, text: text.slice(0, 2000) }].concat(store.hist.filter(h => h.text !== text)).slice(0, 6);
+        XIRU.save(SAVE, store); renderHist();
+        XIRU.egg('k-code-tutor');
+    }
+    $('#go').addEventListener('click', run);
+    $('#stop').addEventListener('click', () => { if (ctl) ctl.abort(); });
+    function renderHist() {
+        const ul = $('#hist');
+        ul.replaceChildren();
+        if (!store.hist.length) { const li = document.createElement('li'); li.className = 'small faint'; li.textContent = 'Noch nichts gefragt.'; ul.appendChild(li); return; }
+        store.hist.forEach(h => {
+            const li = document.createElement('li'), b = document.createElement('button');
+            b.type = 'button'; b.textContent = ({ erklaeren: '🔍', frage: '💬', fehler: '🐞', aufgabe: '🎯' }[h.mode] || '•') + ' ' + (h.text.split('\n')[0] || '(ohne Thema)');
+            b.addEventListener('click', () => { setMode(h.mode); $('#q').value = h.text; $('#lang').value = h.lang || ''; });
+            li.appendChild(b); ul.appendChild(li);
+        });
+    }
+    renderHist();
+});
+</script>
+</body>
+</html>

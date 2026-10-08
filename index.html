@@ -8,18 +8,39 @@
     <link rel="stylesheet" href="assets/css/main.css">
     <script src="assets/js/site.js"></script>
     <script src="assets/js/core.js"></script>
+    <script src="assets/js/mech-art.js"></script>
     <style>
-        .hero { position: relative; min-height: min(78vh, 680px); display: grid; align-items: center; margin: -2.5rem -1.25rem 0; padding: 4rem 1.25rem; overflow: hidden; border-bottom: 1px solid var(--border); }
+        /* Hero und Laufband gehen über die ganze Fensterbreite, der Inhalt bleibt im 1200-px-Raster */
+        .hero { --rig-w: min(36vw, 460px); --edge: max(1.25rem, calc(50vw - var(--sbw, 0px) / 2 - 600px + 1.25rem)); position: relative; min-height: min(78vh, 700px); display: grid; align-items: center; margin: -2.5rem calc(50% - 50vw + var(--sbw, 0px) / 2) 0; padding: 4rem var(--edge); overflow-x: clip; overflow-y: visible; border-bottom: 1px solid var(--border); }
         .hero canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
-        .hero__inner { position: relative; max-width: 1200px; margin: 0 auto; width: 100%; }
-        .hero h1 { font-size: clamp(2.3rem, 6.5vw, 4.6rem); line-height: 1.03; letter-spacing: -.035em; max-width: 14ch; }
+        /* Tageszeit-Stimmung: Himmel hinter dem Partikelnetz */
+        .hero__sky { position: absolute; inset: 0; pointer-events: none; transition: opacity 2s; }
+        .hero[data-daytime="morgen"] .hero__sky { background: radial-gradient(ellipse 70% 60% at 12% 115%, rgba(251, 146, 60, .30), transparent 60%), radial-gradient(ellipse 50% 40% at 30% 110%, rgba(244, 114, 182, .18), transparent 60%); }
+        .hero[data-daytime="tag"] .hero__sky { background: radial-gradient(ellipse 60% 50% at 85% -10%, rgba(94, 234, 212, .14), transparent 60%); }
+        .hero[data-daytime="abend"] .hero__sky { background: radial-gradient(ellipse 80% 55% at 85% 120%, rgba(249, 115, 22, .26), transparent 60%), radial-gradient(ellipse 70% 60% at 50% 120%, rgba(167, 139, 250, .24), transparent 65%); }
+        .hero[data-daytime="nacht"] .hero__sky { background: radial-gradient(ellipse 60% 50% at 80% -5%, rgba(96, 165, 250, .16), transparent 60%),
+            radial-gradient(1.5px 1.5px at 12% 22%, #fff, transparent), radial-gradient(1px 1px at 28% 68%, #fff, transparent), radial-gradient(1.5px 1.5px at 47% 14%, #fff, transparent),
+            radial-gradient(1px 1px at 63% 42%, #fff, transparent), radial-gradient(1.5px 1.5px at 78% 74%, #fff, transparent), radial-gradient(1px 1px at 91% 30%, #fff, transparent),
+            radial-gradient(1px 1px at 36% 88%, #fff, transparent), radial-gradient(1.5px 1.5px at 6% 56%, #fff, transparent); animation: twinkle 4s ease-in-out infinite alternate; }
+        @keyframes twinkle { from { opacity: .55; } to { opacity: 1; } }
+        html.no-anim .hero__sky { animation: none; }
+        .hero__inner { position: relative; width: 100%; padding-right: calc(var(--rig-w) + 2rem); }
+        .hero h1 { font-size: clamp(1.9rem, 1.1rem + 3.4vw, 4.2rem); line-height: 1.05; letter-spacing: -.035em; }
+        .hero h1 #tw { white-space: nowrap; }   /* wechselnde Zeile bricht nie um – kein Springen */
         .hero h1 .grad { background: linear-gradient(90deg, var(--rc), var(--accent-2), #f472b6, var(--rc)); background-size: 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: gradMove 8s linear infinite; }
         @keyframes gradMove { to { background-position: 300% 0; } }
-        .hero .lead { font-size: clamp(1.05rem, 2vw, 1.3rem); margin-top: 1rem; }
+        .hero .lead { font-size: clamp(1.02rem, .9rem + .5vw, 1.25rem); margin-top: 1rem; max-width: 40rem; }
         .hero__cta { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 2rem; }
-        .hero__rig { position: absolute; right: 2%; top: 50%; width: min(40vw, 440px); transform: translateY(-50%); overflow: visible; animation: heroFloat 8s ease-in-out infinite; filter: drop-shadow(0 30px 50px rgba(0,0,0,.35)); }
+        .hero__rig { position: absolute; right: var(--edge); top: 50%; width: var(--rig-w); transform: translateY(-50%); overflow: visible; animation: heroFloat 8s ease-in-out infinite; filter: drop-shadow(0 30px 50px rgba(0,0,0,.35)); }
         @keyframes heroFloat { 0%, 100% { transform: translateY(-50%); } 50% { transform: translateY(-53%); } }
-        @media (max-width: 860px) { .hero__rig { opacity: .22; right: -14%; width: 80vw; } }
+        @media (max-width: 1000px) { .hero__inner { padding-right: 0; } .hero__rig { opacity: .2; right: -12%; width: min(80vw, 520px); } }
+        @media (max-width: 560px) { .hero { min-height: 0; padding-block: 3rem 2.5rem; } .hero__cta .btn { flex: 1 1 auto; justify-content: center; } }
+        .hero__rig { z-index: 2; }
+        .rig-link { cursor: pointer; outline: none; transition: filter .25s, transform .3s var(--ease); transform-box: fill-box; transform-origin: center; }
+        .rig-link:hover, .rig-link:focus-visible { filter: drop-shadow(0 0 10px var(--rc)) brightness(1.25); transform: translateY(-4px) scale(1.05); }
+        .rig-label { position: absolute; z-index: 3; transform: translate(-50%, -100%); padding: .3rem .7rem; border-radius: 999px; background: var(--surface); border: 1px solid var(--rc);
+            font-size: .82rem; font-weight: 700; white-space: nowrap; pointer-events: none; box-shadow: 0 8px 24px -8px var(--rc); }
+        @media (max-width: 1000px) { .hero__rig { pointer-events: none; z-index: 0; } .rig-label { display: none; } }
         .rig-edge { fill: none; stroke: var(--rc); stroke-width: 1; opacity: .28; stroke-dasharray: 1; stroke-dashoffset: 1; animation: rigDraw 1.6s var(--ease) forwards; }
         .rig-edge.outer { stroke-width: 2; opacity: .85; }
         .rig-flow { fill: none; stroke: #fff; stroke-width: 2.2; stroke-linecap: round; stroke-dasharray: .05 .95; animation: rigFlow 2.6s linear infinite; filter: drop-shadow(0 0 4px var(--rc)); }
@@ -35,11 +56,60 @@
         @keyframes rigSpin { to { stroke-dashoffset: -40; } }
         @keyframes rigBit { 0% { opacity: 0; transform: translateY(0); } 15% { opacity: .9; } 100% { opacity: 0; transform: translateY(-70px); } }
         .pixel { position: absolute; width: 5px; height: 5px; background: var(--accent-2); left: 61%; top: 22%; opacity: .55; cursor: default; border-radius: 1px; }
-        .ticker { margin: 0 -1.25rem 2.5rem; }
+        .ticker { margin: 0 calc(50% - 50vw + var(--sbw, 0px) / 2) 2.5rem; }
         .region-tile { --tc: var(--rcol); }
+        /* Lebendige Regionen-Kacheln: kleine Szene oben rechts, im Stil des Bereichs */
+        .rfx { position: absolute; top: .9rem; right: .9rem; width: 92px; height: 56px; pointer-events: none; opacity: .75; color: var(--rcol); }
+        .region-tile:hover .rfx { opacity: 1; }
+        .rfx * { box-sizing: border-box; }
+        /* Hardware: Leiterbahnen mit Datenpunkten */
+        .rfx--hardware { background: linear-gradient(currentColor 0 0) 0 18px / 100% 2px no-repeat, linear-gradient(currentColor 0 0) 0 40px / 100% 2px no-repeat, linear-gradient(currentColor 0 0) 46px 0 / 2px 100% no-repeat; opacity: .45; }
+        .rfx--hardware i { position: absolute; width: 7px; height: 7px; border-radius: 50%; background: #fff; box-shadow: 0 0 8px 2px currentColor; top: 15px; left: -8px; animation: rfxRun 2.4s linear infinite; }
+        .rfx--hardware i:nth-child(2) { top: 37px; animation-duration: 3.1s; animation-delay: -1.2s; }
+        @keyframes rfxRun { to { left: 96px; } }
+        /* Spielhalle: Pixel-Invader marschiert */
+        .rfx--arcade i { position: absolute; top: 16px; left: 10px; width: 4px; height: 4px; color: currentColor; animation: rfxMarch 3s steps(6) infinite alternate;
+            box-shadow: 8px 0, 24px 0, 12px 4px, 16px 4px, 20px 4px, 4px 8px, 8px 8px, 12px 8px, 16px 8px, 20px 8px, 24px 8px, 28px 8px, 0 12px, 8px 12px, 12px 12px, 16px 12px, 20px 12px, 24px 12px, 32px 12px, 0 16px, 32px 16px, 8px 20px, 24px 20px; }
+        @keyframes rfxMarch { from { transform: translateX(0); } to { transform: translateX(46px); } }
+        /* Studio: Equalizer */
+        .rfx--studio { display: flex; align-items: flex-end; gap: 4px; justify-content: flex-end; }
+        .rfx--studio i { width: 8px; height: 100%; background: currentColor; border-radius: 2px; transform-origin: bottom; animation: rfxEq 1s ease-in-out infinite alternate; }
+        .rfx--studio i:nth-child(2) { animation-delay: -.3s; } .rfx--studio i:nth-child(3) { animation-delay: -.6s; } .rfx--studio i:nth-child(4) { animation-delay: -.15s; } .rfx--studio i:nth-child(5) { animation-delay: -.8s; }
+        @keyframes rfxEq { from { transform: scaleY(.15); } to { transform: scaleY(1); } }
+        /* KI-Labor: Neuronen */
+        .rfx--ki svg, .rfx--mixer svg, .rfx--werkzeuge svg, .rfx--konto svg { width: 100%; height: 100%; overflow: visible; }
+        .rfx--ki circle { fill: currentColor; animation: rfxPulse 1.8s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+        .rfx--ki circle:nth-of-type(2) { animation-delay: .3s; } .rfx--ki circle:nth-of-type(3) { animation-delay: .6s; } .rfx--ki circle:nth-of-type(4) { animation-delay: .9s; } .rfx--ki circle:nth-of-type(5) { animation-delay: 1.2s; }
+        .rfx--ki line { stroke: currentColor; stroke-width: 1.2; opacity: .5; }
+        @keyframes rfxPulse { 0%, 100% { transform: scale(.7); opacity: .5; } 50% { transform: scale(1.25); opacity: 1; } }
+        /* Mixer: wandernde Welle */
+        .rfx--mixer path { fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; animation: rfxWave 1.6s linear infinite; }
+        @keyframes rfxWave { to { transform: translateX(-40px); } }
+        /* Werkzeugkasten: Zahnräder */
+        .rfx--werkzeuge g { transform-box: fill-box; transform-origin: center; animation: rfxSpin 6s linear infinite; }
+        .rfx--werkzeuge g:nth-of-type(2) { animation-direction: reverse; animation-duration: 4s; }
+        @keyframes rfxSpin { to { transform: rotate(360deg); } }
+        /* Heimathafen: Anker auf Wellen */
+        .rfx--konto .anchor { transform-box: fill-box; transform-origin: 50% 0; animation: rfxBob 3s ease-in-out infinite; }
+        .rfx--konto .waves { fill: none; stroke: currentColor; stroke-width: 2; opacity: .6; animation: rfxWave 2.4s linear infinite; }
+        @keyframes rfxBob { 0%, 100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg) translateY(2px); } }
+        html.no-anim .rfx *, html.no-anim .rfx { animation: none !important; }
+        @media (prefers-reduced-motion: reduce) { .rfx *, .rfx { animation: none !important; } }
+        .region-tile .tile__title { padding-right: 96px; }
+
         .region-tile .bar { height: 5px; margin-top: .3rem; }
         .region-tile .bar__fill { background: var(--rcol); }
-        .progress-card { display: grid; grid-template-columns: auto 1fr; gap: 1.5rem; align-items: center; }
+        .progress-card { display: grid; grid-template-columns: auto 1fr auto; gap: 1.5rem; align-items: center; }
+        /* Mech-Vorschau aus der Werft */
+        .mech-mini { display: grid; gap: .4rem; justify-items: center; width: 190px; padding: .6rem .6rem .7rem; border-radius: var(--radius); color: var(--text);
+            background: radial-gradient(ellipse at 50% 85%, rgba(63, 243, 255, .16), transparent 60%), linear-gradient(#070b14, #03050a);
+            border: 1px solid rgba(63, 243, 255, .35); box-shadow: inset 0 0 30px rgba(63, 243, 255, .08); transition: border-color .25s, transform .25s var(--ease); }
+        .mech-mini:hover { color: var(--text); border-color: #3ff3ff; transform: translateY(-3px); }
+        .mech-mini__view { width: 150px; height: 150px; display: block; }
+        .mech-mini__view svg { width: 100%; height: 100%; }
+        .mech-mini__cap { font-size: .78rem; color: #9fb4cc; text-align: center; line-height: 1.35; }
+        .mech-mini__cap b { color: #3ff3ff; }
+        .mech-mini__cap .warn { color: var(--warning); }
         .lvl-ring { width: 120px; height: 120px; position: relative; }
         .lvl-ring svg { transform: rotate(-90deg); width: 100%; height: 100%; }
         .lvl-ring circle { fill: none; stroke-width: 10; }
@@ -47,9 +117,58 @@
         .lvl-ring b { position: absolute; inset: 0; display: grid; place-items: center; font-size: 2rem; font-weight: 900; }
         .lvl-ring small { position: absolute; bottom: 26px; left: 0; right: 0; text-align: center; font-size: .7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; }
         .feature { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 2rem; align-items: center; padding: 2rem; }
-        @media (max-width: 860px) { .feature, .progress-card { grid-template-columns: 1fr; } }
+        @media (max-width: 860px) { .feature, .progress-card { grid-template-columns: 1fr; } .mech-mini { width: 100%; grid-template-columns: auto 1fr; justify-items: start; align-items: center; } .mech-mini__view { width: 110px; height: 110px; } .mech-mini__cap { text-align: left; font-size: .85rem; } }
         .feature__art { aspect-ratio: 16 / 10; border-radius: var(--radius); background: var(--bg-2); border: 1px solid var(--border); overflow: hidden; position: relative; }
         .feature__art canvas { width: 100%; height: 100%; image-rendering: pixelated; }
+        /* Offenes Suchfeld im Hero mit Sofort-Treffern */
+        .hero__search { position: relative; display: flex; align-items: center; gap: .6rem; max-width: 34rem; margin-top: 1.4rem; padding: .35rem .5rem .35rem 1rem;
+            border: 1px solid var(--border-strong); border-radius: 999px; background: color-mix(in srgb, var(--surface) 78%, transparent); backdrop-filter: blur(8px);
+            transition: border-color .2s, box-shadow .2s; z-index: 2; }
+        .hero__search:focus-within { border-color: var(--rc); box-shadow: 0 0 0 4px color-mix(in srgb, var(--rc) 18%, transparent), 0 12px 40px -12px color-mix(in srgb, var(--rc) 45%, transparent); }
+        .hero__search-icon { font-size: 1.2rem; color: var(--rc); }
+        .hero__search input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--text); font: inherit; font-size: 1rem; padding: .55rem 0; outline: none; }
+        .hero__search input::-webkit-search-cancel-button { filter: grayscale(1); }
+        .hero__search kbd { font-size: .72rem; opacity: .6; }
+        @media (max-width: 560px) { .hero__search kbd { display: none; } }
+        .hero__hits { position: absolute; left: 0; right: 0; top: calc(100% + .45rem); list-style: none; margin: 0; padding: .35rem; border: 1px solid var(--border-strong); border-radius: var(--radius);
+            background: var(--surface); box-shadow: var(--shadow); max-height: 22rem; overflow-y: auto; }
+        .hero__hits li { margin: 0; }
+        .hero__hits a { display: flex; align-items: center; gap: .6rem; padding: .5rem .7rem; border-radius: var(--radius-sm); color: var(--text); }
+        .hero__hits a:hover, .hero__hits a.is-active { background: color-mix(in srgb, var(--hc) 14%, var(--surface-2)); }
+        .hero__hits small { margin-left: auto; color: var(--text-faint); white-space: nowrap; }
+        .hero__hits .all { color: var(--rc); font-size: .9rem; }
+
+        /* Willkommens-Tour: Spotlight + Karte */
+        .tour-link { text-align: right; }
+        .linklike { background: none; border: 0; padding: 0; font: inherit; color: var(--text-muted); cursor: pointer; text-decoration: underline dotted; }
+        .linklike:hover { color: var(--rc); }
+        .tour-spot { position: fixed; z-index: 9000; border-radius: 14px; box-shadow: 0 0 0 9999px rgba(4, 6, 14, .72), 0 0 0 3px var(--rc), 0 0 40px 6px color-mix(in srgb, var(--rc) 40%, transparent);
+            transition: all .45s var(--ease); pointer-events: none; }
+        .tour-card { position: fixed; z-index: 9001; width: min(360px, calc(100vw - 2rem)); padding: 1.2rem 1.3rem 1rem; border: 1px solid var(--rc); border-radius: var(--radius);
+            background: var(--surface); box-shadow: var(--shadow); transition: top .45s var(--ease), left .45s var(--ease); }
+        .tour-card h3 { margin: .2rem 0 .4rem; }
+        .tour-card p { color: var(--text-muted); margin: 0; }
+        .tour-card__step { font-size: .72rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--rc); }
+        .tour-card__row { display: flex; justify-content: space-between; align-items: center; gap: .5rem; margin-top: 1rem; }
+        .tour-dots { display: flex; gap: .3rem; } .tour-dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--border-strong); } .tour-dots i.on { background: var(--rc); }
+        html.no-anim .tour-spot, html.no-anim .tour-card { transition: none; }
+
+        /* Kompass: drei Vorschläge für den nächsten Schritt */
+        .compass { display: grid; gap: 1rem; grid-template-columns: 1fr; margin-top: 1rem; }
+        @media (min-width: 900px) { .compass { grid-template-columns: repeat(3, 1fr); } }
+        .compass__card { position: relative; display: grid; grid-template-columns: auto 1fr; gap: .9rem; align-items: start; padding: 1.1rem 1.2rem; border: 1px solid var(--border); border-radius: var(--radius); background: color-mix(in srgb, var(--cc, var(--rc)) 7%, var(--surface)); color: var(--text); overflow: hidden; transition: transform .25s var(--ease), border-color .25s, box-shadow .25s; }
+        .compass__card:hover, .compass__card:focus-visible { transform: translateY(-3px); border-color: var(--cc, var(--rc)); color: var(--text); }
+        .compass__card::after { content: ""; position: absolute; right: -50px; bottom: -70px; width: 170px; height: 170px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--cc, var(--rc)) 24%, transparent), transparent 70%); pointer-events: none; }
+        .compass__icon { width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center; font-size: 1.45rem; background: color-mix(in srgb, var(--cc, var(--rc)) 16%, var(--surface-2)); }
+        .compass__icon svg { width: 30px; height: 30px; }
+        .compass__k { display: block; font-size: .72rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--cc, var(--rc)); }
+        .compass__t { display: block; font-weight: 800; margin: .1rem 0 .25rem; }
+        .compass__d { display: block; font-size: .88rem; color: var(--text-muted); }
+        .compass__req { display: flex; flex-wrap: wrap; gap: .3rem; margin-top: .55rem; }
+        .compass__req span { font-size: .72rem; padding: .1rem .5rem; border-radius: 999px; border: 1px solid var(--border-strong); color: var(--text-muted); }
+        .compass__req .ok { border-color: var(--success); color: var(--success); }
+        .compass__card.is-ready { border-color: var(--success); box-shadow: 0 0 0 1px var(--success), 0 0 26px -8px var(--success); }
+        .compass__card.is-ready .compass__icon { animation: pulse 1.8s infinite; --pc: var(--success); }
         .section-title { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin: 3rem 0 1.25rem; flex-wrap: wrap; }
         .section-title h2 { margin: 0; }
     </style>
@@ -57,11 +176,13 @@
 <body data-no-crumbs>
 <main class="content">
     <section class="hero">
+        <div class="hero__sky" aria-hidden="true"></div>
         <canvas id="net" aria-hidden="true"></canvas>
         <span class="pixel" data-egg="p-hero-pixel" title=""></span>
-        <svg class="hero__rig" id="rig" viewBox="0 0 400 430" aria-hidden="true"></svg>
+        <svg class="hero__rig" id="rig" viewBox="0 0 400 430" role="group" aria-label="Das Gerüst – jedes Teil führt in einen Bereich"></svg>
+        <div class="rig-label" id="rig-label" hidden></div>
         <div class="hero__inner">
-            <span class="eyebrow">◆ Willkommen bei Xiruprojekts</span>
+            <span class="eyebrow" id="greet-time">◆ Willkommen bei Xiruprojekts</span>
             <h1><span id="tw">Eine Website</span><br><span class="grad">zum Verlaufen.</span></h1>
             <p class="lead">Ein kleines Indie-Hobby-Gamestudio von zwei Freunden – und eine offene Welt aus Datenblättern, Spielen,
                 KI-Experimenten, Mixern und Werkzeugen. Je mehr du entdeckst, desto mehr öffnet sich.</p>
@@ -70,6 +191,12 @@
                 <a class="btn btn--lg" id="cta-account" href="konto/login.html">⚓ Konto erstellen</a>
                 <button class="btn btn--lg btn--ghost" id="random" type="button">🎲 Zufälliger Ort</button>
             </div>
+            <form class="hero__search" id="hero-search" action="suche.html" role="search">
+                <span class="hero__search-icon" aria-hidden="true">⌕</span>
+                <input type="search" name="q" id="hs-q" placeholder="Wonach suchst du? Spiele, Hardware, Werkzeuge …" autocomplete="off" aria-label="Website durchsuchen" aria-controls="hs-hits">
+                <kbd aria-hidden="true">Enter</kbd>
+                <ul class="hero__hits" id="hs-hits" hidden></ul>
+            </form>
         </div>
     </section>
 
@@ -92,7 +219,13 @@
             </div>
             <p class="mt-2 mb-0" id="suggest"></p>
         </div>
+        <a class="mech-mini" href="konto/skilltree.html" aria-label="Zur Werft – dein Mech">
+            <span class="mech-mini__view" id="mech-view" aria-hidden="true"></span>
+            <span class="mech-mini__cap" id="mech-cap"></span>
+        </a>
     </section>
+    <nav class="compass" id="compass" aria-label="Kompass – dein nächster Schritt" data-reveal></nav>
+    <p class="small muted mt-1 tour-link"><button class="linklike" type="button" id="tour-start">❔ Neu hier? Kurze Tour starten</button></p>
 
     <div class="section-title"><h2>Regionen</h2><a href="weltkarte.html">Alle auf der Weltkarte →</a></div>
     <div class="grid" id="regions"></div>
@@ -128,6 +261,9 @@
 </main>
 <script>
 XIRU.ready(function () {
+    // Hero und Laufband gehen über die volle Breite: Scrollleiste herausrechnen (100vw zählt sie mit)
+    const sbw = () => document.documentElement.style.setProperty('--sbw', (innerWidth - document.documentElement.clientWidth) + 'px');
+    sbw(); addEventListener('resize', sbw);
     const P = XIRU.profile();
     const pages = XIRU.pages.filter(p => !p.hidden);
 
@@ -176,7 +312,18 @@ XIRU.ready(function () {
         const iso = (x, y, z) => [CX + (x - y) * .866 * S, CY + (x + y) * .5 * S - z * S];
         const P = (...pts) => pts.map(p => iso.apply(null, p).map(v => v.toFixed(1)).join(',')).join(' ');
         const el = (tag, a, parent) => { const n = document.createElementNS(NS, tag); for (const k in a) n.setAttribute(k, a[k]); (parent || svg).appendChild(n); return n; };
-        const grp = delay => el('g', { class: 'rig-part', style: 'animation-delay:' + delay + 's' });
+        // Teile mit Ziel werden zu Links (Tastatur: Tab, Enter)
+        const LINK = { hardware: ['hardware/index.html', '⬛', 'Hardware-Archiv'], studio: ['studio/index.html', '💿', 'Studio'], mixer: ['mixer/index.html', '🎚', 'Mixer'],
+            code: ['hardware/code/index.html', '⌨', 'Code-Bibliothek'], ki: ['ki/index.html', '✦', 'KI-Labor'], arcade: ['arcade/index.html', '🕹', 'Spielhalle'], werkzeuge: ['werkzeuge/index.html', '🧰', 'Werkzeugkasten'] };
+        const grp = (delay, to) => {
+            const g = el('g', { class: 'rig-part', style: 'animation-delay:' + delay + 's' });
+            if (!to) return g;
+            const [href, icon, name] = LINK[to], pg = XIRU.pageFor(href), open = !pg || XIRU.isUnlocked(pg);
+            const a = el('a', { href: XIRU.url(href), class: 'rig-link', 'aria-label': name + ' öffnen' });
+            a.dataset.label = icon + ' ' + name + (open ? '' : ' · 🌫 im Nebel');
+            a.appendChild(g);
+            return g;
+        };
         const isoEllipse = (x, y, z, r, a, parent) => { const c = iso(x, y, z); return el('ellipse', Object.assign({ cx: c[0], cy: c[1], rx: 1.2247 * r * S, ry: .7071 * r * S }, a), parent); };
         const seg = (a, b) => 'M' + iso.apply(null, a) + ' L' + iso.apply(null, b);
 
@@ -198,7 +345,7 @@ XIRU.ready(function () {
         })));
 
         // Prozessor oben in der Mitte
-        let g = grp(1.1);
+        let g = grp(1.1, 'hardware');
         el('polygon', { points: P([-.5, -.5, 1], [.5, -.5, 1], [.5, .5, 1], [-.5, .5, 1]), fill: 'var(--surface-3)', stroke: 'var(--rc)', 'stroke-width': 1.5 }, g);
         for (let i = -.35; i <= .36; i += .175) {
             el('path', { d: seg([i, -.5, 1], [i, -.62, 1]) + ' ' + seg([i, .5, 1], [i, .62, 1]) + ' ' + seg([-.5, i, 1], [-.62, i, 1]) + ' ' + seg([.5, i, 1], [.62, i, 1]), stroke: '#facc15', 'stroke-width': 1.4 }, g);
@@ -206,19 +353,19 @@ XIRU.ready(function () {
         el('polygon', { points: P([-.22, -.22, 1], [.22, -.22, 1], [.22, .22, 1], [-.22, .22, 1]), fill: 'var(--rc)', class: 'rig-core' }, g);
 
         // CDs schweben über und neben dem Gerüst
-        const cd = (x, y, z, r, d, hue) => {
-            const g2 = grp(d);
+        const cd = (x, y, z, r, d, hue, to) => {
+            const g2 = grp(d, to);
             isoEllipse(x, y, z, r, { fill: '#d6dcf5', stroke: 'var(--rc)', 'stroke-width': 1 }, g2);
             isoEllipse(x, y, z, r * .78, { fill: 'none', stroke: hue, 'stroke-width': 3, 'stroke-dasharray': '22 18', class: 'rig-spin', opacity: .75 }, g2);
             isoEllipse(x, y, z, r * .55, { fill: 'none', stroke: '#60a5fa', 'stroke-width': 2, 'stroke-dasharray': '10 30', class: 'rig-spin', opacity: .6, style: 'animation-duration:.8s' }, g2);
             isoEllipse(x, y, z, r * .2, { fill: 'var(--bg)' }, g2);
         };
-        cd(.95, -.95, 1.55, .5, 1.4, '#f472b6');
-        cd(-1.55, .25, -.55, .38, 1.9, '#a78bfa');
+        cd(.95, -.95, 1.55, .5, 1.4, '#f472b6', 'studio');
+        cd(-1.55, .25, -.55, .38, 1.9, '#a78bfa', 'mixer');
 
         // Festplatten: flache Box mit drehender Scheibe und Lesearm
-        const hdd = (x0, y0, z0, w, d, h, delay) => {
-            const g3 = grp(delay);
+        const hdd = (x0, y0, z0, w, d, h, delay, to) => {
+            const g3 = grp(delay, to);
             el('polygon', { points: P([x0 + w, y0, z0], [x0 + w, y0 + d, z0], [x0 + w, y0 + d, z0 + h], [x0 + w, y0, z0 + h]), fill: '#334155' }, g3);
             el('polygon', { points: P([x0, y0 + d, z0], [x0 + w, y0 + d, z0], [x0 + w, y0 + d, z0 + h], [x0, y0 + d, z0 + h]), fill: '#1e293b' }, g3);
             el('polygon', { points: P([x0, y0, z0 + h], [x0 + w, y0, z0 + h], [x0 + w, y0 + d, z0 + h], [x0, y0 + d, z0 + h]), fill: '#64748b', stroke: 'var(--rc)', 'stroke-width': 1 }, g3);
@@ -231,11 +378,11 @@ XIRU.ready(function () {
             const pv = ' ' + a[0] + ' ' + a[1];
             el('animateTransform', { attributeName: 'transform', type: 'rotate', values: '0' + pv + ';-14' + pv + ';6' + pv + ';0' + pv, dur: '2.4s', repeatCount: 'indefinite' }, arm);
         };
-        hdd(.15, .2, -1, .75, .62, .14, 1.6);
-        hdd(-1, .42, 1, .52, .5, .1, 2.0);
+        hdd(.15, .2, -1, .75, .62, .14, 1.6, 'code');
+        hdd(-1, .42, 1, .52, .5, .1, 2.0, 'ki');
 
         // Diskette auf der rechten Seitenwand (Ebene x = 1)
-        g = grp(1.3);
+        g = grp(1.3, 'arcade');
         const fl = (y, z) => [1, y, z];
         el('polygon', { points: P(fl(-.75, -.75), fl(.05, -.75), fl(.05, .1), fl(-.65, .1), fl(-.75, 0)), fill: 'var(--accent-2)', stroke: 'var(--bg)', 'stroke-width': 1 }, g);
         el('polygon', { points: P(fl(-.55, .1), fl(-.15, .1), fl(-.15, -.18), fl(-.55, -.18)), fill: '#cbd5e1' }, g);
@@ -245,10 +392,22 @@ XIRU.ready(function () {
 
         // Zwei RAM-Riegel auf der linken Seitenwand (Ebene y = 1)
         [[.42, .18, 1.5], [-.12, -.36, 1.7]].forEach(([zt, zb, d]) => {
-            const g4 = grp(d), r = (x, z) => [x, 1, z];
+            const g4 = grp(d, 'werkzeuge'), r = (x, z) => [x, 1, z];
             el('polygon', { points: P(r(-.85, zt), r(.55, zt), r(.55, zb), r(-.85, zb)), fill: '#15803d', stroke: '#052e16', 'stroke-width': 1 }, g4);
             for (let x = -.75; x < .45; x += .2) el('polygon', { points: P(r(x, zt - .05), r(x + .13, zt - .05), r(x + .13, zb + .07), r(x, zb + .07)), fill: '#0f172a' }, g4);
             el('path', { d: seg(r(-.82, zb + .02), r(.52, zb + .02)), stroke: '#facc15', 'stroke-width': 2, 'stroke-dasharray': '2 2' }, g4);
+        });
+
+        // Schild mit dem Ziel beim Überfahren oder Fokussieren
+        const label = XIRU.$('#rig-label'), hero = svg.closest('.hero');
+        const showLabel = a => {
+            const r = a.getBoundingClientRect(), h = hero.getBoundingClientRect();
+            label.textContent = a.dataset.label; label.hidden = false;
+            label.style.left = (r.left + r.width / 2 - h.left) + 'px'; label.style.top = (r.top - h.top - 10) + 'px';
+        };
+        svg.querySelectorAll('.rig-link').forEach(a => {
+            a.addEventListener('pointerenter', () => showLabel(a)); a.addEventListener('focus', () => showLabel(a));
+            a.addEventListener('pointerleave', () => { label.hidden = true; }); a.addEventListener('blur', () => { label.hidden = true; });
         });
 
         // Aufsteigende Bits
@@ -314,12 +473,182 @@ XIRU.ready(function () {
         location.href = XIRU.url(XIRU.pick(pool).p);
     });
 
+    /* ── Tageszeit-Stimmung im Hero (prüft jede Minute) ── */
+    (function () {
+        const hero = XIRU.$('.hero'), eye = XIRU.$('#greet-time');
+        const MOOD = { morgen: '☀ Guten Morgen', tag: '◆ Willkommen', abend: '🌇 Guten Abend', nacht: '🌙 Hallo, Nachteule' };
+        function set() {
+            const h = new Date().getHours(), d = h >= 5 && h < 10 ? 'morgen' : h < 17 && h >= 10 ? 'tag' : h >= 17 && h < 21 ? 'abend' : 'nacht';
+            if (hero.dataset.daytime === d) return;
+            hero.dataset.daytime = d;
+            eye.textContent = MOOD[d] + (d === 'tag' ? ' bei Xiruprojekts' : ' – willkommen bei Xiruprojekts');
+        }
+        set(); setInterval(set, 60000);
+    })();
+
+    /* ── Mech-Vorschau: derselbe Mech wie in der Werft, bewegt sich nur, solange er sichtbar ist ── */
+    (function () {
+        const view = XIRU.$('#mech-view'), cap = XIRU.$('#mech-cap'), M = XIRU.mech;
+        if (!view || !XIRU.mechArt) return;
+        const parts = XIRU.mechSlots.map(sl => M.installed(sl.id)).filter(Boolean);
+        const worst = parts.map(p => M.cond(p.id)).sort((a, b) => a - b)[0];
+        cap.innerHTML = parts.length
+            ? '<b>Dein Mech</b><br>' + parts.length + '/' + XIRU.mechSlots.length + ' Bauplätze belegt' + (worst != null && worst < 40 ? '<br><span class="warn">⚠ Reparatur nötig</span>' : '')
+            : '<b>Noch kein Mech</b><br>Bau ihn in der Werft – Schrott liegt bereit.';
+        if (document.documentElement.classList.contains('no-anim')) { view.innerHTML = XIRU.mechArt.draw(0, false); return; }
+        let visible = true, last = 0;
+        if ('IntersectionObserver' in window) new IntersectionObserver(e => { visible = e[0].isIntersecting; }).observe(view);
+        (function frame(t) {
+            if (visible && !document.hidden && t - last > 110) { last = t; view.innerHTML = XIRU.mechArt.draw(t / 1000, false); }
+            requestAnimationFrame(frame);
+        })(0);
+    })();
+
+    /* ── Offenes Suchfeld: Sofort-Treffer beim Tippen, Enter → volle Suche ── */
+    (function () {
+        const form = XIRU.$('#hero-search'), input = XIRU.$('#hs-q'), hits = XIRU.$('#hs-hits');
+        const norm = t => String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+        const pool = pages.filter(p => !p.hidden).map(p => ({ p, t: norm(p.t), d: norm(p.d), open: XIRU.isUnlocked(p) }));
+        let active = -1;
+        function show() {
+            const q = norm(input.value).trim();
+            active = -1;
+            if (q.length < 2) { hits.hidden = true; hits.innerHTML = ''; return; }
+            const words = q.split(/\s+/);
+            const found = pool.map(x => ({ x, s: words.every(w => x.t.includes(w) || x.d.includes(w)) ? (x.t.startsWith(words[0]) ? 3 : x.t.includes(q) ? 2 : 1) : 0 }))
+                .filter(r => r.s).sort((a, b) => (b.x.open - a.x.open) || (b.s - a.s)).slice(0, 6);
+            hits.innerHTML = found.map(({ x }) => { const reg = XIRU.region(x.p.r) || {}; return '<li><a href="' + XIRU.url(x.p.p) + '" style="--hc:' + reg.color + '"><span aria-hidden="true">' + (x.open ? (reg.icon || '◆') : '🌫') + '</span>' + XIRU.esc(x.p.t) + '<small>' + XIRU.esc(reg.name || '') + (x.open ? '' : ' · im Nebel') + '</small></a></li>'; }).join('') +
+                '<li><a class="all" href="suche.html?q=' + encodeURIComponent(input.value.trim()) + '">' + (found.length ? 'Alle Treffer anzeigen →' : 'Hier nichts – in der grossen Suche weitersuchen →') + '</a></li>';
+            hits.hidden = false;
+        }
+        input.addEventListener('input', show);
+        input.addEventListener('focus', show);
+        input.addEventListener('keydown', e => {
+            const links = XIRU.$$('#hs-hits a');
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                if (!links.length) return;
+                e.preventDefault();
+                active = (active + (e.key === 'ArrowDown' ? 1 : -1) + links.length) % links.length;
+                links.forEach((a, i) => a.classList.toggle('is-active', i === active));
+            } else if (e.key === 'Enter' && active >= 0 && links[active]) { e.preventDefault(); location.href = links[active].href; }
+            else if (e.key === 'Escape') { hits.hidden = true; input.blur(); }
+        });
+        document.addEventListener('click', e => { if (!form.contains(e.target)) hits.hidden = true; });
+        // Wechselnde Beispiele im Platzhalter, solange niemand tippt
+        const ideas = ['RTX 5090', 'Snake', 'Netzteil-Rechner', 'Passwort', 'Weltkarte', 'Sudoku', 'Werft', 'Glossar', 'Textabenteuer'];
+        let k = 0;
+        setInterval(() => { if (document.activeElement !== input && !input.value) input.placeholder = 'Suche zum Beispiel: ' + ideas[k++ % ideas.length]; }, 3200);
+    })();
+
+    /* ── Kompass: drei Vorschläge für den nächsten Schritt (Spiel und Kristall wechseln täglich) ── */
+    (function () {
+        let seed = 0; for (const c of XIRU.today()) seed = (seed * 31 + c.charCodeAt(0)) >>> 0;
+        const dayPick = list => list.length ? list[seed % list.length] : null;
+        const sum = o => Object.keys(o || {}).reduce((a, k) => a + o[k], 0);
+        const card = o => '<a class="compass__card' + (o.ready ? ' is-ready' : '') + '" href="' + XIRU.url(o.href) + '" style="--cc:' + o.color + '">' +
+            '<span class="compass__icon" aria-hidden="true">' + o.icon + '</span><span><span class="compass__k">' + XIRU.esc(o.k) + '</span>' +
+            '<span class="compass__t">' + XIRU.esc(o.t) + '</span><span class="compass__d">' + o.d + '</span>' + (o.extra || '') + '</span></a>';
+        const out = [], M = XIRU.mech, st = M.stats(), NAMES = { R: 'Reichweite', E: 'Energie', S: 'Sensor', P: 'Panzerung' };
+        // 1 · Die am leichtesten erreichbare Insel im Nebel
+        const isle = XIRU.regions.filter(r => M.req(r.id) && !M.discovered(r.id)).sort((a, b) => sum(M.req(a.id)) - sum(M.req(b.id)))[0];
+        if (isle) {
+            const need = M.req(isle.id), ready = M.canReach(isle.id);
+            out.push({ k: 'Nächste Insel', icon: isle.icon, color: isle.color, href: 'konto/skilltree.html#reisen', ready, t: isle.name + (ready ? ' – Expedition bereit!' : ''),
+                d: ready ? 'Dein Mech schafft es durch den Nebel. Ab in die Werft!' : !M.ready() ? 'Bau zuerst deinen Mech: Rahmen, Antrieb und Energiekern.' : 'Rüste deinen Mech auf, um durch den Nebel zu kommen.',
+                extra: '<span class="compass__req">' + Object.keys(need).map(k => '<span class="' + (st[k] >= need[k] ? 'ok' : '') + '">' + (st[k] >= need[k] ? '✓ ' : '') + NAMES[k] + ' ' + Math.max(0, Math.min(st[k], need[k])) + '/' + need[k] + '</span>').join('') + '</span>' });
+        } else out.push({ k: 'Alle Inseln entdeckt', icon: '🗺', color: 'var(--accent-2)', href: 'weltkarte.html', t: 'Die bekannte Welt gehört dir', d: 'Neue Inseln tauchen bald aus dem Nebel auf. Bis dahin: Kristalle jagen!' });
+        // 2 · Zuletzt gespieltes Spiel – oder ein Spiel des Tages
+        const played = Object.keys(P.scores).map(id => ({ s: P.scores[id], pg: pages.find(p => p.p.split('/').pop() === id + '.html') }))
+            .filter(x => x.pg && XIRU.isUnlocked(x.pg)).sort((a, b) => (b.s.at || 0) - (a.s.at || 0));
+        if (played.length) {
+            const g = played[0];
+            out.push({ k: 'Weiterspielen', icon: '🕹', color: XIRU.region(g.pg.r).color, href: g.pg.p, t: g.pg.t,
+                d: 'Dein Rekord: ' + (g.s.best != null ? XIRU.fmt(g.s.best) : '–') + ' · ' + (+g.s.plays || 0) + '× gespielt. Knackst du ihn heute?' });
+        } else {
+            const g = dayPick(pages.filter(p => p.r === 'arcade' && !p.hidden && !/index\.html$/.test(p.p) && XIRU.isUnlocked(p)));
+            const u = g ? null : dayPick(unseen.filter(p => !p.hw));
+            if (g) out.push({ k: 'Spiel des Tages', icon: '🕹', color: XIRU.region('arcade').color, href: g.p, t: g.t, d: XIRU.esc(g.d) });
+            else if (u) { out.push({ k: 'Noch nicht besucht', icon: XIRU.region(u.r).icon, color: XIRU.region(u.r).color, href: u.p, t: u.t, d: XIRU.esc(u.d) }); XIRU.$('#suggest').hidden = true; }
+        }
+        // 3 · Hinweis auf einen noch nicht gefundenen Kristall (wechselt täglich)
+        const e = dayPick(XIRU.eggs.filter(x => !XIRU.hasEgg(x.id) && x.h && x.r <= 2 && x.pg && !x.manual).filter(x => { const pg = XIRU.pageFor(x.pg); return pg && !pg.hidden && XIRU.isUnlocked(pg); }));
+        if (e) out.push({ k: 'Kristall-Spur', icon: XIRU.crystalSVG(e.r, 30), color: XIRU.rarityColor[e.r], href: e.pg, t: XIRU.pageFor(e.pg).t, d: '„' + XIRU.esc(e.h) + '“' });
+        XIRU.$('#compass').innerHTML = out.map(card).join('');
+    })();
+
+    /* ── Willkommens-Tour für Erstbesucher (einmalig, überspringbar) ── */
+    (function () {
+        const STEPS = [
+            { el: '.hero h1', t: 'Willkommen bei Xiruprojekts!', d: 'Das hier ist keine normale Website, sondern eine kleine offene Welt: Spiele, Hardware, KI-Experimente, Mixer und Werkzeuge – verteilt auf Inseln.' },
+            { el: '.hero__cta .btn--primary', t: 'Die Weltkarte', d: 'Jede Region ist eine Insel. Die meisten liegen am Anfang im Nebel – auf der Karte siehst du, was es schon zu entdecken gibt.' },
+            { el: '#cta-account', t: 'Die Werft', d: 'Bau dir einen Mech aus Bauteilen. Mit ihm unternimmst du Expeditionen durch den Nebel und schaltest neue Inseln frei. Bauteile verdienst du mit XP.' },
+            { el: '#compass', t: 'Realitätskristalle & Kompass', d: 'Überall sind Kristalle versteckt – in Spielen, auf Seiten, manchmal hinter seltsamen Klicks. Der Kompass zeigt dir täglich, was sich als Nächstes lohnt.' },
+            { el: '#hero-search', t: 'Und wenn du etwas suchst …', d: 'Tipp einfach hier. Viel Spass beim Verlaufen!' }
+        ];
+        let i = 0, spot, card;
+        function place() {
+            const target = XIRU.$(STEPS[i].el); if (!target) return;
+            const r = target.getBoundingClientRect(), pad = 8;
+            Object.assign(spot.style, { left: (r.left - pad) + 'px', top: (r.top - pad) + 'px', width: (r.width + pad * 2) + 'px', height: (r.height + pad * 2) + 'px' });
+            const cw = card.offsetWidth, ch = card.offsetHeight, below = r.bottom + pad + 14 + ch < innerHeight;
+            card.style.left = Math.max(16, Math.min(innerWidth - cw - 16, r.left)) + 'px';
+            card.style.top = (below ? r.bottom + pad + 14 : Math.max(16, r.top - pad - 14 - ch)) + 'px';
+        }
+        function render() {
+            const s = STEPS[i], last = i === STEPS.length - 1;
+            card.innerHTML = '<span class="tour-card__step">Schritt ' + (i + 1) + ' von ' + STEPS.length + '</span><h3 id="tour-t">' + s.t + '</h3><p>' + s.d + '</p>' +
+                '<div class="tour-card__row"><span class="tour-dots">' + STEPS.map((_, k) => '<i class="' + (k === i ? 'on' : '') + '"></i>').join('') + '</span><span class="row">' +
+                (last ? '' : '<button class="btn btn--sm btn--ghost" type="button" data-skip>Überspringen</button>') +
+                '<button class="btn btn--sm btn--primary" type="button" data-next>' + (last ? 'Los geht’s!' : 'Weiter →') + '</button></span></div>';
+            const target = XIRU.$(s.el);
+            if (target) target.scrollIntoView({ block: 'center', behavior: document.documentElement.classList.contains('no-anim') ? 'auto' : 'smooth' });
+            setTimeout(place, 420); place();
+            card.querySelector('[data-next]').focus({ preventScroll: true });
+        }
+        function close(done) {
+            spot.remove(); card.remove();
+            removeEventListener('resize', place); removeEventListener('scroll', place, true); document.removeEventListener('keydown', key);
+            XIRU.save('tour', 1);
+            if (done) XIRU.egg('b-tour');
+        }
+        function key(e) { if (e.key === 'Escape') close(false); }
+        function start() {
+            if (spot) { spot.remove(); card.remove(); }
+            i = 0;
+            spot = document.createElement('div'); spot.className = 'tour-spot';
+            card = document.createElement('div'); card.className = 'tour-card'; card.setAttribute('role', 'dialog'); card.setAttribute('aria-labelledby', 'tour-t');
+            document.body.append(spot, card);
+            card.addEventListener('click', e => {
+                if (e.target.closest('[data-skip]')) return close(false);
+                if (e.target.closest('[data-next]')) { if (i === STEPS.length - 1) return close(true); i++; render(); }
+            });
+            addEventListener('resize', place); addEventListener('scroll', place, true); document.addEventListener('keydown', key);
+            render();
+        }
+        XIRU.$('#tour-start').addEventListener('click', start);
+        // Automatisch nur für ganz neue Besucher
+        if (!XIRU.load('tour') && Object.keys(P.visited).length <= 2) setTimeout(start, 1400);
+    })();
+
     /* ── Regionen ── */
+    // Kleine Szenen je Region (nur auf entdeckten Inseln)
+    const gear = (cx, cy, r, n) => { let d = ''; for (let i = 0; i < n * 2; i++) { const a = i / (n * 2) * Math.PI * 2, rr = i % 2 ? r * .78 : r; d += (i ? 'L' : 'M') + (cx + Math.cos(a) * rr).toFixed(1) + ' ' + (cy + Math.sin(a) * rr).toFixed(1); } return '<g><path d="' + d + 'Z" fill="currentColor"/><circle cx="' + cx + '" cy="' + cy + '" r="' + (r * .32) + '" fill="var(--surface)"/></g>'; };
+    const wave = 'M0 28' + Array.from({ length: 6 }, (_, k) => ' q10 -16 20 0 t20 0').join('');
+    const FX = {
+        hardware: '<i></i><i></i>', arcade: '<i></i>', studio: '<i></i><i></i><i></i><i></i><i></i>',
+        ki: '<svg viewBox="0 0 92 56"><line x1="12" y1="28" x2="46" y2="10"/><line x1="12" y1="28" x2="46" y2="46"/><line x1="46" y1="10" x2="80" y2="28"/><line x1="46" y1="46" x2="80" y2="28"/><line x1="46" y1="10" x2="46" y2="46"/>' +
+            '<circle cx="12" cy="28" r="5"/><circle cx="46" cy="10" r="5"/><circle cx="46" cy="46" r="5"/><circle cx="80" cy="28" r="5"/><circle cx="46" cy="28" r="3"/></svg>',
+        mixer: '<svg viewBox="0 0 92 56" style="overflow:hidden"><path d="' + wave + '"/></svg>',
+        werkzeuge: '<svg viewBox="0 0 92 56">' + gear(58, 26, 18, 9) + gear(28, 36, 12, 7) + '</svg>',
+        konto: '<svg viewBox="0 0 92 56" style="overflow:hidden"><g class="anchor"><circle cx="46" cy="7" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M46 11 V40 M36 20 H56 M30 32 Q34 44 46 42 Q58 44 62 32" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></g>' +
+            '<path class="waves" d="M0 50' + Array.from({ length: 6 }, () => ' q10 -6 20 0 t20 0').join('') + '"/></svg>'
+    };
     XIRU.$('#regions').innerHTML = XIRU.regions.filter(r => r.id !== 'geheim' && r.id !== 'zentrum').map((r, i) => {
         const rp = pages.filter(p => p.r === r.id), seen = rp.filter(p => P.visited[p.p]).length;
         const idx = XIRU.pages.find(p => p.r === r.id && /index\.html$/.test(p.p)) || rp[0];
         if (!XIRU.mech.discovered(r.id)) return '<a class="tile region-tile is-locked" href="' + XIRU.url('konto/skilltree.html#reisen') + '" data-reveal style="--rcol:' + r.color + '"><span class="tile__icon">🌫</span><span class="tile__title">' + XIRU.esc(r.name) + '</span><span class="tile__desc">' + XIRU.esc(r.desc) + '</span><span class="tile__meta">Expedition nötig · ' + XIRU.esc(XIRU.mech.islandReqText(r.id)) + '</span></a>';
         return '<a class="tile region-tile" href="' + XIRU.url(idx.p) + '" data-reveal style="--rcol:' + r.color + ';--d:' + (i * .05) + 's">' +
+            (FX[r.id] ? '<span class="rfx rfx--' + r.id + '" aria-hidden="true">' + FX[r.id] + '</span>' : '') +
             '<span class="tile__icon">' + r.icon + '</span><span class="tile__title">' + XIRU.esc(r.name) + '</span>' +
             '<span class="tile__desc">' + XIRU.esc(r.desc) + '</span>' +
             '<span class="tile__meta">' + (XIRU.mech.discovered(r.id) ? seen + ' / ' + rp.length + ' Orte entdeckt' : '🌫 Expedition nötig · ' + XIRU.esc(XIRU.mech.islandReqText(r.id))) + '</span>' +

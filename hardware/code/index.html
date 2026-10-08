@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code-Bibliothek · Xiruprojekts</title>
+    <meta name="description" content="Programmiersprachen lernen: kurze Kurse mit Quiz und Live-Vorschau, dazu Cheat-Sheets als Word-Datei.">
+    <link rel="stylesheet" href="../../assets/css/main.css">
+    <link rel="stylesheet" href="../../assets/css/themes/hardware.css">
+    <link rel="stylesheet" href="css/code.css">
+    <script src="../../assets/js/site.js"></script>
+    <script src="../../assets/js/core.js"></script>
+    <script src="../../assets/js/docx.js"></script>
+    <script src="js/code.js"></script>
+    <script src="data/csharp.js"></script>
+    <script src="data/python.js"></script>
+    <script src="data/html.js"></script>
+    <script src="data/css.js"></script>
+    <script src="data/javascript.js"></script>
+    <script src="data/sql.js"></script>
+    <script src="data/git.js"></script>
+    <script src="data/java.js"></script>
+    <script src="data/cpp.js"></script>
+    <script src="data/lua.js"></script>
+    <script src="data/powershell.js"></script>
+    <script src="data/bash.js"></script>
+</head>
+<body class="theme-hardware">
+<main class="content">
+    <section class="lib-hero">
+        <div>
+            <span class="eyebrow">⌨ Hardware-Archiv · Software</span>
+            <h1>Code-Bibliothek</h1>
+            <p class="lead">Die Hardware kennst du – jetzt die Software, die darauf läuft. Lerne Programmiersprachen in kurzen Lektionen
+                mit Quiz und Live-Vorschau und hol dir zu jeder Sprache ein <strong>Cheat-Sheet als Word-Datei</strong> zum Nachschlagen.</p>
+            <p class="small muted" id="lib-count"></p>
+            <div class="row mt-2">
+                <a class="btn btn--primary" href="#langs">Sprache wählen</a>
+                <button class="btn" type="button" id="all-sheets">📄 Alle Cheat-Sheets (Word)</button>
+            </div>
+        </div>
+        <div class="lib-term" id="term" aria-hidden="true"></div>
+    </section>
+
+    <div class="section-title"><h2>Sprachen</h2><span class="small muted">Dein Fortschritt wird lokal gespeichert.</span></div>
+    <div class="langs" id="langs"></div>
+
+    <div class="section-title"><h2>So funktioniert's</h2></div>
+    <div class="grid">
+        <div class="card"><h3>1 · Lernen</h3><p class="muted">Jede Sprache hat einen Kurs aus kurzen Lektionen: Erklärung, Beispielcode zum Kopieren und ein Mini-Quiz.
+            Bei HTML, CSS und JavaScript kannst du den Code direkt bearbeiten und siehst das Ergebnis live.</p></div>
+        <div class="card"><h3>2 · Nachschlagen</h3><p class="muted">Im Reiter „Cheat-Sheet“ stehen alle Begriffe als Tabelle – Begriff, Code-Beispiel, Beschreibung –
+            mit Suche. Ideal neben dem Editor.</p></div>
+        <div class="card"><h3>3 · Mitnehmen</h3><p class="muted">Ein Klick erzeugt das Cheat-Sheet als echte Word-Datei (.docx) – direkt in deinem Browser,
+            nichts wird hochgeladen. Ausdrucken, ergänzen, in die Schule mitnehmen.</p></div>
+    </div>
+</main>
+<script>
+XIRU.ready(function () {
+    XIRU_CODE.index();
+    // Terminal im Kopf: tippt kleine Beispiele aus den Sprachen
+    const term = XIRU.$('#term'), lines = [
+        ['C#', 'Console.WriteLine("Hallo Welt!");'], ['Python', 'print(f"{x} Kristalle gefunden")'], ['HTML', '<h1>Meine erste Seite</h1>'],
+        ['C#', 'for (int i = 0; i < 3; i++) { }'], ['Python', 'for x in range(3): print(x)'], ['HTML', '<a href="weltkarte.html">Los!</a>']
+    ];
+    if (document.documentElement.classList.contains('no-anim')) { term.innerHTML = lines.map(l => '<b>' + l[0] + '&gt;</b> ' + XIRU.esc(l[1])).join('<br>'); return; }
+    let li = 0, ch = 0, shown = [];
+    (function tick() {
+        const [lang, text] = lines[li % lines.length];
+        ch++;
+        const cur = '<b>' + lang + '&gt;</b> ' + XIRU.esc(text.slice(0, ch));
+        term.innerHTML = shown.concat(cur + '<span class="cur"></span>').join('<br>');
+        if (ch >= text.length) { shown.push(cur); if (shown.length > 4) shown.shift(); li++; ch = 0; setTimeout(tick, 900); }
+        else setTimeout(tick, 35 + Math.random() * 60);
+    })();
+});
+</script>
+</body>
+</html>

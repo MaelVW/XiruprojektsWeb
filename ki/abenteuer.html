@@ -466,7 +466,7 @@ XIRU.ready(function () {
         if (!store.slots.length) { el.innerHTML = '<div class="empty"><div class="empty__icon">📜</div>Noch keine Spielstände.<br>Dein erstes Abenteuer wartet!</div>'; return; }
         el.innerHTML = store.slots.map(sl => {
             const G = GENRES[sl.genre] || GENRES.dungeon;
-            const status = sl.state.ende === 'sieg' ? '<span class="badge badge--success">Sieg</span>' : sl.state.ende === 'niederlage' ? '<span class="badge badge--danger">Ende</span>' : '<span class="badge">' + sl.turns + ' Züge</span>';
+            const status = sl.state.ende === 'sieg' ? '<span class="badge badge--success">Sieg</span>' : sl.state.ende === 'niederlage' ? '<span class="badge badge--danger">Ende</span>' : '<span class="badge">' + (+sl.turns || 0) + ' Züge</span>';
             return '<div class="slot" data-id="' + esc(sl.id) + '"><span class="slot__icon">' + G.icon + '</span>' +
                 '<div class="slot__main"><div class="slot__title">' + esc(sl.hero) + ' · ' + esc(G.n) + ' ' + status + '</div>' +
                 '<div class="slot__meta">' + esc(sl.state.ort || '') + ' · ' + new Date(sl.updated).toLocaleString('de-CH', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) +
@@ -581,7 +581,7 @@ XIRU.ready(function () {
         const div = document.createElement('div');
         div.className = 'end-card';
         div.innerHTML = '<div class="big">' + (win ? '🏆' : '💀') + '</div><h3>' + (win ? 'Abenteuer bestanden!' : 'Das Abenteuer ist vorbei') + '</h3>' +
-            '<p class="muted">' + game.turns + ' Züge · ' + XIRU.fmt(game.state.gold) + ' ' + esc((GENRES[game.genre] || GENRES.dungeon).cur) + (win ? '' : ' · Nimm den letzten Zug zurück oder versuch es neu.') + '</p>' +
+            '<p class="muted">' + (+game.turns || 0) + ' Züge · ' + XIRU.fmt(game.state.gold) + ' ' + esc((GENRES[game.genre] || GENRES.dungeon).cur) + (win ? '' : ' · Nimm den letzten Zug zurück oder versuch es neu.') + '</p>' +
             '<div class="row" style="justify-content:center">' + (win ? '' : '<button class="btn" type="button" data-end="undo">↶ Zug zurücknehmen</button>') +
             '<button class="btn btn--primary" type="button" data-end="new">Neues Abenteuer</button></div>';
         div.addEventListener('click', e => {

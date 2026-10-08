@@ -20,7 +20,13 @@
         .totd { display: grid; grid-template-columns: auto 1fr; gap: 1rem; align-items: center; }
         .totd__icon { font-size: 2.2rem; }
         .hw-search { display: flex; gap: .5rem; max-width: 520px; }
-    </style>
+            .code-teaser { display: grid; grid-template-columns: auto 1fr auto; gap: 1.2rem; align-items: center; color: var(--text); border-color: color-mix(in srgb, var(--accent-2) 50%, var(--border)); }
+        .code-teaser:hover { color: var(--text); border-color: var(--accent-2); }
+        .code-teaser__icon { width: 64px; height: 64px; border-radius: 16px; display: grid; place-items: center; font: 800 1.3rem var(--mono); color: var(--accent-2); background: color-mix(in srgb, var(--accent-2) 14%, var(--surface-2)); }
+        .code-teaser__t { display: block; font-size: 1.25rem; margin: .1rem 0 .2rem; }
+        .code-teaser .muted { display: block; }
+        @media (max-width: 640px) { .code-teaser { grid-template-columns: 1fr; } }
+</style>
 </head>
 <body class="theme-hardware">
 <main class="content">
@@ -66,6 +72,13 @@
 
     <h2>Datenblätter</h2>
     <div class="grid mb-4" id="cats"></div>
+
+    <a class="card code-teaser mb-4" href="code/index.html" data-reveal>
+        <span class="code-teaser__icon" aria-hidden="true">&lt;/&gt;</span>
+        <span><span class="eyebrow">Neu · Software</span><strong class="code-teaser__t">Code-Bibliothek</strong>
+            <span class="muted">Die Hardware kennst du – jetzt die Software: C#, Python, HTML und mehr lernen, mit Quiz, Live-Vorschau und Cheat-Sheets als Word-Datei.</span></span>
+        <span class="btn btn--primary">Öffnen →</span>
+    </a>
 
     <div class="grid-2 mb-4">
         <section class="card card--accent" data-reveal>

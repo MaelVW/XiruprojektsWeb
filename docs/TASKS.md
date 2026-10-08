@@ -26,6 +26,33 @@ Arbeitsliste für alle weiteren Sitzungen (auch automatische Nachtschichten).
 
 ---
 
+## K · Tagesplan mit Mael (ab 8.10. nachmittags) – **immer abwechseln: ein Stück Hauptseite (H), dann ein neuer Bereich (N)**
+
+Mael-Wünsche: Die Suche bleibt wie sie ist (keine Strg+K-Palette). Erst alles Angekündigte aufbauen, die Hauptseite parallel verbessern.
+Neuer Bereich **„Code-Bibliothek“** (Software-Gegenstück im Hardware-Archiv, Ordner `hardware/code/`, Design `theme-hardware`, Region `hardware`):
+Programmiersprachen lernen (Kurse mit Lektionen + Quiz/Übungen, HTML/CSS/JS mit Live-Vorschau in `iframe sandbox="allow-scripts"` + `srcdoc`)
+und **Cheat-Sheets als Word-Datei** zum Herunterladen – im Stil von Maels eigenem Cheat-Sheet: Titel marineblau #1F4E78, Calibri 11,
+Überschrift 1 = Sprache, Überschrift 2 = Themengruppe („Basics“ zuerst), Tabelle „Begriff | Code-Beispiel | Beschreibung“ (Kopfzeile
+marineblau, weiss, fett; Spalten 3.5/5/7.5 cm; Code in Consolas; der Begriff in jeder Zelle gelb markiert + fett), optional „Vertiefung“-Abschnitte (H3).
+.docx wird im Browser erzeugt (eigener ZIP-Schreiber, keine Bibliothek, funktioniert auch über file://). Daten pro Sprache in `hardware/code/data/<id>.js`.
+
+- [x] H1 · Startseite: Suchfeld in der Startregion offener/prominenter → **erledigt**: `#hero-search` im Hero (Sofort-Treffer inkl. Orte „im Nebel“,
+      Pfeiltasten, Enter → `suche.html?q=`, wechselnde Beispiele im Platzhalter). Hero hat jetzt `overflow-x: clip` (Liste darf nach unten raus).
+- [x] N1 · Code-Bibliothek Grundgerüst (**erledigt**, siehe Notiz): `assets/js/docx.js` (ZIP + WordprocessingML im Cheat-Sheet-Stil), Datenformat, `hardware/code/index.html`,
+      Sprachseiten (eine Vorlage, je Sprache eine kleine Datei), Register-Einträge, Link aus `hardware/index.html` + Navigation.
+      Erste Sprachen: C# (Maels Schulsprache), Python, HTML – je ~20 Cheat-Sheet-Einträge + 4–5 Lektionen mit Quiz.
+- [x] H2 · Willkommens-Tour → **erledigt**: Spotlight-Tour in `index.html` (5 Schritte, auto nur bei ≤2 besuchten Seiten, Flag `tour`,
+      Link „Neu hier? Kurze Tour starten“ unter dem Kompass, Kristall `b-tour`).
+- [x] N2 · Weitere Sprachen: CSS, JavaScript, SQL, Git → **erledigt** (7 Sprachen, 209 Begriffe, 34 Lektionen; CSS/JS live).
+- [x] H3 · Interaktives Gerüst im Hero (**erledigt**: SVG-`<a>` je Teil, Schild `#rig-label`, unter 1000 px deaktiviert): Teile anklickbar (CD → Studio, CPU → Hardware, Diskette → Spielhalle, RAM → Werkzeuge, HDD → Code-Bibliothek).
+- [x] N3 · KI-Labor: `ki/code-tutor.html` (**erledigt**) – erklärt Code/Begriffe (KI über `ai.js`, offline mit den Cheat-Sheet-Daten), verlinkt in die Code-Bibliothek.
+- [x] H4 · Mech-Vorschau → **erledigt**: Mech-Grafik nach `assets/js/mech-art.js` ausgelagert (`XIRU.mechArt.draw(f, run)`; Werft nutzt sie
+      über `const drawMech = …`), Vorschau `.mech-mini` in der Fortschrittskarte (Bauplätze, „Reparatur nötig“ unter 40 %, animiert nur sichtbar).
+- [x] N4 · Weitere Sprachen: Java, C++, Lua, PowerShell, Bash → **erledigt** (jetzt 12 Sprachen, 305 Begriffe, 54 Lektionen; Tutor erkennt alle).
+- [x] H5 · Lebendige Regionen-Kacheln → **erledigt** (`.rfx--<region>` in `index.html`: Leiterbahnen, Invader, Equalizer, Neuronen, Welle, Zahnräder, Anker; CSS-only, no-anim beachtet).
+- [ ] N5 · Danach fehlende Seiten aus B–G.
+- [x] H6 · Tageszeit-Stimmung → **erledigt** (`.hero__sky` + `data-daytime` morgen/tag/abend/nacht, Gruss in `#greet-time`, Sterne nachts).
+
 ## A · Integration & Aufräumen (zuerst!)
 
 - [x] **Kristalle registrieren**: `python tools/check_site.py` listet ~100 benutzte, aber nicht registrierte IDs
@@ -138,13 +165,13 @@ Jeder Bereich bekommt ein eigenes Design über eine Body-Klasse, die die Farb-Va
 
 Der Liminal-Teil (`Why.html`, `why/*`, `liminal*.js`) wird mitgeprüft, aber **nicht verändert** – Funde dort nur in den Notizen für Mael aufschreiben.
 
-- [ ] Gesamte Website auf Code-Injection prüfen und beheben: jede Stelle mit `innerHTML`/`insertAdjacentHTML`, in die
+- [x] Gesamte Website auf Code-Injection prüfen und beheben: jede Stelle mit `innerHTML`/`insertAdjacentHTML`, in die
       Nutzereingaben, URL-Parameter (`location.search`, `location.hash`), importierte JSON-Dateien (Profil-Import),
       localStorage-Inhalte (Gästebuch, Notizen, Namen, Spielstände), KI-Antworten (`ai.js`, Textabenteuer, Taverne) oder
       Dateinamen gelangen → immer `XIRU.esc()` bzw. `textContent`. Markdown-Parser in Notizen: nur sichere Tags, Links nur `http(s):`.
       Keine `eval`/`new Function`/`setTimeout(String)`. Weiterleitungen nur auf eigene Seiten (vgl. `konto/login.html` `weiter=`).
       Profil-Import: Typen prüfen, Grössen begrenzen. Ergebnis als kurzer Bericht in die Notizen.
-- [ ] Entwickler-Zugang: `dev/` bleibt in `.gitignore`; keine Seite darf `dev/` verlinken oder laden (`grep -rn "dev/"`).
+- [x] Entwickler-Zugang: `dev/` bleibt in `.gitignore`; keine Seite darf `dev/` verlinken oder laden (`grep -rn "dev/"`).
       Prüfen, dass sich niemand über manipulierte Eingaben (Profil-Import, URL-Parameter, Konsole-Eastereggs, Terminal-Befehle)
       Entwickler-/Admin-Rechte, Vollfreischaltung oder fremde Konten verschaffen kann; keine versteckten „Cheat"-Parameter in der Live-Seite.
 
@@ -156,6 +183,41 @@ Der Liminal-Teil (`Why.html`, `why/*`, `liminal*.js`) wird mitgeprüft, aber **n
 ---
 
 ## Notizen der letzten Sitzung
+
+- 2026-10-08 (Nachmittag, Stand): **Alle H-Punkte (Hauptseite) und N1–N4 erledigt.** Offen aus K: nur noch N5 (fehlende Seiten B–G).
+  Neue gemeinsame Dateien: `assets/js/docx.js`, `assets/js/mech-art.js`, `hardware/code/**`, `ki/code-tutor.html`, `tools/build_code.py`.
+
+- 2026-10-08 (N3 fertig): **Code-Tutor** `ki/code-tutor.html` – Modi erklären/frage/fehler/aufgabe; online `XIRU.ai.chat` (Stream), offline: Begriffe aus
+  allen Cheat-Sheets (ganze Wörter), Fehler-Heuristik (Klammern, Anführungszeichen, C#-Semikolon, `=` in if, JS `==`, Python `:`/True, HTML-Tags/alt,
+  SQL UPDATE/DELETE ohne WHERE), Aufgabenliste je Sprache. Verlauf `code-tutor` (textContent). Register (nav), Kristall `k-code-tutor`,
+  Kachel in `ki/index.html`, Knopf „Code-Tutor fragen“ auf jeder Sprachseite. Neue Sprachen auch in `ki/code-tutor.html` als `<script>` einbinden!
+
+- 2026-10-08 (N1 fertig): **Code-Bibliothek** `hardware/code/`: `index.html` (Übersicht, Terminal-Animation, „Alle Cheat-Sheets“),
+  Sprachseiten `csharp|python|html.html` (erzeugt von `tools/build_code.py`), Inhalt in `data/<id>.js` (je ~27–45 Begriffe + 5 Lektionen mit Quiz,
+  HTML mit Live-Editor im `sandbox`-iframe), Logik `js/code.js`, Stil `css/code.css`, Word-Erzeuger `assets/js/docx.js` (im Browser geprüft: gültige ZIP,
+  alle XML-Teile wohlgeformt). Register: 4 Seiten + Kristalle `c-lektion`, `c-cheatsheet`, `c-kurs`. Teaser in `hardware/index.html`.
+  Neue Sprache: Datendatei + Eintrag in `tools/build_code.py` (LANGS) + site.js + `<script>` in `hardware/code/index.html`.
+  Achtung: in Daten-Strings keine ungeschützten ' (z. B. in SVG-Data-URIs als %27 schreiben).
+
+- 2026-10-08 (Nachmittag, mit Mael): **Startseite responsiv**: Hero + Laufband über die volle Fensterbreite (Inhalt im 1200-px-Raster, Gerüst bündig
+  rechts, `--sbw` rechnet die Scrollleiste heraus), Überschrift skaliert, Schreibmaschinen-Zeile bricht nie um; unter 1000 px Gerüst als Hintergrund.
+  Handy-Menü (`.nav` in main.css) blendet jetzt ein statt seitlich ausserhalb zu liegen → kein Querscrollen mehr; `body { overflow-x: clip }`.
+  Neu: **Kompass** unter der Fortschrittskarte (nächste Insel mit Anforderungen, Weiterspielen/Spiel des Tages, Kristall-Spur – täglich wechselnd).
+
+- 2026-10-08 (Nachmittag, mit Mael) – **Sicherheitsbericht (Abschnitt J)**:
+  - Geprüft: alle 246 `innerHTML`/`insertAdjacentHTML`-Stellen, URL-Parameter (`suche ?q=`, `login ?weiter=`, Hashes), Profil-Import,
+    KI-Antworten (`AI.md` maskiert zuerst, setzt nur eigene Tags, keine Links), Toasts/Modals mit HTML, Netzwerk, `eval`/`new Function` (keine),
+    `javascript:`-Links (keine), Weiterleitungen (nur eigene Seiten; `weiter=` nur Registerseiten), API-Schlüssel (nur an Hugging Face, `credentials: omit`).
+  - **Lücke behoben – Profil-Import** (`konto/profil.html`): Eine präparierte Spielstand-Datei konnte über Spielstände HTML einschleusen
+    (z. B. Textabenteuer: Zugzahl/Protokoll ungeprüft im HTML). Jetzt: max. 3 MB; Profil streng gefiltert (Kristalle/Module/Seiten/Bauteile/Inseln
+    nur mit Registereintrag, Zahlen bleiben Zahlen, Einstellungen nur `theme/anim/sound/visitToasts` mit gültigen Werten, `bonus` ≤ Anzahl r4-Kristalle);
+    Spielstände: Schlüssel geprüft, Texte entschärft (`< > " ' \`` → `‹ › ” ’ ˋ`), Tiefe/Grösse begrenzt, kein `__proto__`; `why-*`/`liminal-*` werden nicht übertragen.
+    Getestet mit böser Datei (nichts ausgeführt, alles gefiltert) und ehrlicher Datei (vollständig wiederhergestellt).
+  - Zusätzlich: `ki/abenteuer.html` zeigt Zugzahlen nur noch als Zahl; Dungeon-Konsolenhilfe `G.debug` nur noch auf localhost/file:.
+  - Entwickler-Zugang: `dev/` in `.gitignore`, nirgends verlinkt/geladen. Keine URL-Cheat-Parameter. Konsole (`xiru.*`), Terminal und `xyzzy` (Minesweeper)
+    vergeben nur Kristalle/Spielspass, keine Rechte. Konten sind lokal (PBKDF2), fremde Konten nur mit Passwort.
+  - Liminal-Teil (nur gelesen): Texte über `textContent`, `innerHTML` nur mit festem Markup – keine Funde.
+  - Für später: `werkzeuge/notizen` (Mini-Markdown) und `geheim/archiv-1999` (Gästebuch) beim Bauen konsequent escapen.
 
 - 2026-10-08 (01:55, Nachtschicht 3): **Studio-Design** fertig: `assets/css/themes/studio.css` (`body.theme-studio`, immer dunkel): Keil-Schaumstoff
   (SVG-Muster), warme Spots, zwei hängende Kopfhörer als unscharfe Schatten (`body::before`), „ON AIR“-Lämpchen, Karten als Kanalzüge mit Schrauben,

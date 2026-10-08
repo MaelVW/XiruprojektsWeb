@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Textwerk · Xiruprojekts</title>
+    <meta name="description" content="Textwerk: Texte zusammenfassen, übersetzen, umformulieren und korrigieren – mit KI-Dienst oder offline mit Grundfunktionen.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="ki.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/ai.js"></script>
+    <style>
+        .tw-in { width: 100%; min-height: 14rem; } .tw-opt { width: auto; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">✦ KI-Labor</span>
+        <h1>Textwerk</h1>
+        <p class="lead">Füge einen Text ein und wähle, was das Textwerk damit tun soll. Ohne KI-Dienst klappen Zusammenfassen und Korrekturhinweise offline.</p>
+    </header>
+    <div class="ki-top">
+        <div id="ai-status"></div>
+        <a class="btn btn--sm" href="index.html">✦ Zum KI-Labor</a>
+    </div>
+    <div class="ki-layout">
+        <section>
+            <div class="tabs" id="modes" role="tablist">
+                <button type="button" data-m="kurz" aria-selected="true">📝 Zusammenfassen</button>
+                <button type="button" data-m="uebersetzen">🌍 Übersetzen</button>
+                <button type="button" data-m="umformulieren">🔄 Umformulieren</button>
+                <button type="button" data-m="korrigieren">✔ Korrigieren</button>
+            </div>
+            <textarea class="textarea tw-in" id="in" placeholder="Text hier einfügen …"></textarea>
+            <div class="row mt-1">
+                <select class="select tw-opt" id="opt" aria-label="Option"></select>
+                <button class="btn btn--primary" type="button" id="go">Los</button>
+                <span class="small muted" id="count"></span>
+            </div>
+            <div class="ki-output ai-md mt-1" id="out" data-empty="Hier erscheint das Ergebnis."></div>
+            <button class="btn btn--sm btn--ghost mt-1" type="button" id="copy">📋 Ergebnis kopieren</button>
+        </section>
+        <aside class="ki-side"><h3>Gut zu wissen</h3><ul class="small"><li>Texte bleiben in deinem Browser, ausser du schickst sie an deinen eingerichteten KI-Dienst.</li><li>Für Hausaufgaben: Lass dir helfen, aber schreib selbst – so lernst du am meisten.</li></ul></aside>
+    </div>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU;
+    const AI = X.ai;
+    async function ask(out, msgs, opts, offline) {
+        const s = AI.ui.stream(out); let a;
+        try { a = await AI.chat(msgs, Object.assign({ onToken: x => s.push(x), offline }, opts)); }
+        catch (e) { a = e && e.code === 'abort' ? '_Abgebrochen._' : offline(); }
+        await s.end(a); return a;
+    }
+    const $ = s => X.$(s), O = AI.offline;
+    AI.ui.status('#ai-status', { offlineText: 'Zusammenfassen & Korrekturhinweise offline' });
+    const OPT = {
+        kurz: [['3', '3 Sätze'], ['stichpunkte', 'Stichpunkte'], ['1', '1 Satz']],
+        uebersetzen: [['Englisch', 'nach Englisch'], ['Deutsch', 'nach Deutsch'], ['Französisch', 'nach Französisch'], ['Italienisch', 'nach Italienisch'], ['Spanisch', 'nach Spanisch']],
+        umformulieren: [['locker', 'lockerer'], ['förmlich', 'förmlicher'], ['kürzer', 'kürzer'], ['einfacher', 'einfacher (für Kinder)']],
+        korrigieren: [['alles', 'Rechtschreibung & Grammatik']]
+    };
+    let mode = 'kurz', result = '';
+    function opts() { $('#opt').innerHTML = OPT[mode].map(([v, t]) => '<option value="' + v + '">' + t + '</option>').join(''); }
+    const sentences = t => t.replace(/\s+/g, ' ').match(/[^.!?]+[.!?]+["»“]?|[^.!?]+$/g) || [];
+    function summarize(t, n) {   // Extraktiv: Sätze nach Häufigkeit ihrer Wörter bewerten
+        const ss = sentences(t).map(s => s.trim()).filter(Boolean), freq = {};
+        t.toLowerCase().match(/[a-zäöüß]{4,}/g)?.forEach(w => freq[w] = (freq[w] || 0) + 1);
+        const scored = ss.map((s, i) => ({ s, i, v: (s.toLowerCase().match(/[a-zäöüß]{4,}/g) || []).reduce((a, w) => a + freq[w], 0) / Math.sqrt(s.length + 20) + (i === 0 ? .5 : 0) }));
+        return scored.sort((a, b) => b.v - a.v).slice(0, n).sort((a, b) => a.i - b.i).map(x => x.s);
+    }
+    function lint(t) {
+        const out = [];
+        if (/  +/.test(t)) out.push('Doppelte Leerzeichen gefunden.');
+        if (/[.!?]\s+[a-zäöü]/.test(t)) out.push('Nach einem Satzende sollte ein Grossbuchstabe folgen.');
+        if (/\s[,.!?]/.test(t)) out.push('Vor Satzzeichen gehört kein Leerzeichen.');
+        if (/,(?=\S)/.test(t.replace(/\d,\d/g, ''))) out.push('Nach einem Komma fehlt ein Leerzeichen.');
+        if (/\b(das)\s+(ich|du|er|sie|es|wir|ihr|man)\b/i.test(t)) out.push('Prüfe „das“ vs. „dass“: Leitet es einen Nebensatz ein („…, dass ich …“), schreibt man „dass“.');
+        if (/\b(\w+)\s+\1\b/i.test(t)) out.push('Ein Wort steht doppelt hintereinander: „' + /\b(\w+)\s+\1\b/i.exec(t)[0] + '“.');
+        if (/ß/.test(t)) out.push('In der Schweiz schreibt man „ss“ statt „ß“.');
+        return out;
+    }
+    function offline() {
+        const t = $('#in').value.trim(), o = $('#opt').value;
+        if (mode === 'kurz') { const n = o === '1' ? 1 : o === '3' ? 3 : 5, s = summarize(t, n); return '**Zusammenfassung (offline):**\n\n' + (o === 'stichpunkte' ? s.map(x => '- ' + x).join('\n') : s.join(' ')); }
+        if (mode === 'korrigieren') { const l = lint(t); return '**Korrekturhinweise (offline):**\n\n' + (l.length ? l.map(x => '- ' + x).join('\n') : '- Keine offensichtlichen Fehler gefunden. 👍') + '\n\n_Für eine vollständige Korrektur richte einen KI-Dienst ein._'; }
+        return '_Übersetzen und Umformulieren braucht einen KI-Dienst. Richte ihn im KI-Labor ein – das geht kostenlos._\n\n**Statistik deines Textes:** ' + sentences(t).length + ' Sätze, ' + (t.match(/\S+/g) || []).length + ' Wörter.';
+    }
+    const TASK = { kurz: o => o === 'stichpunkte' ? 'Fasse den Text in 3–6 Stichpunkten zusammen.' : 'Fasse den Text in ' + o + ' Satz/Sätzen zusammen.',
+        uebersetzen: o => 'Übersetze den Text ' + (o === 'Deutsch' ? 'nach Deutsch (Schweiz, ss statt ß)' : 'nach ' + o) + '. Gib nur die Übersetzung aus.',
+        umformulieren: o => 'Formuliere den Text ' + (o === 'kürzer' ? 'deutlich kürzer' : o === 'einfacher' ? 'so einfach, dass ein Kind ihn versteht' : o + 'er') + ' um. Gib nur den neuen Text aus.',
+        korrigieren: () => 'Korrigiere Rechtschreibung und Grammatik (Schweizer Rechtschreibung, ss statt ß). Gib zuerst den korrigierten Text aus, dann eine kurze Liste der Änderungen.' };
+    async function go() {
+        const t = $('#in').value.trim(); if (!t) { $('#in').focus(); return; }
+        result = await ask($('#out'), [{ role: 'user', content: TASK[mode]($('#opt').value) + '\n\n---\n' + t.slice(0, 12000) }], { system: 'Du bist ein präziser Textassistent. Antworte auf Deutsch, ausser beim Übersetzen. Erfinde nichts dazu.', temperature: .3, maxTokens: 1200 }, offline);
+        X.once('ki-textwerk', 5, 'Textwerk benutzt');
+    }
+    X.$$('#modes button').forEach(b => b.addEventListener('click', () => { mode = b.dataset.m; X.$$('#modes button').forEach(x => x.setAttribute('aria-selected', x === b)); opts(); }));
+    $('#in').addEventListener('input', () => { const t = $('#in').value; $('#count').textContent = (t.match(/\S+/g) || []).length + ' Wörter · ' + t.length + ' Zeichen'; });
+    $('#go').addEventListener('click', go);
+    $('#copy').addEventListener('click', () => { if (result) navigator.clipboard.writeText(result).then(() => X.toast('📋 Kopiert', 'Das Ergebnis ist in der Zwischenablage.'), () => {}); });
+    opts();
+});
+</script>
+</body>
+</html>

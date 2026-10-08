@@ -17,12 +17,55 @@ Arbeitsliste für alle weiteren Sitzungen (auch automatische Nachtschichten).
 7. Nach jeder Aufgabe: `python tools/check_site.py` laufen lassen. Neue Kristalle in `assets/js/site.js`
    im Block `XIRU.eggs.push(…)` vor `/* EGGS:ENDE */` eintragen (Komma hinter dem vorherigen Eintrag nicht vergessen!).
 8. Seiten auf Inseln sind erst nach einer Werft-Expedition offen. Zum Testen im eigenen Tab per Konsole:
-   `XIRU.mech.state().islands = {werkzeuge:1,studio:1,arcade:1,hardware:1,mixer:1,ki:1}; XIRU.persist();`
+   `XIRU.islands.forEach(i => XIRU.mech.state().islands[i.id] = 1); XIRU.persist();` (oder Entdecker-Modus: `XIRU.setting('modus','entdecker')`)
    Skill-gesperrte Seiten: Testkonto wie in `docs/NEUE-SEITE.md` simulieren. Testdaten danach wieder entfernen.
 9. **Horror-Teil gehört Mael** (`Why.html`, `why/*`, `assets/css/liminal.css`, `assets/js/liminal.js`, `assets/js/liminal-ton.js`): nicht bearbeiten.
    Ebenso unverändert lassen: die drei versteckten Eingänge (`XIRU.riss.bind(…)` in `weltkarte.html`, `404.html`,
    `hardware/netzteil-rechner.html`), `X.riss` und das blutige Tab-Symbol für `data-bare` in `core.js`. Keine Links zu `Why.html`/`why/`.
 10. Lieber eine Seite richtig fertig als drei halb. Wenn das Limit naht: aktuellen Stand hier notieren.
+
+---
+
+## L · Welt & Mech – grosser Ausbau (Auftrag von Mael, 8.10. abends) – **aktuelle Hauptaufgabe**
+
+Ziel: Weltkarte und Werft verschmelzen, viel grössere und schönere Karte, Spiel-Inseln mit Gebäuden (Handel, Arena …),
+Mech-System ~8× grösser (Inventar, Seltenheiten, Starter-Ausrüstung), Reise-Ladebildschirm auf der echten Karte,
+Entdecker-Modus (ohne Werft, alles offen), echter Login-Screen, 1–2 nützliche echte Cookies, Orte grafisch ausbauen.
+Riss 1 (unbekanntes Land unten rechts, 5× klicken) MUSS auf der neuen Karte erhalten bleiben (`XIRU.riss.bind(1, land, 5)`).
+
+Entscheidungen (Datenmodell & Regeln):
+- Seltenheiten (`XIRU.rarities`): 1 Gewöhnlich ×1 · 2 Ungewöhnlich ×1.25 · 3 Selten ×1.5 · 4 Episch ×1.9 · 5 Legendär ×2.4 · 6 Mythisch ×3.
+- Werte: R Reichweite · E Energie · S Sensor · P Panzerung · **A Angriff (neu)**. 8 Bauplätze: rahmen, antrieb, kern, sensor, arm, panzer, **waffe**, **zubehoer**.
+- Teile-IDs: r- a- k- s- w- p- wie bisher, Waffen `f-…`, Zubehör `z-…` (nie zwei Bindestriche mit Präfix g/k/x/t/h – check_site!).
+- Mech-Daten v2 in `P.data.mech`: `{v:2, inv:[{u,id,q,c,up,at}], eq:{slot:u}, mat:{}, taler, spent, islands, pos, trip, tutorial, testrun, trep, job, arena, wrack, mine, markt, log}`.
+  Migration v1 (parts/built/cond) → v2 in core.js (Teile werden Gewöhnlich). Schrott = XP/4 − spent (wie bisher), **Taler** neue Währung.
+- Inseln (`XIRU.islands`, Karte 2400×1600): Inhalts-Inseln = Regionen; Spiel-Inseln: markt (Händlerbucht), schmiede (Funkenschmiede),
+  wrack (Wrackriff), arena (Schrott-Arena), mine (Nebelmine) mit Seiten `welt/*.html` (Region `meer`, Feld `isle`).
+- Mech-Position `pos`: Bauen/Reparieren nur im Heimathafen (konto), Handeln nur in der Händlerbucht usw. Reisen dauert je nach Distanz
+  und Reichweite (ca. 4–18 s, ⏩ ×3), unterwegs Ereignisse (Treibgut, Sturm, Flaschenpost …). Notruf-Schlepper, falls fahruntüchtig.
+- Entdecker-Modus: `P.settings.modus = 'entdecker'` → alle Inseln/Seiten/Module offen (`X.easy()`), Werft & Spiel-Inseln ausgeblendet/Hinweis, keine Reisen.
+- Cookies (nur mit „Alles erlauben“, nur über http/https): `xiru_zuletzt` (letztes Konto + Modus für den Login-Screen),
+  `xiru_sicherung_<hash>` (kompakte Notfall-Sicherung: XP, Kristalle/Orte/Module als Bitmasken + Registry-Prüfsumme, Mech-Kern). Wiederherstellen per Toast/Einstellungen.
+
+Phasen (der Reihe nach, jede testen und hier abhaken):
+- [x] L1 core.js: Mech v2 + Migration + Taler/Material + Seltenheit + Position/Reisen + Entdecker-Modus + Cookies
+- [x] L2 site.js: rarities, materials, neue Teile (~47), islands, Region `meer` + 5 Seiten, neue Kristalle (m-…)
+- [x] L3 `assets/js/werft.js` (+ `assets/css/welt.css`): Item-Karten, Inventar-Helfer, Beute, Reise-Overlay auf der Karte, Ereignisse
+- [x] L4 `assets/js/weltkarte-art.js`: grosse Karte mit detaillierten Inseln/Gebäuden, Seedrache, Kraken, Wal, Schiffe, Leuchtturm, Kompassrose
+- [x] L5 `weltkarte.html` neu: Pan/Zoom, Mech-Figur, Insel-Panel mit Gebäuden & Reisen, Listen
+- [x] L6 `konto/skilltree.html` (Werft) neu: Ausrüstung, Inventar, Baupläne, Module, Tutorial mit Starter-Set
+- [x] L7 `mech-art.js`: Loadout-Parameter, Waffen/Zubehör, Seltenheits-Glühen
+- [x] L8 Spiel-Inseln: `welt/markt.html`, `welt/schmiede.html`, `welt/arena.html`, `welt/wrack.html`, `welt/mine.html`
+- [x] L9 Login-Screen (`konto/login.html` neu) + Modus-Wahl; Einstellungen: Modus & Cookie-Sicherung
+- [x] L10 Integration: index.html (Mech-Vorschau, Kompass, Kacheln), Sperrbildschirm, profil.html-Import (v2!), dev/testkonto, datenschutz.html, NEUE-SEITE.md
+- [x] L11 Gesamttest + check_site (8.10. abends: alle Seiten fehlerfrei, Entdecker-Modus, Reise, Arena, Markt, Schmiede, Wrack, Mine, Cookie-Wiederherstellung und Import-Schutz geprüft)
+  Notiz: check_site erkennt jetzt auch `X.egg(…)`. Echte Funde für später (Mael wollte die Kristalle danach ansehen): `x-elf` (mixer/js/studio.js) ist nicht registriert, `p-glossar` und `p-zeitleiste` werden nirgends ausgelöst.
+  Testdaten im Vorschau-Browser (Port 1130) zurückgesetzt (Mech, XP, Kristalle). Nebeneffekt: Die Besuchsliste des Vorschau-Gasts ist leer.
+  Wichtig (Cookie-Sicherung): Eine Sicherung, die weiter ist als der aktuelle Stand, wird nicht überschrieben (`XIRU.backup.ahead()`), bis man wiederherstellt oder „Nein“ sagt.
+  8.10. spät (Wunsch Mael): Karte heisst jetzt **Sektaria**, komplett im 32-Bit-Pixelstil (weltkarte-pixel.js) – Weltkarte, Reise-Ladebildschirm, Insel-Kopfbilder, Login-Hintergrund.
+  Alle Emojis in Werft/Inventar/Spiel-Inseln/Login durch Pixel-Icons ersetzt (pixel-icons.js, 90 Icons inkl. Figuren-Porträts). Spiel-Inseln im Pixel-Design `theme-pixel`.
+  Diskettenreaktor sitzt in einer Kern-Fassung; Funkeln beim Zubehör sitzt am Teil. Kristalle: x-elf registriert, check_site erkennt dynamische data-egg.
+  Ideen für später: Quests im Hafenamt, Gegner-Mechs auf der Karte, Wetter, Tag/Nacht auf der Karte, weitere Spiel-Inseln (Leuchtturm-Insel, Vulkan).
 
 ---
 
@@ -50,7 +93,11 @@ marineblau, weiss, fett; Spalten 3.5/5/7.5 cm; Code in Consolas; der Begriff in 
       über `const drawMech = …`), Vorschau `.mech-mini` in der Fortschrittskarte (Bauplätze, „Reparatur nötig“ unter 40 %, animiert nur sichtbar).
 - [x] N4 · Weitere Sprachen: Java, C++, Lua, PowerShell, Bash → **erledigt** (jetzt 12 Sprachen, 305 Begriffe, 54 Lektionen; Tutor erkennt alle).
 - [x] H5 · Lebendige Regionen-Kacheln → **erledigt** (`.rfx--<region>` in `index.html`: Leiterbahnen, Invader, Equalizer, Neuronen, Welle, Zahnräder, Anker; CSS-only, no-anim beachtet).
-- [ ] N5 · Danach fehlende Seiten aus B–G.
+- [x] N5 · Fehlende Seiten aus B–G → **erledigt (8.10.)**: alle 41 Seiten gebaut und im Browser getestet (check_site: 0 Seiten ohne Datei).
+  werkzeuge/ timer, json, klicktest, tastaturtest, bildschirmtest, hz-test, notizen · arcade/ memory, galgen, tippen, gluecksrad, kisten (Level per BFS geprüft), labyrinth, rohre, mitternacht ·
+  mixer/ farbe, namen, wesen, synth, beat · ki/ kartenschmiede, bildwerk, hardware-berater, textwerk, orakel · studio/ floppy-hub, pixmag, xiruweb, beta ·
+  geheim/ keller, archiv-1999, leuchtturm, serverraum, void, runen, turm, ruhmeshalle, kristallschrein (o-schrein ab 50), katzen, rueckwaerts, ende (o-ende bei allen Modulen).
+  Hinweis: XP-Schlüssel von X.once() NICHT mit „g-/k-/x-/t-/h-…-…“ beginnen (check_site hält sie sonst für Kristalle) → z. B. „geheim-…“. Gast-Testdaten in Port 1130 aufgeräumt.
 - [x] H6 · Tageszeit-Stimmung → **erledigt** (`.hero__sky` + `data-daytime` morgen/tag/abend/nacht, Gruss in `#greet-time`, Sterne nachts).
 
 ## A · Integration & Aufräumen (zuerst!)

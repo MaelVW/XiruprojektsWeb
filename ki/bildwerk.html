@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bildwerk · Xiruprojekts</title>
+    <meta name="description" content="Bildwerk: Bilder aus Text erzeugen – mit eingerichtetem KI-Dienst oder offline als prozedurale Kunst. Mit Stilen, Seed und Download.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="ki.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/ai.js"></script>
+    <style>
+        .bw-sel { width: auto; } .bw-seed { width: 11rem; }
+        .bw-fig { margin: .5rem 0; min-height: 12rem; display: grid; place-items: center; background: var(--surface-2); border-radius: 12px; overflow: hidden; }
+        .bw-img { display: block; max-width: 100%; height: auto; }
+        .bw-hist { list-style: none; padding: 0; display: grid; gap: .3rem; } .bw-hist .btn { width: 100%; justify-content: flex-start; text-align: left; white-space: normal; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">✦ KI-Labor</span>
+        <h1>Bildwerk</h1>
+        <p class="lead">Beschreib ein Bild, wähle einen Stil – und das Bildwerk malt. Ohne KI-Dienst entsteht prozedurale Kunst aus deinen Worten.</p>
+    </header>
+    <div class="ki-top">
+        <div id="ai-status"></div>
+        <a class="btn btn--sm" href="index.html">✦ Zum KI-Labor</a>
+    </div>
+    <div class="ki-layout">
+        <section>
+            <label class="ki-label" for="p">Was soll auf dem Bild sein?</label>
+            <textarea class="textarea" id="p" rows="3" placeholder="z. B. Ein kleiner Roboter repariert eine Diskette auf einer Insel bei Sonnenuntergang"></textarea>
+            <div class="row mt-1">
+                <select class="select bw-sel" id="style" aria-label="Stil"><option value="">Kein Stil</option><option value="pixel art, retro 16-bit">Pixel-Art</option><option value="watercolor painting">Aquarell</option><option value="digital fantasy art, detailed">Fantasy</option><option value="low poly 3d render">Low-Poly</option><option value="comic style, bold outlines">Comic</option><option value="synthwave neon">Synthwave</option></select>
+                <select class="select bw-sel" id="size" aria-label="Format"><option value="768x768">Quadrat</option><option value="1024x576">Breit</option><option value="576x1024">Hoch</option></select>
+                <input class="input mono bw-seed" id="seed" placeholder="Seed (leer = Zufall)" aria-label="Seed">
+                <button class="btn btn--primary" type="button" id="go">🎨 Malen</button>
+            </div>
+            <p class="small muted" id="st" role="status"></p>
+            <figure class="bw-fig" id="fig"><div class="empty"><div class="empty__icon">🖼</div><p>Noch kein Bild.</p></div></figure>
+            <div class="row" id="acts" hidden><button class="btn btn--sm" type="button" id="dl">⤓ Herunterladen</button><button class="btn btn--sm" type="button" id="again">↻ Gleicher Text, neuer Seed</button></div>
+        </section>
+        <aside class="ki-side"><h3>Zuletzt</h3><ul class="small bw-hist" id="hist"></ul><p class="small muted">Es werden nur deine Beschreibungen gemerkt – die Bilder bleiben, bis du die Seite verlässt.</p></aside>
+    </div>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU;
+    const AI = X.ai, $ = s => X.$(s);
+    AI.ui.status('#ai-status', { kind: 'image', offlineText: 'Prozedurale Kunst aus deinen Worten' });
+    let last = null, busy = false;
+    function hist() {
+        const h = X.load('bildwerk', []), ul = $('#hist'); ul.textContent = '';
+        h.forEach(t => { const li = document.createElement('li'), b = document.createElement('button'); b.type = 'button'; b.className = 'btn btn--sm btn--ghost'; b.textContent = t.slice(0, 60); b.addEventListener('click', () => { $('#p').value = t; }); li.appendChild(b); ul.appendChild(li); });
+        if (!h.length) ul.innerHTML = '<li class="muted">Noch nichts.</li>';
+    }
+    async function paint(newSeed) {
+        const p = $('#p').value.trim(); if (!p || busy) { $('#p').focus(); return; }
+        busy = true; $('#go').disabled = true; $('#st').textContent = 'Male …';
+        const [w, h] = $('#size').value.split('x').map(Number), seedIn = $('#seed').value.trim();
+        try {
+            const r = await AI.image(p, { width: w, height: h, style: $('#style').value, seed: newSeed ? null : (seedIn || null), onStatus: t => $('#st').textContent = t });
+            last = r; $('#seed').value = r.seed;
+            const img = new Image(); img.src = r.url; img.alt = p; img.className = 'bw-img';
+            $('#fig').textContent = ''; $('#fig').appendChild(img); $('#acts').hidden = false;
+            $('#st').textContent = 'Fertig · ' + (r.provider === 'offline' ? 'Offline-Kunst' : r.provider) + ' · Seed ' + r.seed;
+            const hs = X.load('bildwerk', []).filter(t => t !== p); hs.unshift(p.slice(0, 300)); X.save('bildwerk', hs.slice(0, 12)); hist();
+            X.once('ki-bild', 5, 'Erstes Bild gemalt');
+        } catch (e) { $('#st').textContent = '⚠ ' + (e && e.message || 'Das hat nicht geklappt.'); }
+        busy = false; $('#go').disabled = false;
+    }
+    $('#go').addEventListener('click', () => paint(false));
+    $('#again').addEventListener('click', () => { $('#seed').value = ''; paint(true); });
+    $('#p').addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) paint(false); });
+    $('#dl').addEventListener('click', () => { if (!last) return; const a = document.createElement('a'); a.href = last.url; a.download = 'bildwerk-' + last.seed + '.png'; a.click(); });
+    hist();
+});
+</script>
+</body>
+</html>

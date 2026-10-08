@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bildschirmtest · Xiruprojekts</title>
+    <meta name="description" content="Bildschirm prüfen: tote Pixel, Farbverläufe, Ausleuchtung und Schärfe – im Vollbild, Farbe für Farbe.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="css/werkzeuge.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <style>
+        .bt-swatches { display: grid; grid-template-columns: repeat(5, 1fr); gap: .5rem; }
+        .bt-sw { aspect-ratio: 16 / 10; border-radius: 8px; border: 1px solid var(--border-strong); cursor: pointer; }
+        .bt-sw:hover { outline: 2px solid var(--accent); outline-offset: 2px; }
+        .bt-full { position: fixed; inset: 0; z-index: 9999; cursor: none; }
+        .bt-label { position: absolute; left: 50%; bottom: 2rem; transform: translateX(-50%); padding: .4rem .9rem; border-radius: 99px; background: rgba(0,0,0,.7); color: #fff; font: 600 .85rem var(--mono); opacity: 0; transition: opacity .4s; }
+        .bt-label.is-on { opacity: 1; }
+        #info { list-style: none; padding: 0; } #info li { display: flex; justify-content: space-between; gap: 1rem; padding: .25rem 0; border-bottom: 1px solid var(--border); }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">⚒ Werkzeugkasten</span>
+        <h1>Bildschirmtest</h1>
+        <p class="lead">Starte den Test im Vollbild und klick dich durch die Testbilder. Auf einfarbigen Flächen fallen tote oder hängende Pixel sofort auf.</p>
+    </header>
+    <div class="grid-2">
+        <section class="card">
+            <h3>Testbilder</h3>
+            <div class="bt-swatches" id="sw"></div>
+            <button class="btn btn--primary mt-1" type="button" id="start">⛶ Test im Vollbild starten</button>
+            <p class="small muted mt-1">Im Test: <kbd>Klick</kbd> / <kbd>→</kbd> weiter, <kbd>←</kbd> zurück, <kbd>Esc</kbd> beenden.</p>
+        </section>
+        <aside class="card">
+            <h3>Dein Bildschirm</h3>
+            <ul class="spec-table small" id="info"></ul>
+            <h3 class="mt-1">Worauf achten?</h3>
+            <ul class="small">
+                <li><b>Tote Pixel</b>: schwarze Punkte auf Weiss.</li>
+                <li><b>Hängende Pixel</b>: farbige Punkte auf Schwarz.</li>
+                <li><b>Backlight-Bleeding</b>: helle Ränder auf Schwarz (am besten im Dunkeln).</li>
+                <li><b>Banding</b>: Stufen im Farbverlauf.</li>
+            </ul>
+        </aside>
+    </div>
+    <div class="bt-full" id="full" hidden tabindex="-1"><span class="bt-label" id="lab"></span></div>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU;
+    const grid = 'repeating-linear-gradient(0deg, #fff 0 1px, #000 1px 32px), repeating-linear-gradient(90deg, #fff 0 1px, #000 1px 32px)';
+    const T = [
+        ['Rot', '#f00'], ['Grün', '#0f0'], ['Blau', '#00f'], ['Weiss', '#fff'], ['Schwarz', '#000'], ['Grau 50 %', '#808080'],
+        ['Verlauf Grau', 'linear-gradient(90deg, #000, #fff)'], ['Verlauf Farben', 'linear-gradient(90deg, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)'],
+        ['Gitter (Schärfe)', grid], ['Schachbrett 1 px', 'repeating-conic-gradient(#000 0 25%, #fff 0 50%) 0 0 / 2px 2px']
+    ];
+    const full = X.$('#full'), lab = X.$('#lab'); let i = 0, hideT;
+    X.$('#sw').innerHTML = T.map((t, k) => '<button type="button" class="bt-sw" data-k="' + k + '" style="background:' + t[1].replace(/"/g, '') + '" title="' + t[0] + '"></button>').join('');
+    function show(k) {
+        i = (k + T.length) % T.length; full.style.background = T[i][1]; lab.textContent = (i + 1) + '/' + T.length + ' · ' + T[i][0];
+        lab.classList.add('is-on'); clearTimeout(hideT); hideT = setTimeout(() => lab.classList.remove('is-on'), 1400);
+    }
+    function open(k) {
+        full.hidden = false; show(k || 0); full.focus();
+        if (full.requestFullscreen) full.requestFullscreen().catch(() => {});
+        X.once('wz-bildschirm', 5, 'Bildschirm geprüft');
+    }
+    function close() { full.hidden = true; if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); }
+    X.$('#start').addEventListener('click', () => open(0));
+    X.$$('.bt-sw').forEach(b => b.addEventListener('click', () => open(+b.dataset.k)));
+    full.addEventListener('click', () => show(i + 1));
+    document.addEventListener('keydown', e => {
+        if (full.hidden) return;
+        if (e.key === 'Escape') close(); else if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); show(i + 1); } else if (e.key === 'ArrowLeft') show(i - 1);
+    });
+    document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && !full.hidden) close(); });
+    const dpr = window.devicePixelRatio || 1, row = (a, b) => '<li><b>' + a + '</b> ' + X.esc(b) + '</li>';
+    X.$('#info').innerHTML = row('Auflösung', Math.round(screen.width * dpr) + ' × ' + Math.round(screen.height * dpr) + ' px') + row('Skalierung', Math.round(dpr * 100) + ' %') +
+        row('Farbtiefe', screen.colorDepth + ' Bit') + row('HDR', matchMedia('(dynamic-range: high)').matches ? 'ja' : 'nein') + row('Farbraum', matchMedia('(color-gamut: p3)').matches ? 'Display P3 (gross)' : 'sRGB');
+});
+</script>
+</body>
+</html>

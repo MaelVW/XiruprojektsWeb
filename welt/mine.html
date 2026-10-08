@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nebelmine · Xiruprojekts</title>
+    <meta name="description" content="Die Nebelmine: Grubenbots auf Schicht schicken, Kristallsplitter und Nebelkerne abbauen und selbst Erzadern hacken.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="../assets/css/welt.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/mech-art.js"></script>
+    <script src="../assets/js/weltkarte-art.js"></script>
+    <script src="../assets/js/weltkarte-pixel.js"></script>
+    <script src="../assets/js/pixel-icons.js"></script>
+    <script src="../assets/js/werft.js"></script>
+    <style>
+        .shafts { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: .8rem; }
+        .shaft { padding: 1rem; border-radius: 12px; border: 1px solid var(--border); background: linear-gradient(180deg, var(--surface), color-mix(in srgb, #57534e 25%, var(--surface))); display: grid; gap: .5rem; }
+        .shaft.is-locked { opacity: .5; }
+        .shaft h3 { margin: 0; }
+        .durs { display: flex; gap: .35rem; flex-wrap: wrap; }
+        .job { padding: 1rem; border-radius: 12px; border: 2px solid #67e8f9; background: color-mix(in srgb, #0e7490 15%, var(--surface)); }
+        .job .bar { height: 14px; }
+        .bots { font-size: 1.6rem; letter-spacing: .3rem; }
+        .bots span { display: inline-block; animation: dig 1s ease-in-out infinite; }
+        .bots span:nth-child(2) { animation-delay: -.33s; } .bots span:nth-child(3) { animation-delay: -.66s; }
+        @keyframes dig { 50% { transform: rotate(-25deg) translateY(-3px); } }
+        html.no-anim .bots span { animation: none; }
+        .wall { position: relative; height: 260px; border-radius: 12px; overflow: hidden; cursor: crosshair; touch-action: manipulation;
+            background: radial-gradient(circle at 30% 40%, #57534e, transparent 40%), radial-gradient(circle at 75% 65%, #44403c, transparent 45%), repeating-linear-gradient(35deg, #292524 0 22px, #1c1917 22px 44px); }
+        .vein { position: absolute; width: 46px; height: 46px; margin: -23px 0 0 -23px; border: 0; border-radius: 40% 60% 55% 45%; cursor: pointer; font-size: 1.4rem;
+            background: radial-gradient(circle, rgba(103, 232, 249, .9), rgba(14, 116, 144, .4) 60%, transparent 70%); animation: vein var(--life) linear forwards; }
+        @keyframes vein { 0% { transform: scale(.3); } 15% { transform: scale(1); } 85% { opacity: 1; } 100% { opacity: 0; transform: scale(.8); } }
+        .wall__hud { position: absolute; left: .7rem; top: .6rem; font: 800 .9rem var(--mono); color: #e7e5e4; text-shadow: 0 2px 0 #000; }
+    </style>
+</head>
+<body class="theme-pixel">
+<main class="content content--wide">
+    <div class="isle-head" id="isle-head"><div class="isle-head__text"><span class="eyebrow">Offenes Meer · Spiel-Insel</span><h1>Nebelmine</h1>
+        <p>Tief im Berg wachsen Kristallsplitter, und ganz unten verdichtet sich der Nebel zu kalten, schweren Kernen. Steiger Kiesel vermietet Grubenbots.</p></div></div>
+    <div id="easy" hidden></div>
+    <div id="game" class="shop">
+        <div class="here mt-2" id="here"></div>
+        <div class="wallet" id="wallet"></div>
+        <div class="npc"><div class="npc__face"><i data-px="npc-kiesel"></i></div><div><h2 class="mb-1">Steiger Kiesel</h2><p class="npc__say" id="say">„Glück auf! Die Bots graben, während du unterwegs bist. Abholen musst du die Lore aber selbst.“</p></div></div>
+        <section data-here id="jobbox"></section>
+        <section data-here>
+            <h2>Stollen</h2>
+            <div class="shafts" id="shafts"></div>
+        </section>
+        <section class="card" data-here>
+            <div class="row"><h2 class="mb-0">Ader hacken</h2><span class="spacer"></span><button class="btn btn--primary btn--sm" type="button" id="hack">Loslegen (20 s)</button></div>
+            <p class="small muted">Klick die leuchtenden Erzadern, bevor sie im Gestein verschwinden. Danach brauchen deine Arme fünf Minuten Pause.</p>
+            <div class="wall" id="wall"><div class="wall__hud" id="wall-hud">Bereit.</div></div>
+        </section>
+    </div>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU, M = X.mech, W = X.werft, $ = X.$, esc = X.esc;
+    const page = W.islePage('mine', render);
+    if (page.easy) return;
+    const SHAFTS = [
+        { id: 1, n: 'Obere Stollen',  d: 'Kabel, Zahnräder, Altöl. Ehrliche Arbeit.', need: {},           o: { mats: 1, rare: .04, item: .05, maxT: 2 } },
+        { id: 2, n: 'Kristallgänge',  d: 'Platinen, Chips – und Splitter in den Wänden.', need: { E: 4 },  o: { mats: 1, rare: .2, item: .1, maxT: 3, luck: .2 } },
+        { id: 3, n: 'Nebelgrund',     d: 'Ganz unten. Kalt. Hier entstehen Nebelkerne.', need: { E: 6, S: 4 }, o: { mats: 1, rare: .5, item: .18, maxT: 4, luck: .5 } }
+    ];
+    const DURS = [[2, '2 Min.', 2], [15, '15 Min.', 7], [60, '1 Std.', 20]];   // [Minuten, Text, Würfe]
+    const mine = () => { const m = M.state(); if (!m.mine || typeof m.mine !== 'object') m.mine = {}; return m.mine; };
+    const ok = need => { const st = M.stats(); return Object.keys(need).every(k => st[k] >= need[k]); };
+    const fmtT = s => s >= 3600 ? Math.floor(s / 3600) + ' h ' + Math.floor(s % 3600 / 60) + ' min' : s >= 60 ? Math.floor(s / 60) + ' min ' + (s % 60) + ' s' : s + ' s';
+
+    function renderJob() {
+        const j = mine().job, box = $('#jobbox');
+        if (!j) { box.innerHTML = ''; return; }
+        const left = Math.max(0, Math.ceil((j.end - Date.now()) / 1000)), k = Math.min(1, (Date.now() - j.start) / (j.end - j.start)), sh = SHAFTS.find(s => s.id === j.depth);
+        box.innerHTML = '<div class="job"><div class="row"><span class="bots">' + (left ? '<span>' + W.px('npc-schraube', 30) + '</span><span>' + W.px('ic-amboss', 30) + '</span><span>' + W.px('npc-schraube', 30) + '</span>' : W.px('ev-kiste', 34)) + '</span><div><b>' + esc(sh.n) + '</b><br><span class="small muted">' + (left ? 'Die Grubenbots graben … noch ' + fmtT(left) : 'Die Lore ist voll!') + '</span></div><span class="spacer"></span>' +
+            (left ? '' : '<button class="btn btn--primary" type="button" id="collect">Lore abholen</button>') + '</div><div class="bar mt-1"><div class="bar__fill" style="--v:' + Math.round(k * 100) + '%"></div></div></div>';
+        const c = $('#collect'); if (c) c.addEventListener('click', collect);
+    }
+    function renderShafts() {
+        const busy = !!mine().job;
+        $('#shafts').innerHTML = SHAFTS.map(s => {
+            const can = ok(s.need), req = Object.keys(s.need).map(k => W.STAT[k] + ' ' + s.need[k]).join(' · ');
+            return '<div class="shaft' + (can ? '' : ' is-locked') + '"><h3>' + 'Stufe ' + s.id + ' · ' + esc(s.n) + '</h3><p class="small muted mb-0">' + esc(s.d) + '</p>' +
+                (req ? '<p class="small mb-0">Braucht: ' + esc(req) + (can ? ' – erfüllt' : '') + '</p>' : '') +
+                '<div class="durs">' + DURS.map(d => '<button class="btn btn--sm" type="button" data-s="' + s.id + '" data-d="' + d[0] + '"' + (can && !busy ? '' : ' disabled') + '>' + d[1] + '</button>').join('') + '</div></div>';
+        }).join('');
+    }
+    $('#shafts').addEventListener('click', e => {
+        const b = e.target.closest('[data-s]'); if (!b || !page.at() || mine().job) return;
+        const min = +b.dataset.d; mine().job = { depth: +b.dataset.s, dur: min, start: Date.now(), end: Date.now() + min * 60000 }; X.persist();
+        $('#say').textContent = X.pick(['„Glück auf! Die Bots sind unterwegs.“', '„Helm auf, Lampe an, ab nach unten.“', '„Ich koch schon mal Kaffee.“']);
+        X.beep(220, .12, 'square', .05); render();
+    });
+    function collect() {
+        const j = mine().job; if (!j || Date.now() < j.end || !page.at()) return;
+        const sh = SHAFTS.find(s => s.id === j.depth), rolls = (DURS.find(d => d[0] === j.dur) || DURS[0])[2];
+        let all = [];
+        for (let i = 0; i < rolls; i++) all = all.concat(W.loot(Object.assign({}, sh.o, { item: i === 0 ? sh.o.item * 2 : sh.o.item / 2 })));
+        // gleiche Materialien zusammenfassen
+        const merged = [], mats = {};
+        all.forEach(e => { if (e.type === 'mat') mats[e.id] = (mats[e.id] || 0) + e.n; else merged.push(e); });
+        Object.keys(mats).forEach(id => merged.push({ type: 'mat', id, n: mats[id] }));
+        const lines = W.grant(merged);
+        delete mine().job; X.persist(); X.egg('m-bergbau'); X.addXP(4 + j.depth * 3 + Math.round(j.dur / 10), 'Bergbau');
+        X.modal('<h2>' + W.px('ev-kiste', 28) + ' Die Lore ist voll!</h2><p>' + lines.join('<br>') + '</p><div class="row"><button class="btn btn--primary" type="button" data-close>Glück auf!</button></div>');
+        render();
+    }
+
+    /* ── Ader hacken (aktives Minispiel) ── */
+    let hacking = false;
+    $('#hack').addEventListener('click', () => {
+        if (!page.at() || hacking) return;
+        const wait = (mine().hack || 0) + 5 * 60000 - Date.now();
+        if (wait > 0) { X.toast('Die Arme brauchen Pause', 'Noch ' + fmtT(Math.ceil(wait / 1000)) + '.', { iconHtml: W.px('npc-kiesel', 26) }); return; }
+        hacking = true; mine().hack = Date.now(); X.persist();
+        const wall = $('#wall'), hud = $('#wall-hud'), t0 = Date.now(), got = {};
+        let hits = 0, spawnT = null;
+        const spawn = () => {
+            if (!hacking) return;
+            const v = document.createElement('button'); v.type = 'button'; v.className = 'vein'; v.dataset.rare = Math.random() < .12 ? '1' : ''; v.innerHTML = W.px(v.dataset.rare ? 'mat-splitter' : 'mat-zahnrad', 30);
+            const life = 1.1 + Math.random() * .8; v.style.setProperty('--life', life + 's');
+            v.style.left = (8 + Math.random() * 84) + '%'; v.style.top = (14 + Math.random() * 76) + '%';
+            v.addEventListener('pointerdown', e => {
+                e.stopPropagation(); hits++; X.beep(500 + hits * 20, .05, 'square', .04);
+                const rare = !!v.dataset.rare, id = rare ? 'splitter' : X.pick(['kabel', 'zahnrad', 'oel', 'platine', 'kabel', 'zahnrad']);
+                got[id] = (got[id] || 0) + 1; v.remove();
+            });
+            wall.appendChild(v); setTimeout(() => v.remove(), life * 1000);
+            spawnT = setTimeout(spawn, 380 + Math.random() * 380);
+        };
+        spawn();
+        const timer = setInterval(() => {
+            const left = 20 - Math.floor((Date.now() - t0) / 1000);
+            hud.textContent = 'Zeit ' + Math.max(0, left) + ' s · Adern ' + hits;
+            if (left <= 0) {
+                clearInterval(timer); clearTimeout(spawnT); hacking = false; X.$$('.vein', wall).forEach(v => v.remove());
+                Object.keys(got).forEach(id => M.addMat(id, got[id]));
+                hud.textContent = hits ? 'Geschafft: ' + Object.keys(got).map(id => got[id] + '× ' + M.mat(id).n).join(', ') : 'Nichts erwischt. Das Gestein lacht.';
+                if (hits >= 20) X.once('mine-hacker', 15, 'Erzhacker: 20 Adern in 20 Sekunden');
+                render();
+            }
+        }, 200);
+    });
+
+    function render() { page.redraw && page.redraw(); renderJob(); renderShafts(); }
+    render();
+    setInterval(() => { if (!document.hidden && mine().job) renderJob(); }, 1000);
+});
+</script>
+</body>
+</html>

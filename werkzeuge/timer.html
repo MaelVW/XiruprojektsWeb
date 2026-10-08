@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timer & Pomodoro · Xiruprojekts</title>
+    <meta name="description" content="Pomodoro-Timer, Countdown und Stoppuhr – mit Ton, Tab-Anzeige und Tageszähler. Läuft komplett im Browser.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="css/werkzeuge.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <style>
+        .tm-card { text-align: center; }
+        .tm-card .tabs { justify-content: center; }
+        .tm-time { font-size: clamp(3.2rem, 12vw, 6rem); font-weight: 800; letter-spacing: .02em; margin: .2rem 0 .8rem; color: var(--rc, var(--accent)); text-shadow: 0 0 30px color-mix(in srgb, var(--accent) 35%, transparent); }
+        .tm-phase { margin: 1rem 0 0; text-transform: uppercase; letter-spacing: .2em; font-size: .8rem; color: var(--text-muted); }
+        .tm-card .row { justify-content: center; }
+        .tm-laps { text-align: left; max-height: 10rem; overflow: auto; margin: 1rem auto 0; width: max-content; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">⚒ Werkzeugkasten</span>
+        <h1>Timer & Pomodoro</h1>
+        <p class="lead">Konzentriert arbeiten mit der Pomodoro-Methode: 25 Minuten Fokus, 5 Minuten Pause. Oder einfach ein Countdown oder eine Stoppuhr.</p>
+    </header>
+    <div class="grid-2">
+        <section class="card tm-card">
+            <div class="tabs" id="modes" role="tablist">
+                <button type="button" data-m="pomo" aria-selected="true">🍅 Pomodoro</button>
+                <button type="button" data-m="count">⏳ Countdown</button>
+                <button type="button" data-m="watch">⏱ Stoppuhr</button>
+            </div>
+            <p class="tm-phase" id="phase">Fokus</p>
+            <div class="tm-time mono" id="time" aria-live="polite">25:00</div>
+            <div class="bar bar--sm"><div class="bar__fill" id="prog" style="width:0%"></div></div>
+            <div class="row mt-1">
+                <button class="btn btn--primary" type="button" id="go">▶ Start</button>
+                <button class="btn" type="button" id="reset">↺ Zurücksetzen</button>
+                <button class="btn btn--ghost" type="button" id="lap" hidden>⚑ Runde</button>
+            </div>
+            <ol class="tm-laps small mono" id="laps"></ol>
+        </section>
+        <aside class="card">
+            <h3>Einstellungen</h3>
+            <div class="field"><label for="f-work">Fokus (Minuten)</label><input id="f-work" type="number" min="1" max="120" value="25"></div>
+            <div class="field"><label for="f-break">Pause (Minuten)</label><input id="f-break" type="number" min="1" max="60" value="5"></div>
+            <div class="field"><label for="f-count">Countdown (Minuten)</label><input id="f-count" type="number" min="1" max="600" value="10"></div>
+            <p class="stat__label">Heute geschafft</p>
+            <p class="stat__value" id="today">0 🍅</p>
+        </aside>
+    </div>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU;
+    const $ = s => X.$(s), pad = n => String(n).padStart(2, '0');
+    const fmt = ms => { const s = Math.max(0, Math.round(ms / 1000)); const h = Math.floor(s / 3600); return (h ? h + ':' : '') + pad(Math.floor(s / 60) % 60) + ':' + pad(s % 60); };
+    const fmtW = ms => fmt(ms) + '.' + Math.floor(ms % 1000 / 100);
+    let mode = 'pomo', phase = 'work', running = false, start = 0, acc = 0, total = 0, tick = null, laps = [];
+    const baseTitle = document.title;
+    const mins = id => X.clamp(+$('#' + id).value || 1, 1, 600) * 60000;
+    function day() { const d = X.load('timer-tag', null); return d && d.date === X.today() ? d : { date: X.today(), n: 0 }; }
+    function showDay() { $('#today').textContent = day().n + ' 🍅'; }
+    function setTotal() { total = mode === 'watch' ? 0 : mode === 'count' ? mins('f-count') : mins(phase === 'work' ? 'f-work' : 'f-break'); }
+    function elapsed() { return acc + (running ? Date.now() - start : 0); }
+    function render() {
+        const e = elapsed(), left = total - e;
+        const txt = mode === 'watch' ? fmtW(e) : fmt(left);
+        $('#time').textContent = txt;
+        $('#prog').style.width = mode === 'watch' ? '0%' : Math.min(100, e / total * 100) + '%';
+        $('#phase').textContent = mode === 'pomo' ? (phase === 'work' ? 'Fokus' : 'Pause') : mode === 'count' ? 'Countdown' : 'Stoppuhr';
+        document.title = running ? txt + ' · ' + baseTitle : baseTitle;
+        if (mode !== 'watch' && running && left <= 0) done();
+    }
+    function done() {
+        stop(); acc = 0;
+        [660, 880, 990].forEach((f, i) => setTimeout(() => X.beep(f, .18, 'sine', .25), i * 220));
+        if (mode === 'pomo') {
+            if (phase === 'work') { const d = day(); d.n++; X.save('timer-tag', d); showDay(); X.toast('🍅 Fokus geschafft', 'Zeit für eine Pause.'); X.once('wz-pomodoro', 10, 'Erster Pomodoro'); }
+            else X.toast('☕ Pause vorbei', 'Weiter geht\'s!');
+            phase = phase === 'work' ? 'break' : 'work';
+        } else X.toast('⏳ Zeit ist um', 'Dein Countdown ist abgelaufen.');
+        setTotal(); render();
+    }
+    function play() { running = true; start = Date.now(); tick = setInterval(render, 100); $('#go').textContent = '⏸ Pause'; }
+    function stop() { if (running) acc += Date.now() - start; running = false; clearInterval(tick); $('#go').textContent = '▶ Start'; }
+    $('#go').addEventListener('click', () => { running ? stop() : play(); render(); });
+    $('#reset').addEventListener('click', () => { stop(); acc = 0; laps = []; $('#laps').textContent = ''; if (mode === 'pomo') phase = 'work'; setTotal(); render(); });
+    $('#lap').addEventListener('click', () => { if (!running) return; laps.push(elapsed()); const li = document.createElement('li'); li.textContent = fmtW(laps[laps.length - 1]); $('#laps').prepend(li); });
+    X.$$('#modes button').forEach(b => b.addEventListener('click', () => {
+        X.$$('#modes button').forEach(x => x.setAttribute('aria-selected', x === b));
+        stop(); acc = 0; mode = b.dataset.m; phase = 'work'; $('#lap').hidden = mode !== 'watch'; laps = []; $('#laps').textContent = ''; setTotal(); render();
+    }));
+    ['f-work', 'f-break', 'f-count'].forEach(id => $('#' + id).addEventListener('change', () => { if (!running && !acc) { setTotal(); render(); } }));
+    document.addEventListener('keydown', e => { if (e.key === ' ' && !/INPUT|TEXTAREA|BUTTON/.test(e.target.tagName)) { e.preventDefault(); $('#go').click(); } });
+    setTotal(); render(); showDay();
+});
+</script>
+</body>
+</html>

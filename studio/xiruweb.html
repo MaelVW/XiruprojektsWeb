@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diese Website · Xiruprojekts</title>
+    <meta name="description" content="Wie Xiruprojekts gebaut ist: reines HTML, CSS und JavaScript, keine Frameworks, kein Server – mit Live-Zahlen aus dem Register.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="../assets/css/themes/studio.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <style>
+        .xw-tree { list-style: none; padding: 0; display: grid; gap: .45rem; } .xw-tree li { overflow-wrap: anywhere; }
+        .xw-regions { display: grid; gap: .45rem; }
+        .xw-reg { display: grid; grid-template-columns: minmax(9rem, 1fr) 2fr 3rem; gap: .7rem; align-items: center; font-size: .9rem; } .xw-reg b { text-align: right; }
+    </style>
+</head>
+<body class="theme-studio">
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">🎬 Studio</span>
+        <h1>Diese Website</h1>
+        <p class="lead">Kein Framework, kein Server, keine Cloud. Xiruprojekts ist reines HTML, CSS und JavaScript – und alles, was du hier sammelst, bleibt in deinem Browser.</p>
+    </header>
+    <div class="grid-3" id="stats"></div>
+    <div class="grid-2 mt-1">
+        <section class="card">
+            <h2>Aufbau</h2>
+            <ul class="xw-tree mono small">
+                <li>assets/js/<b>site.js</b> – das Register: alle Seiten, Inseln, Kristalle, Module</li>
+                <li>assets/js/<b>core.js</b> – Konto, Speicher, Erfahrung, Kristalle, Navigation</li>
+                <li>assets/js/<b>ai.js</b> – KI-Dienste &amp; Offline-Modus (einziger Netzwerkzugriff)</li>
+                <li>assets/css/<b>main.css</b> + Themes – Design pro Bereich</li>
+                <li>hardware/ · arcade/ · ki/ · mixer/ · werkzeuge/ · studio/ – die Inseln</li>
+                <li>geheim/ – …</li>
+            </ul>
+        </section>
+        <section class="card">
+            <h2>Grundsätze</h2>
+            <ul class="small">
+                <li>🔒 <b>Deine Daten bleiben bei dir</b>: Spielstände liegen im Browser (localStorage), nie auf einem Server.</li>
+                <li>🚫 <b>Keine Tracker, keine fremden Schriften</b>, keine Werbung.</li>
+                <li>📴 <b>Funktioniert offline</b> – sogar direkt von der Festplatte geöffnet.</li>
+                <li>🧩 <b>Ohne Build-Schritt</b>: Jede Seite ist eine HTML-Datei, die man lesen kann.</li>
+                <li>🕵 <b>Geheimnisse überall</b> – wer genau hinschaut, findet mehr.</li>
+            </ul>
+        </section>
+    </div>
+    <section class="card mt-1"><h2>Inseln und Seiten</h2><div id="regions" class="xw-regions"></div></section>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU;
+    const $ = s => X.$(s), pages = X.pages || [], vis = pages.filter(p => !p.hidden);
+    const box = (l, v) => '<div class="card stat"><span class="stat__label">' + l + '</span><span class="stat__value">' + v + '</span></div>';
+    $('#stats').innerHTML = box('Seiten', X.fmt(vis.length) + ' <small class="muted">+ ' + (pages.length - vis.length) + ' geheime</small>') + box('Realitätskristalle', X.fmt((X.eggs || []).length)) +
+        box('Spiele in der Spielhalle', X.fmt(pages.filter(p => p.game).length));
+    $('#regions').innerHTML = (X.regions || []).map(r => { const n = pages.filter(p => p.r === r.id && !p.hidden).length; return n ? '<div class="xw-reg"><span>' + (r.icon || '') + ' ' + X.esc(r.name) + '</span><div class="bar bar--sm"><div class="bar__fill" style="width:' + Math.min(100, n * 2) + '%"></div></div><b>' + n + '</b></div>' : ''; }).join('');
+    X.once('st-xiruweb', 5, 'Hinter die Kulissen geschaut');
+});
+</script>
+</body>
+</html>

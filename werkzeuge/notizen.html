@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notizblock · Xiruprojekts</title>
+    <meta name="description" content="Notizen mit Markdown-Vorschau, die nur in deinem Browser gespeichert werden. Suchen, anheften, als Datei exportieren.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="css/werkzeuge.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <style>
+        .nz { display: grid; grid-template-columns: minmax(0, 260px) minmax(0, 1fr); gap: 1rem; align-items: start; }
+        @media (max-width: 760px) { .nz { grid-template-columns: 1fr; } }
+        .nz__items { list-style: none; padding: 0; margin: .8rem 0 0; display: flex; flex-direction: column; gap: .35rem; max-height: 60vh; overflow: auto; }
+        .nz__item { width: 100%; text-align: left; display: flex; flex-direction: column; gap: .15rem; padding: .55rem .7rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-2); color: var(--text); cursor: pointer; font: inherit; overflow: hidden; }
+        .nz__item span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .nz__item.is-active, .nz__item:hover { border-color: var(--accent); }
+        .nz__title { flex: 1 1 12rem; font-weight: 700; }
+        .nz__text { width: 100%; min-height: 24rem; font-family: var(--mono); font-size: .9rem; line-height: 1.55; }
+        .nz__md { min-height: 24rem; padding: .2rem .4rem; overflow-wrap: anywhere; }
+        .nz__md ul { padding-left: 1.2rem; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">⚒ Werkzeugkasten</span>
+        <h1>Notizblock</h1>
+        <p class="lead">Schreib auf, was dir einfällt. Alles bleibt in deinem Browser (bei deinem Konto) – kein Server, keine Cloud.</p>
+    </header>
+    <div class="nz">
+        <aside class="nz__list card">
+            <div class="row"><button class="btn btn--primary btn--sm" type="button" id="new">＋ Neue Notiz</button></div>
+            <input class="input mt-1" id="q" type="search" placeholder="Suchen …" aria-label="Notizen durchsuchen">
+            <ul id="list" class="nz__items"></ul>
+        </aside>
+        <section class="card nz__edit">
+            <div class="row">
+                <input class="input nz__title" id="title" placeholder="Titel" aria-label="Titel">
+                <button class="btn btn--sm" type="button" id="pin" title="Anheften">📌</button>
+                <button class="btn btn--sm" type="button" id="view" aria-pressed="false">👁 Vorschau</button>
+                <button class="btn btn--sm" type="button" id="dl" title="Als .md herunterladen">⤓</button>
+                <button class="btn btn--sm btn--danger" type="button" id="del" title="Löschen">🗑</button>
+            </div>
+            <textarea class="textarea nz__text mt-1" id="text" placeholder="# Überschrift&#10;**fett**, *kursiv*, `code`, - Liste, [ ] Aufgabe"></textarea>
+            <div class="nz__md mt-1" id="md" hidden></div>
+            <p class="small muted mb-0" id="meta"></p>
+        </section>
+    </div>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU;
+    const $ = s => X.$(s);
+    let notes = X.load('notizen', null), cur = null, q = '';
+    if (!Array.isArray(notes)) notes = [{ id: Date.now(), t: 'Willkommen', x: '# Mein Notizblock\n\n- Notizen speichern sich **automatisch**\n- [ ] Erste eigene Notiz schreiben\n- Vorschau mit dem 👁-Knopf', pin: true, at: Date.now() }];
+    const save = () => X.save('notizen', notes);
+    // Sicheres Mini-Markdown: zuerst ALLES escapen, dann nur eigene Tags einsetzen
+    function md(src) {
+        const inline = s => s.replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/\*([^*]+)\*/g, '<em>$1</em>');
+        let html = '', list = false;
+        X.esc(src).split('\n').forEach(l => {
+            const li = /^\s*[-*] (\[( |x)\] )?(.*)$/.exec(l);
+            if (li) { if (!list) { html += '<ul>'; list = true; } html += '<li>' + (li[1] ? (li[2] === 'x' ? '☑ ' : '☐ ') : '') + inline(li[3]) + '</li>'; return; }
+            if (list) { html += '</ul>'; list = false; }
+            const h = /^(#{1,3}) (.*)$/.exec(l);
+            html += h ? '<h' + (h[1].length + 1) + '>' + inline(h[2]) + '</h' + (h[1].length + 1) + '>' : l.trim() ? '<p>' + inline(l) + '</p>' : '';
+        });
+        return html + (list ? '</ul>' : '');
+    }
+    function list() {
+        const ul = $('#list'); ul.textContent = '';
+        notes.filter(n => !q || (n.t + ' ' + n.x).toLowerCase().includes(q))
+            .sort((a, b) => (b.pin - a.pin) || b.at - a.at)
+            .forEach(n => {
+                const li = document.createElement('li'), b = document.createElement('button');
+                b.type = 'button'; b.className = 'nz__item' + (cur && n.id === cur.id ? ' is-active' : '');
+                const t = document.createElement('b'); t.textContent = (n.pin ? '📌 ' : '') + (n.t || 'Ohne Titel');
+                const s = document.createElement('span'); s.className = 'small muted'; s.textContent = n.x.replace(/\s+/g, ' ').slice(0, 60);
+                b.append(t, s); b.addEventListener('click', () => open(n)); li.appendChild(b); ul.appendChild(li);
+            });
+        if (!ul.children.length) ul.innerHTML = '<li class="small muted">Nichts gefunden.</li>';
+    }
+    function open(n) {
+        cur = n; $('#title').value = n.t; $('#text').value = n.x; $('#pin').classList.toggle('btn--primary', !!n.pin);
+        $('#meta').textContent = 'Zuletzt geändert: ' + new Date(n.at).toLocaleString('de-CH'); render(); list();
+    }
+    function render() { if (!$('#md').hidden) $('#md').innerHTML = md($('#text').value); }
+    let saveT;
+    function edit() {
+        if (!cur) return; cur.t = $('#title').value.slice(0, 120); cur.x = $('#text').value.slice(0, 50000); cur.at = Date.now();
+        clearTimeout(saveT); saveT = setTimeout(() => { save(); list(); $('#meta').textContent = '✔ Gespeichert'; }, 400); render();
+    }
+    $('#title').addEventListener('input', edit); $('#text').addEventListener('input', edit);
+    $('#new').addEventListener('click', () => { const n = { id: Date.now(), t: '', x: '', pin: false, at: Date.now() }; notes.push(n); save(); open(n); $('#title').focus(); X.once('wz-notiz', 5, 'Erste Notiz'); });
+    $('#del').addEventListener('click', () => { if (!cur || !confirm('Diese Notiz wirklich löschen?')) return; notes = notes.filter(n => n !== cur); save(); cur = null; notes.length ? open(notes[0]) : $('#new').click(); });
+    $('#pin').addEventListener('click', () => { if (!cur) return; cur.pin = !cur.pin; save(); open(cur); });
+    $('#view').addEventListener('click', e => { const on = $('#md').hidden; $('#md').hidden = !on; $('#text').hidden = on; e.currentTarget.setAttribute('aria-pressed', on); render(); });
+    $('#q').addEventListener('input', e => { q = e.target.value.trim().toLowerCase(); list(); });
+    $('#dl').addEventListener('click', () => {
+        if (!cur) return; const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([(cur.t ? '# ' + cur.t + '\n\n' : '') + cur.x], { type: 'text/markdown' }));
+        a.download = (cur.t || 'notiz').replace(/[^\wäöüÄÖÜ -]/g, '').trim().slice(0, 40) + '.md'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    });
+    open(notes.slice().sort((a, b) => (b.pin - a.pin) || b.at - a.at)[0]);
+});
+</script>
+</body>
+</html>

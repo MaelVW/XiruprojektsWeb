@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kartenschmiede · Xiruprojekts</title>
+    <meta name="description" content="Kartenschmiede: Inselwelten und Dungeons per Zufall generieren – mit Namen, Legende und Beschreibung. Als Bild speichern.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="ki.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/ai.js"></script>
+    <style>
+        .ks-map { width: 100%; height: auto; border-radius: 10px; display: block; box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+        .ks-seed { width: 9rem; } .ks-sel { width: auto; }
+        .ks-legend { list-style: none; padding: 0; display: grid; gap: .25rem; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">✦ KI-Labor</span>
+        <h1>Kartenschmiede</h1>
+        <p class="lead">Ein Klick, eine neue Welt. Die Karte entsteht aus Rauschen und Zufall direkt in deinem Browser – die KI (oder das Offline-Orakel) schreibt die Legende dazu.</p>
+    </header>
+    <div class="ki-top">
+        <div id="ai-status"></div>
+        <a class="btn btn--sm" href="index.html">✦ Zum KI-Labor</a>
+    </div>
+    <div class="ki-layout">
+        <section>
+            <div class="row">
+                <select class="select ks-sel" id="kind" aria-label="Art"><option value="welt">🏝 Inselwelt</option><option value="dungeon">🗝 Dungeon</option></select>
+                <input class="input mono ks-seed" id="seed" aria-label="Seed" placeholder="Seed">
+                <button class="btn btn--primary" type="button" id="go">🎲 Neue Karte</button>
+                <button class="btn" type="button" id="dl">⤓ PNG</button>
+            </div>
+            <canvas id="map" class="ks-map mt-1" width="960" height="640"></canvas>
+        </section>
+        <aside class="ki-side">
+            <h3 id="title">–</h3>
+            <ul class="small ks-legend" id="legend"></ul>
+            <button class="btn btn--sm" type="button" id="story">📜 Legende schreiben</button>
+            <div class="ki-output ai-md mt-1" id="out" data-empty="Hier erscheint die Geschichte deiner Karte."></div>
+        </aside>
+    </div>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU;
+    const AI = X.ai;
+    async function ask(out, msgs, opts, offline) {
+        const s = AI.ui.stream(out); let a;
+        try { a = await AI.chat(msgs, Object.assign({ onToken: x => s.push(x), offline }, opts)); }
+        catch (e) { a = e && e.code === 'abort' ? '_Abgebrochen._' : offline(); }
+        await s.end(a); return a;
+    }
+    const $ = s => X.$(s), O = AI.offline, cv = $('#map'), ctx = cv.getContext('2d'), W = 960, H = 640;
+    AI.ui.status('#ai-status', { offlineText: 'Legenden aus dem Offline-Orakel' });
+    let places = [], name = '';
+    function world(seed) {
+        const n = O.noise(seed), r = O.rng(seed + 1), img = ctx.createImageData(W, H), S = 4;
+        const hAt = (x, y) => { const dx = x / W - .5, dy = y / H - .5, fall = Math.sqrt(dx * dx * 1.2 + dy * dy * 1.9) * 1.75; return O.fbm(n, x / 150, y / 150, 5) - fall + .45; };
+        for (let y = 0; y < H; y += S) for (let x = 0; x < W; x += S) {
+            const h = hAt(x, y); let c;
+            if (h < .25) c = [18, 52, 96]; else if (h < .33) c = [32, 92, 150]; else if (h < .36) c = [222, 205, 150]; else if (h < .5) c = [76, 150, 72];
+            else if (h < .6) c = [40, 110, 58]; else if (h < .7) c = [120, 112, 98]; else c = [235, 238, 245];
+            const sh = 1 + (hAt(x + S, y + S) - h) * -4;
+            for (let j = 0; j < S; j++) for (let i = 0; i < S; i++) { const k = ((y + j) * W + x + i) * 4; img.data[k] = c[0] * sh; img.data[k + 1] = c[1] * sh; img.data[k + 2] = c[2] * sh; img.data[k + 3] = 255; }
+        }
+        ctx.putImageData(img, 0, 0);
+        places = []; const ICON = [['🏰', 'Burg', .5, .7], ['🏘', 'Dorf', .37, .55], ['⛰', 'Gipfel', .66, 1], ['🌲', 'Wald', .5, .6], ['⚓', 'Hafen', .36, .4], ['🗼', 'Turm', .55, .7], ['💎', 'Kristallhöhle', .6, .75]];
+        for (let t = 0; t < 400 && places.length < 9; t++) {
+            const x = 40 + r() * (W - 80), y = 40 + r() * (H - 80), h = hAt(x, y), cand = ICON.filter(c => h >= c[2] && h < c[3]);
+            if (!cand.length || places.some(p => Math.hypot(p.x - x, p.y - y) < 110)) continue;
+            const c = O.pick(r, cand); places.push({ x, y, i: c[0], t: c[1], n: O.name(r, 'ort') });
+        }
+        name = O.name(r, 'land');
+    }
+    function dungeon(seed) {
+        const r = O.rng(seed), G = 24, cols = W / G, rows = H / G, grid = Array.from({ length: rows }, () => new Array(cols).fill(0)), rooms = [];
+        for (let t = 0; t < 200 && rooms.length < 11; t++) {
+            const w = 4 + Math.floor(r() * 6), h = 3 + Math.floor(r() * 5), x = 1 + Math.floor(r() * (cols - w - 2)), y = 1 + Math.floor(r() * (rows - h - 2));
+            if (rooms.some(o => x < o.x + o.w + 1 && x + w + 1 > o.x && y < o.y + o.h + 1 && y + h + 1 > o.y)) continue;
+            rooms.push({ x, y, w, h, cx: x + (w >> 1), cy: y + (h >> 1) });
+        }
+        rooms.sort((a, b) => a.cx - b.cx);
+        rooms.forEach((o, i) => { for (let y = o.y; y < o.y + o.h; y++) for (let x = o.x; x < o.x + o.w; x++) grid[y][x] = 1;
+            if (i) { const p = rooms[i - 1]; for (let x = Math.min(p.cx, o.cx); x <= Math.max(p.cx, o.cx); x++) grid[p.cy][x] = grid[p.cy][x] || 2; for (let y = Math.min(p.cy, o.cy); y <= Math.max(p.cy, o.cy); y++) grid[y][o.cx] = grid[y][o.cx] || 2; } });
+        ctx.fillStyle = '#120f0c'; ctx.fillRect(0, 0, W, H);
+        grid.forEach((row, y) => row.forEach((v, x) => { if (!v) return; ctx.fillStyle = v === 1 ? '#c8b48a' : '#a8946c'; ctx.fillRect(x * G, y * G, G, G); ctx.strokeStyle = 'rgba(60,45,30,.35)'; ctx.strokeRect(x * G + .5, y * G + .5, G - 1, G - 1); }));
+        const ICON = [['🚪', 'Eingang'], ['💀', 'Gruft'], ['🐉', 'Drachenhort'], ['📦', 'Schatzkammer'], ['🕯', 'Kapelle'], ['🕸', 'Spinnennest'], ['⚗', 'Labor'], ['🗝', 'Schlüsselraum'], ['👑', 'Thronsaal'], ['🪤', 'Fallenraum'], ['🛏', 'Wachstube']];
+        places = rooms.map((o, i) => ({ x: o.cx * G + G / 2, y: o.cy * G + G / 2, i: i === 0 ? '🚪' : O.pick(r, ICON.slice(1))[0], t: '' }));
+        places.forEach((p, i) => { p.t = i === 0 ? 'Eingang' : ICON.find(c => c[0] === p.i)[1]; p.n = 'Raum ' + (i + 1); });
+        name = 'Verlies von ' + O.name(r, 'ort');
+    }
+    function draw() {
+        const kind = $('#kind').value, seed = $('#seed').value.trim() || String(X.rand(1, 999999)); $('#seed').value = seed;
+        (kind === 'welt' ? world : dungeon)(O.hash(seed));
+        ctx.font = '26px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        places.forEach(p => { ctx.fillText(p.i, p.x, p.y); if (kind === 'welt') { ctx.font = '600 13px system-ui'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.7)'; ctx.strokeText(p.n, p.x, p.y + 22); ctx.fillStyle = '#fff'; ctx.fillText(p.n, p.x, p.y + 22); ctx.font = '26px system-ui'; } });
+        ctx.font = '700 22px Georgia, serif'; ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.textAlign = 'left'; ctx.fillText(name, 20, 28);
+        $('#title').textContent = name;
+        $('#legend').innerHTML = places.map(p => '<li>' + p.i + ' <b>' + X.esc(p.n) + '</b> – ' + X.esc(p.t) + '</li>').join('');
+        $('#out').innerHTML = ''; X.once('ki-karte', 5, 'Erste Karte geschmiedet');
+    }
+    function offline() {
+        const r = O.rng(O.hash(name));
+        return '### ' + name + '\n\n' + O.fill('[Man erzählt sich|Die Alten sagen|In verstaubten Karten steht], dass {a} [einst|vor langer Zeit|in der Nacht des Nebels] [gegründet|verflucht|entdeckt] wurde. ', { a: name }, r) +
+            places.slice(0, 4).map(p => O.fill('- **' + p.n + '** (' + p.t + '): [Hier soll|Angeblich soll hier|Reisende berichten, hier würde] [ein alter Wächter wohnen|ein Schatz vergraben liegen|nachts ein Licht flackern|ein Kristall summen].', {}, r)).join('\n') +
+            '\n\n_' + O.fill('[Wer mutig ist, beginnt|Die Reise beginnt] bei **' + places[0].n + '**.', {}, r) + '_';
+    }
+    $('#go').addEventListener('click', () => { $('#seed').value = ''; draw(); });
+    $('#seed').addEventListener('keydown', e => { if (e.key === 'Enter') draw(); });
+    $('#kind').addEventListener('change', () => { $('#seed').value = ''; draw(); });
+    $('#dl').addEventListener('click', () => cv.toBlob(b => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = name.replace(/\s+/g, '-') + '.png'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); }));
+    $('#story').addEventListener('click', () => ask($('#out'), [{ role: 'user', content: 'Schreibe eine kurze, stimmungsvolle Legende (max. 120 Wörter, Deutsch, Markdown) zur Karte "' + name + '". Orte: ' + places.map(p => p.n + ' (' + p.t + ')').join(', ') + '.' }],
+        { system: 'Du bist ein Geschichtenerzähler für ein Fantasy-Abenteuer für Jugendliche. Schreib Deutsch (Schweiz, ss statt ß), freundlich-geheimnisvoll, ohne Gewaltdetails.', temperature: .9, maxTokens: 400 }, offline));
+    draw();
+});
+</script>
+</body>
+</html>

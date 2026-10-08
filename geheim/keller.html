@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Der Keller · Xiruprojekts</title>
+    <meta name="description" content="Unter der Website gibt es einen Keller. Es riecht nach altem Staub und Kabeln.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <style>
+        .kl { position: relative; height: min(70vh, 560px); border-radius: 14px; overflow: hidden; background: #050505; transition: background .4s; box-shadow: inset 0 0 120px #000; }
+        .kl.is-lit { background: radial-gradient(circle at 50% 8%, #fde68a55, #3b2f1e 45%, #120d08 85%); animation: klFlick 6s infinite; }
+        @keyframes klFlick { 0%, 96%, 100% { filter: none; } 97% { filter: brightness(.5); } 98% { filter: none; } 99% { filter: brightness(.6); } }
+        html.no-anim .kl.is-lit { animation: none; }
+        .kl__bulb { position: absolute; top: 4%; left: 50%; transform: translateX(-50%); font-size: 2rem; background: none; border: 0; cursor: pointer; filter: grayscale(1) brightness(.4); z-index: 2; }
+        .kl.is-lit .kl__bulb { filter: drop-shadow(0 0 20px #fde68a); }
+        .kl__it { position: absolute; font-size: clamp(1.8rem, 5vw, 2.6rem); background: none; border: 0; cursor: pointer; opacity: 0; transition: opacity .6s, transform .2s; }
+        .kl.is-lit .kl__it { opacity: 1; } .kl__it:hover { transform: scale(1.15) rotate(-4deg); }
+        .kl__msg { position: absolute; left: 1rem; right: 1rem; bottom: 1rem; margin: 0; padding: .7rem 1rem; border-radius: 8px; background: rgba(0,0,0,.6); color: #e7e5e4; font-family: var(--mono); font-size: .9rem; }
+        .kl__msg a { color: #fde68a; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">🗝 Geheimer Ort</span>
+        <h1>Der Keller</h1>
+        <p class="lead">Eine knarrende Treppe, eine nackte Glühbirne, Kisten voller Dinge, die niemand mehr braucht. Oder doch?</p>
+    </header>
+    <section class="kl" id="room">
+        <button class="kl__bulb" type="button" id="bulb" aria-label="Licht an oder aus">💡</button>
+        <div class="kl__items" id="items"></div>
+        <p class="kl__msg" id="msg" aria-live="polite">Es ist stockdunkel. Irgendwo hängt eine Glühbirne.</p>
+    </section>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU;
+    const $ = s => X.$(s);
+    const IT = [['📦', 'Eine Kiste mit der Aufschrift „Disketten 1–400“. Ganz unten klebt ein Zettel: <i>„Im Terminal: <code>gehe archiv</code>“</i>'],
+        ['🕸', 'Spinnweben. Nur Spinnweben. Ehrlich.'], ['🖥', 'Ein Röhrenmonitor. Er ist warm, obwohl er nicht eingesteckt ist.'],
+        ['🔌', 'Ein Kabelsalat, der mindestens 1998 begonnen hat.'], ['🐈', 'Eine Katze schaut dich an und verschwindet durch einen Spalt. <a href="katzen.html">Hinterher?</a>'],
+        ['🧯', 'Ein Feuerlöscher. Geprüft: 2003.'], ['📜', 'Eine Karte mit einem Leuchtturm. Darunter: <i>„Der Code führt zum Licht.“</i>']];
+    let on = false, n = 0;
+    $('#items').innerHTML = IT.map((t, i) => '<button type="button" class="kl__it" data-i="' + i + '" style="left:' + (8 + (i * 13) % 80) + '%;top:' + (30 + (i * 37) % 55) + '%">' + t[0] + '</button>').join('');
+    $('#bulb').addEventListener('click', () => {
+        on = !on; $('#room').classList.toggle('is-lit', on); X.beep(on ? 90 : 60, .08, 'square', .03);
+        $('#msg').textContent = on ? (++n > 5 ? 'Die Birne flackert beleidigt.' : 'Klick. Staub tanzt im Licht. Schau dich um.') : 'Dunkel. Irgendwo tropft etwas.';
+    });
+    $('#items').addEventListener('click', e => { const b = e.target.closest('.kl__it'); if (!b || !on) return; $('#msg').innerHTML = IT[+b.dataset.i][1]; });
+});
+</script>
+</body>
+</html>

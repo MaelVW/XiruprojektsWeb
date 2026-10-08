@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON-Werkstatt · Xiruprojekts</title>
+    <meta name="description" content="JSON formatieren, prüfen und verkleinern – mit Fehlerstelle, Statistik und Baumansicht. Nichts verlässt deinen Browser.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="css/werkzeuge.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <style>
+        .js-area { min-height: 22rem; width: 100%; font-size: .85rem; line-height: 1.5; tab-size: 4; }
+        .js-out { margin: 0; padding: .8rem 1rem; background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius); overflow: auto; max-height: 34rem; white-space: pre; }
+        #msg { min-height: 1.5em; margin-top: .8rem; overflow-wrap: anywhere; }
+        #stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: .6rem; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">⚒ Werkzeugkasten</span>
+        <h1>JSON-Werkstatt</h1>
+        <p class="lead">Füge JSON ein, und die Werkstatt formatiert, prüft oder verkleinert es. Bei Fehlern zeigt sie dir Zeile und Spalte.</p>
+    </header>
+    <div class="grid-2">
+        <div class="field mb-0"><label for="in">Eingabe</label><textarea id="in" class="textarea mono js-area" spellcheck="false" placeholder='{"name": "Xiru", "kristalle": [1, 2, 3]}'></textarea></div>
+        <div class="field mb-0"><label for="out">Ergebnis</label><pre id="out" class="js-area js-out mono" tabindex="0"></pre></div>
+    </div>
+    <div class="row mt-1">
+        <button class="btn btn--primary" type="button" id="b-fmt">✨ Formatieren</button>
+        <button class="btn" type="button" id="b-min">🗜 Verkleinern</button>
+        <button class="btn" type="button" id="b-sort">🔤 Schlüssel sortieren</button>
+        <label class="small"><input type="checkbox" id="tabs"> Tabs statt Leerzeichen</label>
+        <span class="spacer"></span>
+        <button class="btn btn--ghost" type="button" id="b-copy">📋 Kopieren</button>
+        <button class="btn btn--ghost" type="button" id="b-demo">Beispiel</button>
+    </div>
+    <p class="form-msg" id="msg" role="status"></p>
+    <div class="hw-stats" id="stats"></div>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU;
+    const $ = s => X.$(s), inp = $('#in'), out = $('#out'), msg = $('#msg');
+    let result = '';
+    // Eigener Mini-Parser, falls der Browser keine Fehlerposition nennt
+    function locate(t) {
+        let i = 0;
+        const ws = () => { while (/\s/.test(t[i])) i++; }, fail = () => { throw i; };
+        function str() { i++; while (i < t.length && t[i] !== '"') { if (t[i] === '\\') i++; else if (t[i] === '\n') fail(); i++; } if (t[i] !== '"') fail(); i++; }
+        function val() {
+            ws(); const c = t[i];
+            if (c === '{' || c === '[') {
+                const end = c === '{' ? '}' : ']'; i++; ws(); if (t[i] === end) { i++; return; }
+                for (;;) { if (c === '{') { ws(); if (t[i] !== '"') fail(); str(); ws(); if (t[i] !== ':') fail(); i++; } val(); ws();
+                    if (t[i] === ',') { i++; continue; } if (t[i] === end) { i++; return; } fail(); }
+            }
+            if (c === '"') return str();
+            const m = /^(-?\d+(\.\d+)?([eE][+-]?\d+)?|true|false|null)/.exec(t.slice(i)); if (!m) fail(); i += m[0].length;
+        }
+        try { val(); ws(); if (i < t.length) fail(); return -1; } catch (p) { return typeof p === 'number' ? p : -1; }
+    }
+    function where(text, err) {
+        const m = /position (\d+)/.exec(err.message) || /line (\d+) column (\d+)/.exec(err.message) || ((p => p >= 0 ? [0, p] : null)(locate(text)));
+        if (!m) return '';
+        let line, col;
+        if (m.length === 3) { line = +m[1]; col = +m[2]; } else { const before = text.slice(0, +m[1]).split('\n'); line = before.length; col = before[before.length - 1].length + 1; }
+        return ' – Zeile ' + line + ', Spalte ' + col + ':  ' + (text.split('\n')[line - 1] || '').trim().slice(0, 80);
+    }
+    function stats(v) {
+        let objs = 0, arrs = 0, keys = 0, vals = 0, depth = 0;
+        (function walk(x, d) {
+            depth = Math.max(depth, d);
+            if (Array.isArray(x)) { arrs++; x.forEach(y => walk(y, d + 1)); }
+            else if (x && typeof x === 'object') { objs++; Object.keys(x).forEach(k => { keys++; walk(x[k], d + 1); }); }
+            else vals++;
+        })(v, 0);
+        const box = (l, n) => '<div class="stat"><span class="stat__label">' + l + '</span><span class="stat__value">' + X.fmt(n) + '</span></div>';
+        $('#stats').innerHTML = box('Objekte', objs) + box('Listen', arrs) + box('Schlüssel', keys) + box('Werte', vals) + box('Tiefe', depth) + box('Zeichen', result.length);
+    }
+    const sortKeys = v => Array.isArray(v) ? v.map(sortKeys) : v && typeof v === 'object' ? Object.keys(v).sort((a, b) => a.localeCompare(b, 'de')).reduce((o, k) => (o[k] = sortKeys(v[k]), o), {}) : v;
+    function run(kind) {
+        const text = inp.value;
+        if (!text.trim()) { msg.textContent = 'Bitte zuerst JSON einfügen.'; msg.className = 'form-msg'; return; }
+        let v;
+        try { v = JSON.parse(text); }
+        catch (e) { out.textContent = ''; $('#stats').innerHTML = ''; msg.textContent = '✖ Ungültiges JSON' + where(text, e); msg.className = 'form-msg callout--danger'; return; }
+        if (kind === 'sort') v = sortKeys(v);
+        result = kind === 'min' ? JSON.stringify(v) : JSON.stringify(v, null, $('#tabs').checked ? '\t' : 2);
+        out.textContent = result;
+        msg.textContent = '✔ Gültiges JSON' + (kind === 'min' ? ' – ' + X.fmt(text.length - result.length) + ' Zeichen gespart' : '');
+        msg.className = 'form-msg text-success';
+        stats(v); X.once('wz-json', 5, 'JSON gebändigt');
+    }
+    $('#b-fmt').addEventListener('click', () => run('fmt'));
+    $('#b-min').addEventListener('click', () => run('min'));
+    $('#b-sort').addEventListener('click', () => run('sort'));
+    $('#b-copy').addEventListener('click', () => { if (!result) return; navigator.clipboard.writeText(result).then(() => X.toast('📋 Kopiert', 'Das Ergebnis ist in der Zwischenablage.'), () => {}); });
+    $('#b-demo').addEventListener('click', () => { inp.value = '{"spieler":"Xiru","level":7,"kristalle":["Splitter","Prisma"],"werft":{"mech":"Ankerläufer","module":3,"aktiv":true}}'; run('fmt'); });
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) run('fmt'); });
+});
+</script>
+</body>
+</html>

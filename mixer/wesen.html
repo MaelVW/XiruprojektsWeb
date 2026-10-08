@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kreaturenmixer · Xiruprojekts</title>
+    <meta name="description" content="Kreaturenmixer: Bau dir ein Monster aus Körper, Augen, Maul, Hörnern und Muster – mit Namen und als SVG zum Herunterladen.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="css/mixer.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="js/mixer.js"></script>
+    <style>
+        .wm-stage { text-align: center; }
+        .wm-stage svg { width: min(100%, 320px); height: auto; filter: drop-shadow(0 12px 20px rgba(0,0,0,.35)); animation: wmBob 3s ease-in-out infinite; }
+        @keyframes wmBob { 50% { transform: translateY(-6px) rotate(-1.5deg); } }
+        html.no-anim .wm-stage svg { animation: none; }
+        .wm-name { margin: .4rem 0 0; }
+        #col { width: 100%; height: 2.6rem; padding: 0; border-radius: 8px; border: 1px solid var(--border-strong); background: none; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">🎛 Mixer-Studio</span>
+        <h1>Kreaturenmixer</h1>
+        <p class="lead">Würfle ein Wesen zusammen oder stell es Teil für Teil ein. Gefällt es dir, kannst du es als Bild speichern.</p>
+    </header>
+    <div class="grid-2">
+        <section class="card wm-stage"><svg id="pic" viewBox="0 0 200 200" role="img" aria-label="Dein Wesen"></svg><h2 class="wm-name" id="name"></h2><p class="small muted" id="info"></p></section>
+        <aside class="card">
+            <div id="ctrl"></div>
+            <div class="field"><label for="col">Farbe</label><input type="color" id="col" value="#a78bfa"></div>
+            <div class="row"><button class="btn btn--primary" type="button" id="rnd">🎲 Zufallswesen</button><button class="btn" type="button" id="dl">⤓ Als SVG</button></div>
+        </aside>
+    </div>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU;
+    const M = X.Mixer, $ = s => X.$(s);
+    const P = {
+        koerper: ['Klecks', 'Würfel', 'Birne', 'Geist', 'Stachel'],
+        augen: ['Eins', 'Zwei', 'Drei', 'Schlitze', 'Viele'],
+        maul: ['Grinsen', 'Zähne', 'Rüssel', 'Oh!', 'Fangzähne'],
+        kopf: ['Nichts', 'Hörner', 'Antennen', 'Ohren', 'Krone'],
+        muster: ['Glatt', 'Punkte', 'Streifen', 'Schuppen']
+    };
+    const LBL = { koerper: 'Körper', augen: 'Augen', maul: 'Maul', kopf: 'Kopfschmuck', muster: 'Muster' };
+    let st = M.load('wesen', null) || { koerper: 0, augen: 1, maul: 0, kopf: 1, muster: 1, col: '#a78bfa', seed: 7 };
+    $('#ctrl').innerHTML = Object.keys(P).map(k => '<div class="field"><label for="s-' + k + '">' + LBL[k] + '</label><select class="select" id="s-' + k + '" data-k="' + k + '">' + P[k].map((v, i) => '<option value="' + i + '">' + v + '</option>').join('') + '</select></div>').join('');
+    const BODY = [
+        'M40 120 C30 70 70 40 100 42 C140 40 172 70 162 122 C170 165 130 180 100 178 C62 180 30 165 40 120Z',
+        'M45 60 H155 Q165 60 165 70 V165 Q165 175 155 175 H45 Q35 175 35 165 V70 Q35 60 45 60Z',
+        'M100 40 C130 40 140 80 150 110 C165 150 140 180 100 180 C60 180 35 150 50 110 C60 80 70 40 100 40Z',
+        'M45 175 V95 C45 55 75 40 100 40 C125 40 155 55 155 95 V175 L135 160 L117 177 L100 160 L83 177 L65 160Z',
+        'M100 30 L118 58 L150 48 L145 82 L175 100 L148 118 L158 150 L124 148 L100 178 L76 148 L42 150 L52 118 L25 100 L55 82 L50 48 L82 58Z'
+    ];
+    function eye(x, y, r) { return '<circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="#fff"/><circle cx="' + (x + r * .25) + '" cy="' + (y + r * .15) + '" r="' + r * .5 + '" fill="#111"/><circle cx="' + (x + r * .4) + '" cy="' + (y - r * .15) + '" r="' + r * .15 + '" fill="#fff"/>'; }
+    function svg() {
+        const c = st.col, dark = 'rgba(0,0,0,.25)'; let s = '';
+        const rng = (n => () => (n = (n * 9301 + 49297) % 233280) / 233280)(st.seed);
+        s += '<defs><radialGradient id="sh" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset="1" stop-color="#000" stop-opacity=".2"/></radialGradient><clipPath id="bc"><path d="' + BODY[st.koerper] + '"/></clipPath></defs>';
+        const K = st.kopf;
+        if (K === 1) s += '<path d="M65 62 Q50 30 40 22 Q70 32 80 55Z M135 62 Q150 30 160 22 Q130 32 120 55Z" fill="#f5e6c8" stroke="' + dark + '" stroke-width="2"/>';
+        if (K === 2) s += '<path d="M85 50 Q78 25 70 15 M115 50 Q122 25 130 15" stroke="#333" stroke-width="3" fill="none"/><circle cx="70" cy="15" r="6" fill="#facc15"/><circle cx="130" cy="15" r="6" fill="#facc15"/>';
+        if (K === 3) s += '<path d="M55 75 L40 30 L80 55Z M145 75 L160 30 L120 55Z" fill="' + c + '" stroke="' + dark + '" stroke-width="3"/>';
+        if (K === 4) s += '<path d="M70 50 L72 22 L86 38 L100 18 L114 38 L128 22 L130 50Z" fill="#facc15" stroke="#b45309" stroke-width="2"/>';
+        s += '<path d="' + BODY[st.koerper] + '" fill="' + c + '" stroke="' + dark + '" stroke-width="3"/>';
+        let pat = '';
+        if (st.muster === 1) for (let i = 0; i < 9; i++) pat += '<circle cx="' + (40 + rng() * 120) + '" cy="' + (60 + rng() * 115) + '" r="' + (4 + rng() * 8) + '" fill="' + dark + '"/>';
+        if (st.muster === 2) for (let i = 0; i < 6; i++) pat += '<path d="M20 ' + (70 + i * 22) + ' Q100 ' + (60 + i * 22) + ' 180 ' + (70 + i * 22) + '" stroke="' + dark + '" stroke-width="7" fill="none"/>';
+        if (st.muster === 3) for (let y = 60; y < 180; y += 14) for (let x = 30 + (y % 28 ? 7 : 0); x < 175; x += 14) pat += '<path d="M' + x + ' ' + y + ' q7 9 14 0" stroke="' + dark + '" stroke-width="2" fill="none"/>';
+        s += '<g clip-path="url(#bc)">' + pat + '<path d="' + BODY[st.koerper] + '" fill="url(#sh)"/></g>';
+        const E = st.augen;
+        if (E === 0) s += eye(100, 92, 22);
+        if (E === 1) s += eye(80, 92, 15) + eye(120, 92, 15);
+        if (E === 2) s += eye(72, 98, 12) + eye(100, 82, 14) + eye(128, 98, 12);
+        if (E === 3) s += '<path d="M65 95 Q80 85 92 95 M108 95 Q120 85 135 95" stroke="#111" stroke-width="5" stroke-linecap="round" fill="none"/>';
+        if (E === 4) [[70, 85, 7], [92, 78, 9], [115, 84, 8], [132, 97, 6], [82, 100, 6], [106, 100, 7]].forEach(e => s += eye(...e));
+        const Mw = st.maul;
+        if (Mw === 0) s += '<path d="M75 128 Q100 150 125 128" stroke="#111" stroke-width="5" fill="none" stroke-linecap="round"/>';
+        if (Mw === 1) s += '<path d="M70 125 Q100 155 130 125Z" fill="#3b0a1a"/><path d="M78 128 l6 8 l6 -8 l6 8 l6 -8 l6 8 l6 -8 l6 8 l6 -8" stroke="#fff" stroke-width="2" fill="#fff"/>';
+        if (Mw === 2) s += '<path d="M95 115 Q90 150 100 165 Q108 170 112 160" stroke="' + dark + '" stroke-width="12" fill="none" stroke-linecap="round"/>';
+        if (Mw === 3) s += '<ellipse cx="100" cy="135" rx="12" ry="15" fill="#3b0a1a"/>';
+        if (Mw === 4) s += '<path d="M72 128 H128" stroke="#111" stroke-width="4" stroke-linecap="round"/><path d="M80 128 l5 14 l5 -14 M110 128 l5 14 l5 -14" fill="#fff" stroke="#ddd" stroke-width="1"/>';
+        return s;
+    }
+    const SY = [['Gro', 'Bli', 'Mu', 'Kra', 'Zo', 'Pf', 'Wu', 'Schnu', 'Ra', 'Ko'], ['bbel', 'nki', 'mpf', 'zzel', 'rk', 'lli', 'ggo', 'tz', 'ckel', 'mmi']];
+    function render() {
+        Object.keys(P).forEach(k => $('#s-' + k).value = st[k]); $('#col').value = st.col;
+        $('#pic').innerHTML = svg();
+        const r = (st.seed * 7 + st.koerper * 3 + st.augen) % 10;
+        $('#name').textContent = SY[0][r] + SY[1][(st.seed + st.maul * 3 + st.kopf) % 10] + (st.augen === 2 ? ' der Dreiäugige' : st.kopf === 4 ? ' der Erste' : '');
+        $('#info').textContent = P.koerper[st.koerper] + '-Körper · ' + P.augen[st.augen] + ' · ' + P.maul[st.maul] + ' · ' + P.kopf[st.kopf] + ' · ' + P.muster[st.muster];
+        M.save('wesen', st);
+    }
+    X.$$('#ctrl select').forEach(s => s.addEventListener('change', () => { st[s.dataset.k] = +s.value; render(); }));
+    $('#col').addEventListener('input', () => { st.col = $('#col').value; render(); });
+    $('#rnd').addEventListener('click', () => {
+        Object.keys(P).forEach(k => st[k] = X.rand(0, P[k].length - 1)); st.seed = X.rand(1, 9999);
+        st.col = 'hsl(' + X.rand(0, 359) + ' 70% 62%)'; const tmp = document.createElement('canvas').getContext('2d'); tmp.fillStyle = st.col; st.col = tmp.fillStyle;
+        render(); X.once('mx-wesen', 5, 'Monsterbauer');
+    });
+    $('#dl').addEventListener('click', () => M.download(($('#name').textContent || 'wesen').replace(/\s+/g, '-') + '.svg', new Blob(['<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">' + svg() + '</svg>'], { type: 'image/svg+xml' })));
+    render();
+});
+</script>
+</body>
+</html>

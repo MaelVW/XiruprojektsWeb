@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Namensmixer · Xiruprojekts</title>
+    <meta name="description" content="Namensmixer: Namen für Spiele, Helden, Mechs, Studios und Inseln – gemischt aus Silben und Wörtern, mit Favoritenliste.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="css/mixer.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="js/mixer.js"></script>
+    <style>
+        .nm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: .6rem; }
+        .nm-card { display: flex; align-items: center; gap: .3rem; padding: .7rem .9rem; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--border); font-weight: 700; animation: nmIn .35s var(--ease, ease) both; }
+        .nm-card span { flex: 1; overflow-wrap: anywhere; }
+        @keyframes nmIn { from { opacity: 0; transform: translateY(8px) scale(.97); } }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">🎛 Mixer-Studio</span>
+        <h1>Namensmixer</h1>
+        <p class="lead">Dir fehlt ein Name? Wähle, wofür – der Mixer würfelt Silben und Wörter zusammen. Gute Namen sternst du an.</p>
+    </header>
+    <div class="tabs" id="kinds" role="tablist"></div>
+    <div class="nm-grid" id="out" aria-live="polite"></div>
+    <div class="row mt-1"><button class="btn btn--primary" type="button" id="go">🎲 Neue Namen <kbd>Leertaste</kbd></button></div>
+    <section class="card mt-1"><h3>★ Favoriten</h3><div class="row" id="favs"></div></section>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU;
+    const M = X.Mixer, $ = s => X.$(s);
+    const A = {
+        held: { n: '🗡 Held', f: () => X.pick(['Ar', 'Bel', 'Cor', 'Dra', 'El', 'Fen', 'Gal', 'Ka', 'Ly', 'Mor', 'Ny', 'Ro', 'Sy', 'Tha', 'Val', 'Xi', 'Zer']) + X.pick(['a', 'e', 'i', 'o', 'y', 'ae', 'io', '']) + X.pick(['dor', 'lin', 'ra', 'wen', 'ric', 'mir', 'thas', 'ven', 'nor', 'ys', 'ka']) + (Math.random() < .5 ? ' ' + X.pick(['der Kühne', 'Sturmklinge', 'aus dem Nebel', 'Funkenherz', 'die Weise', 'Eisenfaust', 'vom Leuchtturm', 'Schattenschritt']) : '') },
+        spiel: { n: '🎮 Spiel', f: () => X.pick(['Pixel', 'Neon', 'Krypto', 'Turbo', 'Schatten', 'Kristall', 'Dungeon', 'Retro', 'Hyper', 'Mega', 'Nebel', 'Sternen']) + X.pick(['jäger', 'flug', 'sturm', 'läufer', 'schmiede', 'krieger', 'ritter', 'rausch', 'held', 'flucht']) + (Math.random() < .4 ? X.pick([' 2000', ' DX', ': Die Rückkehr', ' Origins', ' XL', ' 64']) : '') },
+        mech: { n: '🤖 Mech', f: () => X.pick(['Anker', 'Titan', 'Eisen', 'Donner', 'Stahl', 'Kobalt', 'Funken', 'Granit', 'Orkan']) + X.pick(['läufer', 'brecher', 'wächter', 'faust', 'koloss', 'pionier', 'schreiter']) + ' ' + X.pick(['MK-', 'XR-', 'V', 'Typ ', 'Z-']) + X.rand(1, 99) },
+        studio: { n: '🏢 Studio', f: () => X.pick(['Floppy', 'Pixel', 'Blauer', 'Wilde', 'Leise', 'Goldene', 'Kleine', 'Rote', 'Nebel']) + ' ' + X.pick(['Werkstatt', 'Füchse', 'Schmiede', 'Labor', 'Kollektiv', 'Garage', 'Byte', 'Drachen', 'Möwen']) + X.pick(['', ' Games', ' Studios', ' & Co.', ' Interactive']) },
+        insel: { n: '🏝 Insel', f: () => X.pick(['Nebel', 'Kristall', 'Funken', 'Salz', 'Rost', 'Mond', 'Glut', 'Kabel', 'Sturm', 'Muschel']) + X.pick(['bucht', 'riff', 'atoll', 'klippe', 'eiland', 'hafen', 'hügel', 'insel']) },
+        gilde: { n: '🛡 Gilde', f: () => 'Die ' + X.pick(['Silbernen', 'Verlorenen', 'Ewigen', 'Wilden', 'Stillen', 'Gläsernen', 'Letzten']) + ' ' + X.pick(['Klingen', 'Wächter', 'Laternen', 'Disketten', 'Raben', 'Runen', 'Anker']) }
+    };
+    let kind = M.load('namen-art', 'held'); if (!A[kind]) kind = 'held';
+    $('#kinds').innerHTML = Object.keys(A).map(k => '<button type="button" role="tab" data-k="' + k + '">' + A[k].n + '</button>').join('');
+    function favs() {
+        const f = M.load('namen-favs', []), box = $('#favs'); box.textContent = '';
+        if (!f.length) { box.innerHTML = '<span class="small muted">Klick auf ☆ neben einem Namen.</span>'; return; }
+        f.forEach((n, i) => { const c = document.createElement('button'); c.type = 'button'; c.className = 'chip'; c.textContent = n + ' ✕'; c.title = 'Entfernen'; c.addEventListener('click', () => { f.splice(i, 1); M.save('namen-favs', f); favs(); }); box.appendChild(c); });
+    }
+    function roll() {
+        X.$$('#kinds button').forEach(b => b.setAttribute('aria-selected', b.dataset.k === kind));
+        const seen = new Set(); let guard = 0; while (seen.size < 8 && guard++ < 50) seen.add(A[kind].f());
+        const out = $('#out'); out.textContent = '';
+        [...seen].forEach((n, i) => {
+            const d = document.createElement('div'); d.className = 'nm-card'; d.style.animationDelay = i * 40 + 'ms';
+            const t = document.createElement('span'); t.textContent = n;
+            const s = document.createElement('button'); s.type = 'button'; s.className = 'btn btn--sm btn--ghost'; s.textContent = '☆'; s.title = 'Merken';
+            s.addEventListener('click', () => { const f = M.load('namen-favs', []); if (!f.includes(n)) { f.unshift(n); M.save('namen-favs', f.slice(0, 30)); } s.textContent = '★'; favs(); });
+            const c = document.createElement('button'); c.type = 'button'; c.className = 'btn btn--sm btn--ghost'; c.textContent = '📋'; c.title = 'Kopieren'; c.addEventListener('click', () => M.copy(n, n));
+            d.append(t, s, c); out.appendChild(d);
+        });
+        X.once('mx-namen', 5, 'Namensfinder');
+    }
+    X.$$('#kinds button').forEach(b => b.addEventListener('click', () => { kind = b.dataset.k; M.save('namen-art', kind); roll(); }));
+    $('#go').addEventListener('click', roll);
+    document.addEventListener('keydown', e => { if (e.key === ' ' && !M.isTyping(e) && e.target.tagName !== 'BUTTON') { e.preventDefault(); roll(); } });
+    roll(); favs();
+});
+</script>
+</body>
+</html>

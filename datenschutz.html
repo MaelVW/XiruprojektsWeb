@@ -31,6 +31,7 @@
     <div class="tldr">
         <div class="card card--flat"><b>0</b><span class="small muted">Tracker</span></div>
         <div class="card card--flat"><b>0</b><span class="small muted">Werbe- oder Tracking-Cookies</span></div>
+        <div class="card card--flat"><b>2</b><span class="small muted">technische Cookies (nur mit Einwilligung)</span></div>
         <div class="card card--flat"><b>0</b><span class="small muted">Server-Datenbanken</span></div>
         <div class="card card--flat"><b>100 %</b><span class="small muted">in deinem Browser</span></div>
     </div>
@@ -44,7 +45,8 @@
     <ul>
         <li><strong>Lokale Konten:</strong> Name und ein Passwort-Hash (PBKDF2 mit Salt). Das Passwort selbst wird nie gespeichert.</li>
         <li><strong>Fortschritt:</strong> XP, besuchte Seiten, Realitätskristalle, Module, Spielrekorde und Spielstände.</li>
-        <li><strong>Einstellungen:</strong> Design, Animationen, Töne.</li>
+        <li><strong>Einstellungen:</strong> Design, Animationen, Töne und Spielmodus (Abenteuer oder Entdecker).</li>
+        <li><strong>Mech-Spiel:</strong> Inventar, Bauteile, Taler, Materialien und wo dein Mech gerade steht.</li>
         <li><strong>Notizen und Mixer-Voreinstellungen,</strong> die du selbst anlegst.</li>
         <li><strong>API-Schlüssel,</strong> falls du im KI-Labor eigene Schlüssel einträgst (siehe Punkt 4).</li>
     </ul>
@@ -53,10 +55,18 @@
     <h2>3. Cookies & Speicher-Einwilligung <span class="crumbs" data-egg="p-krumen" title="Krümel">🍪 · · ·</span></h2>
     <p>Beim ersten Besuch fragt dich ein Banner, wie gespeichert werden darf:</p>
     <ul>
-        <li><strong>Alles erlauben:</strong> Fortschritt, lokales Konto und Einstellungen werden dauerhaft im localStorage (bzw. künftig in kleinen, rein technischen Cookies) deines Browsers gespeichert.</li>
+        <li><strong>Alles erlauben:</strong> Fortschritt, lokales Konto und Einstellungen werden dauerhaft im localStorage deines Browsers gespeichert. Zusätzlich setzt die Website zwei kleine, rein technische Cookies (siehe unten).</li>
         <li><strong>Nur notwendige:</strong> Alles funktioniert, wird aber nur im sessionStorage gehalten und beim Schliessen des Browsers gelöscht.
             Dauerhaft gespeichert wird nur deine Entscheidung selbst, damit das Banner nicht bei jedem Besuch erscheint.</li>
     </ul>
+    <p><strong>Die zwei Cookies</strong> (nur bei „Alles erlauben“, nur wenn die Website über http/https läuft, Laufzeit ca. 13 Monate, <code>SameSite=Strict</code>):</p>
+    <ul>
+        <li><code>xiru_sicherung_…</code> – eine kompakte Notfall-Sicherung deines Fortschritts (XP, gefundene Kristalle, besuchte Orte, Module, entdeckte Inseln, die wichtigsten Mech-Teile, Taler) als Zahlencode.
+            Damit kann die Website deinen Stand wiederherstellen, falls der Browser-Speicher einmal geleert wird.</li>
+        <li><code>xiru_zuletzt</code> – der Name des zuletzt benutzten lokalen Kontos und der Spielmodus, damit dich der Startbildschirm begrüssen kann.</li>
+    </ul>
+    <p>Beide enthalten keine Passwörter und keine Daten von Dritten. Technisch schickt dein Browser Cookies bei jedem Seitenaufruf an den Webserver mit, auf dem die Website liegt;
+        wir werten sie dort nicht aus und speichern sie nicht. In den <a href="konto/einstellungen.html">Einstellungen</a> kannst du die Cookies jederzeit löschen.</p>
     <p>Du kannst deine Entscheidung jederzeit ändern: <button class="btn btn--sm" type="button" id="consent-open">🍪 Einstellung ändern</button></p>
     <p>Wir benutzen keine Analyse- oder Werbedienste und keine eingebetteten Inhalte von Dritten (Videos, Schriftarten, Social-Media-Knöpfe), die beim Laden Daten übertragen würden.</p>
 

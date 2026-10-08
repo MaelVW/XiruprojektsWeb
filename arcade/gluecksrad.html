@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Glücksrad · Xiruprojekts</title>
+    <meta name="description" content="Das Glücksrad der Spielhalle: einmal am Tag drehen und Erfahrungspunkte gewinnen.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="../assets/css/themes/arcade.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/arcade.js"></script>
+    <style>
+        .gr { position: relative; padding: clamp(14px, 3vw, 30px); display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+        .gr canvas { width: min(100%, 400px); height: auto; aspect-ratio: 1; filter: drop-shadow(0 10px 30px rgba(0,0,0,.45)); }
+        .gr__arrow { font-size: 2.2rem; line-height: 1; color: #facc15; text-shadow: 0 2px 8px rgba(0,0,0,.6); margin-bottom: -1.6rem; z-index: 1; }
+    </style>
+</head>
+<body class="theme-arcade">
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">▶ Spielhalle · Bonus</span>
+        <h1>Glücksrad</h1>
+        <p class="lead">Einmal pro Tag darfst du drehen. Was zeigt der Pfeil, wenn das Rad stehen bleibt?</p>
+    </header>
+    <div class="game">
+        <div>
+            <div class="game__hud" id="hud">
+                <div><span>Heute</span><b id="h-state">bereit</b></div>
+                <div><span>Gewinne gesamt</span><b id="h-total">0 XP</b></div>
+                <div><span>Drehungen</span><b id="h-spins">0</b></div>
+            </div>
+            <div class="game__stage" id="stage">
+                <div class="gr">
+                    <div class="gr__arrow" aria-hidden="true">▼</div>
+                    <canvas id="wheel" width="440" height="440" aria-label="Glücksrad"></canvas>
+                    <button class="btn btn--primary btn--lg gr__go" type="button" id="spin">Drehen!</button>
+                </div>
+                <div class="game__overlay" id="ov" hidden></div>
+            </div>
+            <div class="row mt-1"></div>
+        </div>
+        <aside class="game__side">
+            <div class="card">
+                <h3>Gewinne</h3>
+                <ul class="keys-help" id="prizes"></ul>
+            </div>
+            <div class="card">
+                <h3>Nächste Drehung</h3>
+                <p class="stat__value" id="next">jetzt</p>
+            </div>
+        </aside>
+    </div>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU;
+    const G = X.Game, $ = s => X.$(s), cv = $('#wheel'), ctx = cv.getContext('2d');
+    const P = [[10, '#38bdf8'], [25, '#a78bfa'], [5, '#64748b'], [50, '#f472b6'], [15, '#22d3ee'], [100, '#facc15'], [20, '#4ade80'], [5, '#64748b'], [30, '#fb923c'], [10, '#38bdf8']];
+    const W = [14, 10, 14, 5, 12, 2, 11, 14, 7, 11];   // Gewichte (100 XP ist selten)
+    let rot = 0, spinning = false;
+    let st = X.load('gluecksrad', null) || { last: null, total: 0, spins: 0 };
+    function draw() {
+        const c = 220, n = P.length, seg = Math.PI * 2 / n;
+        ctx.clearRect(0, 0, 440, 440);
+        P.forEach(([v, col], i) => {
+            const a = rot + i * seg - Math.PI / 2 - seg / 2;
+            ctx.beginPath(); ctx.moveTo(c, c); ctx.arc(c, c, 210, a, a + seg); ctx.closePath(); ctx.fillStyle = col; ctx.fill();
+            ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 2; ctx.stroke();
+            ctx.save(); ctx.translate(c, c); ctx.rotate(a + seg / 2); ctx.fillStyle = '#0b1020'; ctx.font = '800 26px system-ui, sans-serif'; ctx.textAlign = 'right'; ctx.fillText(v + ' XP', 190, 9); ctx.restore();
+        });
+        ctx.beginPath(); ctx.arc(c, c, 34, 0, Math.PI * 2); ctx.fillStyle = '#0b1020'; ctx.fill(); ctx.strokeStyle = '#facc15'; ctx.lineWidth = 4; ctx.stroke();
+    }
+    function ui() {
+        const today = st.last === X.today();
+        $('#spin').disabled = today || spinning; $('#h-state').textContent = today ? 'gedreht' : 'bereit';
+        $('#h-total').textContent = st.total + ' XP'; $('#h-spins').textContent = st.spins;
+        $('#next').textContent = today ? 'morgen' : 'jetzt';
+    }
+    function spin() {
+        if (spinning || st.last === X.today()) return;
+        if (!X.user) { X.toast('Konto nötig', 'Melde dich an, damit dein Gewinn gespeichert wird.'); }
+        spinning = true; st.last = X.today(); X.save('gluecksrad', st); ui();
+        let r = Math.random() * W.reduce((a, b) => a + b), i = 0; while ((r -= W[i]) > 0) i++;
+        const seg = Math.PI * 2 / P.length, start = rot, target = Math.PI * 2 * 6 - i * seg + (Math.random() - .5) * seg * .7, t0 = performance.now(), D = 4200;
+        let lastTick = 0;
+        (function step(t) {
+            const k = Math.min(1, (t - t0) / D), e = 1 - Math.pow(1 - k, 4);
+            rot = start + (target - start % (Math.PI * 2)) * e; draw();
+            const tick = Math.floor(rot / seg); if (tick !== lastTick) { lastTick = tick; G.sfx.click(); }
+            if (k < 1) return requestAnimationFrame(step);
+            spinning = false; const xp = P[i][0];
+            st.total += xp; st.spins++; X.save('gluecksrad', st); X.addXP(xp, 'Glücksrad'); G.sfx.win(); if (xp >= 50) X.confetti(80);
+            G.overlay('#ov').show({ icon: xp >= 100 ? '🌟' : '🎡', title: '+' + xp + ' XP', text: xp >= 100 ? 'Der Hauptgewinn!' : 'Komm morgen wieder für die nächste Drehung.', button: 'Super', onClick: () => G.overlay('#ov').hide() });
+            ui();
+        })(t0);
+    }
+    $('#prizes').innerHTML = [...new Set(P.map(p => p[0]))].sort((a, b) => b - a).map(v => '<li><b>' + v + ' XP</b> ' + (v >= 100 ? '– selten!' : '') + '</li>').join('');
+    $('#spin').addEventListener('click', spin);
+    draw(); ui();
+});
+</script>
+</body>
+</html>

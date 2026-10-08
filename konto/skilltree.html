@@ -4,11 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Werft · Xiruprojekts</title>
-    <meta name="description" content="Bau deinen Erkundungs-Mech, repariere ihn und brich zu neuen Inseln auf.">
+    <meta name="description" content="Die Werft im Heimathafen: Mech ausrüsten, Inventar mit Seltenheiten, Baupläne, Module – und von hier aus zu den Inseln von Sektaria aufbrechen.">
     <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="../assets/css/welt.css">
     <script src="../assets/js/site.js"></script>
     <script src="../assets/js/core.js"></script>
     <script src="../assets/js/mech-art.js"></script>
+    <script src="../assets/js/weltkarte-art.js"></script>
+    <script src="../assets/js/weltkarte-pixel.js"></script>
+    <script src="../assets/js/pixel-icons.js"></script>
+    <script src="../assets/js/werft.js"></script>
     <style>
         .yard { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 1.25rem; align-items: start; }
         @media (max-width: 920px) { .yard { grid-template-columns: 1fr; } }
@@ -114,64 +119,140 @@
         .wires { width: 100%; max-width: 360px; display: block; margin: 0 auto; touch-action: none; user-select: none; background: #0b0e18; box-shadow: 0 0 0 3px #000, 0 0 0 6px var(--border-strong); }
         .wires .plug { cursor: grab; }
         .wires .sock.is-done, .wires .plug.is-done { opacity: .55; }
+        /* ── Werft v2 ── */
+        .theme-werft .item { border-radius: 0; box-shadow: 0 0 0 3px #000; }
+        .theme-werft .item[data-q="5"], .theme-werft .item[data-q="6"] { box-shadow: 0 0 0 3px #000, 0 0 16px -2px var(--qc); }
+        .theme-werft .idetail, .theme-werft .here { border-radius: 0; }
+        .slots8 { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: .6rem; }
+        .slot8 { display: grid; gap: .3rem; padding: .55rem; background: var(--surface); box-shadow: 0 0 0 3px #000, 0 0 0 5px var(--border-strong); }
+        .slot8__head { display: flex; justify-content: space-between; align-items: center; font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--text-muted); }
+        .slot8 .item { min-height: 112px; }
+        .slot8__acts { display: flex; gap: .3rem; flex-wrap: wrap; }
+        .slot8__acts .btn { flex: 1; padding: .3rem .4rem; font-size: .68rem; }
+        .stats { grid-template-columns: repeat(5, 1fr); }
+        .combat { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: .4rem; margin-top: .5rem; font-size: .8rem; }
+        .combat div { background: var(--surface-2); padding: .35rem .5rem; box-shadow: 0 0 0 2px #000; }
+        .combat b { color: var(--accent); }
+        .inv-bar { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-bottom: .8rem; }
+        .inv-bar select { width: auto; }
+        .inv-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 380px); gap: 1rem; align-items: start; }
+        @media (max-width: 900px) { .inv-grid { grid-template-columns: 1fr; } }
+        .inv-side { position: sticky; top: 5rem; display: grid; gap: .8rem; }
+        .bp-list { display: grid; gap: .5rem; }
+        .bp { display: grid; grid-template-columns: auto 1fr auto; gap: .35rem .8rem; align-items: center; padding: .6rem .8rem; background: var(--surface); box-shadow: 0 0 0 3px #000, 0 0 0 5px var(--border-strong); }
+        .bp.is-locked { opacity: .55; }
+        .bp__icon { font-size: 1.6rem; }
+        .bp__d { grid-column: 2 / -1; font-size: .78rem; color: var(--text-muted); }
+        .easy-box { max-width: 640px; margin: 2rem auto; text-align: center; }
+        .slots8 > *, .slot8 .item, .items > * { min-width: 0; }
+        .slot8 .item__name { font-size: .72rem; overflow-wrap: anywhere; word-break: break-word; }
+        .slot8__head { gap: .3rem; } .slot8__head span { display: inline-flex; align-items: center; gap: .3rem; }
+        .slot8 { min-width: 0; overflow: hidden; }
+        .slot8 > * { min-width: 0; max-width: 100%; }
+        .slot8__head { flex-wrap: wrap; row-gap: .2rem; }
+        .slot8__head > span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .slot8__head .badge { font-size: .62rem; padding: .05rem .35rem; white-space: nowrap; }
+        .slot8 .item { width: 100%; box-sizing: border-box; overflow: hidden; }
+        .slot8__acts .btn { min-width: 0; }
+        .guide__bot { animation: float 3s ease-in-out infinite; line-height: 0; }
+        .combat div { display: flex; align-items: center; gap: .35rem; }
+        .theme-werft .tabs button { display: inline-flex; align-items: center; gap: .4rem; }
+        .bp__icon { line-height: 0; filter: drop-shadow(0 2px 0 rgba(0,0,0,.6)); }
+        .scrap .root-egg { line-height: 0; }
     </style>
 </head>
 <body class="theme-werft">
 <main class="content content--wide">
     <header class="page-head row" style="align-items:flex-end">
         <div>
-            <span class="eyebrow">⚓ Heimathafen · Werft</span>
+            <span class="eyebrow">Heimathafen · Werft</span>
             <h1 class="mb-0">Die Werft</h1>
-            <p class="lead">Die Inseln der Xiru-Welt liegen hinter Nebel und Wasser. Bau dir einen Erkundungs-Mech aus alter Technik,
-                halte ihn in Schuss und brich zu neuen Ufern auf. Bauteile verdienst du dir mit Leveln, Realitätskristallen und Entdeckungen.</p>
+            <p class="lead">Hier rüstest du deinen Erkundungs-Mech aus. Jedes Teil hat eine Seltenheit – von <span class="q1">Gewöhnlich</span> bis <span class="q6">Mythisch</span>.
+                Bauteile baust du aus Schrott, findest sie auf Reisen, gewinnst sie in der Arena oder kaufst sie in der Händlerbucht.</p>
         </div>
         <span class="spacer"></span>
-        <div class="card card--flat scrap" title="1 Schrott pro 4 XP"><span class="root-egg" data-egg="p-wurzel" data-egg-clicks="10">🔩</span><span id="scrap">0</span><span class="small muted">Schrott</span></div>
+        <div class="card card--flat scrap" title="1 Schrott pro 4 XP"><span class="root-egg" data-egg="p-wurzel" data-egg-clicks="10" id="scrap-ic"></span><span id="scrap">0</span><span class="small muted">Schrott</span></div>
     </header>
 
-    <section class="card guide mb-3" id="guide" hidden></section>
+    <div id="easy" hidden></div>
+    <div id="game">
+        <div class="here mb-2" id="here"></div>
+        <div class="wallet mb-2" id="wallet"></div>
+        <section class="card guide mb-3" id="guide" hidden></section>
 
-    <div class="tabs" role="tablist">
-        <button role="tab" aria-selected="true" data-tab="mech">⚙ Mech</button>
-        <button role="tab" aria-selected="false" data-tab="reisen">🧭 Expeditionen</button>
-        <button role="tab" aria-selected="false" data-tab="module">✦ Module</button>
-    </div>
-
-    <section data-panel="mech">
-        <div class="yard">
-            <div>
-                <div class="bay"><div id="mech"></div><div class="monitor" id="monitor" aria-live="polite"></div></div>
-                <div class="stats" id="stats"></div>
-                <div class="row mt-2"><button class="btn" id="testrun" type="button">▶ Testlauf</button><span class="small muted" id="ready"></span></div>
-            </div>
-            <div id="slots"></div>
+        <div class="tabs" role="tablist">
+            <button role="tab" aria-selected="true" data-tab="mech"><i data-px="mat-zahnrad"></i> Mech</button>
+            <button role="tab" aria-selected="false" data-tab="inventar"><i data-px="inventar"></i> Inventar</button>
+            <button role="tab" aria-selected="false" data-tab="bauen"><i data-px="ic-amboss"></i> Baupläne</button>
+            <button role="tab" aria-selected="false" data-tab="module"><i data-px="k-kristall"></i> Module</button>
+            <button role="tab" aria-selected="false" data-tab="reisen"><i data-px="z-kompass"></i> Reisen</button>
         </div>
-    </section>
 
-    <section data-panel="reisen" hidden>
-        <p class="muted">Jede Expedition schaltet eine Insel dauerhaft frei – und beansprucht den Mech. Gute Panzerung verringert den Schaden.
-            Bereits erreichte Inseln bleiben erreichbar, auch wenn später etwas kaputtgeht.</p>
-        <div class="isles" id="isles"></div>
-    </section>
+        <section data-panel="mech">
+            <div class="yard">
+                <div>
+                    <div class="bay"><div id="mech"></div><div class="monitor" id="monitor" aria-live="polite"></div></div>
+                    <div class="stats" id="stats"></div>
+                    <div class="combat" id="combat"></div>
+                    <div class="row mt-2"><button class="btn" id="testrun" type="button">▶ Testlauf</button><span class="small muted" id="ready"></span></div>
+                </div>
+                <div class="slots8" id="slots"></div>
+            </div>
+        </section>
 
-    <section data-panel="module" hidden>
-        <p class="muted" id="mod-lead">Module sind Spezialeinbauten für deinen Mech. Jedes Level bringt einen Modulpunkt, Kernkristalle einen zusätzlichen. Module brauchen ein (lokales) Konto.</p>
-        <div class="row mb-2"><span class="badge badge--accent" id="mod-pts"></span><span class="spacer"></span><button class="btn btn--ghost btn--sm" id="reset" type="button">🧪 Module ausbauen (Vergessenstrank)</button></div>
-        <div class="branches" id="branches"></div>
-        <div class="card mt-3" id="mod-detail" hidden></div>
-    </section>
+        <section data-panel="inventar" hidden>
+            <div class="inv-bar">
+                <select class="select" id="f-slot" aria-label="Bauplatz"><option value="">Alle Bauplätze</option></select>
+                <select class="select" id="f-q" aria-label="Seltenheit"><option value="">Alle Seltenheiten</option></select>
+                <select class="select" id="f-sort" aria-label="Sortierung"><option value="q">Seltenste zuerst</option><option value="neu">Neueste zuerst</option><option value="t">Stärkste Baupläne</option><option value="c">Kaputteste zuerst</option></select>
+                <span class="spacer"></span><span class="small muted" id="inv-count"></span>
+            </div>
+            <div class="inv-grid">
+                <div><div class="items" id="items"></div><h3 class="mt-3">Materialien</h3><div class="items" id="mats"></div></div>
+                <aside class="inv-side" id="detail"><p class="muted">Wähle ein Teil, um es anzusehen.</p></aside>
+            </div>
+        </section>
+
+        <section data-panel="bauen" hidden>
+            <p class="muted">Baupläne schaltest du mit Leveln, Realitätskristallen, entdeckten Orten und gespielten Spielen frei. Gebaute Teile sind immer
+                <span class="q1">Gewöhnlich</span> – seltenere findest du in der Welt. Bauen geht nur in der Werft, also wenn dein Mech im Heimathafen liegt.</p>
+            <div class="bp-list" id="blueprints"></div>
+        </section>
+
+        <section data-panel="module" hidden>
+            <p class="muted" id="mod-lead">Module sind Spezialeinbauten für deinen Mech. Jedes Level bringt einen Modulpunkt, Kernkristalle einen zusätzlichen. Module brauchen ein (lokales) Konto.</p>
+            <div class="row mb-2"><span class="badge badge--accent" id="mod-pts"></span><span class="spacer"></span><button class="btn btn--ghost btn--sm" id="reset" type="button">Module ausbauen (Vergessenstrank)</button></div>
+            <div class="branches" id="branches"></div>
+            <div class="card mt-3" id="mod-detail" hidden></div>
+        </section>
+
+        <section data-panel="reisen" hidden>
+            <p class="muted">Gereist wird auf der <a href="../weltkarte.html">Weltkarte</a>: Klick eine Insel an und brich auf. Die erste Reise zu einer Insel ist eine Expedition –
+                dafür braucht dein Mech bestimmte Werte. Je weiter weg und je schwächer der Antrieb, desto länger dauert die Fahrt.</p>
+            <div class="isles" id="isles"></div>
+        </section>
+    </div>
 </main>
 <script>
 XIRU.ready(function () {
-    const $ = XIRU.$, M = XIRU.mech;
-    const STAT = { R: 'Reichweite', E: 'Energie', S: 'Sensor', P: 'Panzerung' };
-    const ISLE_ICON = { werkzeuge: '⚒', studio: '⬇', arcade: '▶', hardware: '▣', mixer: '≋', ki: '✦' };
-
+    const $ = XIRU.$, M = XIRU.mech, W = XIRU.werft, esc = XIRU.esc;
+    const STAT = W.STAT;
     const drawMech = (f, run) => XIRU.mechArt.draw(f, run);   // Grafik liegt in assets/js/mech-art.js
+    const atHome = () => M.pos() === 'konto';
+
+    /* Entdecker-Modus: keine Werft nötig */
+    if (XIRU.easy()) {
+        $('#game').hidden = true; $('#easy').hidden = false;
+        $('#easy').innerHTML = '<div class="card easy-box"><div>' + XIRU.pix.svg('z-kompass', 64) + '</div><h2>Entdecker-Modus</h2><p class="muted">Du erkundest ohne Mech – alle Inseln, Orte und Module sind offen. ' +
+            'Die Werft brauchst du nur im Abenteuer-Modus.</p><div class="row" style="justify-content:center"><a class="btn" href="../weltkarte.html">Zur Weltkarte</a>' +
+            '<button class="btn btn--primary" type="button" id="to-adv">Abenteuer-Modus starten</button></div></div>';
+        $('#to-adv').addEventListener('click', () => { XIRU.setting('modus', 'abenteuer'); location.reload(); });
+        return;
+    }
 
     /* ── Die Werkhalle ──────────────────────────────────────────────────── */
-    const SLOT_POINT = { rahmen: [160, 80], antrieb: [160, 146], kern: [160, 95], sensor: [160, 38], arm: [201, 118], panzer: [124, 72] };
-    const SLOT_COLOR = { rahmen: '#9ca3af', antrieb: '#f97316', kern: '#a78bfa', sensor: '#4ff0ff', arm: '#facc15', panzer: '#22c55e' };
+    const SLOT_POINT = { rahmen: [160, 80], antrieb: [160, 146], kern: [160, 95], sensor: [160, 38], arm: [201, 118], panzer: [124, 72], waffe: [119, 118], zubehoer: [176, 98] };
+    const SLOT_COLOR = { rahmen: '#9ca3af', antrieb: '#f97316', kern: '#a78bfa', sensor: '#4ff0ff', arm: '#facc15', panzer: '#22c55e', waffe: '#ef4444', zubehoer: '#f472b6' };
     function worker(x, y, f, face, busy) {
         const step = Math.floor(f * 8) % 2, X0 = Math.round(x), Y0 = Math.round(y), d = face < 0;
         let g = '<g>';
@@ -191,7 +272,7 @@ XIRU.ready(function () {
     function sceneSVG(f, run) {
         const job = M.state().job, now = Date.now();
         const jp = job ? Math.min(1, Math.max(0, (now - job.start) / (job.end - job.start))) : 0;
-        const jpart = job && M.part(job.id), target = jpart ? SLOT_POINT[jpart.slot] : null;
+        const jitem = job && M.item(job.u), jpart = jitem && M.part(jitem.id), target = jpart ? SLOT_POINT[jpart.slot] : null;
         let g = '';
         // Dunkle Halle: kaltes Licht, Nebel, Hologramm-Projektor
         g += '<defs><linearGradient id="fog" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3ff3ff" stop-opacity="0"/><stop offset="1" stop-color="#7dd3fc" stop-opacity=".16"/></linearGradient>' +
@@ -274,12 +355,13 @@ XIRU.ready(function () {
     }
     setInterval(paintMech, 110);
 
-    /* ── Anbau dauert ein paar Sekunden (max. 10) ── */
-    const jobDuration = p => Math.min(10, 3.5 + p.t * 1.5) * 1000;
-    function startInstall(id) {
-        const m = M.state(), pt = M.part(id);
-        if (m.job) { XIRU.toast('Die Crew ist beschäftigt', 'Erst muss der aktuelle Anbau fertig sein.', { icon: '⏳' }); return; }
-        m.job = { id, start: Date.now(), end: Date.now() + jobDuration(pt) }; XIRU.persist();
+    /* ── Einbauen: im Heimathafen holt der Kran das Teil (ein paar Sekunden), unterwegs geht es sofort ── */
+    const jobDuration = p => Math.min(8, 3 + p.t * 1.1) * 1000;
+    function startInstall(u) {
+        const m = M.state(), it = M.item(u); if (!it) return;
+        if (!atHome()) { M.equip(u); XIRU.toast('Feldmontage', M.part(it.id).n + ' ist eingebaut.', { iconHtml: XIRU.pix.svg('w-schluessel', 26) }); render(); return; }
+        if (m.job) { XIRU.toast('Die Crew ist beschäftigt', 'Erst muss der aktuelle Einbau fertig sein.', { iconHtml: XIRU.pix.svg('mat-zahnrad', 26) }); return; }
+        m.job = { u, start: Date.now(), end: Date.now() + jobDuration(M.part(it.id)) }; XIRU.persist();
         XIRU.beep(330, .1, 'triangle'); render();
     }
     let lastMon = '';
@@ -287,24 +369,25 @@ XIRU.ready(function () {
         const m = M.state(), job = m.job;
         if (job && Date.now() >= job.end) {
             delete m.job; XIRU.persist();
-            if (M.install(job.id)) { [523, 659, 784].forEach((f, i) => setTimeout(() => XIRU.beep(f, .08, 'square', .04), i * 90)); XIRU.toast('Angebaut: ' + M.part(job.id).n, 'Die Crew klatscht sich ab.', { icon: '🔧' }); }
+            const it = M.item(job.u);
+            if (it && M.equip(job.u)) { [523, 659, 784].forEach((f, i) => setTimeout(() => XIRU.beep(f, .08, 'square', .04), i * 90)); XIRU.toast('Eingebaut: ' + M.part(it.id).n, 'Die Crew klatscht sich ab.', { iconHtml: XIRU.pix.svg('w-schluessel', 26) }); }
             render(); return;
         }
-        // Modul-Monitor oben links
         let html;
-        if (job) {
-            const pt = M.part(job.id), sl = XIRU.mechSlots.find(x => x.id === pt.slot), k = Math.min(1, (Date.now() - job.start) / (job.end - job.start));
+        if (job && M.item(job.u)) {
+            const it = M.item(job.u), pt = M.part(it.id), sl = XIRU.mechSlots.find(x => x.id === pt.slot), k = Math.min(1, (Date.now() - job.start) / (job.end - job.start));
             const left = Math.max(0, Math.ceil((job.end - Date.now()) / 1000));
-            html = '<b>▶ MONTAGE</b><br>' + XIRU.esc(sl.n.toUpperCase()) + ': ' + XIRU.esc(pt.n) + '<br>' +
+            html = '<b>▶ MONTAGE</b><br>' + esc(sl.n.toUpperCase()) + ': ' + esc(pt.n) + '<br>' +
                 (k < .25 ? 'Kran holt Bauteil …' : k < .85 ? 'Crew schraubt & schweisst …' : 'Abschlusstest …') + '<div class="mbar"><span style="width:' + Math.round(k * 100) + '%"></span></div>noch ' + left + ' s';
         } else {
-            const st = M.stats(), last = XIRU.mechSlots.map(x => M.installed(x.id)).filter(Boolean).length;
-            html = '<b>MODUL-MONITOR</b><br>' + (M.ready() ? 'STATUS: EINSATZBEREIT' : 'STATUS: UNVOLLSTÄNDIG') + '<br>R' + st.R + ' · E' + st.E + ' · S' + st.S + ' · P' + st.P + '<br>Bauplätze ' + last + '/6 <span class="blink">█</span>';
+            const st = M.stats(), n = XIRU.mechSlots.filter(x => M.installed(x.id)).length;
+            html = '<b>MODUL-MONITOR</b><br>' + (M.ready() ? 'STATUS: EINSATZBEREIT' : 'STATUS: UNVOLLSTÄNDIG') + '<br>R' + st.R + ' · E' + st.E + ' · S' + st.S + ' · P' + st.P + ' · A' + st.A + '<br>Bauplätze ' + n + '/' + XIRU.mechSlots.length + ' <span class="blink">█</span>';
         }
         if (html !== lastMon) { const mon = $('#monitor'); if (mon) mon.innerHTML = html; lastMon = html; }
     }
 
     /* ── Tutorial ── */
+    const has = id => M.items().some(x => x.id === id);
     function tutorialStep() {
         const m = M.state();
         if (m.tutorial >= 2) return null;
@@ -318,14 +401,14 @@ XIRU.ready(function () {
         return 'reise';
     }
     const STEPS = {
-        intro: ['1/7', 'Willkommen in der Werft!', 'Ich bin Schraube, die Werftmeisterin. Die Inseln dieser Welt erreichst du nur mit einem Mech. Hier ist dein Startpaket: ein Schrottrahmen, ein Paddelrad und eine Autobatterie. Nicht schön, aber es schwimmt.', '<button class="btn btn--primary" id="t-open">📦 Startpaket öffnen</button>'],
-        rahmen: ['2/7', 'Zuerst der Rahmen', 'Öffne rechts „Rahmen", klicke beim Schrottrahmen auf <b>Bauen</b> und danach auf <b>Einbauen</b>. Dann holt der Kran das Teil und meine Crew montiert es – das dauert ein paar Sekunden. Oben links auf dem Monitor siehst du, was gerade passiert.', ''],
-        antrieb: ['3/7', 'Jetzt der Antrieb', 'Ohne Antrieb kein Vorwärtskommen. Bau und montiere das Paddelrad unter „Antrieb".', ''],
-        kern: ['4/7', 'Energie!', 'Ein Mech braucht einen Energiekern. Die Autobatterie unter „Energiekern" reicht für den Anfang.', ''],
+        intro: ['1/7', 'Willkommen in der Werft!', 'Ich bin Schraube, die Werftmeisterin. Die Inseln dieser Welt erreichst du nur mit einem Mech. Hier ist dein <b>Starter-Set</b>: Schrottrahmen, Paddelrad, Autobatterie und eine Nagelpistole – alles <span class="q1">Gewöhnlich</span>. Nicht schön, aber es schwimmt.', '<button class="btn btn--primary" id="t-open">Starter-Set öffnen</button>'],
+        rahmen: ['2/7', 'Zuerst der Rahmen', 'Klick rechts beim Bauplatz <b>Rahmen</b> auf <b>Einbauen</b> und wähle den Schrottrahmen. Dann holt der Kran das Teil und meine Crew montiert es. Oben links auf dem Monitor siehst du, was gerade passiert.', ''],
+        antrieb: ['3/7', 'Jetzt der Antrieb', 'Ohne Antrieb kein Vorwärtskommen. Bau das Paddelrad beim Bauplatz <b>Antrieb</b> ein.', ''],
+        kern: ['4/7', 'Energie!', 'Ein Mech braucht einen Energiekern. Die Autobatterie reicht für den Anfang. (Die Nagelpistole kannst du auch gleich einbauen – die brauchst du später in der Arena.)', ''],
         test: ['5/7', 'Testlauf', 'Alles drin? Dann wirf den Motor an! Drück links auf <b>▶ Testlauf</b>.', ''],
-        repair: ['6/7', 'Autsch – das Paddelrad', 'Siehst du den Rauch? Teile nutzen sich ab – besonders auf Expeditionen. Unter 40 % arbeiten sie nur halb so gut, bei 0 % fallen sie aus. Zum Reparieren musst du die losen Kabel wieder richtig verbinden. Normalerweise kostet das Schrott – diese erste Reparatur geht aufs Haus.', '<button class="btn btn--primary" id="t-repair">🔧 Gratis reparieren</button>'],
-        reise: ['7/7', 'Leinen los!', 'Dein Mech ist bereit. Wechsle zu <b>🧭 Expeditionen</b> und fahr zum Werkzeugkasten oder ins Studio. Danach wartet die ganze Welt – sobald dein Mech stark genug ist.', '<button class="btn btn--primary" id="t-go">🧭 Zu den Expeditionen</button>'],
-        fertig: ['✓', 'Geschafft!', 'Deine erste Insel ist erreicht. Ab jetzt verdienst du Bauteile mit Leveln, Realitätskristallen, entdeckten Orten und gespielten Spielen. Schrott bekommst du für jede XP. Viel Spass beim Basteln!', '<button class="btn btn--primary" id="t-done">Los geht\'s</button>']
+        repair: ['6/7', 'Autsch – das Paddelrad', 'Siehst du den Rauch? Teile nutzen sich ab – besonders auf Reisen und in Kämpfen. Unter 40 % arbeiten sie nur halb so gut, bei 0 % fallen sie aus. Zum Reparieren musst du die losen Kabel wieder richtig verbinden. Normalerweise kostet das Schrott – diese erste Reparatur geht aufs Haus.', '<button class="btn btn--primary" id="t-repair">Gratis reparieren</button>'],
+        reise: ['7/7', 'Leinen los!', 'Dein Mech ist bereit. Auf der <b>Weltkarte</b> klickst du eine Insel an und brichst auf – der Werkzeugkasten und das Studio sind nah genug für dein Paddelrad. Unterwegs kann einiges passieren …', '<a class="btn btn--primary" href="../weltkarte.html#werkzeuge">Zur Weltkarte</a>'],
+        fertig: ['✓', 'Geschafft!', 'Deine erste Insel ist erreicht. Ab jetzt findest du Teile auf Reisen, verdienst Taler, kämpfst in der Arena und handelst in der Händlerbucht. Schrott bekommst du für jede XP. Viel Spass beim Basteln!', '<button class="btn btn--primary" id="t-done">Los geht\'s</button>']
     };
     function renderGuide() {
         const step = tutorialStep(), box = $('#guide');
@@ -333,14 +416,17 @@ XIRU.ready(function () {
         if (!step) { box.hidden = true; return; }
         const t = STEPS[step];
         box.hidden = false;
-        box.innerHTML = '<div class="guide__bot">🤖</div><div><div class="guide__step">Tutorial ' + t[0] + '</div><h3 class="mb-1">' + t[1] + '</h3><p class="mb-2">' + t[2] + '</p><div class="row">' + t[3] + '</div></div>';
+        box.innerHTML = '<div class="guide__bot">' + XIRU.pix.svg('npc-schraube', 64) + '</div><div><div class="guide__step">Tutorial ' + t[0] + '</div><h3 class="mb-1">' + t[1] + '</h3><p class="mb-2">' + t[2] + '</p><div class="row">' + t[3] + '</div></div>';
         const hint = { rahmen: 'rahmen', antrieb: 'antrieb', kern: 'kern' }[step];
-        if (hint) { const d = $('details[data-slot="' + hint + '"]'); if (d) { d.open = true; d.classList.add('pulse-hint'); } }
+        if (hint) { const d = $('.slot8[data-slot="' + hint + '"]'); if (d) d.classList.add('pulse-hint'); showTab('mech'); }
         if (step === 'test') $('#testrun').classList.add('pulse-hint');
         const on = (id, fn) => { const b = $('#' + id); if (b) b.addEventListener('click', fn); };
-        on('t-open', () => { M.state().tutorial = 1; XIRU.persist(); XIRU.toast('Startpaket geöffnet', 'Schrottrahmen, Paddelrad und Autobatterie liegen im Lager.', { icon: '📦' }); render(); });
-        on('t-repair', () => cableGame(3, () => { const ant = M.installed('antrieb'); if (ant) M.state().cond[ant.id] = 100; M.state().trep = 1; XIRU.persist(); XIRU.egg('m-reparatur'); render(); }));
-        on('t-go', () => showTab('reisen'));
+        on('t-open', () => {
+            M.state().tutorial = 1;
+            (XIRU.starterSet || []).forEach(id => { if (!has(id)) M.add(id, 1); });
+            XIRU.persist(); XIRU.toast('Starter-Set geöffnet', 'Schrottrahmen, Paddelrad, Autobatterie und Nagelpistole liegen im Inventar.', { iconHtml: XIRU.pix.svg('ev-kiste', 26) }); render();
+        });
+        on('t-repair', () => cableGame(3, () => { const ant = M.installed('antrieb'); if (ant) M.item(ant.u).c = 100; M.state().trep = 1; XIRU.persist(); XIRU.egg('m-reparatur'); render(); }));
         on('t-done', () => { M.state().tutorial = 2; XIRU.persist(); XIRU.egg('m-tutorial'); XIRU.confetti(); render(); });
     }
 
@@ -375,99 +461,143 @@ XIRU.ready(function () {
                 svg.querySelectorAll('[data-c="' + drag + '"]').forEach(x => x.classList.add('is-done'));
                 done++; XIRU.beep(660 + done * 80, .06);
                 m.el.querySelector('#w-msg').textContent = done + '/' + n + ' verbunden';
-                if (done === n) { XIRU.beep(1046, .12); m.el.querySelector('#w-msg').textContent = '⚡ Strom fliesst!'; setTimeout(() => { m.close(); onWin(); }, 600); }
+                if (done === n) { XIRU.beep(1046, .12); m.el.querySelector('#w-msg').textContent = 'Strom fliesst!'; setTimeout(() => { m.close(); onWin(); }, 600); }
             } else { line.remove(); XIRU.beep(160, .12, 'sawtooth'); }
             drag = null; line = null;
         });
     }
 
-    /* ── Werkstatt ── */
-    const statChips = s => Object.keys(s || {}).map(k => '<span class="badge' + (s[k] < 0 ? ' badge--danger' : ' badge--accent') + '">' + (s[k] > 0 ? '+' : '') + s[k] + ' ' + STAT[k] + '</span>').join('');
+    /* ── Reparieren (nur in der Werft) ── */
+    function repairItem(u) {
+        const it = M.item(u); if (!it) return;
+        if (!atHome()) { XIRU.toast('Keine Werft in der Nähe', 'Reparieren geht im Heimathafen – oder gegen Taler in der Funkenschmiede.', { iconHtml: XIRU.pix.svg('z-anker', 26) }); return; }
+        if (M.scrap() < M.repairCost(u)) { XIRU.toast('Zu wenig Schrott', 'Sammle XP – jede 4 XP geben 1 Schrott.', { iconHtml: XIRU.pix.svg('schrott', 26), type: 'error' }); return; }
+        cableGame(3 + Math.min(3, Math.floor((100 - it.c) / 34)), () => { if (M.repair(u)) { XIRU.toast('Repariert: ' + M.part(it.id).n, 'Alle Kabel sitzen.', { iconHtml: XIRU.pix.svg('w-schluessel', 26) }); render(); } });
+    }
+
+    /* ── Bauplätze (Mech-Reiter) ── */
+    let slotFilter = '';
+    const SLOT_PX = { rahmen: 'r-alu', antrieb: 'a-paddel', kern: 'k-batterie', sensor: 's-radar', arm: 'w-schluessel', panzer: 'p-blech', waffe: 'f-klinge', zubehoer: 'z-kompass' };
     function renderSlots() {
-        const openSlots = XIRU.$$('#slots details[open]').map(d => d.dataset.slot);
+        const job = M.state().job;
         $('#slots').innerHTML = XIRU.mechSlots.map(sl => {
-            const cur = M.installed(sl.id);
-            const parts = XIRU.mechParts.filter(p => p.slot === sl.id);
-            return '<details class="slot-card" data-slot="' + sl.id + '"' + (openSlots.includes(sl.id) ? ' open' : '') + '><summary><span class="slot-card__icon">' + sl.icon + '</span><div><strong>' + sl.n + '</strong>' +
-                '<div class="small muted">' + (cur ? XIRU.esc(cur.n) + ' · ' + M.cond(cur.id) + ' %' : 'leer') + '</div></div><span class="spacer"></span><span class="badge">' + parts.filter(p => M.isBuilt(p.id)).length + '/' + parts.length + '</span></summary>' +
-                parts.map(p => {
-                    const built = M.isBuilt(p.id), avail = M.available(p), on = cur && cur.id === p.id, c = M.cond(p.id);
-                    let act;
-                    if (on) act = '<span class="badge badge--success">eingebaut</span>';
-                    else if (M.state().job && M.state().job.id === p.id) act = '<span class="badge badge--warning">⏳ wird montiert</span>';
-                    else if (built) act = '<button class="btn btn--sm btn--primary" data-install="' + p.id + '"' + (M.state().job ? ' disabled' : '') + '>Einbauen</button>';
-                    else if (avail) act = '<button class="btn btn--sm" data-build="' + p.id + '"' + (M.scrap() < p.cost ? ' disabled' : '') + '>Bauen · ' + p.cost + ' 🔩</button>';
-                    else act = '<span class="small faint">🔒 ' + XIRU.esc(M.reqText(p)) + '</span>';
-                    const repCost = built ? M.repairCost(p.id) : 0;
-                    return '<div class="part' + (!avail && !built ? ' is-locked' : '') + '"><div><div class="part__name">' + XIRU.esc(p.n) + ' <span class="faint small">Stufe ' + p.t + '</span></div><div class="part__stats">' + statChips(p.s) + (p.rep ? '<span class="badge badge--success">−' + Math.round(p.rep * 100) + ' % Reparatur</span>' : '') + '</div></div>' +
-                        '<div>' + act + '</div><div class="part__d">' + XIRU.esc(p.d) + '</div>' +
-                        (built ? '<div class="cond' + (c <= 0 ? ' dead' : c < 40 ? ' low' : '') + '"><div class="bar"><div class="bar__fill" style="--v:' + c + '%"></div></div><span>' + (c <= 0 ? 'defekt' : c + ' %') +
-                            (c < 100 ? ' <button class="btn btn--sm btn--ghost" data-repair="' + p.id + '"' + (M.scrap() < repCost ? ' disabled' : '') + '>🔧 ' + repCost + ' 🔩</button>' : '') + '</span></div>' : '') + '</div>';
-                }).join('') + (cur ? '<div class="part"><span class="small muted">Platz leeren</span><button class="btn btn--sm btn--ghost" data-uninstall="' + sl.id + '">Ausbauen</button></div>' : '') + '</details>';
+            const v = M.installed(sl.id), spare = M.items().filter(x => M.part(x.id).slot === sl.id && !M.equipped(x.u)).length;
+            const busy = job && M.item(job.u) && M.part(M.item(job.u).id).slot === sl.id;
+            return '<div class="slot8" data-slot="' + sl.id + '"><div class="slot8__head"><span>' + XIRU.pix.svg(SLOT_PX[sl.id], 14) + ' ' + sl.n + '</span>' + (spare ? '<span class="badge">' + spare + ' im Lager</span>' : '') + '</div>' +
+                (v ? W.itemCard(M.item(v.u)) : '<div class="item item--empty"><span class="item__icon" style="opacity:' + (busy ? '.9' : '.22') + '">' + XIRU.pix.svg(SLOT_PX[sl.id], 40) + '</span><span class="item__name">' + (busy ? 'wird montiert' : 'leer') + '</span></div>') +
+                '<div class="slot8__acts"><button class="btn btn--sm" type="button" data-pick="' + sl.id + '">' + (v ? 'Wechseln' : 'Einbauen') + '</button>' +
+                (v && v.c < 100 ? '<button class="btn btn--sm btn--ghost" type="button" data-rep="' + v.u + '" title="Reparieren">' + XIRU.pix.svg('w-schluessel') + ' ' + M.repairCost(v.u) + '</button>' : '') +
+                (v ? '<button class="btn btn--sm btn--ghost" type="button" data-off="' + sl.id + '" title="Ausbauen">Aus</button>' : '') + '</div></div>';
         }).join('');
     }
     $('#slots').addEventListener('click', e => {
         const b = e.target.closest('button'); if (!b) return;
-        if (b.dataset.build && M.build(b.dataset.build)) { XIRU.beep(440, .08); XIRU.toast('Gebaut: ' + M.part(b.dataset.build).n, 'Jetzt noch einbauen.', { icon: '🔩' }); }
-        if (b.dataset.install) startInstall(b.dataset.install);
-        if (b.dataset.repair) {
-            const id = b.dataset.repair;
-            if (M.scrap() < M.repairCost(id)) return;
-            cableGame(3 + Math.min(3, Math.floor((100 - M.cond(id)) / 34)), () => { if (M.repair(id)) { XIRU.toast('Repariert: ' + M.part(id).n, 'Alle Kabel sitzen.', { icon: '🔧' }); render(); } });
-            return;
-        }
-        if (b.dataset.uninstall) M.uninstall(b.dataset.uninstall);
-        render();
+        if (b.dataset.pick) { slotFilter = b.dataset.pick; $('#f-slot').value = slotFilter; showTab('inventar'); renderInv(); const first = M.items().find(x => M.part(x.id).slot === slotFilter && !M.equipped(x.u)); if (first) showDetail(first.u); return; }
+        if (b.dataset.rep) { repairItem(b.dataset.rep); return; }
+        if (b.dataset.off) { M.uninstall(b.dataset.off); render(); return; }
+        if (b.dataset.u) { showTab('inventar'); showDetail(b.dataset.u); }
     });
 
+    /* ── Werte ── */
+    function combat(st) {   // abgeleitete Kampfwerte (wie in der Arena)
+        const fr = M.installed('rahmen');
+        return { hp: 30 + st.P * 6 + (fr ? fr.t * 4 : 0), atk: 2 + st.A + Math.floor(st.S / 2), def: st.P, spd: st.R + Math.floor(st.E / 2), en: 3 + st.E, crit: Math.min(40, 5 + st.S * 2) };
+    }
     function renderStats() {
-        const st = M.stats();
-        $('#stats').innerHTML = ['R', 'E', 'S', 'P'].map(k => '<div><b>' + st[k] + '</b><span>' + STAT[k] + '</span></div>').join('');
+        const st = M.stats(), c = combat(st);
+        $('#stats').innerHTML = ['R', 'E', 'S', 'P', 'A'].map(k => '<div>' + XIRU.pix.svg('st-' + k, 22) + '<b>' + st[k] + '</b><span>' + STAT[k] + '</span></div>').join('');
+        const cs = (ic, t, v) => '<div>' + XIRU.pix.svg(ic, 18) + ' ' + t + ' <b>' + v + '</b></div>';
+        $('#combat').innerHTML = cs('st-hp', 'Struktur', c.hp) + cs('st-atk', 'Schlag', c.atk) + cs('st-def', 'Abwehr', c.def) + cs('st-spd', 'Tempo', c.spd) + cs('st-E', 'Energie', c.en) + cs('st-crit', 'Krit.', c.crit + ' %') +
+            (Object.keys(st.fx).length ? '<div style="grid-column:1/-1">' + W.fxChips(st.fx) + '</div>' : '');
         $('#scrap').textContent = XIRU.fmt(M.scrap());
-        $('#ready').textContent = M.ready() ? '✓ Einsatzbereit' : 'Noch nicht einsatzbereit: Rahmen, Antrieb und Energiekern nötig.';
+        $('#ready').textContent = M.ready() ? 'Fahrbereit' : 'Noch nicht fahrbereit: Rahmen, Antrieb und Energiekern nötig.';
         if (!mechCanvas) { $('#mech').innerHTML = '<canvas width="' + PX_W + '" height="' + PX_H + '" role="img" aria-label="Werkhalle mit deinem Mech"></canvas>'; mechCanvas = $('#mech canvas'); }
         paintMech();
     }
     $('#testrun').addEventListener('click', () => {
-        if (!M.ready()) { XIRU.toast('Der Motor stottert …', 'Rahmen, Antrieb und Energiekern müssen eingebaut sein.', { icon: '⚠', type: 'error' }); return; }
+        if (!M.ready()) { XIRU.toast('Der Motor stottert …', 'Rahmen, Antrieb und Energiekern müssen eingebaut sein.', { iconHtml: XIRU.pix.svg('ev-sturm', 26), type: 'error' }); return; }
         runUntil = performance.now() + 1800;
         [220, 260, 300, 340].forEach((f, i) => setTimeout(() => XIRU.beep(f, .12, 'sawtooth', .04), i * 120));
         setTimeout(() => {
             const m = M.state();
             if (!m.testrun) {
                 m.testrun = 1; XIRU.persist();
-                const a = M.installed('antrieb'); if (a) M.damage(a.id, 45);
-                XIRU.toast('Knirsch!', 'Das ' + (a ? a.n : 'Teil') + ' hat etwas abbekommen.', { icon: '💥' });
+                const a = M.installed('antrieb'); if (a) M.damage(a.u, 45);
+                XIRU.toast('Knirsch!', 'Das ' + (a ? a.n : 'Teil') + ' hat etwas abbekommen.', { iconHtml: XIRU.pix.svg('ev-sturm', 26) });
             }
             render();
         }, 1800);
     });
 
-    /* ── Expeditionen ── */
+    /* ── Inventar ── */
+    let selU = null;
+    XIRU.mechSlots.forEach(sl => { $('#f-slot').insertAdjacentHTML('beforeend', '<option value="' + sl.id + '">' + sl.icon + ' ' + sl.n + '</option>'); });
+    XIRU.rarities.forEach((r, q) => { if (r) $('#f-q').insertAdjacentHTML('beforeend', '<option value="' + q + '">' + r.n + '</option>'); });
+    function renderInv() {
+        const fs = $('#f-slot').value, fq = +$('#f-q').value || 0, so = $('#f-sort').value;
+        let list = M.items().filter(x => (!fs || M.part(x.id).slot === fs) && (!fq || x.q === fq));
+        const key = { q: x => -(x.q * 10 + (x.up || 0)), neu: x => -(x.at || 0), t: x => -(M.part(x.id).t * 10 + x.q), c: x => x.c }[so];
+        list.sort((a, b) => key(a) - key(b) || (M.equipped(b.u) ? 1 : 0) - (M.equipped(a.u) ? 1 : 0));
+        $('#items').innerHTML = list.length ? list.map(x => W.itemCard(x, { sel: selU })).join('') : '<p class="muted" style="grid-column:1/-1">' + (M.items().length ? 'Nichts passt zum Filter.' : 'Dein Inventar ist leer. ' + (M.state().tutorial ? 'Bau Teile unter „Baupläne“ oder geh auf Reisen.' : 'Öffne zuerst das Starter-Set.')) + '</p>';
+        const mats = M.mats();
+        $('#mats').innerHTML = Object.keys(mats).length ? XIRU.materials.filter(m => mats[m.id]).map(m => W.matCard(m.id, mats[m.id])).join('') : '<p class="muted small" style="grid-column:1/-1">Noch keine Materialien. Die gibt es auf Reisen, im Wrackriff und in der Nebelmine.</p>';
+        $('#inv-count').textContent = M.items().length + '/' + M.INV_MAX + ' Plätze belegt';
+    }
+    function showDetail(u) {
+        const it = M.item(u); if (!it) { $('#detail').innerHTML = '<p class="muted">Wähle ein Teil, um es anzusehen.</p>'; selU = null; return; }
+        selU = u; if (it.neu) { delete it.neu; XIRU.persist(); }
+        const eq = M.equipped(u), job = M.state().job;
+        const acts = (eq ? '<button class="btn btn--sm" type="button" data-a="off">Ausbauen</button>' : '<button class="btn btn--sm btn--primary" type="button" data-a="on"' + (job ? ' disabled' : '') + '>' + XIRU.pix.svg('w-schluessel') + ' Einbauen</button>') +
+            (it.c < 100 ? '<button class="btn btn--sm" type="button" data-a="rep">' + XIRU.pix.svg('w-schluessel') + ' Reparieren · ' + M.repairCost(u) + ' ' + XIRU.pix.svg('schrott') + '</button>' : '') +
+            (!eq ? '<button class="btn btn--sm btn--ghost" type="button" data-a="drop">Wegwerfen</button>' : '');
+        $('#detail').innerHTML = W.detail(it, { actions: acts }) + '<p class="small muted">Verkaufen: <a href="../welt/markt.html">Händlerbucht</a> · Aufwerten & Zerlegen: <a href="../welt/schmiede.html">Funkenschmiede</a></p>';
+        renderInv();
+    }
+    $('#items').addEventListener('click', e => { const b = e.target.closest('[data-u]'); if (b) showDetail(b.dataset.u); });
+    $('#detail').addEventListener('click', e => {
+        const b = e.target.closest('[data-a]'); if (!b || !selU) return;
+        const it = M.item(selU), a = b.dataset.a;
+        if (a === 'on') { startInstall(selU); showTab('mech'); }
+        if (a === 'off') { M.uninstall(M.equipped(selU)); render(); showDetail(selU); }
+        if (a === 'rep') repairItem(selU);
+        if (a === 'drop') {
+            const m = XIRU.modal('<h2>' + esc(M.part(it.id).n) + ' wegwerfen?</h2><p class="muted">Das Teil ist danach weg. Tipp: In der Händlerbucht bekommst du ' + M.value(it) + ' Taler dafür, in der Funkenschmiede Materialien.</p><div class="row"><button class="btn btn--danger" type="button" id="ok">Wegwerfen</button><button class="btn" type="button" data-close>Behalten</button></div>');
+            m.el.querySelector('#ok').addEventListener('click', () => { M.remove(selU); selU = null; m.close(); render(); showDetail(null); });
+        }
+    });
+    ['f-slot', 'f-q', 'f-sort'].forEach(id => $('#' + id).addEventListener('change', renderInv));
+
+    /* ── Baupläne ── */
+    function renderBlueprints() {
+        $('#blueprints').innerHTML = XIRU.mechSlots.map(sl => '<h3 class="mt-2 mb-0">' + XIRU.pix.svg(SLOT_PX[sl.id], 22) + ' ' + sl.n + '</h3>' + XIRU.mechParts.filter(p => p.slot === sl.id).map(p => {
+            const avail = M.available(p), own = M.items().filter(x => x.id === p.id).length, starter = (XIRU.starterSet || []).includes(p.id);
+            let act;
+            if (starter) act = '<span class="small faint">Starter-Set</span>';
+            else if (!avail) act = '<span class="small faint">Gesperrt: ' + esc(M.reqText(p)) + '</span>';
+            else act = '<button class="btn btn--sm" type="button" data-build="' + p.id + '"' + (M.scrap() < p.cost || !atHome() || M.full() ? ' disabled' : '') + '>Bauen · ' + p.cost + ' ' + XIRU.pix.svg('schrott') + '</button>';
+            return '<div class="bp' + (!avail && !starter ? ' is-locked' : '') + '"><span class="bp__icon">' + XIRU.pix.svg(p.id, 40) + '</span><div><b>' + esc(p.n) + '</b> <span class="faint small">Stufe ' + p.t + '</span>' + (own ? ' <span class="badge">' + own + '× im Inventar</span>' : '') +
+                '<div class="statrow" style="margin:.25rem 0 0">' + W.statChips(p.s) + (p.rep ? '<span class="stat-chip">' + XIRU.pix.svg('w-schluessel') + ' −' + Math.round(p.rep * 100) + ' %</span>' : '') + W.fxChips(p.fx) + '</div></div><div>' + act + '</div><div class="bp__d">' + esc(p.d) + '</div></div>';
+        }).join('')).join('');
+    }
+    $('#blueprints').addEventListener('click', e => {
+        const b = e.target.closest('[data-build]'); if (!b) return;
+        const it = M.build(b.dataset.build);
+        if (it) { XIRU.beep(440, .08); XIRU.toast('Gebaut: ' + M.part(it.id).n, 'Liegt jetzt im Inventar. Zum Einbauen: Mech → Bauplatz.', { iconHtml: XIRU.pix.svg('schrott', 26) }); render(); }
+    });
+
+    /* ── Reisen ── */
     function renderIsles() {
-        $('#isles').innerHTML = XIRU.regions.filter(r => XIRU.islandReq[r.id]).map(r => {
-            const done = M.discovered(r.id), can = M.canReach(r.id), miss = M.missing(r.id);
-            return '<div class="card isle' + (done ? ' is-done' : '') + '" style="--ic:' + r.color + '"><div class="row"><h3 class="mb-0">' + (ISLE_ICON[r.id] || r.icon) + ' ' + XIRU.esc(r.name) + '</h3><span class="spacer"></span>' +
-                (done ? '<span class="badge badge--success">erreicht</span>' : '') + '</div><p class="small muted mt-1">' + XIRU.esc(r.desc) + '</p>' +
-                '<p class="small">Benötigt: <strong>' + XIRU.esc(M.islandReqText(r.id)) + '</strong></p>' +
-                (done ? '<a class="btn btn--sm" href="' + XIRU.url((XIRU.pages.find(p => p.r === r.id && /index\.html$/.test(p.p)) || {}).p || 'weltkarte.html') + '">Hinfahren →</a>'
-                    : can ? '<button class="btn btn--primary btn--sm" data-go="' + r.id + '">🧭 Expedition starten</button>'
-                        : '<p class="small faint mb-0">Es fehlt: ' + XIRU.esc(miss.join(' · ')) + '</p>') + '</div>';
+        $('#isles').innerHTML = XIRU.islands.filter(i => i.req).map(i => {
+            const done = M.discovered(i.id), can = M.canReach(i.id), here = M.pos() === i.id;
+            return '<div class="card isle' + (done ? ' is-done' : '') + '" style="--ic:' + (i.game ? '#22d3ee' : (XIRU.region(i.r) || {}).color) + '"><div class="row"><h3 class="mb-0">' + esc(i.n) + '</h3><span class="spacer"></span>' +
+                (here ? '<span class="badge badge--accent">hier</span>' : done ? '<span class="badge badge--success">entdeckt</span>' : '') + '</div>' +
+                '<p class="small">Erste Reise braucht: <strong>' + esc(M.islandReqText(i.id)) + '</strong></p>' +
+                (here ? '' : done || can ? '<p class="small muted mb-1">ca. ' + Math.round(M.travelSecs(i.id)) + ' s Reise</p><button class="btn btn--sm' + (done ? '' : ' btn--primary') + '" type="button" data-go="' + i.id + '">' + (done ? 'Hinreisen' : 'Expedition') + '</button>'
+                    : '<p class="small faint mb-0">Es fehlt: ' + esc(M.missing(i.id).join(' · ')) + '</p>') +
+                ' <a class="btn btn--sm btn--ghost" href="../weltkarte.html#' + i.id + '">Karte</a></div>';
         }).join('');
     }
-    $('#isles').addEventListener('click', e => {
-        const b = e.target.closest('[data-go]'); if (!b) return;
-        const reg = XIRU.region(b.dataset.go);
-        const modal = XIRU.modal('<h2>Unterwegs nach ' + XIRU.esc(reg.name) + ' …</h2><div class="travel"><span class="travel__mech">🤖</span><span class="travel__isle">' + (ISLE_ICON[reg.id] || '🏝') + '</span></div><p class="muted" id="tv-msg">Der Mech kämpft sich durch die Wellen.</p>');
-        [196, 247, 294].forEach((f, i) => setTimeout(() => XIRU.beep(f, .15, 'triangle', .05), 300 + i * 500));
-        setTimeout(() => {
-            const report = M.expedition(reg.id) || [];
-            modal.el.querySelector('#tv-msg').innerHTML = '<strong class="text-success">Angekommen!</strong> ' + XIRU.esc(reg.name) + ' ist jetzt erreichbar.<br>' +
-                (report.length ? 'Schäden: ' + report.map(x => XIRU.esc(x.part.n) + ' −' + x.dmg + ' %').join(', ') : 'Kein Kratzer – die Panzerung hat gehalten!') +
-                '<div class="row mt-2"><button class="btn btn--primary" data-close>Weiter</button></div>';
-            render();
-        }, 2400);
-    });
+    $('#isles').addEventListener('click', e => { const b = e.target.closest('[data-go]'); if (b) W.travel(b.dataset.go).then(() => render()); });
 
     /* ── Module (die früheren Skills) ── */
     const POS = { 1: [50, 10], 2: [24, 36], 3: [76, 36], 5: [24, 63], 4: [76, 63], 6: [50, 90] };
@@ -512,12 +642,19 @@ XIRU.ready(function () {
         XIRU.$$('[data-panel]').forEach(p => { p.hidden = p.dataset.panel !== t; });
         history.replaceState(null, '', '#' + t);
     }
-    XIRU.$$('[data-tab]').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
-    function render() { renderStats(); renderSlots(); renderIsles(); renderModules(); renderGuide(); }
+    XIRU.$$('[data-tab]').forEach(b => b.addEventListener('click', () => { showTab(b.dataset.tab); if (b.dataset.tab === 'inventar') renderInv(); }));
+    function render() {
+        W.here('konto', '#here', render);
+        renderStats(); renderSlots(); renderInv(); renderBlueprints(); renderIsles(); renderModules(); renderGuide();
+        if (selU && M.item(selU)) showDetail(selU);
+    }
+    W.wallet('#wallet');
+    XIRU.$$('[data-px]').forEach(el => { el.outerHTML = XIRU.pix.svg(el.dataset.px, 18); });
+    $('#scrap-ic').innerHTML = XIRU.pix.svg('schrott', 28);
     XIRU.on('egg', () => render());
     render();
     const h = location.hash.slice(1);
-    if (['mech', 'reisen', 'module'].includes(h)) showTab(h);
+    if (['mech', 'inventar', 'bauen', 'module', 'reisen'].includes(h)) showTab(h);
 });
 </script>
 </body>

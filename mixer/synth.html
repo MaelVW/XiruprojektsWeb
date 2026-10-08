@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Synthesizer · Xiruprojekts</title>
+    <meta name="description" content="Synthesizer im Browser: zwei Oktaven, Wellenformen, Filter, Hüllkurve und Echo – spielbar mit Maus, Touch oder Computertastatur.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="css/mixer.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="js/mixer.js"></script>
+    <style>
+        .sy-ctrl { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0 1rem; }
+        .sy-keys { position: relative; display: flex; height: 13rem; margin-top: .5rem; user-select: none; touch-action: none; overflow-x: auto; }
+        .sy-k { flex: 1 0 2.4rem; position: relative; border: 1px solid #94a3b8; border-radius: 0 0 8px 8px; background: linear-gradient(#fff, #e2e8f0); color: #475569; font: 600 .7rem var(--mono); display: flex; align-items: flex-end; justify-content: center; padding-bottom: .5rem; cursor: pointer; }
+        .sy-k--b { flex: 0 0 1.6rem; margin: 0 -.8rem; z-index: 1; height: 62%; background: linear-gradient(#334155, #0f172a); border-color: #020617; }
+        .sy-k.is-on { background: linear-gradient(var(--accent), color-mix(in srgb, var(--accent) 60%, #fff)); box-shadow: 0 0 18px var(--accent); }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">🎛 Mixer-Studio</span>
+        <h1>Synthesizer</h1>
+        <p class="lead">Spiel mit der Maus, dem Finger oder deiner Tastatur (A, W, S, E, D …). Dreh an den Reglern, bis es nach dir klingt.</p>
+    </header>
+    <div id="sound-off" hidden></div>
+    <section class="card">
+        <div class="sy-ctrl">
+            <div class="field"><label for="wave">Welle</label><select class="select" id="wave"><option value="sawtooth">Sägezahn</option><option value="square">Rechteck</option><option value="triangle">Dreieck</option><option value="sine">Sinus</option></select></div>
+            <div class="field"><label for="cut">Filter <span id="cut-v"></span></label><input type="range" class="mx-range" id="cut" min="200" max="12000" value="3200"></div>
+            <div class="field"><label for="att">Anschlag <span id="att-v"></span></label><input type="range" class="mx-range" id="att" min="0" max="800" value="10"></div>
+            <div class="field"><label for="rel">Ausklang <span id="rel-v"></span></label><input type="range" class="mx-range" id="rel" min="20" max="2500" value="400"></div>
+            <div class="field"><label for="echo">Echo <span id="echo-v"></span></label><input type="range" class="mx-range" id="echo" min="0" max="80" value="25"></div>
+            <div class="field"><label>Oktave</label><div class="row"><button class="btn btn--sm" type="button" id="oct-dn">−</button><b id="oct">4</b><button class="btn btn--sm" type="button" id="oct-up">+</button></div></div>
+        </div>
+        <div class="sy-keys" id="keys"></div>
+        <p class="small muted mt-1">Tastatur: <kbd>A</kbd>–<kbd>K</kbd> weisse Tasten, <kbd>W</kbd> <kbd>E</kbd> <kbd>T</kbd> <kbd>Z</kbd> <kbd>U</kbd> schwarze, <kbd>Y</kbd>/<kbd>X</kbd> Oktave.</p>
+    </section>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU;
+    const M = X.Mixer, $ = s => X.$(s), gate = M.soundGate('#sound-off');
+    const NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'H'];
+    const KEYMAP = 'awsedftgzhujkolpö'.split('');   // ab C, chromatisch
+    let oct = M.load('synth-okt', 4), ctx = null, bus = null, filt = null, fb = null, wet = null;
+    const voices = {};
+    const val = id => +$('#' + id).value;
+    function engine() {
+        if (ctx) return true; if (!gate.check()) return false; ctx = M.ctx(); if (!ctx) return false;
+        filt = ctx.createBiquadFilter(); filt.type = 'lowpass'; filt.Q.value = 4;
+        bus = ctx.createGain(); bus.gain.value = .5; const dl = ctx.createDelay(1); dl.delayTime.value = .28; fb = ctx.createGain(); wet = ctx.createGain();
+        filt.connect(bus); bus.connect(ctx.destination); bus.connect(dl); dl.connect(fb); fb.connect(dl); dl.connect(wet); wet.connect(ctx.destination);
+        params(); return true;
+    }
+    function params() {
+        $('#cut-v').textContent = val('cut') + ' Hz'; $('#att-v').textContent = val('att') + ' ms'; $('#rel-v').textContent = val('rel') + ' ms'; $('#echo-v').textContent = val('echo') + ' %';
+        if (!ctx) return; filt.frequency.setTargetAtTime(val('cut'), ctx.currentTime, .02); fb.gain.value = val('echo') / 160; wet.gain.value = val('echo') / 100;
+    }
+    function on(n) {
+        if (voices[n] || !engine()) return;
+        const t = ctx.currentTime, f = 440 * Math.pow(2, (n - 57) / 12), o = ctx.createOscillator(), o2 = ctx.createOscillator(), g = ctx.createGain();
+        o.type = o2.type = $('#wave').value; o.frequency.value = f; o2.frequency.value = f; o2.detune.value = 7;
+        g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.22, t + val('att') / 1000 + .005);
+        o.connect(g); o2.connect(g); g.connect(filt); o.start(t); o2.start(t); voices[n] = { o, o2, g };
+        const k = $('#keys [data-n="' + n + '"]'); if (k) k.classList.add('is-on');
+        X.once('mx-synth', 5, 'Erster Ton');
+    }
+    function off(n) {
+        const v = voices[n]; if (!v) return; delete voices[n];
+        const t = ctx.currentTime, r = val('rel') / 1000; v.g.gain.cancelScheduledValues(t); v.g.gain.setValueAtTime(v.g.gain.value, t); v.g.gain.linearRampToValueAtTime(0, t + r);
+        v.o.stop(t + r + .05); v.o2.stop(t + r + .05);
+        const k = $('#keys [data-n="' + n + '"]'); if (k) k.classList.remove('is-on');
+    }
+    function build() {
+        const box = $('#keys'); box.textContent = ''; $('#oct').textContent = oct;
+        for (let i = 0; i < 25; i++) {
+            const n = oct * 12 + i, name = NAMES[i % 12], black = name.includes('#'), b = document.createElement('button');
+            b.type = 'button'; b.className = 'sy-k' + (black ? ' sy-k--b' : ''); b.dataset.n = n; b.setAttribute('aria-label', name + (oct + Math.floor(i / 12)));
+            if (!black) b.textContent = name === 'C' ? 'C' + (oct + Math.floor(i / 12)) : '';
+            b.addEventListener('pointerdown', e => { e.preventDefault(); b.setPointerCapture(e.pointerId); on(n); });
+            ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => b.addEventListener(ev, () => off(n)));
+            box.appendChild(b);
+        }
+    }
+    function shift(d) { Object.keys(voices).forEach(off); oct = X.clamp(oct + d, 1, 6); M.save('synth-okt', oct); build(); }
+    document.addEventListener('keydown', e => {
+        if (e.repeat || M.isTyping(e) || e.ctrlKey || e.metaKey) return;
+        const k = e.key.toLowerCase(), i = KEYMAP.indexOf(k);
+        if (i >= 0) on(oct * 12 + i); else if (k === 'y') shift(-1); else if (k === 'x') shift(1);
+    });
+    document.addEventListener('keyup', e => { const i = KEYMAP.indexOf(e.key.toLowerCase()); if (i >= 0) off(oct * 12 + i); });
+    addEventListener('blur', () => Object.keys(voices).forEach(off));
+    ['cut', 'att', 'rel', 'echo'].forEach(id => $('#' + id).addEventListener('input', () => { params(); M.paintRange($('#' + id)); }));
+    $("#oct-dn").addEventListener('click', () => shift(-1)); $("#oct-up").addEventListener('click', () => shift(1));
+    build(); params(); M.paintRanges(document);
+});
+</script>
+</body>
+</html>

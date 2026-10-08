@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schrott-Arena · Xiruprojekts</title>
+    <meta name="description" content="Die Schrott-Arena: Mech gegen Mech in rundenbasierten Kämpfen. Steig in der Rangliste auf und gewinne seltene Bauteile.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="../assets/css/welt.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/mech-art.js"></script>
+    <script src="../assets/js/weltkarte-art.js"></script>
+    <script src="../assets/js/weltkarte-pixel.js"></script>
+    <script src="../assets/js/pixel-icons.js"></script>
+    <script src="../assets/js/werft.js"></script>
+    <style>
+        .ladder { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: .7rem; }
+        .foe { display: grid; gap: .3rem; padding: .7rem; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); text-align: center; }
+        .foe svg { width: 100%; height: 130px; }
+        .foe.is-done { opacity: .7; } .foe.is-next { border-color: #fde68a; box-shadow: 0 0 18px -6px #fde68a; } .foe.is-locked { opacity: .45; }
+        .foe.is-locked svg { filter: brightness(0) opacity(.5); }
+        .foe h3 { margin: 0; font-size: 1rem; }
+        .power { font: 700 .75rem var(--mono); color: var(--text-muted); }
+        .fight { position: fixed; inset: 0; z-index: 1100; display: grid; grid-template-rows: 1fr auto; background: radial-gradient(ellipse at 50% 85%, #b08a4e 0, #6b5532 30%, #2a2116 62%, #0b0906 100%); color: #f5f5f4; }
+        .fight__stage { position: relative; display: grid; grid-template-columns: 1fr 1fr; align-items: end; padding: 1rem clamp(.5rem, 3vw, 2rem) 0; overflow: hidden; }
+        .fight__crowd { position: absolute; inset: 0 0 auto; height: 34%; background: repeating-linear-gradient(90deg, rgba(0,0,0,.35) 0 18px, rgba(0,0,0,.15) 18px 36px); opacity: .8; }
+        .fighter { position: relative; display: grid; justify-items: center; gap: .4rem; }
+        .fighter svg { width: min(100%, 300px); height: auto; aspect-ratio: 1; }
+        .fighter--foe svg { transform: scaleX(-1); }
+        .fighter.is-hit svg { animation: hitShake .35s; filter: brightness(2) saturate(0); }
+        .fighter.is-lunge svg { animation: lunge .35s; }
+        .fighter--foe.is-lunge svg { animation: lungeFoe .35s; }
+        @keyframes hitShake { 25% { translate: -8px 0; } 75% { translate: 8px 0; } }
+        @keyframes lunge { 50% { translate: 40px -6px; } }
+        @keyframes lungeFoe { 50% { translate: -40px -6px; } }
+        .bars { width: min(100%, 300px); display: grid; gap: .25rem; font: 700 .78rem var(--mono); }
+        .bars .hp, .bars .en { height: 12px; border-radius: 99px; background: rgba(0,0,0,.45); overflow: hidden; }
+        .bars .hp i { display: block; height: 100%; background: linear-gradient(90deg, #ef4444, #22c55e); transition: width .4s; }
+        .bars .en i { display: block; height: 100%; background: #38bdf8; transition: width .4s; }
+        .pop { position: absolute; top: 20%; left: 50%; font: 900 2rem var(--mono); text-shadow: 0 3px 0 #000; pointer-events: none; animation: pop 1s ease-out forwards; }
+        @keyframes pop { from { transform: translate(-50%, 0) scale(1.4); } to { transform: translate(-50%, -70px); opacity: 0; } }
+        .fight__bar { padding: .8rem clamp(.7rem, 3vw, 2rem) 1rem; background: rgba(10, 8, 5, .92); display: grid; gap: .6rem; }
+        .fight__acts { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: .5rem; }
+        .fight__acts .btn { justify-content: center; }
+        .fight__log { list-style: none; margin: 0; padding: 0; max-height: 6.5rem; overflow: auto; font-size: .88rem; display: grid; gap: .2rem; }
+        html.no-anim .fighter svg, html.no-anim .pop { animation: none !important; }
+    </style>
+</head>
+<body class="theme-pixel">
+<main class="content content--wide">
+    <div class="isle-head" id="isle-head"><div class="isle-head__text"><span class="eyebrow">Offenes Meer · Spiel-Insel</span><h1>Schrott-Arena</h1>
+        <p>Der Sand ist voller Schrauben, die Tribüne voller Pfiffe. Hier zeigt sich, wessen Mech wirklich etwas taugt. Zwölf Gegner, ein Pokal.</p></div></div>
+    <div id="easy" hidden></div>
+    <div id="game" class="shop">
+        <div class="here mt-2" id="here"></div>
+        <div class="wallet" id="wallet"></div>
+        <section class="card">
+            <div class="npc"><div class="npc__face"><i data-px="npc-bolzen"></i></div><div><h2 class="mb-1">Ansagerin Bolzen</h2><p class="npc__say" id="say"></p></div></div>
+            <div class="row mt-2" id="mystats"></div>
+        </section>
+        <section data-here>
+            <div class="row"><h2 class="mb-0">Rangliste</h2><span class="spacer"></span><button class="btn btn--sm" type="button" id="spar">Trainingskampf</button></div>
+            <p class="small muted">Besiege die Gegner der Reihe nach. Jeder erste Sieg bringt ein garantiertes Bauteil. Revanchen geben weniger, aber immer noch Taler und Beute.</p>
+            <div class="ladder" id="ladder"></div>
+        </section>
+    </div>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU, M = X.mech, W = X.werft, A = X.mechArt, esc = X.esc, $ = X.$;
+    const page = W.islePage('arena', render);
+    if (page.easy) return;
+    const LADDER = [
+        { n: 'Rostbeule',            f: 'z-anker', d: 'Ein Mech aus einem Briefkasten. Er meint es nicht böse.', lo: { rahmen: ['r-schrott', 1], antrieb: ['a-paddel', 1], kern: ['k-batterie', 1], waffe: ['f-nagel', 1] } },
+        { n: 'Klapperkiste',         f: 'ev-kiste', d: 'Klappert schon beim Stillstehen.', lo: { rahmen: ['r-schrott', 2], antrieb: ['a-paddel', 1], kern: ['k-batterie', 2], waffe: ['f-nagel', 2], panzer: ['p-blech', 1] } },
+        { n: 'Paddel-Paule',         f: 'a-paddel', d: 'Schwört auf Segel. Und auf Lötkolben.', lo: { rahmen: ['r-alu', 1], antrieb: ['a-segel', 2], kern: ['k-solar', 1], waffe: ['f-loet', 1], panzer: ['p-blech', 2] } },
+        { n: 'Blechkönigin',         f: 'p-blech', d: 'Trägt eine Krone aus Kühlrippen.', lo: { rahmen: ['r-alu', 2], antrieb: ['a-raupe', 2], kern: ['k-diskette', 2], waffe: ['f-loet', 2], panzer: ['p-ram', 1], sensor: ['s-antenne', 2] } },
+        { n: 'Sir Lötkolben',        f: 'f-loet', d: 'Höflich, heiss und hartnäckig.', lo: { rahmen: ['r-carbon', 2], antrieb: ['a-schraube', 1], kern: ['k-cd', 1], waffe: ['f-loet', 3], panzer: ['p-ram', 2], arm: ['w-schweiss', 2] } },
+        { n: 'Turbo-Tante',          f: 'a-duesen', d: 'Fährt schneller, als ihr Mech eigentlich darf.', lo: { rahmen: ['r-titan', 2], antrieb: ['a-duesen', 2], kern: ['k-cd', 2], waffe: ['f-laser', 2], sensor: ['s-radar', 3], zubehoer: ['z-kompass', 2] } },
+        { n: 'Der Tower',            f: 'p-tower', d: 'Ein Big-Tower auf Raupen. Unerschütterlich.', lo: { rahmen: ['r-titan', 3], antrieb: ['a-raupe', 4], kern: ['k-cd', 3], waffe: ['f-bohr', 3], panzer: ['p-tower', 3], arm: ['w-greifer', 3] } },
+        { n: 'Nebelgeist',           f: 'ev-nebel', d: 'Man sieht ihn erst, wenn er zuschlägt.', lo: { rahmen: ['r-kristall', 3], antrieb: ['a-hover', 2], kern: ['k-kristall', 2], waffe: ['f-tesla', 3], sensor: ['s-prisma', 3], panzer: ['p-schild', 3] } },
+        { n: 'Kristallkoloss',       f: 'k-kristall', d: 'Funkelt. Wiegt drei Tonnen.', lo: { rahmen: ['r-kristall', 4], antrieb: ['a-beine', 3], kern: ['k-kristall', 4], waffe: ['f-klinge', 3], panzer: ['p-kristall', 3], sensor: ['s-hdd', 4] } },
+        { n: 'Obsidian-Otto',        f: 'r-obsidian', d: 'Glüht von innen. Ölt sich mit Lava.', lo: { rahmen: ['r-obsidian', 4], antrieb: ['a-beine', 4], kern: ['k-fusion', 3], waffe: ['f-tesla', 4, 2], panzer: ['p-kristall', 4], arm: ['w-nano', 3] } },
+        { n: 'Die Legende',          f: 's-auge', d: 'Niemand weiss, wer im Cockpit sitzt.', lo: { rahmen: ['r-obsidian', 5, 2], antrieb: ['a-hover', 5], kern: ['k-fusion', 5], waffe: ['f-klinge', 5, 2], panzer: ['p-kristall', 5], sensor: ['s-auge', 4], arm: ['w-nano', 4] } },
+        { n: 'XIRU-0, der Champion', f: 'taler', d: 'Der erste Mech von Sektaria. Ungeschlagen seit 1999.', lo: { rahmen: ['r-obsidian', 6, 3], antrieb: ['a-hover', 5, 4], kern: ['k-fusion', 6], waffe: ['f-klinge', 6, 2], panzer: ['p-kristall', 5, 4], sensor: ['s-auge', 5, 3], arm: ['w-nano', 5], zubehoer: ['z-kleeblatt', 5] } }
+    ];
+    const SAY = ['„Meine Damen und Herren, Mechs und Möwen!“', '„Heute im Ring: Schrauben, Schweiss und Schrott!“', '„Wer verliert, putzt die Tribüne.“', '„Ein Applaus für die Reparaturcrew!“'];
+    $('#say').textContent = X.pick(SAY);
+
+    /* Werte aus einem Loadout (gleiche Regeln wie für den eigenen Mech) */
+    function statsOf(lo) {
+        const out = { R: 0, E: 0, S: 0, P: 0, A: 0, rep: 0 };
+        Object.values(lo).forEach(v => { Object.keys(v.s).forEach(k => { const x = v.s[k]; out[k] += x < 0 ? x : v.c <= 0 ? 0 : v.c < 40 ? Math.floor(x / 2) : x; }); if (v.c > 0) out.rep = Math.max(out.rep, v.rep || 0); });
+        return out;
+    }
+    function combat(lo) {
+        const st = statsOf(lo), fr = lo.rahmen;
+        return { hp: 30 + Math.max(0, st.P) * 6 + (fr ? fr.t * 4 : 0), atk: 2 + Math.max(0, st.A) + Math.floor(Math.max(0, st.S) / 2), def: Math.max(0, st.P), spd: st.R + Math.floor(st.E / 2), en: 3 + Math.max(0, st.E), crit: Math.min(40, 5 + Math.max(0, st.S) * 2), rep: st.rep };
+    }
+    const power = c => Math.round(c.hp + c.atk * 5 + c.def * 3 + c.spd * 2 + c.en);
+    const svgOf = (lo, f) => A.draw(f || 0, false, lo).replace('width="240" height="240"', '');
+    const arena = () => { const a = M.state().arena; a.rank = a.rank || 0; a.wins = a.wins || 0; a.losses = a.losses || 0; return a; };
+
+    function renderMe() {
+        const c = combat(M.loadout()), a = arena();
+        $('#mystats').innerHTML = '<span class="chip">' + W.px('st-hp') + ' ' + c.hp + '</span><span class="chip">' + W.px('st-atk') + ' ' + c.atk + '</span><span class="chip">' + W.px('st-def') + ' ' + c.def + '</span><span class="chip">' + W.px('st-spd') + ' ' + c.spd + '</span><span class="chip">' + W.px('st-E') + ' ' + c.en + '</span><span class="chip">' + W.px('st-crit') + ' ' + c.crit + ' %</span>' +
+            '<span class="chip">Stärke ' + power(c) + '</span><span class="chip">Rang ' + a.rank + '/' + LADDER.length + '</span><span class="chip">' + a.wins + ' Siege · ' + a.losses + ' Niederlagen</span>';
+    }
+    function renderLadder() {
+        const a = arena();
+        $('#ladder').innerHTML = LADDER.map((o, i) => {
+            const lo = A.loadoutOf(o.lo), c = combat(lo), done = i < a.rank, next = i === a.rank, locked = i > a.rank;
+            return '<div class="foe' + (done ? ' is-done' : next ? ' is-next' : ' is-locked') + '">' + svgOf(lo, i) + '<h3>' + (locked ? '???' : W.px(o.f) + ' ' + esc(o.n)) + '</h3>' +
+                '<span class="power">Rang ' + (i + 1) + ' · Stärke ' + (locked ? '?' : power(c)) + '</span><p class="small muted mb-0">' + (locked ? 'Erst den Rang davor besiegen.' : esc(o.d)) + '</p>' +
+                (locked ? '' : '<button class="btn btn--sm' + (next ? ' btn--primary' : '') + '" type="button" data-fight="' + i + '">' + (done ? 'Revanche' : 'Herausfordern') + '</button>') + '</div>';
+        }).join('');
+    }
+    $('#ladder').addEventListener('click', e => { const b = e.target.closest('[data-fight]'); if (b) start(+b.dataset.fight); });
+    $('#spar').addEventListener('click', () => start(-1));
+
+    /* ── Kampf ── */
+    function sparring() {   // Trainingspartner: dein eigener Mech, leicht verändert
+        const lo = {};
+        Object.entries(M.loadout()).forEach(([sl, v]) => { lo[sl] = [v.id, X.clamp(v.q + X.pick([-1, 0, 0, 1]), 1, 6), v.up || 0]; });
+        if (!lo.rahmen) lo.rahmen = ['r-schrott', 1];
+        if (!lo.waffe) lo.waffe = ['f-nagel', 1];
+        return { n: X.pick(['Sparrings-Sepp', 'Übungs-Ute', 'Trainings-Toni', 'Probe-Paula']), f: 'st-atk', d: 'Trainingspartner', lo };
+    }
+    function start(rank) {
+        if (!page.at()) return;
+        if (!M.ready()) { X.toast('Nicht kampfbereit', 'Rahmen, Antrieb und Energiekern müssen eingebaut und intakt sein.', { iconHtml: W.px('ev-sturm', 26), type: 'error' }); return; }
+        const foe = rank < 0 ? sparring() : LADDER[rank];
+        const meLo = M.loadout(), foeLo = A.loadoutOf(foe.lo), me = combat(meLo), op = combat(foeLo);
+        const S = { me: { c: me, hp: me.hp, en: Math.ceil(me.en / 2), guard: false }, op: { c: op, hp: op.hp, en: Math.ceil(op.en / 2), guard: false } };
+        const root = document.createElement('div'); root.className = 'fight'; root.setAttribute('role', 'dialog'); root.setAttribute('aria-label', 'Arenakampf');
+        root.innerHTML = '<div class="fight__stage"><div class="fight__crowd"></div>' +
+            '<div class="fighter fighter--me"><div class="bars"><span>Du</span><div class="hp"><i></i></div><div class="en"><i></i></div><span class="hpt"></span></div><div class="pic"></div></div>' +
+            '<div class="fighter fighter--foe"><div class="bars"><span>' + W.px(foe.f) + ' ' + esc(foe.n) + '</span><div class="hp"><i></i></div><div class="en"><i></i></div><span class="hpt"></span></div><div class="pic"></div></div></div>' +
+            '<div class="fight__bar"><div class="fight__acts">' +
+            '<button class="btn btn--primary" type="button" data-act="hit"><i data-px="st-atk"></i> Schlag</button><button class="btn" type="button" data-act="over"><i data-px="st-E"></i> Überladung · 3</button>' +
+            '<button class="btn" type="button" data-act="guard"><i data-px="st-def"></i> Abwehr</button><button class="btn" type="button" data-act="heal"><i data-px="w-schluessel"></i> Flicken · 2</button>' +
+            '<button class="btn btn--ghost" type="button" data-act="auto" aria-pressed="false"><i data-px="st-spd"></i> Automatisch</button></div><ul class="fight__log" aria-live="polite"></ul></div>';
+        document.body.appendChild(root); document.body.style.overflow = 'hidden';
+        W.pxify(root);
+        const fMe = root.querySelector('.fighter--me'), fOp = root.querySelector('.fighter--foe'), log = root.querySelector('.fight__log');
+        let busy = false, over = false, auto = false, t0 = performance.now();
+        const paint = () => {
+            const f = (performance.now() - t0) / 1000;
+            fMe.querySelector('.pic').innerHTML = svgOf(meLo, f); fOp.querySelector('.pic').innerHTML = svgOf(foeLo, f + 1.3);
+        };
+        const tick = setInterval(() => { if (!document.hidden) paint(); }, 170); paint();
+        const bars = () => [[fMe, S.me], [fOp, S.op]].forEach(([el, s]) => {
+            el.querySelector('.hp i').style.width = Math.max(0, s.hp / s.c.hp * 100) + '%'; el.querySelector('.en i').style.width = (s.en / s.c.en * 100) + '%';
+            el.querySelector('.hpt').textContent = 'Struktur ' + Math.max(0, s.hp) + '/' + s.c.hp + ' · Energie ' + s.en + '/' + s.c.en + (s.guard ? ' · Deckung' : '');
+        });
+        const say = h => { const li = document.createElement('li'); li.innerHTML = h; log.prepend(li); };
+        const pop = (el, txt, col) => { const p = document.createElement('div'); p.className = 'pop'; p.textContent = txt; p.style.color = col; el.appendChild(p); setTimeout(() => p.remove(), 1000); };
+        const fx = (el, cls) => { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); setTimeout(() => el.classList.remove(cls), 360); };
+        const wait = ms => new Promise(r => setTimeout(r, X.setting('anim') === false ? 0 : ms));
+        async function act(who, kind) {
+            const a = S[who], b = S[who === 'me' ? 'op' : 'me'], ea = who === 'me' ? fMe : fOp, eb = who === 'me' ? fOp : fMe, name = who === 'me' ? 'Du' : foe.n, du = who === 'me';
+            a.guard = false;
+            if (kind === 'over' && a.en < 3) kind = 'hit';
+            if (kind === 'heal' && a.en < 2) kind = 'guard';
+            if (kind === 'hit' || kind === 'over') {
+                fx(ea, 'is-lunge'); await wait(180);
+                const crit = Math.random() * 100 < a.c.crit, ov = kind === 'over';
+                let dmg = a.c.atk * 1.8 * (.85 + Math.random() * .3) * (ov ? 2.1 : 1) - (ov ? 0 : b.c.def * .6);
+                dmg = Math.max(1, Math.round(dmg * (crit ? 1.6 : 1) * (b.guard ? .4 : 1)));
+                if (ov) a.en -= 3;
+                b.hp -= dmg; fx(eb, 'is-hit'); pop(eb, '−' + dmg + (crit ? '!' : ''), crit ? '#fde047' : '#fca5a5');
+                X.beep(ov ? 120 : 200, .1, 'sawtooth', .06);
+                say('<b>' + esc(name) + '</b> ' + (ov ? (du ? 'überlädst' : 'überlädt') + ' die Waffe' : (du ? 'schlägst' : 'schlägt') + ' zu') + (crit ? ' – <b>Volltreffer!</b>' : '') + ' (' + dmg + ' Schaden' + (b.guard ? ', abgewehrt' : '') + ')');
+                b.guard = false;
+            } else if (kind === 'guard') {
+                a.guard = true; a.en = Math.min(a.c.en, a.en + 2); pop(ea, 'DECKUNG', '#93c5fd'); say('<b>' + esc(name) + '</b>' + (du ? ' gehst in Deckung und sammelst Energie.' : ' geht in Deckung und sammelt Energie.')); X.beep(440, .06, 'triangle', .04);
+            } else if (kind === 'heal') {
+                const h = Math.round(a.c.hp * (.18 + a.c.rep * .2)); a.en -= 2; a.hp = Math.min(a.c.hp, a.hp + h); pop(ea, '+' + h, '#86efac'); say('<b>' + esc(name) + '</b>' + (du ? ' flickst dich zusammen (+' : ' flickt sich zusammen (+') + h + ').'); X.beep(660, .08, 'sine', .05);
+            }
+            bars(); await wait(420);
+        }
+        function aiPick() {
+            const s = S.op, r = Math.random();
+            if (s.hp < s.c.hp * .35 && s.en >= 2 && r < .6) return 'heal';
+            if (s.en >= 3 && r < .55) return 'over';
+            if (r < .14) return 'guard';
+            return 'hit';
+        }
+        async function round(kind) {
+            if (busy || over) return; busy = true; root.querySelectorAll('[data-act]:not([data-act="auto"])').forEach(b => { b.disabled = true; });
+            const meFirst = S.me.c.spd >= S.op.c.spd;
+            const order = meFirst ? [['me', kind], ['op', aiPick()]] : [['op', aiPick()], ['me', kind]];
+            for (const [who, k] of order) { if (S.me.hp <= 0 || S.op.hp <= 0) break; await act(who, k); }
+            S.me.en = Math.min(S.me.c.en, S.me.en + 1); S.op.en = Math.min(S.op.c.en, S.op.en + 1); bars();
+            busy = false;
+            if (S.me.hp <= 0 || S.op.hp <= 0) return finish(S.op.hp <= 0);
+            root.querySelectorAll('[data-act]').forEach(b => { b.disabled = false; });
+            root.querySelector('[data-act="over"]').disabled = S.me.en < 3; root.querySelector('[data-act="heal"]').disabled = S.me.en < 2;
+            if (auto) setTimeout(() => round(S.me.en >= 3 && Math.random() < .5 ? 'over' : S.me.hp < S.me.c.hp * .3 && S.me.en >= 2 ? 'heal' : 'hit'), 250);
+        }
+        function finish(win) {
+            over = true; const a = arena(), first = win && rank >= 0 && rank === a.rank, champ = first && rank === LADDER.length - 1;
+            const wear = M.wear(2, 6 + Math.max(0, rank), null);
+            let lines = [];
+            if (win) {
+                a.wins++; X.egg('m-arena');
+                const rr = Math.max(0, rank), rep = rank >= 0 && !first;
+                lines = W.grant(W.loot({ taler: rank < 0 ? [6, 14] : [Math.round((15 + rr * 14) * (rep ? .5 : 1)), Math.round((25 + rr * 18) * (rep ? .5 : 1))], item: rank < 0 ? .15 : rep ? .2 + rr * .02 : 0, maxT: Math.min(5, 1 + Math.ceil(rr / 2.5)), luck: rr * .08, mats: 1 + Math.floor(rr / 3), rare: rr * .03 }));
+                if (first) {
+                    a.rank = rank + 1;
+                    const q = champ ? 6 : Math.min(5, 1 + Math.floor((rank + 1) / 2.4)), p = W.rollPart({ maxT: Math.min(5, 1 + Math.ceil((rank + 1) / 2.5)), minQ: q, maxQ: q });
+                    lines = lines.concat(W.grant([{ type: 'item', id: p.id, q: p.q }]));
+                    if (champ) X.egg('m-champion');
+                }
+                X.addXP(rank < 0 ? 5 : 10 + Math.max(0, rank) * 4, 'Arenasieg');
+                X.confetti(first ? 90 : 40);
+            } else { a.losses++; lines = W.grant([{ type: 'taler', n: 3 }]); }
+            X.persist(); clearInterval(tick);
+            const acts = root.querySelector('.fight__acts');
+            acts.innerHTML = '<div style="grid-column:1/-1"><h2 class="mb-1">' + (win ? (champ ? 'Champion von Sektaria!' : 'Sieg!') : 'Niederlage') + '</h2>' +
+                '<p class="mb-1">' + (win ? 'Beute: ' : 'Trostpreis: ') + lines.join(' · ') + '</p>' +
+                (wear.length ? '<p class="small muted mb-1">Abnutzung: ' + wear.map(w => esc(w.part.n) + ' −' + w.dmg + ' %').join(', ') + '</p>' : '') +
+                '<button class="btn btn--primary" type="button" data-leave>Zurück zur Tribüne</button></div>';
+            acts.querySelector('[data-leave]').addEventListener('click', () => { root.remove(); document.body.style.overflow = ''; render(); });
+            say(win ? '<b>Die Menge tobt!</b>' : '<b>' + esc(foe.n) + '</b> gewinnt diese Runde.');
+        }
+        root.querySelector('.fight__acts').addEventListener('click', e => {
+            const b = e.target.closest('[data-act]'); if (!b || over) return;
+            if (b.dataset.act === 'auto') { auto = !auto; b.setAttribute('aria-pressed', auto); b.classList.toggle('btn--primary', auto); if (auto && !busy) round('hit'); return; }
+            round(b.dataset.act);
+        });
+        say(W.px('npc-bolzen') + ' <b>' + esc(foe.n) + '</b> betritt den Ring! ' + (S.me.c.spd >= S.op.c.spd ? 'Du bist schneller und beginnst.' : 'Der Gegner ist schneller.'));
+        bars(); root.querySelector('[data-act="over"]').disabled = S.me.en < 3; root.querySelector('[data-act="heal"]').disabled = S.me.en < 2;
+    }
+
+    function render() { page.redraw && page.redraw(); renderMe(); renderLadder(); }
+    render();
+});
+</script>
+</body>
+</html>

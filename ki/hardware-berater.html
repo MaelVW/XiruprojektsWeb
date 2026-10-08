@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hardware-Berater · Xiruprojekts</title>
+    <meta name="description" content="Hardware-Berater: PC-Kaufberatung nach Budget und Zweck – mit Budget-Aufteilung, Tipps und Links ins Hardware-Archiv.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="ki.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/ai.js"></script>
+    <style>
+        .hb-split { display: grid; gap: .35rem; }
+        .hb-row { display: grid; grid-template-columns: minmax(9rem, 1.2fr) 2fr 6rem; gap: .6rem; align-items: center; font-size: .85rem; }
+        .hb-row b { text-align: right; font-family: var(--mono); }
+        @media (max-width: 560px) { .hb-row { grid-template-columns: 1fr 5.5rem; } .hb-row .bar { grid-column: 1 / -1; grid-row: 2; } }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">✦ KI-Labor</span>
+        <h1>Hardware-Berater</h1>
+        <p class="lead">Sag, wofür dein PC sein soll und wie viel du ausgeben willst. Der Berater teilt das Budget auf und erklärt, worauf es ankommt.</p>
+    </header>
+    <div class="ki-top">
+        <div id="ai-status"></div>
+        <a class="btn btn--sm" href="index.html">✦ Zum KI-Labor</a><a class="btn btn--sm btn--ghost" href="../hardware/index.html">🖥 Hardware-Archiv</a>
+    </div>
+    <div class="ki-layout">
+        <section>
+            <div class="grid-2">
+                <div class="field"><label for="use">Wofür?</label><select class="select" id="use"><option value="gaming">🎮 Gaming</option><option value="schule">📚 Schule & Office</option><option value="kreativ">🎬 Video & Grafik</option><option value="ki">🧠 KI & Programmieren</option></select></div>
+                <div class="field"><label for="res">Bildschirm</label><select class="select" id="res"><option value="1080">Full HD (1080p)</option><option value="1440">WQHD (1440p)</option><option value="2160">4K</option></select></div>
+            </div>
+            <div class="field"><label for="bud">Budget: <b id="bud-v"></b></label><input type="range" id="bud" min="400" max="4000" step="50" value="1200"></div>
+            <div class="field"><label for="extra">Besondere Wünsche (optional)</label><input class="input" id="extra" placeholder="z. B. leise, klein, Roblox und Minecraft, RGB …"></div>
+            <div class="row"><button class="btn btn--primary" type="button" id="go">🧮 Beraten</button></div>
+            <div class="hb-split mt-1" id="split"></div>
+            <div class="ki-output ai-md mt-1" id="out" data-empty="Hier erscheint deine Beratung."></div>
+        </section>
+        <aside class="ki-side"><h3>Im Archiv nachlesen</h3><ul class="small" id="links"></ul></aside>
+    </div>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU;
+    const AI = X.ai;
+    async function ask(out, msgs, opts, offline) {
+        const s = AI.ui.stream(out); let a;
+        try { a = await AI.chat(msgs, Object.assign({ onToken: x => s.push(x), offline }, opts)); }
+        catch (e) { a = e && e.code === 'abort' ? '_Abgebrochen._' : offline(); }
+        await s.end(a); return a;
+    }
+    const $ = s => X.$(s);
+    AI.ui.status('#ai-status', { offlineText: 'Regelbasierte Beratung aus dem Archiv' });
+    const SPLIT = {   // Anteile am Budget
+        gaming: { 'Grafikkarte': 40, 'Prozessor': 18, 'Mainboard': 10, 'RAM': 8, 'SSD': 8, 'Netzteil': 7, 'Gehäuse & Kühlung': 9 },
+        schule: { 'Prozessor (mit Grafik)': 28, 'Mainboard': 15, 'RAM': 15, 'SSD': 15, 'Netzteil': 10, 'Gehäuse': 10, 'Reserve (Maus/Tastatur)': 7 },
+        kreativ: { 'Prozessor': 26, 'Grafikkarte': 26, 'RAM': 14, 'SSD': 12, 'Mainboard': 10, 'Netzteil': 6, 'Gehäuse & Kühlung': 6 },
+        ki: { 'Grafikkarte (viel VRAM!)': 45, 'Prozessor': 15, 'RAM': 12, 'SSD': 10, 'Mainboard': 8, 'Netzteil': 6, 'Gehäuse': 4 }
+    };
+    const TIPS = {
+        gaming: ['Die Grafikkarte entscheidet über die FPS – hier lohnt sich jeder Franken.', '16 GB RAM reichen, 32 GB sind angenehm für Streaming nebenbei.', 'Eine NVMe-SSD mit 1 TB verkürzt Ladezeiten deutlich.'],
+        schule: ['Eine CPU mit integrierter Grafik spart die Grafikkarte komplett.', 'Eine schnelle SSD fühlt sich wichtiger an als jeder andere Teil.', 'Leise Lüfter machen beim Lernen mehr aus als 10 % Leistung.'],
+        kreativ: ['Viele Kerne beschleunigen Video-Export und 3D-Rendering.', '32 GB RAM sind für Videoschnitt das Minimum, 64 GB für 4K.', 'Eine zweite SSD als Arbeitslaufwerk hält Projekte schnell.'],
+        ki: ['Für lokale KI-Modelle zählt der Grafikspeicher (VRAM) mehr als alles andere – 12 GB+ anpeilen.', '32 GB RAM, damit grosse Modelle und Datensätze Platz haben.', 'NVIDIA-Karten haben die beste Unterstützung (CUDA).']
+    };
+    const chf = n => 'CHF ' + X.fmt(Math.round(n / 10) * 10);
+    function split() {
+        const b = +$('#bud').value, u = $('#use').value; $('#bud-v').textContent = chf(b);
+        $('#split').innerHTML = Object.entries(SPLIT[u]).map(([k, p]) => '<div class="hb-row"><span>' + k + '</span><div class="bar bar--sm"><div class="bar__fill" style="width:' + p * 2 + '%"></div></div><b>' + chf(b * p / 100) + '</b></div>').join('');
+        const want = { gaming: ['gpu', 'cpu', 'memory'], schule: ['cpu', 'storage', 'memory'], kreativ: ['cpu', 'gpu', 'memory'], ki: ['gpu', 'memory', 'cpu'] }[u];
+        const pages = (X.pages || []).filter(p => p.hw && want.includes(p.hw)).slice(-8);
+        $('#links').innerHTML = (pages.length ? pages : [{ p: 'hardware/index.html', t: 'Hardware-Archiv' }]).map(p => '<li><a href="' + X.url(p.p) + '">' + X.esc(p.t) + '</a></li>').join('') + '<li><a href="' + X.url('hardware/netzteil-rechner.html') + '">Netzteil-Rechner</a></li>';
+    }
+    function offline() {
+        const b = +$('#bud').value, u = $('#use').value, r = +$('#res').value;
+        let warn = '';
+        if (u === 'gaming' && r >= 1440 && b < 1200) warn = '\n\n> ⚠ Für ' + (r === 2160 ? '4K' : 'WQHD') + '-Gaming ist das Budget knapp. Rechne mit mittleren Details oder spare noch etwas.';
+        if (u === 'ki' && b < 1500) warn = '\n\n> ⚠ Für lokale KI ist eine Karte mit viel VRAM wichtig – unter CHF 1500 wird das eng. Cloud-Dienste sind eine Alternative.';
+        return '### Dein Plan: ' + $('#use').selectedOptions[0].text + ' für ' + chf(b) + '\n\n' + TIPS[u].map(t => '- ' + t).join('\n') +
+            '\n\n**So würde ich es aufteilen:** siehe Balken oben. Preise schwanken – vergleich vor dem Kauf immer mehrere Shops.' + warn +
+            ($('#extra').value.trim() ? '\n\n_Zu deinem Wunsch „' + $('#extra').value.trim().slice(0, 80) + '“: Mit eingerichtetem KI-Dienst gehe ich darauf genauer ein._' : '');
+    }
+    function go() {
+        split(); X.once('ki-hw-berater', 5, 'Beraten lassen');
+        ask($('#out'), [{ role: 'user', content: 'Berate mich beim PC-Kauf. Zweck: ' + $('#use').selectedOptions[0].text + '. Bildschirm: ' + $('#res').selectedOptions[0].text + '. Budget: ' + chf(+$('#bud').value) + '. Wünsche: ' + ($('#extra').value.trim().slice(0, 300) || 'keine') + '. Geplante Aufteilung: ' + JSON.stringify(SPLIT[$('#use').value]) + ' (Prozent).' }],
+            { system: 'Du bist ein ehrlicher PC-Kaufberater für Jugendliche in der Schweiz. Antworte auf Deutsch (ss statt ß), in Markdown, max. 220 Wörter. Nenne Bauteil-Klassen und Leistungsstufen statt exakter Tagespreise, und weise darauf hin, dass Preise schwanken.', temperature: .4, maxTokens: 700 }, offline);
+    }
+    ['use', 'res', 'bud'].forEach(id => $('#' + id).addEventListener('input', split));
+    $('#go').addEventListener('click', go);
+    split();
+});
+</script>
+</body>
+</html>

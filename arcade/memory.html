@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory · Xiruprojekts</title>
+    <meta name="description" content="Memory mit Hardware-Motiven: Paare finden in 4×4 oder 6×4, mit Zügen, Zeit und Rekord.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="../assets/css/themes/arcade.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/arcade.js"></script>
+    <style>
+        .mem { --cols: 4; display: grid; grid-template-columns: repeat(var(--cols), 1fr); gap: clamp(6px, 1.6vw, 12px); width: min(100%, calc(var(--cols) * 110px)); margin: auto; padding: clamp(10px, 3vw, 24px); }
+        .mem__c { position: relative; aspect-ratio: 3 / 4; border: 0; padding: 0; background: none; cursor: pointer; perspective: 600px; touch-action: manipulation; }
+        .mem__f, .mem__b { position: absolute; inset: 0; display: grid; place-items: center; border-radius: 10px; backface-visibility: hidden; transition: transform .35s var(--ease, ease); }
+        .mem__b { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: rgba(0,0,0,.45); font-size: 1.6rem; box-shadow: inset 0 -4px 0 rgba(0,0,0,.25); }
+        .mem__f { background: var(--surface-2); font-size: clamp(1.6rem, 5vw, 2.4rem); transform: rotateY(180deg); border: 2px solid var(--border-strong); }
+        .mem__c.is-up .mem__b { transform: rotateY(-180deg); } .mem__c.is-up .mem__f { transform: none; }
+        .mem__c.is-done .mem__f { border-color: var(--accent-2); box-shadow: 0 0 16px color-mix(in srgb, var(--accent-2) 45%, transparent); }
+    </style>
+</head>
+<body class="theme-arcade">
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">▶ Spielhalle · Brett</span>
+        <h1>Memory</h1>
+        <p class="lead">Deck zwei Karten auf. Gleiches Bauteil? Dann bleiben sie offen. Schaffst du alle Paare mit möglichst wenigen Zügen?</p>
+    </header>
+    <div class="game">
+        <div>
+            <div class="game__hud" id="hud">
+                <div><span>Züge</span><b id="h-moves">0</b></div>
+                <div><span>Paare</span><b id="h-pairs">0/8</b></div>
+                <div><span>Zeit</span><b id="h-time">0:00</b></div>
+            </div>
+            <div class="game__stage" id="stage">
+                <div class="mem" id="board"></div>
+                <div class="game__overlay" id="ov" hidden></div>
+            </div>
+            <div class="row mt-1"><button class="btn btn--sm" type="button" id="b-new">↺ Neues Spiel</button><button class="btn btn--sm" type="button" data-n="8">4×4</button><button class="btn btn--sm" type="button" data-n="12">6×4</button></div>
+        </div>
+        <aside class="game__side">
+            <div class="card">
+                <h3>So geht's</h3>
+                <ul class="keys-help"><li><b>Klick / Tippen</b> – Karte aufdecken</li><li>Rekord = wenigste Züge pro Grösse</li></ul>
+            </div>
+            <div class="card">
+                <h3>Rekord</h3>
+                <p class="stat__value" id="best">–</p>
+            </div>
+        </aside>
+    </div>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU;
+    const G = X.Game, $ = s => X.$(s);
+    const ICONS = ['🖥️', '💾', '🖱️', '⌨️', '🎮', '🔌', '💿', '🧠', '📡', '🔋', '🕹️', '📀', '🖨️', '📟', '🎧', '💡'];
+    let n = 8, cards = [], open = [], moves = 0, pairs = 0, t0 = 0, timer = null, lock = false;
+    const key = () => n === 8 ? 'memory' : 'memory-gross';
+    function best() { const b = X.best(key()); $('#best').textContent = b == null ? '–' : b + ' Züge'; }
+    function time() { const s = Math.floor((Date.now() - t0) / 1000); $('#h-time').textContent = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+    function start() {
+        clearInterval(timer); t0 = 0; moves = 0; pairs = 0; open = []; lock = false;
+        const pick = ICONS.slice().sort(() => Math.random() - .5).slice(0, n);
+        cards = pick.concat(pick).sort(() => Math.random() - .5);
+        const b = $('#board'); b.style.setProperty('--cols', n === 8 ? 4 : 6); b.textContent = '';
+        cards.forEach((ic, i) => {
+            const c = document.createElement('button'); c.type = 'button'; c.className = 'mem__c'; c.dataset.i = i; c.setAttribute('aria-label', 'Verdeckte Karte');
+            c.innerHTML = '<span class="mem__f">' + ic + '</span><span class="mem__b">✦</span>';
+            c.addEventListener('click', () => flip(c)); b.appendChild(c);
+        });
+        $('#h-moves').textContent = 0; $('#h-pairs').textContent = '0/' + n; $('#h-time').textContent = '0:00'; G.overlay('#ov').hide(); best();
+    }
+    function flip(c) {
+        if (lock || c.classList.contains('is-up')) return;
+        if (!t0) { t0 = Date.now(); timer = setInterval(time, 500); }
+        c.classList.add('is-up'); c.setAttribute('aria-label', cards[c.dataset.i]); G.sfx.click(); open.push(c);
+        if (open.length < 2) return;
+        moves++; $('#h-moves').textContent = moves;
+        const [a, b] = open; open = [];
+        if (cards[a.dataset.i] === cards[b.dataset.i]) {
+            a.classList.add('is-done'); b.classList.add('is-done'); pairs++; $('#h-pairs').textContent = pairs + '/' + n; G.sfx.coin();
+            if (pairs === n) win();
+        } else { lock = true; setTimeout(() => { a.classList.remove('is-up'); b.classList.remove('is-up'); a.setAttribute('aria-label', 'Verdeckte Karte'); b.setAttribute('aria-label', 'Verdeckte Karte'); lock = false; }, 800); }
+    }
+    function win() {
+        clearInterval(timer); time(); G.sfx.win();
+        const r = X.score(key(), moves, { lower: true }); best();
+        if (moves <= n + 4) X.confetti(60);
+        G.overlay('#ov').show({ icon: '🧠', title: 'Alle Paare gefunden!', text: moves + ' Züge in ' + $('#h-time').textContent + (r.isNew ? ' – neuer Rekord!' : ''), button: 'Nochmal', onClick: start });
+    }
+    $('#b-new').addEventListener('click', start);
+    X.$$('[data-n]').forEach(b => b.addEventListener('click', () => { n = +b.dataset.n; start(); }));
+    start();
+});
+</script>
+</body>
+</html>

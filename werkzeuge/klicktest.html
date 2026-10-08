@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Klicktest · Xiruprojekts</title>
+    <meta name="description" content="Klicks pro Sekunde messen: 1, 5 oder 10 Sekunden, mit Rekord und Verlauf.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="css/werkzeuge.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <style>
+        .kt-pad { width: 100%; min-height: 16rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .5rem; cursor: pointer; user-select: none; touch-action: manipulation;
+            border: 2px dashed var(--border-strong); border-radius: var(--radius-lg, 16px); background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--accent) 16%, transparent), var(--bg-2)); color: var(--text); font: inherit; }
+        .kt-pad:hover { border-color: var(--accent); }
+        .kt-pad.is-done { border-style: solid; border-color: var(--accent-2); }
+        #pad-big { font-size: clamp(2.4rem, 8vw, 4rem); font-weight: 800; font-family: var(--mono); }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">⚒ Werkzeugkasten</span>
+        <h1>Klicktest</h1>
+        <p class="lead">Wie schnell kannst du klicken? Wähle eine Dauer und klick los – der Test startet mit dem ersten Klick.</p>
+    </header>
+    <div class="row" id="durs">
+        <button class="btn btn--sm" type="button" data-d="1">1 s</button>
+        <button class="btn btn--sm btn--primary" type="button" data-d="5">5 s</button>
+        <button class="btn btn--sm" type="button" data-d="10">10 s</button>
+    </div>
+    <button class="kt-pad mt-1" type="button" id="pad"><span id="pad-big">Klick mich!</span><span class="small" id="pad-sub">Der Test startet mit dem ersten Klick</span></button>
+    <div class="grid-3 mt-1">
+        <div class="card stat"><span class="stat__label">Klicks</span><span class="stat__value" id="s-n">0</span></div>
+        <div class="card stat"><span class="stat__label">Klicks / Sekunde</span><span class="stat__value" id="s-cps">0.0</span></div>
+        <div class="card stat"><span class="stat__label">Rekord (CPS)</span><span class="stat__value" id="s-best">–</span></div>
+    </div>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU;
+    const $ = s => X.$(s), pad = $('#pad');
+    let dur = 5, n = 0, t0 = 0, timer = null, state = 'idle';
+    const key = () => 'klicktest-' + dur;
+    function best() { const b = X.best(key()); $('#s-best').textContent = b == null ? '–' : (b / 10).toFixed(1); }
+    function reset() { clearInterval(timer); n = 0; state = 'idle'; $('#s-n').textContent = '0'; $('#s-cps').textContent = '0.0'; $('#pad-big').textContent = 'Klick mich!'; $('#pad-sub').textContent = 'Der Test startet mit dem ersten Klick'; pad.classList.remove('is-done'); best(); }
+    function finish() {
+        clearInterval(timer); state = 'done';
+        const cps = n / dur, r = X.score(key(), Math.round(cps * 10));
+        $('#s-cps').textContent = cps.toFixed(1);
+        $('#pad-big').textContent = cps.toFixed(1) + ' CPS';
+        $('#pad-sub').textContent = (r.isNew ? '🏆 Neuer Rekord! ' : '') + (cps >= 10 ? 'Blitzfinger!' : cps >= 7 ? 'Richtig schnell.' : 'Nochmal? Klick in 1 Sekunde wieder.');
+        pad.classList.add('is-done'); best();
+        setTimeout(() => { if (state === 'done') state = 'ready'; }, 1000);
+    }
+    pad.addEventListener('pointerdown', e => {
+        e.preventDefault();
+        if (state === 'done') return;
+        if (state === 'ready') reset();
+        if (state === 'idle') { state = 'run'; t0 = performance.now(); timer = setInterval(() => {
+            const t = (performance.now() - t0) / 1000;
+            $('#pad-sub').textContent = Math.max(0, dur - t).toFixed(1) + ' s übrig';
+            $('#s-cps').textContent = (n / Math.max(t, .1)).toFixed(1);
+            if (t >= dur) finish();
+        }, 50); }
+        n++; $('#s-n').textContent = n; $('#pad-big').textContent = n;
+        pad.animate([{ transform: 'scale(.97)' }, { transform: 'none' }], { duration: 90 });
+    });
+    X.$$('#durs button').forEach(b => b.addEventListener('click', () => { dur = +b.dataset.d; X.$$('#durs button').forEach(x => x.classList.toggle('btn--primary', x === b)); reset(); }));
+    reset();
+});
+</script>
+</body>
+</html>

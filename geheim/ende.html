@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Das Ende? · Xiruprojekts</title>
+    <meta name="description" content="Nur wer alles gemeistert hat, sieht hier mehr als einen leeren Raum.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <style>
+        .en { position: relative; height: min(70vh, 560px); overflow: hidden; border-radius: 14px; background: #000; color: #e5e5e5; display: flex; align-items: center; justify-content: center; text-align: center; }
+        .en__roll { padding: 1rem; } .en__roll a { color: var(--accent); }
+        .en.is-done .en__roll { position: absolute; top: 100%; animation: enRoll 32s linear forwards; font-family: Georgia, serif; font-size: 1.15rem; }
+        .en.is-done .en__roll p:first-child { font: 800 2rem var(--mono); letter-spacing: .2em; color: var(--accent); }
+        @keyframes enRoll { to { transform: translateY(calc(-100% - 70vh)); } }
+        html.no-anim .en.is-done .en__roll { animation: none; position: static; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">🗝 Geheimer Ort</span>
+        <h1>Das Ende?</h1>
+        <p class="lead">Ein Raum am Rand der Welt. Ob hier etwas wartet, hängt davon ab, wie weit du gekommen bist.</p>
+    </header>
+    <section class="en" id="end"><div class="en__roll" id="roll"></div></section>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU;
+    const $ = s => X.$(s), sk = X.skills || [], real = (X.profile() || {}).skills || {}, have = X.user ? sk.filter(s => real[s.id]).length : 0, done = sk.length && have === sk.length;   // echte Module, nicht der Entdecker-Modus
+    const P = X.profile() || {}, lv = X.levelInfo ? X.levelInfo(P.xp || 0).level : '?';
+    if (!done) {
+        $('#roll').innerHTML = '<h2>Noch nicht.</h2><p>' + have + ' von ' + sk.length + ' Modulen gelernt.</p><p class="muted">Meistere alle Äste in der <a href="../konto/skilltree.html">Werft</a> – dann komm zurück.</p>';
+        return;
+    }
+    X.egg('o-ende');
+    const lines = ['XIRUPROJEKTS', '', 'Du hast alles gemeistert.', '', 'Level ' + lv, X.eggCount() + ' Realitätskristalle', Object.keys(P.visited || {}).length + ' besuchte Orte', Object.keys(P.scores || {}).length + ' gespielte Spiele', '',
+        'Idee, Code & Welt', 'Mael', '', 'Getestet von', 'Freunden, Katzen und einer Diskette', '', 'Danke fürs Spielen.', '', 'Das Ende ist erst der Anfang.'];
+    $('#end').classList.add('is-done');
+    $('#roll').innerHTML = lines.map(l => '<p>' + (l ? X.esc(l) : '&nbsp;') + '</p>').join('');
+    X.confetti(120);
+});
+</script>
+</body>
+</html>

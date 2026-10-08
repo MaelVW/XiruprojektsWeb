@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tastaturtest · Xiruprojekts</title>
+    <meta name="description" content="Teste jede Taste deiner Tastatur: Schweizer QWERTZ-Layout, getestete Tasten leuchten, mit Key- und Code-Anzeige.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="css/werkzeuge.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <style>
+        .kb { display: flex; flex-direction: column; gap: 5px; overflow-x: auto; padding-bottom: .3rem; }
+        .kb__row { display: flex; gap: 5px; min-width: 640px; }
+        .kb__row:first-child { margin-bottom: 6px; }
+        .kb__key { flex: 1 1 0; min-width: 0; height: 2.6rem; display: grid; place-items: center; font: 600 .78rem var(--mono); border-radius: 6px;
+            background: var(--bg-2); border: 1px solid var(--border-strong); box-shadow: 0 3px 0 var(--border); color: var(--text-muted); transition: background .15s, color .15s, transform .05s; }
+        .kb__key.is-ok { background: color-mix(in srgb, var(--accent-2) 22%, var(--bg-2)); color: var(--text); border-color: var(--accent-2); }
+        .kb__key.is-down { transform: translateY(3px); box-shadow: none; background: var(--accent); color: #000; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">⚒ Werkzeugkasten</span>
+        <h1>Tastaturtest</h1>
+        <p class="lead">Drück nacheinander alle Tasten. Jede funktionierende Taste leuchtet auf und bleibt markiert – so findest du kaputte Tasten sofort.</p>
+    </header>
+    <div class="card">
+        <div class="kb" id="kb" aria-label="Tastatur"></div>
+        <div class="row mt-1 small">
+            <span>Letzte Taste: <b class="mono" id="last">–</b></span>
+            <span class="muted mono" id="code"></span>
+            <span class="spacer"></span>
+            <span>Getestet: <b id="cnt">0</b> / <span id="tot">0</span></span>
+            <button class="btn btn--sm" type="button" id="clear">↺ Zurücksetzen</button>
+        </div>
+    </div>
+    <p class="small muted mt-1">Hinweis: Manche Tasten (z. B. Fn, Druck oder die Windows-Taste) fängt das Betriebssystem ab, bevor der Browser sie sieht.</p>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU;
+    const W = { Backspace: 2, Tab: 1.5, Backslash: 1.5, CapsLock: 1.8, Enter: 2.2, ShiftLeft: 1.3, ShiftRight: 2.7, Space: 6.2, ControlLeft: 1.4, ControlRight: 1.4, AltLeft: 1.3, AltRight: 1.3, MetaLeft: 1.3, ContextMenu: 1.3 };
+    const ROWS = [
+        [['Escape', 'Esc'], ['F1'], ['F2'], ['F3'], ['F4'], ['F5'], ['F6'], ['F7'], ['F8'], ['F9'], ['F10'], ['F11'], ['F12']],
+        [['Backquote', '§'], ['Digit1', '1'], ['Digit2', '2'], ['Digit3', '3'], ['Digit4', '4'], ['Digit5', '5'], ['Digit6', '6'], ['Digit7', '7'], ['Digit8', '8'], ['Digit9', '9'], ['Digit0', '0'], ['Minus', "'"], ['Equal', '^'], ['Backspace', '⌫']],
+        [['Tab', 'Tab'], ['KeyQ', 'Q'], ['KeyW', 'W'], ['KeyE', 'E'], ['KeyR', 'R'], ['KeyT', 'T'], ['KeyZ', 'Z'], ['KeyU', 'U'], ['KeyI', 'I'], ['KeyO', 'O'], ['KeyP', 'P'], ['BracketLeft', 'ü'], ['BracketRight', '¨'], ['Backslash', '$']],
+        [['CapsLock', 'Caps'], ['KeyA', 'A'], ['KeyS', 'S'], ['KeyD', 'D'], ['KeyF', 'F'], ['KeyG', 'G'], ['KeyH', 'H'], ['KeyJ', 'J'], ['KeyK', 'K'], ['KeyL', 'L'], ['Semicolon', 'ö'], ['Quote', 'ä'], ['Enter', 'Enter']],
+        [['ShiftLeft', '⇧'], ['IntlBackslash', '<'], ['KeyY', 'Y'], ['KeyX', 'X'], ['KeyC', 'C'], ['KeyV', 'V'], ['KeyB', 'B'], ['KeyN', 'N'], ['KeyM', 'M'], ['Comma', ','], ['Period', '.'], ['Slash', '-'], ['ShiftRight', '⇧']],
+        [['ControlLeft', 'Strg'], ['MetaLeft', '⊞'], ['AltLeft', 'Alt'], ['Space', ''], ['AltRight', 'AltGr'], ['ContextMenu', '☰'], ['ControlRight', 'Strg'], ['ArrowLeft', '←'], ['ArrowUp', '↑'], ['ArrowDown', '↓'], ['ArrowRight', '→']]
+    ];
+    const kb = X.$('#kb'), keys = {}, done = new Set();
+    ROWS.forEach(r => { const row = document.createElement('div'); row.className = 'kb__row'; r.forEach(([code, label]) => {
+        const k = document.createElement('span'); k.className = 'kb__key'; k.textContent = label == null ? code : label; k.style.flexGrow = W[code] || 1; k.title = code;
+        keys[code] = k; row.appendChild(k); }); kb.appendChild(row); });
+    X.$('#tot').textContent = Object.keys(keys).length;
+    const BLOCK = /^(Tab|Space|Arrow|Backspace|Quote|Slash|F\d|ContextMenu|Alt|Meta)/;
+    document.addEventListener('keydown', e => {
+        if (BLOCK.test(e.code) && !(e.code === 'F5' || e.code === 'F12')) e.preventDefault();
+        X.$('#last').textContent = e.key === ' ' ? 'Leertaste' : e.key;
+        X.$('#code').textContent = 'code: ' + e.code + (e.location ? ' · Position ' + e.location : '');
+        const k = keys[e.code]; if (!k) return;
+        k.classList.add('is-down', 'is-ok'); done.add(e.code);
+        X.$('#cnt').textContent = done.size;
+        if (done.size === Object.keys(keys).length) X.toast('⌨ Alle Tasten funktionieren', 'Deine Tastatur ist top in Form.');
+        if (done.size >= 20) X.once('wz-tastatur', 5, 'Tastatur geprüft');
+    });
+    document.addEventListener('keyup', e => { const k = keys[e.code]; if (k) k.classList.remove('is-down'); });
+    X.$('#clear').addEventListener('click', () => { done.clear(); Object.values(keys).forEach(k => k.classList.remove('is-ok')); X.$('#cnt').textContent = 0; });
+});
+</script>
+</body>
+</html>

@@ -40,8 +40,13 @@ for base, dirs, names in os.walk(ROOT):
         if n.endswith('.html'):
             files.append(rel)
         text = read(full)
-        for m in re.findall(r"XIRU\.egg\(\s*'([\w-]+)'", text) + re.findall(r'data-egg="([\w-]+)"', text) + re.findall(r"data-egg=\\?'([\w-]+)", text):
+        for m in re.findall(r"\b(?:XIRU|X)\.egg\(\s*'([\w-]+)'", text) + re.findall(r"""['"]?data-egg['"]?\s*[:=]\s*['"]([\w-]+)""", text) + re.findall(r"data-egg=\\?'([\w-]+)", text):
             used.setdefault(m, set()).add(rel)
+        # Seiten, die data-egg dynamisch aus Daten bauen (z. B. Glossar, Zeitleiste): IDs in Anführungszeichen zählen
+        if "data-egg=\"' +" in text:
+            for m in re.findall(r"'([a-z]{1,2}-[a-z0-9-]+)'", text):
+                if m in egg_ids:
+                    used.setdefault(m, set()).add(rel)
         # Kristall-IDs, die als Daten oder über Hilfsfunktionen benutzt werden (z. B. egg: 'p-1080ti', win('g-pong-perfekt'))
         # Nur IDs, deren erster Namensteil zum Dateipfad passt (g-pong-… in pong.js) – sonst wären CSS-IDs dabei
         for m in re.findall(r"['\"]((?:g|k|x|t|h)-[a-z0-9]+-[a-z0-9-]+)['\"]", text):

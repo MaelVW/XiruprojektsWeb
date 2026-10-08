@@ -462,7 +462,7 @@ XIRU.ready(function () {
     XIRU.$('#progress-text').textContent = XIRU.user
         ? 'Noch ' + (li.need - li.into) + ' XP bis Level ' + (li.level + 1) + '. ' + (XIRU.skillPoints().free ? 'Du hast ' + XIRU.skillPoints().free + ' freie Modulpunkte!' : '')
         : 'Du spielst als Gast. Dein Fortschritt wird gespeichert – mit einem (lokalen) Konto kannst du ihn in der Werft einsetzen.';
-    { const a = XIRU.$('#cta-account'); a.textContent = '⚙ Zur Werft'; a.href = 'konto/skilltree.html'; }
+    { const a = XIRU.$('#cta-account'); if (XIRU.easy()) { a.textContent = XIRU.user ? '👤 Profil' : '⚓ Anmelden'; a.href = XIRU.user ? 'konto/profil.html' : 'konto/login.html'; } else { a.textContent = '⚙ Zur Werft'; a.href = 'konto/skilltree.html'; } }
     const unseen = pages.filter(p => !P.visited[p.p] && XIRU.isUnlocked(p));
     if (unseen.length) {
         const s = XIRU.pick(unseen.filter(p => !p.hw).length ? unseen.filter(p => !p.hw) : unseen);
@@ -491,10 +491,12 @@ XIRU.ready(function () {
         const view = XIRU.$('#mech-view'), cap = XIRU.$('#mech-cap'), M = XIRU.mech;
         if (!view || !XIRU.mechArt) return;
         const parts = XIRU.mechSlots.map(sl => M.installed(sl.id)).filter(Boolean);
-        const worst = parts.map(p => M.cond(p.id)).sort((a, b) => a - b)[0];
-        cap.innerHTML = parts.length
-            ? '<b>Dein Mech</b><br>' + parts.length + '/' + XIRU.mechSlots.length + ' Bauplätze belegt' + (worst != null && worst < 40 ? '<br><span class="warn">⚠ Reparatur nötig</span>' : '')
-            : '<b>Noch kein Mech</b><br>Bau ihn in der Werft – Schrott liegt bereit.';
+        const worst = parts.map(p => p.c).sort((a, b) => a - b)[0], best = parts.reduce((q, p) => Math.max(q, p.q), 0);
+        if (XIRU.easy()) { view.closest('a').href = 'weltkarte.html'; view.closest('a').setAttribute('aria-label', 'Zur Weltkarte'); }
+        cap.innerHTML = XIRU.easy() ? '<b>Entdecker-Modus</b><br>Ohne Mech unterwegs – alle Inseln sind offen.'
+            : parts.length
+            ? '<b>Dein Mech</b> · ⚓ ' + XIRU.esc(M.isle(M.pos()).n) + '<br>' + parts.length + '/' + XIRU.mechSlots.length + ' Bauplätze belegt' + (best >= 3 ? ' · <span style="color:' + XIRU.rarities[best].c + '">' + XIRU.rarities[best].n + '</span>' : '') + (worst != null && worst < 40 ? '<br><span class="warn">⚠ Reparatur nötig</span>' : '')
+            : '<b>Noch kein Mech</b><br>Hol dir in der Werft dein Starter-Set.';
         if (document.documentElement.classList.contains('no-anim')) { view.innerHTML = XIRU.mechArt.draw(0, false); return; }
         let visible = true, last = 0;
         if ('IntersectionObserver' in window) new IntersectionObserver(e => { visible = e[0].isIntersecting; }).observe(view);
@@ -548,13 +550,14 @@ XIRU.ready(function () {
         const card = o => '<a class="compass__card' + (o.ready ? ' is-ready' : '') + '" href="' + XIRU.url(o.href) + '" style="--cc:' + o.color + '">' +
             '<span class="compass__icon" aria-hidden="true">' + o.icon + '</span><span><span class="compass__k">' + XIRU.esc(o.k) + '</span>' +
             '<span class="compass__t">' + XIRU.esc(o.t) + '</span><span class="compass__d">' + o.d + '</span>' + (o.extra || '') + '</span></a>';
-        const out = [], M = XIRU.mech, st = M.stats(), NAMES = { R: 'Reichweite', E: 'Energie', S: 'Sensor', P: 'Panzerung' };
-        // 1 · Die am leichtesten erreichbare Insel im Nebel
-        const isle = XIRU.regions.filter(r => M.req(r.id) && !M.discovered(r.id)).sort((a, b) => sum(M.req(a.id)) - sum(M.req(b.id)))[0];
-        if (isle) {
+        const out = [], M = XIRU.mech, st = M.stats(), NAMES = { R: 'Reichweite', E: 'Energie', S: 'Sensor', P: 'Panzerung', A: 'Angriff' };
+        // 1 · Die am leichtesten erreichbare Insel im Nebel (Inhalts- und Spiel-Inseln)
+        const isle = XIRU.easy() ? null : XIRU.islands.filter(i => i.req && !M.discovered(i.id)).sort((a, b) => sum(a.req) - sum(b.req)).map(i => ({ id: i.id, name: i.n, icon: i.game ? '⛵' : XIRU.region(i.r).icon, color: i.game ? '#22d3ee' : XIRU.region(i.r).color }))[0];
+        if (XIRU.easy()) out.push({ k: 'Entdecker-Modus', icon: '🧭', color: 'var(--accent)', href: 'weltkarte.html', t: 'Die ganze Welt ist offen', d: 'Ohne Mech unterwegs. Auf der Weltkarte siehst du alle Inseln und ihre Gebäude.' });
+        else if (isle) {
             const need = M.req(isle.id), ready = M.canReach(isle.id);
-            out.push({ k: 'Nächste Insel', icon: isle.icon, color: isle.color, href: 'konto/skilltree.html#reisen', ready, t: isle.name + (ready ? ' – Expedition bereit!' : ''),
-                d: ready ? 'Dein Mech schafft es durch den Nebel. Ab in die Werft!' : !M.ready() ? 'Bau zuerst deinen Mech: Rahmen, Antrieb und Energiekern.' : 'Rüste deinen Mech auf, um durch den Nebel zu kommen.',
+            out.push({ k: 'Nächste Insel', icon: isle.icon, color: isle.color, href: ready ? 'weltkarte.html#' + isle.id : 'konto/skilltree.html', ready, t: isle.name + (ready ? ' – Expedition bereit!' : ''),
+                d: ready ? 'Dein Mech schafft es durch den Nebel. Auf zur Weltkarte!' : !M.ready() ? 'Bau zuerst deinen Mech: Rahmen, Antrieb und Energiekern.' : 'Rüste deinen Mech auf, um durch den Nebel zu kommen.',
                 extra: '<span class="compass__req">' + Object.keys(need).map(k => '<span class="' + (st[k] >= need[k] ? 'ok' : '') + '">' + (st[k] >= need[k] ? '✓ ' : '') + NAMES[k] + ' ' + Math.max(0, Math.min(st[k], need[k])) + '/' + need[k] + '</span>').join('') + '</span>' });
         } else out.push({ k: 'Alle Inseln entdeckt', icon: '🗺', color: 'var(--accent-2)', href: 'weltkarte.html', t: 'Die bekannte Welt gehört dir', d: 'Neue Inseln tauchen bald aus dem Nebel auf. Bis dahin: Kristalle jagen!' });
         // 2 · Zuletzt gespieltes Spiel – oder ein Spiel des Tages
@@ -643,10 +646,10 @@ XIRU.ready(function () {
         konto: '<svg viewBox="0 0 92 56" style="overflow:hidden"><g class="anchor"><circle cx="46" cy="7" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M46 11 V40 M36 20 H56 M30 32 Q34 44 46 42 Q58 44 62 32" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></g>' +
             '<path class="waves" d="M0 50' + Array.from({ length: 6 }, () => ' q10 -6 20 0 t20 0').join('') + '"/></svg>'
     };
-    XIRU.$('#regions').innerHTML = XIRU.regions.filter(r => r.id !== 'geheim' && r.id !== 'zentrum').map((r, i) => {
+    XIRU.$('#regions').innerHTML = XIRU.regions.filter(r => r.id !== 'geheim' && r.id !== 'zentrum' && !(r.id === 'meer' && XIRU.easy())).map((r, i) => {
         const rp = pages.filter(p => p.r === r.id), seen = rp.filter(p => P.visited[p.p]).length;
-        const idx = XIRU.pages.find(p => p.r === r.id && /index\.html$/.test(p.p)) || rp[0];
-        if (!XIRU.mech.discovered(r.id)) return '<a class="tile region-tile is-locked" href="' + XIRU.url('konto/skilltree.html#reisen') + '" data-reveal style="--rcol:' + r.color + '"><span class="tile__icon">🌫</span><span class="tile__title">' + XIRU.esc(r.name) + '</span><span class="tile__desc">' + XIRU.esc(r.desc) + '</span><span class="tile__meta">Expedition nötig · ' + XIRU.esc(XIRU.mech.islandReqText(r.id)) + '</span></a>';
+        const idx = r.id === 'meer' ? { p: 'weltkarte.html' } : XIRU.pages.find(p => p.r === r.id && /index\.html$/.test(p.p)) || rp[0];
+        if (!XIRU.mech.discovered(r.id)) return '<a class="tile region-tile is-locked" href="' + XIRU.url('weltkarte.html#' + r.id) + '" data-reveal style="--rcol:' + r.color + '"><span class="tile__icon">🌫</span><span class="tile__title">' + XIRU.esc(r.name) + '</span><span class="tile__desc">' + XIRU.esc(r.desc) + '</span><span class="tile__meta">Expedition nötig · ' + XIRU.esc(XIRU.mech.islandReqText(r.id)) + '</span></a>';
         return '<a class="tile region-tile" href="' + XIRU.url(idx.p) + '" data-reveal style="--rcol:' + r.color + ';--d:' + (i * .05) + 's">' +
             (FX[r.id] ? '<span class="rfx rfx--' + r.id + '" aria-hidden="true">' + FX[r.id] + '</span>' : '') +
             '<span class="tile__icon">' + r.icon + '</span><span class="tile__title">' + XIRU.esc(r.name) + '</span>' +

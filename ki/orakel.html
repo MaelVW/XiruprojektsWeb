@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orakel · Xiruprojekts</title>
+    <meta name="description" content="Das Orakel: Stelle eine Frage – und erhalte ein Rätsel als Antwort. Nur für Runenkundige.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="ki.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/ai.js"></script>
+    <style>
+        .or { display: flex; flex-direction: column; align-items: center; gap: 1.2rem; text-align: center; }
+        .or__ball { position: relative; width: 190px; height: 190px; border-radius: 50%; overflow: hidden; background: radial-gradient(circle at 35% 30%, #fff8 0 6%, transparent 7%), radial-gradient(circle at 50% 55%, #7c3aed, #1e1b4b 70%);
+            box-shadow: 0 0 60px #7c3aed88, inset 0 -18px 40px #0008; }
+        .or__mist { position: absolute; inset: -20%; background: radial-gradient(circle at 40% 60%, #c4b5fd66, transparent 40%), radial-gradient(circle at 65% 35%, #f0abfc55, transparent 35%); animation: orSpin 9s linear infinite; }
+        .or__mist--2 { animation-duration: 6s; animation-direction: reverse; opacity: .7; }
+        .or__ball.is-busy { box-shadow: 0 0 110px #c084fc; } .or__ball.is-busy .or__mist { animation-duration: 1.2s; }
+        @keyframes orSpin { to { transform: rotate(360deg); } }
+        html.no-anim .or__mist { animation: none; }
+        .or__ask { display: flex; gap: .5rem; width: min(100%, 560px); } .or__ask .input { flex: 1; }
+        .or__out { width: min(100%, 640px); font-size: 1.1rem; }
+        .or__hist { list-style: none; padding: 0; width: min(100%, 640px); text-align: left; display: grid; gap: .6rem; opacity: .75; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">✦ KI-Labor</span>
+        <h1>Orakel</h1>
+        <p class="lead">Tief im KI-Labor glimmt eine Kristallkugel. Stell ihr eine Frage. Sie antwortet nie direkt – immer in Rätseln.</p>
+    </header>
+    <div class="ki-top">
+        <div id="ai-status"></div>
+        <a class="btn btn--sm" href="index.html">✦ Zum KI-Labor</a>
+    </div>
+    <section class="or">
+        <div class="or__ball" id="ball" aria-hidden="true"><span class="or__mist"></span><span class="or__mist or__mist--2"></span></div>
+        <div class="or__ask"><input class="input" id="q" maxlength="200" placeholder="Was möchtest du wissen?" aria-label="Deine Frage"><button class="btn btn--primary" type="button" id="go">🔮 Fragen</button></div>
+        <div class="ki-output ai-md or__out" id="out" data-empty="Die Kugel schweigt … noch."></div>
+        <ul class="or__hist small" id="hist"></ul>
+    </section>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU;
+    const AI = X.ai;
+    async function ask(out, msgs, opts, offline) {
+        const s = AI.ui.stream(out); let a;
+        try { a = await AI.chat(msgs, Object.assign({ onToken: x => s.push(x), offline }, opts)); }
+        catch (e) { a = e && e.code === 'abort' ? '_Abgebrochen._' : offline(); }
+        await s.end(a); return a;
+    }
+    const $ = s => X.$(s), O = AI.offline;
+    AI.ui.status('#ai-status', { offlineText: 'Das Orakel spricht auch ohne Netz' });
+    const T = [
+        'Was du über „{k}“ suchst, liegt [dort|hier|unter dir], wo [das Licht zuerst bricht|die Diskette schläft|der Nebel am dichtesten ist]. [Zähle die Inseln|Folge dem Anker|Frag den Leuchtturm] – [die dritte|die letzte|die stillste] kennt die Antwort.',
+        '[Ich habe zwei Gesichter und keinen Kopf|Ich laufe und habe keine Beine|Ich spreche ohne Mund]. Wer mich findet, [versteht|erkennt|vergisst] „{k}“. Was bin ich?',
+        'Drei [Kristalle|Runen|Lichter] [leuchten|flackern|warten]: [Rot|Blau|Gold] sagt „ja“, [Grün|Violett|Silber] sagt „nein“, der dritte schweigt. Über „{k}“ spricht heute [der dritte|keiner|der erste].',
+        'Die Antwort auf „{k}“ [ist kein Ort, sondern eine Zeit|wohnt zwischen zwei Seiten|wird erst sichtbar, wenn du aufhörst zu suchen]. [Warte bis Mitternacht|Schau rückwärts|Lies das Kleingedruckte].'
+    ];
+    function offline() { const q = $('#q').value, r = O.rng(O.hash(q + X.today())); return '_' + O.fill(O.pick(r, T), { k: O.keyword(q) }, r) + '_'; }
+    function hist() { const h = X.load('orakel', []); $('#hist').innerHTML = h.map(x => '<li><b>' + X.esc(x.q) + '</b><br>' + X.esc(x.a) + '</li>').join(''); }
+    async function go() {
+        const q = $('#q').value.trim(); if (!q) { $('#q').focus(); return; }
+        $('#ball').classList.add('is-busy');
+        const a = await ask($('#out'), [{ role: 'user', content: q.slice(0, 200) }], { system: 'Du bist ein geheimnisvolles Orakel in einer Kristallkugel. Beantworte jede Frage ausschliesslich als kurzes Rätsel oder Gleichnis (max. 3 Sätze, Deutsch, ss statt ß), freundlich und jugendgerecht. Gib niemals eine direkte Antwort. Bei ernsten Sorgen (Gesundheit, Gefahr) lass das Rätsel weg und rate freundlich, mit einer Vertrauensperson zu sprechen.', temperature: 1, maxTokens: 200 }, offline);
+        $('#ball').classList.remove('is-busy');
+        const h = X.load('orakel', []); h.unshift({ q: q.slice(0, 120), a: String(a).replace(/[_*#>]/g, '').slice(0, 400) }); X.save('orakel', h.slice(0, 6)); hist();
+        X.once('ki-orakel', 10, 'Das Orakel befragt');
+    }
+    $('#go').addEventListener('click', go);
+    $('#q').addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
+    hist();
+});
+</script>
+</body>
+</html>

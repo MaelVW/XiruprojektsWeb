@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rohrleitung · Xiruprojekts</title>
+    <meta name="description" content="Rohrleitung: Drehe die Rohrstücke, bis das Kühlwasser jeden Teil erreicht. Zufällige, immer lösbare Rätsel in drei Grössen.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="../assets/css/themes/arcade.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/arcade.js"></script>
+    <style>
+        .rr { --n: 7; display: grid; grid-template-columns: repeat(var(--n), 1fr); gap: 3px; width: min(100%, calc(var(--n) * 64px)); margin: auto; padding: clamp(10px, 3vw, 24px); }
+        .rr__c { position: relative; aspect-ratio: 1; padding: 0; border: 0; border-radius: 6px; background: var(--surface-2); cursor: pointer; touch-action: manipulation; }
+        .rr__c:hover { background: var(--surface-3); }
+        .rr__c svg { width: 100%; height: 100%; display: block; }
+        .rr__c path { stroke: #64748b; stroke-width: 22; stroke-linecap: butt; fill: none; }
+        .rr__c circle { fill: #64748b; }
+        .rr__c.is-wet path { stroke: #38bdf8; } .rr__c.is-wet circle { fill: #38bdf8; }
+        .rr__c.is-wet svg { filter: drop-shadow(0 0 4px rgba(56,189,248,.7)); }
+        .rr__src { position: absolute; inset: 0; display: grid; place-items: center; font-size: clamp(.8rem, 2.4vw, 1.3rem); pointer-events: none; }
+    </style>
+</head>
+<body class="theme-arcade">
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">▶ Spielhalle · Puzzle</span>
+        <h1>Rohrleitung</h1>
+        <p class="lead">Die Wasserkühlung ist durcheinander! Klick auf ein Rohrstück, um es zu drehen. Erst wenn alles verbunden ist, fliesst das Wasser überall.</p>
+    </header>
+    <div class="game">
+        <div>
+            <div class="game__hud" id="hud">
+                <div><span>Züge</span><b id="h-moves">0</b></div>
+                <div><span>Verbunden</span><b id="h-conn">0 %</b></div>
+                <div><span>Gelöst</span><b id="h-solved">0</b></div>
+            </div>
+            <div class="game__stage" id="stage">
+                <div class="rr" id="board"></div>
+                <div class="game__overlay" id="ov" hidden></div>
+            </div>
+            <div class="row mt-1"><button class="btn btn--sm" type="button" id="b-new">↺ Neues Rätsel</button><button class="btn btn--sm" type="button" data-n="5">5×5</button><button class="btn btn--sm btn--primary" type="button" data-n="7">7×7</button><button class="btn btn--sm" type="button" data-n="9">9×9</button></div>
+        </div>
+        <aside class="game__side">
+            <div class="card">
+                <h3>So geht's</h3>
+                <ul class="keys-help"><li><b>Klick</b> – Rohr im Uhrzeigersinn drehen</li><li><b>Rechtsklick</b> – gegen den Uhrzeigersinn</li><li>Die Pumpe 💧 ist die Quelle</li></ul>
+            </div>
+            <div class="card">
+                <h3>Rekord</h3>
+                <p class="stat__value" id="best">–</p><p class="small muted">gelöste Rätsel insgesamt</p>
+            </div>
+        </aside>
+    </div>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU;
+    const G = X.Game, $ = s => X.$(s);
+    let n = 7, t = [], src = 0, moves = 0, done = false, total = X.load('rohre-gesamt', 0) || 0;
+    const rot = m => ((m << 1) | (m >> 3)) & 15;                 // Bits: 1=N 2=O 4=S 8=W, dreht im Uhrzeigersinn
+    const D = [[1, 0, -1, 4], [2, 1, 0, 8], [4, 0, 1, 1], [8, -1, 0, 2]];
+    function gen() {
+        t = new Array(n * n).fill(0); const seen = new Set([src = ((n / 2) | 0) * n + ((n / 2) | 0)]), front = [src];
+        while (front.length) {   // zufälliger Spannbaum (Prim-artig) → garantiert lösbar
+            const k = Math.floor(Math.random() * front.length), i = front[k], x = i % n, y = (i / n) | 0;
+            const opts = D.filter(([, dx, dy]) => x + dx >= 0 && y + dy >= 0 && x + dx < n && y + dy < n && !seen.has((y + dy) * n + x + dx));
+            if (!opts.length) { front.splice(k, 1); continue; }
+            const [b, dx, dy, ob] = X.pick(opts), j = (y + dy) * n + x + dx;
+            if (t[i] && [1, 2, 4, 8].filter(v => t[i] & v).length >= 3 && Math.random() < .7) { front.splice(k, 1); front.push(i); continue; }
+            t[i] |= b; t[j] |= ob; seen.add(j); front.push(j);
+        }
+        t = t.map(m => { for (let r = X.rand(0, 3); r > 0; r--) m = rot(m); return m; });
+        moves = 0; done = false; draw();
+    }
+    function flow() {
+        const wet = new Set([src]), st = [src];
+        while (st.length) { const i = st.pop(), x = i % n, y = (i / n) | 0;
+            D.forEach(([b, dx, dy, ob]) => { const j = (y + dy) * n + x + dx; if (t[i] & b && x + dx >= 0 && y + dy >= 0 && x + dx < n && y + dy < n && t[j] & ob && !wet.has(j)) { wet.add(j); st.push(j); } }); }
+        return wet;
+    }
+    const PATH = { 1: 'M50 50V0', 2: 'M50 50H100', 4: 'M50 50V100', 8: 'M50 50H0' };
+    function draw() {
+        const wet = flow(), b = $('#board'); b.style.setProperty('--n', n); b.textContent = '';
+        t.forEach((m, i) => {
+            const c = document.createElement('button'); c.type = 'button'; c.className = 'rr__c' + (wet.has(i) ? ' is-wet' : ''); c.dataset.i = i;
+            c.innerHTML = '<svg viewBox="0 0 100 100">' + [1, 2, 4, 8].filter(v => m & v).map(v => '<path d="' + PATH[v] + '"/>').join('') + '<circle cx="50" cy="50" r="' + (i === src ? 22 : 13) + '"/></svg>' + (i === src ? '<span class="rr__src">💧</span>' : '');
+            b.appendChild(c);
+        });
+        $('#h-moves').textContent = moves; $('#h-conn').textContent = Math.round(wet.size / t.length * 100) + ' %';
+        $('#h-solved').textContent = total; $('#best').textContent = total;
+        if (wet.size === t.length && !done && moves) { done = true; total++; X.save('rohre-gesamt', total); X.score('rohre', total); G.sfx.win(); $('#h-solved').textContent = total;
+            G.overlay('#ov').show({ icon: '💧', title: 'Alles fliesst!', text: 'Gelöst in ' + moves + ' Zügen.', button: 'Nächstes Rätsel', onClick: () => { G.overlay('#ov').hide(); gen(); } }); }
+    }
+    function turn(e, back) { const c = e.target.closest('.rr__c'); if (!c || done) return; e.preventDefault(); const i = +c.dataset.i; t[i] = back ? rot(rot(rot(t[i]))) : rot(t[i]); moves++; G.sfx.click(); draw(); }
+    $('#board').addEventListener('click', e => turn(e, false));
+    $('#board').addEventListener('contextmenu', e => turn(e, true));
+    $('#b-new').addEventListener('click', () => { G.overlay('#ov').hide(); gen(); });
+    X.$$('[data-n]').forEach(b => b.addEventListener('click', () => { n = +b.dataset.n; X.$$('[data-n]').forEach(x => x.classList.toggle('btn--primary', x === b)); G.overlay('#ov').hide(); gen(); }));
+    gen();
+});
+</script>
+</body>
+</html>

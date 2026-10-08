@@ -4,149 +4,234 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Anmelden · Xiruprojekts</title>
-    <meta name="description" content="Lokales Konto erstellen oder anmelden – dein Fortschritt bleibt in deinem Browser.">
+    <meta name="description" content="Der Startbildschirm von Xiruprojekts: Spielstand wählen, neues Spiel als Abenteuer oder Entdecker beginnen – dein Konto bleibt nur in deinem Browser.">
     <link rel="stylesheet" href="../assets/css/main.css">
     <script src="../assets/js/site.js"></script>
     <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/mech-art.js"></script>
+    <script src="../assets/js/weltkarte-art.js"></script>
+    <script src="../assets/js/weltkarte-pixel.js"></script>
+    <script src="../assets/js/pixel-icons.js"></script>
     <style>
-        .auth { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 440px); gap: 2.5rem; align-items: center; min-height: 60vh; }
-        @media (max-width: 860px) { .auth { grid-template-columns: 1fr; } }
-        .auth__art { position: relative; aspect-ratio: 1; max-width: 420px; width: 100%; margin: 0 auto; }
-        .auth__art .orbit { position: absolute; inset: 0; border: 1px dashed var(--border-strong); border-radius: 50%; animation: spin 40s linear infinite; }
-        .auth__art .orbit:nth-child(2) { inset: 14%; animation-duration: 28s; animation-direction: reverse; }
-        .auth__art .orbit:nth-child(3) { inset: 28%; animation-duration: 18s; }
-        .auth__art .orbit span { position: absolute; top: -14px; left: calc(50% - 14px); width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; background: var(--surface-2); border: 1px solid var(--border); font-size: .9rem; }
-        .auth__anchor { position: absolute; inset: 38%; display: grid; place-items: center; font-size: 3.5rem; background: var(--surface); border-radius: 50%; border: 1px solid var(--border); box-shadow: var(--glow); animation: float 5s ease-in-out infinite; }
-        .acc-list { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .4rem; }
-        .strength { height: 6px; border-radius: 99px; background: var(--surface-3); overflow: hidden; margin-top: .35rem; }
+        body.title-screen { min-height: 100vh; overflow-x: hidden; background: #041320; }
+        .title-screen .site-header, .title-screen .site-footer, .title-screen .breadcrumb, .title-screen .skip-link { display: none !important; }
+        .title-screen main.content { max-width: none; padding: 0; margin: 0; }
+        .ts-bg { position: fixed; inset: 0; overflow: hidden; z-index: 0; }
+        .ts-drift { position: absolute; inset: -8%; animation: tsDrift 90s ease-in-out infinite alternate; }
+        @keyframes tsDrift { to { transform: translate(8%, 6%) scale(1.06); } }
+        .ts-bg::after { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 45%, rgba(4, 19, 32, .5), rgba(4, 19, 32, .88) 72%), linear-gradient(transparent 55%, rgba(4, 19, 32, .92)); }
+        .ts__hero li { display: flex; gap: .55rem; align-items: center; text-shadow: 0 2px 6px #000; }
+        .ts__hero li svg { flex-shrink: 0; image-rendering: pixelated; }
+        .ts__sub { text-shadow: 0 2px 10px #000; }
+        .modepick b { display: inline-flex; align-items: center; gap: .35rem; }
+        html.no-anim .ts-drift { animation: none; }
+        .ts { position: relative; z-index: 1; min-height: 100vh; display: grid; grid-template-rows: auto 1fr auto; padding: 1rem clamp(1rem, 4vw, 3rem); color: #e2e8f0; }
+        .ts__top { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+        .ts__top a { color: #e8d5a6; font-weight: 700; text-decoration: none; }
+        .ts__main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 460px); gap: clamp(1.5rem, 4vw, 4rem); align-items: center; max-width: 1180px; width: 100%; margin: 0 auto; padding: 2rem 0; }
+        @media (max-width: 900px) { .ts__main { grid-template-columns: 1fr; } .ts__hero { text-align: center; } .ts__mech { display: none; } #logo { display: flex; justify-content: center; } .ts__sub { margin-inline: auto; } .ts__hero ul { justify-items: center; } .ts__hero li { justify-content: center; text-align: left; } }
+        .ts__logo { width: clamp(84px, 12vw, 130px); height: auto; filter: drop-shadow(0 0 30px rgba(94, 234, 212, .45)); animation: float 5s ease-in-out infinite; }
+        .ts__title { font-size: clamp(2.4rem, 1.2rem + 5vw, 5rem); line-height: .95; margin: .6rem 0 .4rem; letter-spacing: .02em; color: #f8fafc; text-shadow: 0 4px 30px rgba(0,0,0,.6); }
+        .ts__title span { background: linear-gradient(90deg, #5eead4, #a78bfa, #f472b6); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .ts__sub { font-size: 1.15rem; color: #cbd5e1; max-width: 34ch; }
+        .ts__hero ul { list-style: none; padding: 0; margin: 1.2rem 0 0; display: grid; gap: .4rem; color: #94a3b8; font-size: .92rem; }
+        .ts__mech { width: 230px; height: 230px; margin-top: 1rem; filter: drop-shadow(0 18px 24px rgba(0,0,0,.6)); }
+        .ts__panel { background: rgba(8, 24, 40, .84); border: 1px solid rgba(232, 213, 166, .45); border-radius: 18px; padding: clamp(1rem, 3vw, 1.6rem); backdrop-filter: blur(10px); box-shadow: 0 30px 80px rgba(0,0,0,.5); }
+        .ts__panel h2 { margin: 0 0 .8rem; color: #f8fafc; }
+        .ts__panel .tabs { border-color: rgba(232, 213, 166, .25); }
+        .ts__panel .tabs button { color: #94a3b8; }
+        .ts__panel .tabs button[aria-selected="true"] { color: #fde68a; border-bottom-color: #fde68a; }
+        .ts__panel label, .ts__panel .field label { color: #cbd5e1; }
+        .ts__panel .input, .ts__panel input:not([type=checkbox]) { background: rgba(2, 10, 20, .6); border-color: rgba(148, 163, 184, .35); color: #f1f5f9; }
+        .ts__panel small, .ts__panel .muted { color: #94a3b8; }
+        .saves { display: grid; gap: .5rem; margin-bottom: 1rem; }
+        .save { display: grid; grid-template-columns: auto 1fr auto; gap: .8rem; align-items: center; padding: .65rem .8rem; border-radius: 12px; border: 1px solid rgba(232, 213, 166, .3); background: rgba(255, 255, 255, .04); color: #f1f5f9; cursor: pointer; text-align: left; font: inherit; }
+        .save:hover, .save.is-sel { border-color: #fde68a; background: rgba(253, 230, 138, .08); }
+        .save__av { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; font: 800 1.2rem var(--font); color: #001417; background: linear-gradient(135deg, #5eead4, #a78bfa); }
+        .save__meta { font-size: .8rem; color: #94a3b8; }
+        .save__last { font-size: .7rem; font-weight: 800; color: #fde68a; text-transform: uppercase; letter-spacing: .06em; }
+        .modepick { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin: .4rem 0 1rem; }
+        .modepick button { display: grid; gap: .2rem; padding: .7rem; border-radius: 12px; border: 2px solid rgba(148, 163, 184, .3); background: rgba(255,255,255,.03); color: #e2e8f0; text-align: left; font: inherit; cursor: pointer; }
+        .modepick button[aria-pressed="true"] { border-color: #5eead4; background: rgba(94, 234, 212, .1); }
+        .modepick b { font-size: 1rem; } .modepick span { font-size: .76rem; color: #94a3b8; line-height: 1.35; }
+        .strength { height: 6px; border-radius: 99px; background: rgba(148,163,184,.25); overflow: hidden; margin-top: .35rem; }
         .strength span { display: block; height: 100%; width: 0; transition: width .3s, background .3s; }
-        .logged { text-align: center; }
+        .ts__foot { text-align: center; font-size: .8rem; color: #64748b; }
+        .press { position: fixed; inset: 0; z-index: 5; display: grid; place-items: center; background: rgba(4, 19, 32, .55); cursor: pointer; }
+        .press span { font: 800 clamp(1rem, 3vw, 1.5rem) var(--mono); color: #fde68a; letter-spacing: .3em; text-shadow: 0 0 20px rgba(253, 230, 138, .6); animation: blink 1.2s step-end infinite; }
+        .press.is-gone { opacity: 0; transition: opacity .5s; pointer-events: none; }
     </style>
 </head>
-<body>
+<body class="title-screen" data-no-crumbs>
 <main class="content">
-    <div class="auth">
-        <div>
-            <span class="eyebrow">⚓ Heimathafen</span>
-            <h1>Dein Konto – nur bei dir</h1>
-            <p class="lead">Mit einem Konto sammelst du XP, baust Module in der Werft ein und schaltest neue Orte, Spiele und Designs frei.</p>
-            <ul class="mt-2">
-                <li><strong>Lokal:</strong> Das Konto existiert nur in diesem Browser. Es gibt keinen Server, keine E-Mail, keine Weitergabe.</li>
-                <li><strong>Sicher gespeichert:</strong> Dein Passwort wird nie im Klartext gespeichert, sondern mit PBKDF2 (150’000 Runden) gehasht.</li>
-                <li><strong>Mitnehmen:</strong> Unter <a href="profil.html">Profil</a> kannst du deinen Spielstand exportieren und anderswo importieren.</li>
-                <li><strong>Gast-Fortschritt:</strong> Was du als Gast schon entdeckt hast, wird beim Erstellen übernommen.</li>
-            </ul>
-            <div class="auth__art mt-3" aria-hidden="true">
-                <div class="orbit"><span>✦</span></div>
-                <div class="orbit"><span>◆</span></div>
-                <div class="orbit"><span>▶</span></div>
-                <div class="auth__anchor">⚓</div>
+    <div class="ts-bg" id="bg" aria-hidden="true"></div>
+    <div class="ts">
+        <div class="ts__top"><a href="../index.html">← Zur Website</a><span class="small" style="color:#64748b" id="clock"></span></div>
+        <div class="ts__main">
+            <div class="ts__hero">
+                <div id="logo"></div>
+                <h1 class="ts__title">XIRU<span>PROJEKTS</span></h1>
+                <p class="ts__sub">Eine Website zum Verlaufen. Eine Inselwelt aus Spielen, Werkzeugen, Geheimnissen – und deinem eigenen Mech.</p>
+                <ul>
+                    <li><i data-px="z-anker"></i> Dein Konto lebt nur in diesem Browser – kein Server, keine E-Mail.</li>
+                    <li><i data-px="st-P"></i> Passwörter werden nie gespeichert, nur sicher gehasht (PBKDF2).</li>
+                    <li><i data-px="ev-kiste"></i> Mit „Alles erlauben“ sichert ein kleines Cookie zusätzlich deinen Fortschritt.</li>
+                </ul>
+                <div class="ts__mech" id="mech"></div>
             </div>
+            <section class="ts__panel" id="panel">
+                <div id="logged" hidden></div>
+                <div id="forms">
+                    <div class="tabs" role="tablist">
+                        <button role="tab" aria-selected="true" data-tab="login" id="tab-login">Weiterspielen</button>
+                        <button role="tab" aria-selected="false" data-tab="register" id="tab-register">Neues Spiel</button>
+                        <button role="tab" aria-selected="false" data-tab="guest" id="tab-guest">Als Gast</button>
+                    </div>
+                    <form id="f-login" autocomplete="on">
+                        <div class="saves" id="saves"></div>
+                        <div class="field"><label for="l-name">Name</label><input id="l-name" name="username" autocomplete="username" required></div>
+                        <div class="field"><label for="l-pw">Passwort</label><input id="l-pw" type="password" name="password" autocomplete="current-password" required></div>
+                        <label class="check mb-2"><input type="checkbox" id="l-remember" checked> Angemeldet bleiben (auf diesem Gerät)</label>
+                        <button class="btn btn--primary btn--block btn--lg" type="submit">Spiel laden</button>
+                        <p class="form-msg" id="l-msg" role="alert"></p>
+                    </form>
+                    <form id="f-register" hidden autocomplete="on">
+                        <div class="field"><label for="r-name">Name</label><input id="r-name" name="username" autocomplete="username" required minlength="3" maxlength="20">
+                            <small>3–20 Zeichen: Buchstaben, Zahlen, _ - . – Du brauchst keinen echten Namen.</small></div>
+                        <div class="field"><label for="r-pw">Passwort</label><input id="r-pw" type="password" autocomplete="new-password" required minlength="6">
+                            <div class="strength"><span id="r-strength"></span></div><small id="r-strength-t">Mindestens 6 Zeichen.</small></div>
+                        <div class="field"><label for="r-pw2">Passwort wiederholen</label><input id="r-pw2" type="password" autocomplete="new-password" required></div>
+                        <label>Wie willst du spielen?</label>
+                        <div class="modepick" data-modes="r">
+                            <button type="button" data-m="abenteuer" aria-pressed="true"><b><i data-px="mat-zahnrad"></i> Abenteuer</b><span>Mech bauen, reisen, handeln, kämpfen. Die Welt öffnet sich nach und nach.</span></button>
+                            <button type="button" data-m="entdecker" aria-pressed="false"><b><i data-px="z-kompass"></i> Entdecker</b><span>Ohne Werft, alles sofort offen. Nur erkunden.</span></button>
+                        </div>
+                        <label class="check mb-2"><input type="checkbox" id="r-remember" checked> Angemeldet bleiben (auf diesem Gerät)</label>
+                        <div class="callout callout--warning small">Es gibt kein „Passwort vergessen“. Ohne Server kann niemand dein Passwort zurücksetzen – merk es dir gut.</div>
+                        <button class="btn btn--primary btn--block btn--lg mt-2" type="submit">Spiel beginnen</button>
+                        <p class="form-msg" id="r-msg" role="alert"></p>
+                    </form>
+                    <div id="f-guest" hidden>
+                        <p class="muted small">Ohne Konto losziehen: Dein Fortschritt wird trotzdem gespeichert (je nach Speicher-Einwilligung) und beim Erstellen eines Kontos übernommen. Module gibt es nur mit Konto.</p>
+                        <div class="modepick" data-modes="g">
+                            <button type="button" data-m="abenteuer" aria-pressed="true"><b><i data-px="mat-zahnrad"></i> Abenteuer</b><span>Mit Mech und Werft.</span></button>
+                            <button type="button" data-m="entdecker" aria-pressed="false"><b><i data-px="z-kompass"></i> Entdecker</b><span>Alles offen, kein Mech.</span></button>
+                        </div>
+                        <button class="btn btn--primary btn--block btn--lg" type="button" id="g-go">Als Gast losziehen</button>
+                    </div>
+                </div>
+            </section>
         </div>
-
-        <section class="card" id="box">
-            <div class="tabs" role="tablist">
-                <button role="tab" aria-selected="true" data-tab="login" id="tab-login">Anmelden</button>
-                <button role="tab" aria-selected="false" data-tab="register" id="tab-register">Konto erstellen</button>
-            </div>
-
-            <form id="f-login" autocomplete="on">
-                <div class="field"><label for="l-name">Name</label><input id="l-name" name="username" autocomplete="username" required></div>
-                <div class="acc-list" id="acc-list"></div>
-                <div class="field mt-2"><label for="l-pw">Passwort</label><input id="l-pw" type="password" name="password" autocomplete="current-password" required></div>
-                <label class="check mb-2"><input type="checkbox" id="l-remember" checked> Angemeldet bleiben (auf diesem Gerät)</label>
-                <button class="btn btn--primary btn--block btn--lg" type="submit">Anmelden</button>
-                <p class="form-msg" id="l-msg" role="alert"></p>
-            </form>
-
-            <form id="f-register" hidden autocomplete="on">
-                <div class="field"><label for="r-name">Name</label><input id="r-name" name="username" autocomplete="username" required minlength="3" maxlength="20">
-                    <small>3–20 Zeichen: Buchstaben, Zahlen, _ - . – Du brauchst keinen echten Namen.</small></div>
-                <div class="field"><label for="r-pw">Passwort</label><input id="r-pw" type="password" autocomplete="new-password" required minlength="6">
-                    <div class="strength"><span id="r-strength"></span></div><small id="r-strength-t">Mindestens 6 Zeichen.</small></div>
-                <div class="field"><label for="r-pw2">Passwort wiederholen</label><input id="r-pw2" type="password" autocomplete="new-password" required></div>
-                <label class="check mb-2"><input type="checkbox" id="r-remember" checked> Angemeldet bleiben (auf diesem Gerät)</label>
-                <div class="callout callout--warning small">Es gibt kein „Passwort vergessen". Ohne Server kann niemand dein Passwort zurücksetzen – merk es dir gut.</div>
-                <button class="btn btn--primary btn--block btn--lg" type="submit">Konto erstellen</button>
-                <p class="form-msg" id="r-msg" role="alert"></p>
-            </form>
-
-            <div id="logged" class="logged" hidden></div>
-        </section>
+        <p class="ts__foot">© <span class="footer-year">2026</span> Xiruprojekts · <a href="../datenschutz.html" style="color:#94a3b8">Datenschutz</a> · <a href="../hilfe.html" style="color:#94a3b8">Hilfe</a></p>
     </div>
+    <div class="press" id="press" hidden><span>DRÜCKE EINE TASTE</span></div>
 </main>
 <script>
 XIRU.ready(function () {
-    const $ = XIRU.$;
+    const X = XIRU, $ = X.$, esc = X.esc;
     // Weiterleitung nur auf Seiten dieser Website
     const nextParam = new URLSearchParams(location.search).get('weiter');
-    const next = nextParam && /^[a-z0-9\-\/]+\.html$/.test(nextParam) && XIRU.pageFor(nextParam) ? nextParam : 'konto/profil.html';
+    const next = nextParam && /^[a-z0-9\-\/]+\.html$/.test(nextParam) && X.pageFor(nextParam) ? nextParam : null;
 
-    function showTab(t) {
-        $('#tab-login').setAttribute('aria-selected', t === 'login');
-        $('#tab-register').setAttribute('aria-selected', t === 'register');
-        $('#f-login').hidden = t !== 'login';
-        $('#f-register').hidden = t !== 'register';
-        (t === 'login' ? $('#l-name') : $('#r-name')).focus({ preventScroll: true });
+    X.$$('[data-px]').forEach(el => { el.outerHTML = X.pix.svg(el.dataset.px, 18); });
+    /* Hintergrund: die Weltkarte, langsam treibend */
+    const drift = document.createElement('div'); drift.className = 'ts-drift'; $('#bg').appendChild(drift);
+    X.mapPix.mount(drift, { discovered: () => true, labels: false, unknown: true, fit: 'cover', view: [200, 150, 2000, 1300] });
+    $('#logo').innerHTML = X.logoSVG.replace('<svg', '<svg class="ts__logo"');
+    const tick = () => { $('#clock').textContent = new Date().toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' }); }; tick(); setInterval(tick, 20000);
+    // Ein Mech steht Wache (der eigene, sonst ein Starter-Mech)
+    const lo = X.mech && X.mech.loadout && Object.keys(X.mech.loadout()).length ? null : X.mechArt.loadoutOf({ rahmen: ['r-alu', 2], antrieb: ['a-segel', 1], kern: ['k-diskette', 3], waffe: ['f-loet', 1], sensor: ['s-radar', 1] });
+    const paint = () => { $('#mech').innerHTML = X.mechArt.draw(performance.now() / 1000, false, lo).replace('width="240" height="240"', 'width="100%" height="100%"'); };
+    paint(); if (X.setting('anim') !== false) setInterval(() => { if (!document.hidden) paint(); }, 150);
+
+    /* „Drücke eine Taste“ – nur einmal pro Sitzung */
+    let pressed = false;
+    try { pressed = !!sessionStorage.getItem('xiru:ts'); } catch (e) { pressed = true; }
+    if (!pressed && !X.user) {
+        const pr = $('#press'); pr.hidden = false;
+        const go = () => { pr.classList.add('is-gone'); try { sessionStorage.setItem('xiru:ts', '1'); } catch (e) { } X.audio(); [392, 523, 659].forEach((f, i) => setTimeout(() => X.beep(f, .1, 'triangle', .05), i * 90)); setTimeout(() => pr.remove(), 520); removeEventListener('keydown', go); };
+        pr.addEventListener('click', go); addEventListener('keydown', go);
     }
-    XIRU.$$('[data-tab]').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
 
-    if (XIRU.user) {
-        $('.tabs').hidden = true; $('#f-login').hidden = true;
-        $('#logged').hidden = false;
-        $('#logged').innerHTML = '<div style="font-size:3rem">⚓</div><h2>Angemeldet als ' + XIRU.esc(XIRU.user) + '</h2>' +
-            '<p class="muted">Level ' + XIRU.levelInfo().level + ' · ' + XIRU.fmt(XIRU.profile().xp) + ' XP</p>' +
-            '<div class="row" style="justify-content:center"><a class="btn btn--primary" href="profil.html">Zum Profil</a><a class="btn" href="skilltree.html">Werft</a>' +
-            '<button class="btn btn--ghost" id="logout" type="button">Abmelden</button></div>';
-        $('#logout').addEventListener('click', () => { XIRU.auth.logout(); location.reload(); });
+    /* Angemeldet? */
+    if (X.user) {
+        $('#forms').hidden = true; $('#logged').hidden = false;
+        const li = X.levelInfo();
+        $('#logged').innerHTML = '<div class="save is-sel" style="cursor:default"><span class="save__av">' + esc(X.user.charAt(0).toUpperCase()) + '</span><div><b>' + esc(X.user) + '</b><div class="save__meta">Level ' + li.level + ' · ' + X.fmt(X.profile().xp) + ' XP · ' + X.eggCount() + ' Kristalle · ' + (X.easy() ? 'Entdecker' : 'Abenteuer') + '</div></div><span></span></div>' +
+            '<a class="btn btn--primary btn--block btn--lg mt-2" href="' + X.url(next || 'index.html') + '">Weiterspielen</a>' +
+            '<div class="row mt-2" style="justify-content:center">' + (X.easy() ? '<a class="btn" href="../weltkarte.html">Weltkarte</a>' : '<a class="btn" href="skilltree.html">Werft</a>') + '<a class="btn" href="profil.html">Profil</a><button class="btn btn--ghost" id="logout" type="button">Abmelden</button></div>';
+        $('#logout').addEventListener('click', () => { X.auth.logout(); location.reload(); });
         return;
     }
 
-    const accounts = Object.values(XIRU.auth.accounts());
-    if (!accounts.length) showTab('register');
-    $('#acc-list').innerHTML = accounts.length ? '<span class="small faint">In diesem Browser:</span>' + accounts.map(a => '<button class="chip" type="button" data-name="' + XIRU.esc(a.name) + '">' + XIRU.esc(a.name) + '</button>').join('') : '';
-    $('#acc-list').addEventListener('click', e => { const c = e.target.closest('[data-name]'); if (c) { $('#l-name').value = c.dataset.name; $('#l-pw').focus(); } });
+    function showTab(t) {
+        ['login', 'register', 'guest'].forEach(k => { $('#tab-' + k).setAttribute('aria-selected', k === t); });
+        $('#f-login').hidden = t !== 'login'; $('#f-register').hidden = t !== 'register'; $('#f-guest').hidden = t !== 'guest';
+        const f = t === 'login' ? $('#l-name').value ? $('#l-pw') : $('#l-name') : t === 'register' ? $('#r-name') : $('#g-go');
+        if (pressed || t !== 'login') f.focus({ preventScroll: true });
+    }
+    X.$$('[data-tab]').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
 
-    async function busy(form, on) { form.querySelector('button[type=submit]').disabled = on; form.querySelector('button[type=submit]').textContent = on ? 'Einen Moment …' : (form.id === 'f-login' ? 'Anmelden' : 'Konto erstellen'); }
+    /* Spielstand-Karten aller Konten in diesem Browser */
+    const accounts = Object.values(X.auth.accounts());
+    const last = X.cookie.getJSON('xiru_zuletzt');
+    const info = a => { const p = X.store.get('xiru:p:' + a.name.toLowerCase(), null) || {}, xp = +p.xp || 0, days = Object.keys(p.days || {}).sort(); return { lvl: X.levelInfo(xp).level, xp, eggs: Object.keys(p.eggs || {}).length, mode: p.settings && p.settings.modus === 'entdecker' ? 'Entdecker' : 'Abenteuer', lastDay: days[days.length - 1] }; };
+    accounts.sort((a, b) => (last && b.name.toLowerCase() === String(last.n).toLowerCase()) - (last && a.name.toLowerCase() === String(last.n).toLowerCase()) || (info(b).lastDay || '').localeCompare(info(a).lastDay || ''));
+    $('#saves').innerHTML = accounts.length ? '<span class="small muted">Spielstände in diesem Browser</span>' + accounts.map((a, i) => {
+        const n = info(a), isLast = last && a.name.toLowerCase() === String(last.n).toLowerCase();
+        return '<button class="save" type="button" data-name="' + esc(a.name) + '"><span class="save__av">' + esc(a.name.charAt(0).toUpperCase()) + '</span><div><b>' + esc(a.name) + '</b><div class="save__meta">Level ' + n.lvl + ' · ' + n.eggs + ' Kristalle · ' + n.mode + (n.lastDay ? ' · zuletzt ' + n.lastDay.split('-').reverse().join('.') : '') + '</div></div>' + (isLast ? '<span class="save__last">zuletzt</span>' : '<span></span>') + '</button>';
+    }).join('') : '';
+    const pick = name => { $('#l-name').value = name; X.$$('.save').forEach(s => s.classList.toggle('is-sel', s.dataset.name === name)); $('#l-pw').focus(); };
+    $('#saves').addEventListener('click', e => { const c = e.target.closest('[data-name]'); if (c) pick(c.dataset.name); });
+    if (last && accounts.some(a => a.name.toLowerCase() === String(last.n).toLowerCase())) $('#l-name').value = accounts.find(a => a.name.toLowerCase() === String(last.n).toLowerCase()).name;
+    else if (accounts.length === 1) $('#l-name').value = accounts[0].name;
+    if ($('#l-name').value) X.$$('.save').forEach(s => s.classList.toggle('is-sel', s.dataset.name === $('#l-name').value));
+    showTab(accounts.length ? 'login' : 'register');
 
+    /* Moduswahl */
+    const modeOf = key => (X.$('[data-modes="' + key + '"] [aria-pressed="true"]') || {}).dataset ? X.$('[data-modes="' + key + '"] [aria-pressed="true"]').dataset.m : 'abenteuer';
+    X.$$('[data-modes]').forEach(box => box.addEventListener('click', e => { const b = e.target.closest('[data-m]'); if (!b) return; X.$$('[data-m]', box).forEach(x => x.setAttribute('aria-pressed', x === b)); }));
+    if (X.easy()) X.$$('[data-modes="g"] [data-m]').forEach(x => x.setAttribute('aria-pressed', x.dataset.m === 'entdecker'));
+
+    function busy(form, on, label) { const b = form.querySelector('button[type=submit]'); b.disabled = on; b.textContent = on ? 'Einen Moment …' : label; }
     $('#f-login').addEventListener('submit', async e => {
         e.preventDefault();
         const msg = $('#l-msg'); msg.className = 'form-msg'; msg.textContent = '';
         busy(e.target, true);
         try {
-            await XIRU.auth.login($('#l-name').value, $('#l-pw').value, $('#l-remember').checked);
+            await X.auth.login($('#l-name').value, $('#l-pw').value, $('#l-remember').checked);
             msg.className = 'form-msg is-ok'; msg.textContent = 'Willkommen zurück!';
-            setTimeout(() => { location.href = XIRU.url(next); }, 400);
+            setTimeout(() => { location.href = X.url(next || 'index.html'); }, 400);
         } catch (err) {
-            msg.className = 'form-msg is-error'; msg.textContent = err.message; busy(e.target, false);
-            $('#box').animate([{ transform: 'translateX(-6px)' }, { transform: 'translateX(6px)' }, { transform: 'none' }], { duration: 250, iterations: 2 });
+            msg.className = 'form-msg is-error'; msg.textContent = err.message; busy(e.target, false, 'Spiel laden');
+            $('#panel').animate([{ transform: 'translateX(-6px)' }, { transform: 'translateX(6px)' }, { transform: 'none' }], { duration: 250, iterations: 2 });
         }
     });
-
     $('#r-pw').addEventListener('input', e => {
-        const pw = e.target.value;
-        let s = 0;
+        const pw = e.target.value; let s = 0;
         if (pw.length >= 6) s++; if (pw.length >= 10) s++; if (pw.length >= 14) s++;
         if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) s++; if (/\d/.test(pw)) s++; if (/[^A-Za-z0-9]/.test(pw)) s++;
-        const lvl = Math.min(4, Math.floor(s * 4 / 6));
-        const cols = ['var(--danger)', 'var(--danger)', 'var(--warning)', 'var(--success)', 'var(--success)'];
-        const txt = ['Sehr schwach', 'Schwach', 'Okay', 'Gut', 'Stark'];
-        $('#r-strength').style.width = (pw ? (lvl + 1) * 20 : 0) + '%';
-        $('#r-strength').style.background = cols[lvl];
+        const lvl = Math.min(4, Math.floor(s * 4 / 6)), cols = ['#f87171', '#f87171', '#facc15', '#4ade80', '#4ade80'], txt = ['Sehr schwach', 'Schwach', 'Okay', 'Gut', 'Stark'];
+        $('#r-strength').style.width = (pw ? (lvl + 1) * 20 : 0) + '%'; $('#r-strength').style.background = cols[lvl];
         $('#r-strength-t').textContent = pw ? txt[lvl] + (pw.length < 6 ? ' – mindestens 6 Zeichen' : '') : 'Mindestens 6 Zeichen.';
     });
-
     $('#f-register').addEventListener('submit', async e => {
         e.preventDefault();
         const msg = $('#r-msg'); msg.className = 'form-msg'; msg.textContent = '';
         if ($('#r-pw').value !== $('#r-pw2').value) { msg.className = 'form-msg is-error'; msg.textContent = 'Die Passwörter stimmen nicht überein.'; return; }
+        const mode = modeOf('r');
         busy(e.target, true);
         try {
-            const name = await XIRU.auth.register($('#r-name').value, $('#r-pw').value, $('#r-remember').checked);
-            msg.className = 'form-msg is-ok'; msg.textContent = 'Konto „' + name + '" erstellt!';
-            XIRU.confetti();
-            setTimeout(() => { location.href = XIRU.url('konto/skilltree.html'); }, 1400);
-        } catch (err) { msg.className = 'form-msg is-error'; msg.textContent = err.message; busy(e.target, false); }
+            const name = await X.auth.register($('#r-name').value, $('#r-pw').value, $('#r-remember').checked);
+            X.setting('modus', mode);
+            msg.className = 'form-msg is-ok'; msg.textContent = 'Konto „' + name + '“ erstellt!';
+            X.confetti();
+            setTimeout(() => { location.href = X.url(next || (mode === 'entdecker' ? 'weltkarte.html' : 'konto/skilltree.html')); }, 1400);
+        } catch (err) { msg.className = 'form-msg is-error'; msg.textContent = err.message; busy(e.target, false, 'Spiel beginnen'); }
+    });
+    $('#g-go').addEventListener('click', () => {
+        const mode = modeOf('g'); X.setting('modus', mode);
+        location.href = X.url(next || (mode === 'entdecker' ? 'weltkarte.html' : 'index.html'));
     });
 });
 </script>

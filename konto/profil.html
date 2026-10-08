@@ -202,20 +202,37 @@ XIRU.ready(function () {
             days: keep(p.days, k => /^\d{4}-\d{2}-\d{2}$/.test(k), () => 1),
             scores: keep(p.scores, () => true, s => s && typeof s === 'object' ? { best: s.best == null ? null : num(s.best), plays: num(s.plays), last: num(s.last), at: num(s.at) } : undefined),
             rewards: keep(p.rewards, () => true, num),
-            settings: keep(p.settings, k => ['theme', 'anim', 'sound', 'visitToasts'].includes(k),
-                (v, k) => k === 'theme' ? (themes.has(v) ? v : null) : typeof v === 'boolean' ? v : undefined),
+            settings: keep(p.settings, k => ['theme', 'anim', 'sound', 'visitToasts', 'modus'].includes(k),
+                (v, k) => k === 'theme' ? (themes.has(v) ? v : null) : k === 'modus' ? (v === 'entdecker' ? 'entdecker' : 'abenteuer') : typeof v === 'boolean' ? v : undefined),
             data: {}
         };
         const d = p.data && typeof p.data === 'object' ? p.data : {};
         if (d.mech && typeof d.mech === 'object') {
-            const m = d.mech;
-            out.data.mech = {
-                parts: keep(m.parts, k => slots.has(k), (v, k) => parts.has(v) && XIRU.mech.part(v).slot === k ? v : undefined),
-                built: keep(m.built, k => parts.has(k), num),
-                cond: keep(m.cond, k => parts.has(k), v => Math.max(0, Math.min(100, num(v)))),
-                islands: keep(m.islands, k => isles.has(k), num),
-                spent: Math.max(0, num(m.spent)), tutorial: num(m.tutorial), testrun: num(m.testrun), trep: num(m.trep)
-            };
+            const m = d.mech, int = (v, a, b) => Math.max(a, Math.min(b, Math.floor(num(v))));
+            const base = { islands: keep(m.islands, k => isles.has(k), num), spent: Math.max(0, num(m.spent)), tutorial: int(m.tutorial, 0, 2), testrun: int(m.testrun, 0, 1), trep: int(m.trep, 0, 1) };
+            if (Array.isArray(m.inv)) {   // Mech-Daten Version 2: Inventar mit Seltenheiten
+                const seen = new Set();
+                const inv = m.inv.slice(0, XIRU.mech.INV_MAX).filter(it => it && typeof it === 'object' && parts.has(it.id)).map(it => {
+                    let u = String(it.u || '').replace(/[^a-z0-9]/gi, '').slice(0, 24) || 'i' + Math.random().toString(36).slice(2, 10);
+                    while (seen.has(u)) u += 'x'; seen.add(u);
+                    return { u, id: it.id, q: int(it.q, 1, 6), c: int(it.c, 0, 100), up: int(it.up, 0, 5), at: num(it.at) };
+                });
+                out.data.mech = Object.assign(base, {
+                    v: 2, inv,
+                    eq: keep(m.eq, k => slots.has(k), (v, k) => { const it = inv.find(x => x.u === v); return it && XIRU.mech.part(it.id).slot === k ? it.u : undefined; }),
+                    mat: keep(m.mat, k => !!XIRU.mech.mat(k), v => int(v, 0, 99999)),
+                    taler: int(m.taler, 0, 10000000),
+                    pos: isles.has(m.pos) && XIRU.mech.isle(m.pos) ? m.pos : 'konto',
+                    arena: { rank: int(m.arena && m.arena.rank, 0, 12), wins: int(m.arena && m.arena.wins, 0, 1e6), losses: int(m.arena && m.arena.losses, 0, 1e6) },
+                    stats: { trips: int(m.stats && m.stats.trips, 0, 1e7), km: int(m.stats && m.stats.km, 0, 1e9) }
+                });
+            } else {   // Version 1 (wird beim Laden automatisch umgewandelt)
+                out.data.mech = Object.assign(base, {
+                    parts: keep(m.parts, k => slots.has(k), (v, k) => parts.has(v) && XIRU.mech.part(v).slot === k ? v : undefined),
+                    built: keep(m.built, k => parts.has(k), num),
+                    cond: keep(m.cond, k => parts.has(k), v => Math.max(0, Math.min(100, num(v))))
+                });
+            }
         }
         if (d.themesTried) out.data.themesTried = keep(d.themesTried, () => true, num);
         return out;

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beta-Programm · Xiruprojekts</title>
+    <meta name="description" content="Das Beta-Programm von Xiruprojekts: neue Seiten und Projekte vor allen anderen testen und Feedback sammeln.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="../assets/css/themes/studio.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <style>
+        .bt-join { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+        .bt-sel { width: auto; }
+        .bt-notes { list-style: none; padding: 0; margin: 1rem 0 0; display: grid; gap: .4rem; }
+        .bt-notes li { display: flex; gap: .5rem; align-items: flex-start; justify-content: space-between; padding: .5rem .7rem; border-radius: 8px; background: var(--surface-2); overflow-wrap: anywhere; }
+    </style>
+</head>
+<body class="theme-studio">
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">🎬 Studio</span>
+        <h1>Beta-Programm</h1>
+        <p class="lead">Du willst Neues zuerst sehen? Als Beta-Tester probierst du frische Seiten aus und notierst, was dir auffällt. Dein Feedback bleibt bei dir, bis du es teilst.</p>
+    </header>
+    <section class="card bt-join">
+        <div><h2 id="j-title">Werde Beta-Tester</h2><p class="small muted" id="j-text">Kostenlos, jederzeit wieder austretbar. Du bekommst ein Abzeichen im Studio.</p></div>
+        <button class="btn btn--primary" type="button" id="join">🧪 Mitmachen</button>
+    </section>
+    <h2 class="mt-1">Gerade im Test</h2>
+    <div class="grid" id="list"></div>
+    <section class="card mt-1">
+        <h2>Feedback-Notizbuch</h2>
+        <div class="row"><select class="select bt-sel" id="f-page" aria-label="Seite"></select><select class="select bt-sel" id="f-kind" aria-label="Art"><option>🐞 Fehler</option><option>💡 Idee</option><option>❤ Gefällt mir</option></select></div>
+        <textarea class="textarea mt-1" id="f-text" rows="3" maxlength="1000" placeholder="Was ist dir aufgefallen?"></textarea>
+        <div class="row mt-1"><button class="btn btn--sm btn--primary" type="button" id="f-add">＋ Notieren</button><button class="btn btn--sm" type="button" id="f-copy">📋 Alles kopieren</button><span class="small muted">Zum Teilen: kopieren und Mael schicken.</span></div>
+        <ul class="bt-notes" id="notes"></ul>
+    </section>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU;
+    const $ = s => X.$(s);
+    const NEW = ['hardware/code/index.html', 'ki/code-tutor.html', 'ki/kartenschmiede.html', 'ki/bildwerk.html', 'ki/textwerk.html', 'mixer/beat.html', 'mixer/wesen.html', 'arcade/kisten.html', 'arcade/rohre.html', 'werkzeuge/notizen.html']
+        .map(p => X.pageFor(p)).filter(Boolean);
+    let st = X.load('beta', null) || { on: false, notes: [] };
+    const save = () => X.save('beta', st);
+    function render() {
+        $('#j-title').textContent = st.on ? '🧪 Du bist Beta-Tester' : 'Werde Beta-Tester';
+        $('#j-text').textContent = st.on ? 'Danke! Probier die Seiten unten aus und notiere, was dir auffällt.' : 'Kostenlos, jederzeit wieder austretbar. Du bekommst ein Abzeichen im Studio.';
+        $('#join').textContent = st.on ? 'Austreten' : '🧪 Mitmachen';
+        $('#list').innerHTML = NEW.map(p => { const open = X.isUnlocked(p); return '<a class="tile" href="' + X.url(p.p) + '"><span class="tile__title">' + X.esc(p.t) + '</span><span class="tile__desc">' + (open ? X.esc(p.d) : '🌫 Noch im Nebel') + '</span><span class="tile__meta">' + (X.isVisited(p.p) ? '✔ getestet' : 'neu') + '</span></a>'; }).join('');
+        $('#f-page').innerHTML = NEW.map(p => '<option>' + X.esc(p.t) + '</option>').join('') + '<option>Andere Seite</option>';
+        const ul = $('#notes'); ul.textContent = '';
+        st.notes.forEach((n, i) => { const li = document.createElement('li'), t = document.createElement('span'), d = document.createElement('button');
+            t.textContent = n.k + ' · ' + n.p + ': ' + n.t; d.type = 'button'; d.className = 'btn btn--sm btn--ghost'; d.textContent = '✕';
+            d.addEventListener('click', () => { st.notes.splice(i, 1); save(); render(); }); li.append(t, d); ul.appendChild(li); });
+    }
+    $('#join').addEventListener('click', () => { st.on = !st.on; save(); render(); if (st.on) { X.toast('🧪 Willkommen im Beta-Programm', 'Danke fürs Testen!'); X.once('st-beta', 10, 'Beta-Tester'); } });
+    $('#f-add').addEventListener('click', () => { const t = $('#f-text').value.trim(); if (!t) return; st.notes.unshift({ p: $('#f-page').value, k: $('#f-kind').value, t: t.slice(0, 1000), at: Date.now() }); st.notes = st.notes.slice(0, 50); save(); $('#f-text').value = ''; render(); });
+    $('#f-copy').addEventListener('click', () => { if (!st.notes.length) return; navigator.clipboard.writeText(st.notes.map(n => '- ' + n.k + ' [' + n.p + '] ' + n.t).join('\n')).then(() => X.toast('📋 Kopiert', st.notes.length + ' Notizen in der Zwischenablage.'), () => {}); });
+    render();
+});
+</script>
+</body>
+</html>

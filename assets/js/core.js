@@ -153,7 +153,7 @@
     }
     let P = loadProfile(X.user);
     X.profile = () => P;
-    function persist() { X.store.set(profileKey(X.user), P); }
+    function persist() { X.store.set(profileKey(X.user), P); if (typeof scheduleBackup === 'function') scheduleBackup(); }
     X.persist = persist;
 
     X.auth = {
@@ -201,6 +201,7 @@
             if (remember) X.store.set(REMEMBER_KEY, name); else X.store.remove(REMEMBER_KEY);
             X.user = name;
             P = loadProfile(name);
+            lastUserCookie();
             emit('login', name);
         },
         logout() {
@@ -232,15 +233,18 @@
             X.store.remove(profileKey(X.user));
             X.store.remove('xiru:keys:' + key);
             X.store.keys('xiru:save:' + key + ':').forEach(k => X.store.remove(k));
+            X.cookie.del(backupName());
+            const last = X.cookie.getJSON('xiru_zuletzt'); if (last && String(last.n).toLowerCase() === key) X.cookie.del('xiru_zuletzt');
             this.logout();
         }
     };
 
     /* ── Einstellungen ──────────────────────────────────────────────────── */
-    const DEFAULTS = { theme: null, anim: true, sound: true, visitToasts: true };
+    const DEFAULTS = { theme: null, anim: true, sound: true, visitToasts: true, modus: 'abenteuer' };
     X.setting = function (key, val) {
         if (arguments.length === 1) return key in P.settings ? P.settings[key] : DEFAULTS[key];
         P.settings[key] = val; persist(); applySettings(); emit('setting', { key, val });
+        if (key === 'modus') { lastUserCookie(); renderHud(); }
     };
     function applySettings() {
         const root = document.documentElement;
@@ -260,6 +264,94 @@
     const saveKey = k => 'xiru:save:' + (X.user ? X.user.toLowerCase() : GUEST) + ':' + k;
     X.load = (k, def) => X.store.get(saveKey(k), def === undefined ? null : def);
     X.save = (k, v) => X.store.set(saveKey(k), v);
+
+
+    /* ── Cookies (nur mit „Alles erlauben" und nur über http/https) ─────────
+       xiru_zuletzt             zuletzt benutztes Konto + Modus (für den Login-Screen)
+       xiru_sicherung_<hash>    kompakte Notfall-Sicherung des Fortschritts
+       Beide enthalten keine Passwörter. Werte sind Base64url-kodiertes JSON.    */
+    const cookiePath = (() => { try { return new URL(rootURL).pathname || '/'; } catch (e) { return '/'; } })();
+    const b64e = str => btoa(unescape(encodeURIComponent(str))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    const b64d = str => decodeURIComponent(escape(atob(String(str).replace(/-/g, '+').replace(/_/g, '/'))));
+    X.cookie = {
+        ok() { try { return !!(consent && consent.all) && /^https?:$/.test(location.protocol) && navigator.cookieEnabled !== false; } catch (e) { return false; } },
+        get(name) { try { const m = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)')); return m ? decodeURIComponent(m[1]) : null; } catch (e) { return null; } },
+        set(name, val, days) {
+            if (!this.ok()) return false;
+            try {
+                document.cookie = name + '=' + encodeURIComponent(val) + '; max-age=' + Math.round((days || 365) * 86400) + '; path=' + cookiePath + '; SameSite=Strict' + (location.protocol === 'https:' ? '; Secure' : '');
+                return this.get(name) === val;
+            } catch (e) { return false; }
+        },
+        del(name) { try { document.cookie = name + '=; max-age=0; path=' + cookiePath + '; SameSite=Strict'; } catch (e) { } },
+        getJSON(name) { try { const v = this.get(name); return v ? JSON.parse(b64d(v)) : null; } catch (e) { return null; } },
+        setJSON(name, obj, days) { return this.set(name, b64e(JSON.stringify(obj)), days); }
+    };
+    const fnv = str => { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); };
+    const toBits = (ids, has) => { const b = new Uint8Array(Math.ceil(ids.length / 8)); ids.forEach((id, i) => { if (has(id)) b[i >> 3] |= 1 << (i & 7); }); return btoa(String.fromCharCode.apply(null, Array.from(b))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
+    const fromBits = (ids, str) => { try { const raw = atob(String(str || '').replace(/-/g, '+').replace(/_/g, '/')); return ids.filter((id, i) => (raw.charCodeAt(i >> 3) >> (i & 7)) & 1); } catch (e) { return []; } };
+    function lastUserCookie() { if (X.user) X.cookie.setJSON('xiru_zuletzt', { n: X.user, m: X.mode(), t: Date.now() }, 400); }
+    const backupName = () => 'xiru_sicherung_' + fnv(X.user ? X.user.toLowerCase() : GUEST);
+    /* Notfall-Sicherung: passt in ein Cookie (< 4 KB). Kristalle, Orte, Module und Inseln als Bitmasken
+       über die Register-Reihenfolge – mit Prüfsumme, damit nach einem Update nichts Falsches zurückkommt. */
+    X.backup = {
+        name: backupName,
+        make() {
+            const E = X.eggs.map(e => e.id), PG = X.pages.map(p => p.p), SK = X.skills.map(k => k.id), IS = (X.islands || []).map(i => i.id);
+            const m = mechState();
+            const eqU = Object.values(m.eq), inv = m.inv.slice().sort((a, b) => (eqU.includes(b.u) - eqU.includes(a.u)) || (b.q - a.q) || ((b.up || 0) - (a.up || 0))).slice(0, 24);
+            return {
+                v: 1, t: Date.now(), n: X.user || '', xp: P.xp, bo: P.bonus,
+                e: toBits(E, id => P.eggs[id]), eh: fnv(E.join()), pv: toBits(PG, p => P.visited[p]), ph: fnv(PG.join()),
+                sk: toBits(SK, id => P.skills[id]), sh: fnv(SK.join()),
+                m: { sp: m.spent, ta: m.taler, po: m.pos, tu: m.tutorial, is: toBits(IS, id => m.islands[id]), ih: fnv(IS.join()), mt: m.mat,
+                     it: inv.map(x => [x.id, x.q, x.up || 0, x.c, eqU.includes(x.u) ? 1 : 0]), ar: m.arena && m.arena.rank || 0 }
+            };
+        },
+        /* Ist eine Sicherung deutlich weiter als der aktuelle Stand? Dann nicht überschreiben (ausser force),
+           bis die Person sich entschieden hat (Wiederherstellen oder „Nein“). */
+        ahead(b) { b = b || this.read(); if (!b) return false; return b.xp > P.xp + 60 || fromBits(X.eggs.map(e => e.id), b.e).length > X.eggCount() + 2; },
+        write(force) {
+            if (!X.cookie.ok() || document.documentElement.hasAttribute('data-bare')) return false;
+            if (!force && !sessionGet('xiru:restore-skip') && this.ahead()) return false;
+            const b = this.make();
+            while (b64e(JSON.stringify(b)).length > 3300 && b.m.it.length) b.m.it.pop();
+            return X.cookie.setJSON(backupName(), b, 400);
+        },
+        read() { return X.cookie.getJSON(backupName()); },
+        /* Zusammenführen: nichts geht verloren – es wird nur ergänzt */
+        restore() {
+            const b = this.read(); if (!b) return null;
+            const E = X.eggs.map(e => e.id), PG = X.pages.map(p => p.p), SK = X.skills.map(k => k.id), IS = (X.islands || []).map(i => i.id), out = { xp: 0, eggs: 0, pages: 0, items: 0 };
+            if (b.xp > P.xp) { out.xp = b.xp - P.xp; P.xp = b.xp; }
+            P.bonus = Math.max(P.bonus, +b.bo || 0);
+            if (b.eh === fnv(E.join())) fromBits(E, b.e).forEach(id => { if (!P.eggs[id]) { P.eggs[id] = b.t; out.eggs++; } });
+            if (b.ph === fnv(PG.join())) fromBits(PG, b.pv).forEach(p => { if (!P.visited[p]) { P.visited[p] = b.t; out.pages++; } });
+            if (X.user && b.sh === fnv(SK.join())) fromBits(SK, b.sk).forEach(id => { if (!P.skills[id]) P.skills[id] = b.t; });
+            const m = mechState(), bm = b.m || {};
+            if (bm.ih === fnv(IS.join())) fromBits(IS, bm.is).forEach(id => { if (!m.islands[id]) m.islands[id] = b.t; });
+            m.spent = Math.min(m.spent || Infinity, +bm.sp || 0) || m.spent; m.taler = Math.max(m.taler, +bm.ta || 0); m.tutorial = Math.max(m.tutorial, +bm.tu || 0);
+            if (!m.inv.length && Array.isArray(bm.it)) bm.it.forEach(r => { if (partMap[r[0]]) { const it = { u: newUid(), id: r[0], q: X.clamp(+r[1] || 1, 1, 6), up: X.clamp(+r[2] || 0, 0, 5), c: X.clamp(+r[3] || 0, 0, 100), at: b.t }; m.inv.push(it); if (r[4]) m.eq[partMap[r[0]].slot] = it.u; out.items++; } });
+            if (bm.mt && typeof bm.mt === 'object') Object.keys(bm.mt).forEach(k => { if (matMap[k]) m.mat[k] = Math.max(m.mat[k] || 0, Math.min(99999, +bm.mt[k] || 0)); });
+            if (bm.ar) m.arena.rank = Math.max(m.arena.rank || 0, +bm.ar || 0);
+            persist(); emit('restore', out); renderHud();
+            return out;
+        }
+    };
+    var backupT = 0;
+    function scheduleBackup() { clearTimeout(backupT); backupT = setTimeout(() => X.backup.write(), 3000); }
+    /* Ist die Sicherung deutlich weiter als der aktuelle Stand (z. B. weil der Browser-Speicher geleert wurde)? */
+    function offerRestore() {
+        const b = X.backup.read();
+        if (!b || sessionGet('xiru:restore-skip') || !X.backup.ahead(b)) return;
+        const t = X.toast('Spielstand-Sicherung gefunden', 'Ein Cookie hat einen weiteren Stand gespeichert (Level ' + X.levelInfo(b.xp).level + ', ' + new Date(b.t).toLocaleDateString('de-CH') + '). ' +
+            '<br><button class="btn btn--sm btn--primary" type="button" data-restore>Wiederherstellen</button> <button class="btn btn--sm btn--ghost" type="button" data-restore-no>Nein</button>', { icon: '🍪', html: true, time: 30000 });
+        if (!t) return;
+        t.addEventListener('click', e => {
+            if (e.target.closest('[data-restore]')) { const r = X.backup.restore(); X.backup.write(true); X.toast('Wiederhergestellt', '+' + r.xp + ' XP · ' + r.eggs + ' Kristalle · ' + r.pages + ' Orte · ' + r.items + ' Teile', { icon: '🍪' }); }
+            if (e.target.closest('[data-restore-no]')) sessionSet('xiru:restore-skip', '1');
+        });
+    }
 
     /* ── Risse: versteckte Eingänge in den Liminal-Teil (Why.html, why/) ──
        Riss n wirkt nur, solange man genau (n-1)-mal ausgeschlossen wurde.
@@ -297,7 +389,7 @@
         while (rest >= X.xpForNext(lvl)) { rest -= X.xpForNext(lvl); lvl++; }
         return { level: lvl, into: rest, need: X.xpForNext(lvl), pct: Math.round(rest / X.xpForNext(lvl) * 100) };
     };
-    X.hasSkill = id => !!(X.user && P.skills[id]);
+    X.hasSkill = id => (X.easy && X.easy()) || !!(X.user && P.skills[id]);
     X.skillPoints = function () {
         const total = X.levelInfo().level + P.bonus;          // 1 Punkt ab Start + 1 pro Level + Bonus
         const spent = Object.keys(P.skills).reduce((s, id) => s + ((skillMap[id] && skillMap[id].c) || 0), 0);
@@ -322,31 +414,144 @@
     };
 
 
-    /* ── Werft: Mech, Bauteile, Inseln ──────────────────────────────────── */
-    const partMap = {};
+    /* ── Spielmodus ─────────────────────────────────────────────────────────
+       abenteuer (Standard): Werft, Reisen und Module schalten die Welt frei.
+       entdecker: alles ist offen, es gibt keinen Mech – nur zum Erkunden.        */
+    X.mode = () => X.setting('modus') === 'entdecker' ? 'entdecker' : 'abenteuer';
+    X.easy = () => X.mode() === 'entdecker';
+
+    /* ── Werft: Mech, Inventar, Inseln, Reisen ──────────────────────────────
+       Daten in P.data.mech (Version 2). Jedes Teil ist ein Gegenstand:
+       { u: ID, id: Bauplan, q: Seltenheit 1–6, c: Zustand 0–100, up: Aufwertung 0–5 }
+       eq = Bauplatz → Gegenstands-ID, mat = Materialien, taler = Währung,
+       pos = Insel, auf der der Mech gerade steht.                               */
+    const partMap = {}, isleMap = {}, matMap = {};
     (X.mechParts || []).forEach(p => { partMap[p.id] = p; });
-    const FREE_PARTS = ['r-schrott', 'a-paddel', 'k-batterie'];
+    (X.islands || []).forEach(i => { isleMap[i.id] = i; });
+    (X.materials || []).forEach(m => { matMap[m.id] = m; });
+    const SLOT_IDS = (X.mechSlots || []).map(s => s.id);
+    const RAR = X.rarities || [null, { n: 'Gewöhnlich', c: '#9ca3af', m: 1 }];
+    const INV_MAX = 80;
+    let uidSeq = 0;
+    const newUid = () => Date.now().toString(36).slice(-6) + (uidSeq++).toString(36) + Math.random().toString(36).slice(2, 5);
+    function migrateMech(m) {   // Version 1: parts {Platz: Teil}, built {Teil: Zeit}, cond {Teil: %}
+        const inv = [], eq = {};
+        Object.keys(m.built || {}).forEach(id => {
+            if (!partMap[id]) return;
+            const c = m.cond && m.cond[id] != null ? +m.cond[id] : 100;
+            inv.push({ u: newUid(), id, q: 1, c: Math.max(0, Math.min(100, c || 0)), up: 0, at: +m.built[id] || Date.now() });
+        });
+        Object.keys(m.parts || {}).forEach(sl => { const it = inv.find(x => x.id === m.parts[sl]); if (it) eq[sl] = it.u; });
+        if (m.job && m.job.id) { const it = inv.find(x => x.id === m.job.id); if (it) m.job = { u: it.u, start: m.job.start, end: m.job.end }; else delete m.job; }
+        m.inv = inv; m.eq = eq; delete m.parts; delete m.built; delete m.cond;
+        m.v = 2;
+    }
     function mechState() {
-        const m = P.data.mech || (P.data.mech = { parts: {}, built: {}, cond: {}, islands: {}, spent: 0, tutorial: 0 });
-        ['parts', 'built', 'cond', 'islands'].forEach(k => { if (!m[k] || typeof m[k] !== 'object') m[k] = {}; });
-        m.spent = +m.spent || 0; m.tutorial = +m.tutorial || 0;
+        let m = P.data.mech;
+        if (!m || typeof m !== 'object' || Array.isArray(m)) m = P.data.mech = { v: 2, tutorial: 0 };
+        if (m.v !== 2) migrateMech(m);
+        ['eq', 'mat', 'islands', 'arena', 'stats'].forEach(k => { if (!m[k] || typeof m[k] !== 'object' || Array.isArray(m[k])) m[k] = {}; });
+        if (!Array.isArray(m.inv)) m.inv = [];
+        m.spent = +m.spent || 0; m.taler = Math.max(0, +m.taler || 0); m.tutorial = +m.tutorial || 0;
+        if (!isleMap[m.pos]) m.pos = 'konto';
         return m;
     }
+    const rarOf = q => RAR[X.clamp(+q || 1, 1, RAR.length - 1)];
+    /* Effektive Werte eines Gegenstands: Seltenheit multipliziert, Aufwertung legt etwas drauf */
+    function itemStats(it) {
+        const b = partMap[it.id], out = {};
+        if (!b) return out;
+        const q = X.clamp(+it.q || 1, 1, 6), up = X.clamp(+it.up || 0, 0, 5), mul = rarOf(q).m;
+        Object.keys(b.s || {}).forEach(k => {
+            const v = b.s[k];
+            if (v <= 0) { out[k] = v; return; }
+            const base = v * mul + (q - 1) * .5;
+            out[k] = Math.round(base) + Math.floor(base * .12 * up + up * .34);
+        });
+        return out;
+    }
+    const repOf = it => { const b = partMap[it.id]; return b && b.rep ? Math.min(.85, b.rep + ((it.q || 1) - 1) * .03 + (it.up || 0) * .01) : 0; };
+    function fxOf(it) {
+        const b = partMap[it.id], out = {};
+        if (b && b.fx) Object.keys(b.fx).forEach(k => { out[k] = +(b.fx[k] * (1 + ((it.q || 1) - 1) * .2 + (it.up || 0) * .05)).toFixed(3); });
+        return out;
+    }
+    const viewOf = it => { const b = it && partMap[it.id]; return b ? Object.assign({}, b, { u: it.u, q: it.q || 1, c: it.c, up: it.up || 0, s: itemStats(it), rep: repOf(it), fx: fxOf(it), base: b }) : null; };
+
     X.mech = {
         state: mechState,
+        INV_MAX,
         part: id => partMap[id] || null,
-        /* Schrott: 1 pro 4 XP, minus Ausgaben */
+        isle: id => isleMap[id] || null,
+        mat: id => matMap[id] || null,
+        rarity: rarOf,
+        itemStats, view: viewOf,
+
+        /* Währungen: Schrott (1 pro 4 XP, minus Ausgaben) und Taler */
         scrap() { return Math.max(0, Math.floor(P.xp / 4) - mechState().spent); },
+        spendScrap(n) { if (n < 0 || this.scrap() < n) return false; mechState().spent += n; persist(); emit('mech', 'scrap'); return true; },
+        taler: () => mechState().taler,
+        addTaler(n) {
+            const m = mechState(); n = Math.round(n > 0 ? n * (1 + (this.stats().fx.taler || 0)) : n);
+            m.taler = Math.max(0, m.taler + n); persist(); emit('mech', 'taler'); return n;
+        },
+        spendTaler(n) { const m = mechState(); if (n < 0 || m.taler < n) return false; m.taler -= n; persist(); emit('mech', 'taler'); return true; },
+        mats: () => mechState().mat,
+        addMat(id, n) {
+            if (!matMap[id] || !n) return; const m = mechState();
+            m.mat[id] = Math.max(0, (m.mat[id] || 0) + Math.round(n)); if (!m.mat[id]) delete m.mat[id];
+            persist(); emit('mech', 'mat');
+        },
+        hasMats(cost) { const m = mechState(); return Object.keys(cost || {}).every(k => (m.mat[k] || 0) >= cost[k]); },
+        spendMats(cost) { if (!this.hasMats(cost)) return false; Object.keys(cost || {}).forEach(k => this.addMat(k, -cost[k])); return true; },
+
+        /* Inventar */
+        items: () => mechState().inv,
+        item: u => mechState().inv.find(x => x.u === u) || null,
+        full: () => mechState().inv.length >= INV_MAX,
+        add(id, q, extra) {
+            if (!partMap[id]) return null;
+            const m = mechState();
+            if (m.inv.length >= INV_MAX) { X.toast('Inventar voll', 'Verkaufe oder zerlege Teile, um Platz zu schaffen.', { icon: '🎒', type: 'error' }); return null; }
+            const it = Object.assign({ u: newUid(), id, q: X.clamp(Math.round(q || 1), 1, 6), c: 100, up: 0, at: Date.now(), neu: 1 }, extra || {});
+            m.inv.push(it); persist();
+            if (it.q >= 5) X.egg('m-legendaer');
+            if (it.q >= 6) X.egg('m-mythisch');
+            emit('mech', 'add'); return it;
+        },
+        remove(u) {
+            const m = mechState(), i = m.inv.findIndex(x => x.u === u); if (i < 0) return null;
+            const it = m.inv.splice(i, 1)[0];
+            Object.keys(m.eq).forEach(sl => { if (m.eq[sl] === u) delete m.eq[sl]; });
+            if (m.job && m.job.u === u) delete m.job;
+            persist(); emit('mech', 'remove'); return it;
+        },
+        equipped(u) { const m = mechState(); return Object.keys(m.eq).find(sl => m.eq[sl] === u) || null; },
+        installed(slot) { const u = mechState().eq[slot]; return u ? viewOf(this.item(u)) : null; },
+        loadout() { const out = {}; SLOT_IDS.forEach(sl => { const v = this.installed(sl); if (v) out[sl] = v; }); return out; },
+        equip(u) {
+            const it = this.item(u); if (!it) return false;
+            const m = mechState(); m.eq[partMap[it.id].slot] = u; delete it.neu; persist(); emit('mech', 'equip');
+            if (SLOT_IDS.every(sl => m.eq[sl])) X.egg('m-vollausbau');
+            if (it.id === 'a-beine') X.egg('m-beine');
+            return true;
+        },
+        install(u) { return this.equip(u); },
+        uninstall(slot) { const m = mechState(); delete m.eq[slot]; persist(); emit('mech', 'uninstall'); },
+        /* Verkaufswert in Talern */
+        value(it) { const b = partMap[it.id]; if (!b) return 0; return Math.max(2, Math.round((b.cost / 3 + 6 + b.t * 4) * Math.pow(rarOf(it.q).m, 1.6) * (1 + (it.up || 0) * .25) * (.4 + (it.c / 100) * .6))); },
+
+        /* Baupläne: gewöhnliche Teile aus Schrott bauen */
         progress() {
             return { level: X.levelInfo().level, eggs: X.eggCount(), pages: Object.keys(P.visited).filter(q => pageMap[q]).length, games: Object.keys(P.scores).length };
         },
         available(part) {
-            if (FREE_PARTS.includes(part.id)) return mechState().tutorial >= 1;
+            if ((X.starterSet || []).includes(part.id)) return mechState().tutorial >= 1;
             const r = part.req || {}, pr = this.progress();
             return (!r.level || pr.level >= r.level) && (!r.eggs || pr.eggs >= r.eggs) && (!r.pages || pr.pages >= r.pages) && (!r.games || pr.games >= r.games);
         },
         reqText(part) {
-            if (FREE_PARTS.includes(part.id)) return 'Startausrüstung (Tutorial)';
+            if ((X.starterSet || []).includes(part.id)) return 'Startausrüstung (Tutorial)';
             const r = part.req || {}, out = [];
             if (r.level) out.push('Level ' + r.level);
             if (r.eggs) out.push(r.eggs + ' Realitätskristalle');
@@ -354,59 +559,58 @@
             if (r.games) out.push(r.games + ' verschiedene Spiele gespielt');
             return out.join(' · ') || 'frei';
         },
-        isBuilt: id => !!mechState().built[id],
-        cond: id => { const c = mechState().cond[id]; return c == null ? 100 : c; },
-        installed(slot) { const id = mechState().parts[slot]; return id ? partMap[id] : null; },
+        owned: id => mechState().inv.some(x => x.id === id),
+        isBuilt(id) { return this.owned(id); },
         build(id) {
-            const pt = partMap[id], m = mechState();
-            if (!pt || m.built[id] || !this.available(pt) || this.scrap() < pt.cost) return false;
-            m.spent += pt.cost; m.built[id] = Date.now(); m.cond[id] = 100; persist(); emit('mech', 'build');
-            return true;
+            const pt = partMap[id];
+            if (!pt || !this.available(pt) || this.scrap() < pt.cost || this.full()) return null;
+            mechState().spent += pt.cost;
+            return this.add(id, 1);
         },
-        install(id) {
-            const pt = partMap[id], m = mechState();
-            if (!pt || !m.built[id]) return false;
-            m.parts[pt.slot] = id; persist(); emit('mech', 'install');
-            if (X.mechSlots.every(sl => m.parts[sl.id])) X.egg('m-vollausbau');
-            if (id === 'a-beine') X.egg('m-beine');
-            return true;
-        },
-        uninstall(slot) { const m = mechState(); delete m.parts[slot]; persist(); emit('mech', 'uninstall'); },
-        /* Effektive Werte: unter 40 % Zustand halbiert, bei 0 % fällt das Teil aus */
+
+        /* Zustand & Werte */
+        cond(u) { const it = this.item(u) || this.items().find(x => x.id === u && this.equipped(x.u)) || this.items().find(x => x.id === u); return it ? it.c : 100; },
         stats() {
-            const out = { R: 0, E: 0, S: 0, P: 0, rep: 0 };
-            X.mechSlots.forEach(sl => {
-                const pt = this.installed(sl.id); if (!pt) return;
-                const c = this.cond(pt.id);
-                Object.keys(pt.s || {}).forEach(k => {
-                    const v = pt.s[k];
-                    out[k] += v < 0 ? v : c <= 0 ? 0 : c < 40 ? Math.floor(v / 2) : v;
-                });
-                if (pt.rep && c > 0) out.rep = pt.rep;
+            const out = { R: 0, E: 0, S: 0, P: 0, A: 0, rep: 0, fx: {} };
+            SLOT_IDS.forEach(sl => {
+                const v = this.installed(sl); if (!v) return;
+                Object.keys(v.s).forEach(k => { const x = v.s[k]; out[k] = (out[k] || 0) + (x < 0 ? x : v.c <= 0 ? 0 : v.c < 40 ? Math.floor(x / 2) : x); });
+                if (v.c > 0) { out.rep = Math.max(out.rep, v.rep || 0); Object.keys(v.fx || {}).forEach(k => { out.fx[k] = (out.fx[k] || 0) + v.fx[k]; }); }
             });
             return out;
         },
-        ready() { return ['rahmen', 'antrieb', 'kern'].every(sl => { const pt = this.installed(sl); return pt && this.cond(pt.id) > 0; }); },
-        repairCost(id) { return Math.ceil((100 - this.cond(id)) * .6 * (1 - this.stats().rep)); },
-        repair(id) {
-            const cost = this.repairCost(id), m = mechState();
-            if (!m.built[id] || cost <= 0 || this.scrap() < cost) return false;
-            m.spent += cost; m.cond[id] = 100; persist(); emit('mech', 'repair');
-            X.egg('m-reparatur');
+        ready() { return ['rahmen', 'antrieb', 'kern'].every(sl => { const v = this.installed(sl); return v && v.c > 0; }); },
+        repairCost(u) { const it = this.item(u); if (!it || it.c >= 100) return 0; return Math.max(1, Math.ceil((100 - it.c) * .6 * (1 + ((it.q || 1) - 1) * .25) * (1 - this.stats().rep))); },
+        repair(u, withTaler) {
+            const it = this.item(u), cost = this.repairCost(u);
+            if (!it || cost <= 0) return false;
+            if (withTaler ? !this.spendTaler(cost) : !this.spendScrap(cost)) return false;
+            it.c = 100; persist(); emit('mech', 'repair'); X.egg('m-reparatur');
             return true;
         },
-        damage(id, amount) {
-            const m = mechState(); if (!m.built[id]) return 0;
-            const before = this.cond(id);
-            m.cond[id] = Math.max(0, before - Math.round(amount)); persist();
-            if (m.cond[id] === 0) X.egg('m-kaputt');
-            return before - m.cond[id];
+        damage(u, amount) {
+            const it = this.item(u) || this.items().find(x => x.id === u && this.equipped(x.u)); if (!it) return 0;
+            const before = it.c; it.c = Math.max(0, before - Math.max(0, Math.round(amount))); persist();
+            if (it.c === 0 && before > 0) X.egg('m-kaputt');
+            return before - it.c;
         },
+        /* Abnutzung der eingebauten Teile (Reisen, Kämpfe): Panzerung dämpft */
+        wear(min, max, slots) {
+            const st = this.stats(), report = [];
+            (slots || SLOT_IDS).forEach(sl => {
+                const v = this.installed(sl); if (!v) return;
+                const dmg = this.damage(v.u, Math.max(0, X.rand(min, max) - st.P * .6));
+                if (dmg > 0) report.push({ part: v, dmg });
+            });
+            return report;
+        },
+
+        /* Inseln & Reisen */
         req: r => (X.islandReq || {})[r] || null,
-        discovered(r) { return !this.req(r) || !!mechState().islands[r]; },
+        discovered(r) { return X.easy() || !this.req(r) || !!mechState().islands[r]; },
         missing(r) {
             const need = this.req(r) || {}, st = this.stats(), out = [];
-            const names = { R: 'Reichweite', E: 'Energie', S: 'Sensor', P: 'Panzerung' };
+            const names = { R: 'Reichweite', E: 'Energie', S: 'Sensor', P: 'Panzerung', A: 'Angriff' };
             Object.keys(need).forEach(k => { if (st[k] < need[k]) out.push(names[k] + ' ' + st[k] + '/' + need[k]); });
             if (!this.ready()) out.unshift('Rahmen, Antrieb und Energiekern müssen eingebaut und intakt sein');
             return out;
@@ -414,25 +618,35 @@
         canReach(r) { return this.missing(r).length === 0; },
         islandReqText(r) {
             const need = this.req(r); if (!need) return 'frei zugänglich';
-            const names = { R: 'Reichweite', E: 'Energie', S: 'Sensor', P: 'Panzerung' };
+            const names = { R: 'Reichweite', E: 'Energie', S: 'Sensor', P: 'Panzerung', A: 'Angriff' };
             return Object.keys(need).map(k => names[k] + ' ' + need[k]).join(' · ');
         },
-        /* Expedition: schaltet eine Insel frei – und beansprucht das Material */
-        expedition(r) {
-            if (this.discovered(r) || !this.canReach(r)) return null;
-            const m = mechState(), st = this.stats(), report = [];
-            ['antrieb', 'rahmen', X.pick(['kern', 'sensor', 'panzer', 'arm'])].forEach(sl => {
-                const pt = this.installed(sl); if (!pt) return;
-                const dmg = this.damage(pt.id, Math.max(0, X.rand(6, 24) - st.P * 3));
-                if (dmg > 0) report.push({ part: pt, dmg });
-            });
-            m.islands[r] = Date.now(); persist();
-            X.addXP(40, 'Expedition');
-            X.egg('m-erste-reise');
-            if (Object.keys(X.islandReq).filter(k => X.islandReq[k]).every(k => m.islands[k])) X.egg('m-alle-inseln');
-            emit('mech', 'expedition');
-            return report;
-        }
+        pos: () => mechState().pos,
+        dist(a, b) { const A = isleMap[a], B = isleMap[b]; return A && B ? Math.hypot(A.x - B.x, A.y - B.y) : 0; },
+        /* Reisedauer in Sekunden: je weiter weg und je schwächer der Antrieb, desto länger */
+        travelSecs(to, from) {
+            const st = this.stats(), speed = (40 + Math.max(1, st.R) * 14) * (1 + (st.fx.speed || 0));
+            return X.clamp(this.dist(from || this.pos(), to) / speed, 2.5, 20);
+        },
+        /* Ankunft nach einer Reise: neue Inseln werden entdeckt, der Antrieb nutzt sich ab */
+        arrive(to) {
+            const m = mechState(), isle = isleMap[to]; if (!isle) return null;
+            const first = !!this.req(to) && !m.islands[to], km = Math.round(this.dist(m.pos, to));
+            const report = this.wear(1, 2 + Math.round(km / 220), ['antrieb']);
+            m.pos = to; m.stats.trips = (m.stats.trips || 0) + 1; m.stats.km = (m.stats.km || 0) + km;
+            if (first) {
+                m.islands[to] = Date.now();
+                X.addXP(40, 'Expedition'); X.egg('m-erste-reise');
+                const content = (X.islands || []).filter(i => i.req && !i.game).map(i => i.id), all = (X.islands || []).filter(i => i.req).map(i => i.id);
+                if (content.every(k => m.islands[k])) X.egg('m-alle-inseln');
+                if (all.every(k => m.islands[k])) X.egg('m-weltreise');
+            }
+            persist(); emit('mech', 'arrive');
+            return { first, report, km };
+        },
+        /* Notruf: ein Schlepper bringt den fahruntüchtigen Mech nach Hause */
+        tow() { const m = mechState(); m.pos = 'konto'; persist(); emit('mech', 'tow'); },
+        expedition(r) { if (this.discovered(r) || !this.canReach(r)) return null; return (this.arrive(r) || {}).report || []; }
     };
 
     X.addXP = function (n, reason) {
@@ -520,7 +734,7 @@
     X.isVisited = p => !!P.visited[p];
     X.isUnlocked = function (pg) {
         if (!pg) return true;
-        if (!X.mech.discovered(pg.r)) return false;
+        if (!X.mech.discovered(pg.isle || pg.r)) return false;
         if (pg.skill && !X.hasSkill(pg.skill)) return false;
         return true;
     };
@@ -554,7 +768,7 @@
         if (count >= 100) X.egg('b-seiten100');
         if (count >= visibleTotal) X.egg('b-seiten-alle');
         const regionsSeen = new Set(Object.keys(P.visited).map(p => pageMap[p] && pageMap[p].r).filter(Boolean));
-        if (X.regions.filter(r => r.id !== 'geheim').every(r => regionsSeen.has(r.id))) X.egg('b-regionen');
+        if (X.regions.filter(r => r.id !== 'geheim' && r.id !== 'meer').every(r => regionsSeen.has(r.id))) X.egg('b-regionen');
     }
 
     /* ── Töne ───────────────────────────────────────────────────────────── */
@@ -822,7 +1036,7 @@
             ? '<div class="nav__item" id="hud-account"><button class="hud__btn" type="button" aria-haspopup="true">' +
               '<span aria-hidden="true">⚓</span>' + X.esc(X.user) + (pts ? ' <span class="badge badge--accent" title="Freie Modulpunkte">' + pts + '</span>' : '') + '</button>' +
               '<div class="nav__menu nav__menu--right">' +
-              X.pages.filter(p => p.r === 'konto' && p.p !== 'konto/login.html').map(p => navLink(p, p.p === 'konto/skilltree.html' && pts ? pts + ' frei' : '')).join('') +
+              X.pages.filter(p => p.r === 'konto' && p.p !== 'konto/login.html' && !(X.easy() && p.p === 'konto/skilltree.html')).map(p => navLink(p, p.p === 'konto/skilltree.html' && pts ? pts + ' frei' : '')).join('') +
               '<a href="#" data-logout><span>Abmelden</span></a></div></div>'
             : '<a class="hud__btn" href="' + X.url('konto/login.html') + '"><span aria-hidden="true">⚓</span>Anmelden</a>';
         return '<a class="hud__btn" href="' + X.url('suche.html') + '" title="Suche" aria-label="Suche">⌕</a>' +
@@ -881,14 +1095,16 @@
 
     function lockScreenHTML() {
         const pg = X.page;
-        if (!X.mech.discovered(pg.r)) {
-            const reg = regionMap[pg.r], miss = X.mech.missing(pg.r), can = X.mech.canReach(pg.r);
+        const key = pg.isle || pg.r;
+        if (!X.mech.discovered(key)) {
+            const isle = X.mech.isle(key), name = isle ? isle.n : regionMap[pg.r].name, miss = X.mech.missing(key), can = X.mech.canReach(key);
             return '<div class="lock-screen"><div class="lock-screen__icon">🌫</div>' +
-                '<h1 style="font-size:1.8rem">' + X.esc(reg.name) + ' liegt im Nebel</h1>' +
-                '<p class="muted">Diese Insel hast du noch nicht erreicht. Bau in der Werft einen Mech, der stark genug ist, und starte eine Expedition.</p>' +
-                '<p>Benötigt: <strong>' + X.esc(X.mech.islandReqText(pg.r)) + '</strong></p>' +
-                (can ? '<p class="text-success">Dein Mech schafft das schon – starte die Expedition!</p>' : '<p class="small muted">Es fehlt: ' + X.esc(miss.join(' · ')) + '</p>') +
-                '<div class="row"><a class="btn btn--primary" href="' + X.url('konto/skilltree.html') + '#reisen">⚙ Zur Werft</a><a class="btn" href="' + X.url('weltkarte.html') + '">Weltkarte</a></div></div>';
+                '<h1 style="font-size:1.8rem">' + X.esc(name) + ' liegt im Nebel</h1>' +
+                '<p class="muted">Diese Insel hast du noch nicht erreicht. Rüste deinen Mech in der Werft aus und reise auf der Weltkarte dorthin – die erste Fahrt ist eine Expedition.</p>' +
+                '<p>Benötigt: <strong>' + X.esc(X.mech.islandReqText(key)) + '</strong></p>' +
+                (can ? '<p class="text-success">Dein Mech schafft das schon – auf zur Weltkarte!</p>' : '<p class="small muted">Es fehlt: ' + X.esc(miss.join(' · ')) + '</p>') +
+                '<div class="row"><a class="btn btn--primary" href="' + X.url('weltkarte.html') + '#' + X.esc(key) + '">Zur Weltkarte</a><a class="btn" href="' + X.url('konto/skilltree.html') + '">Werft</a>' +
+                '<a class="btn btn--ghost" href="' + X.url('konto/einstellungen.html') + '">Entdecker-Modus</a></div></div>';
         }
         const s = skillMap[pg.skill];
         const br = s && X.branches.find(b => b.id === s.b);
@@ -1116,7 +1332,7 @@
         const box = document.createElement('section');
         box.className = 'consent'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-label', 'Speicher-Einwilligung');
         box.innerHTML = '<div class="consent__icon">🍪</div><div class="consent__body"><h2>Krümel im Browser?</h2>' +
-            '<p>Diese Website merkt sich deinen Fortschritt, dein lokales Konto und deine Einstellungen in deinem Browser (localStorage, künftig evtl. kleine Cookies). ' +
+            '<p>Diese Website merkt sich deinen Fortschritt, dein lokales Konto und deine Einstellungen in deinem Browser (localStorage und zwei kleine technische Cookies als Sicherung). ' +
             'Keine Tracker, keine Werbung – nichts verlässt dein Gerät.</p>' +
             '<p class="small"><strong>Alles erlauben:</strong> dein Fortschritt bleibt dauerhaft gespeichert. <strong>Nur notwendige:</strong> alles funktioniert, wird aber beim Schliessen des Browsers vergessen.</p>' +
             (legacy ? '<p class="small text-warning">Du hast bereits gespeicherten Fortschritt. Mit „Nur notwendige" wird er nur noch bis zum Schliessen des Browsers behalten.</p>' : '') +
@@ -1204,6 +1420,10 @@
         safe(initTilt);
         safe(initCounters);
         safe(() => showConsent(false));
+        safe(offerRestore);
+        safe(() => X.backup.write());
+        safe(lastUserCookie);
+        addEventListener('pagehide', () => { try { X.backup.write(); } catch (e) { } });
         X.$$('table[data-sortable]').forEach(t => safe(() => X.sortable(t)));
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);

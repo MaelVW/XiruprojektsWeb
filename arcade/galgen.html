@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galgenmännchen · Xiruprojekts</title>
+    <meta name="description" content="Galgenmännchen auf Deutsch: Errate Wörter aus Technik, Spielen und Fantasy, Buchstabe für Buchstabe.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="../assets/css/themes/arcade.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/arcade.js"></script>
+    <style>
+        .gal { padding: clamp(12px, 3vw, 28px); display: flex; flex-direction: column; align-items: center; gap: 1rem; width: 100%; }
+        .gal__pic { width: 150px; height: 160px; }
+        .gal__pic path, .gal__pic circle { fill: none; stroke: var(--text); stroke-width: 3; stroke-linecap: round; }
+        .gal__base { stroke: var(--text-muted) !important; }
+        #parts > * { opacity: 0; transition: opacity .3s; } #parts > .is-on { opacity: 1; stroke: var(--danger, #f87171); }
+        .gal__word { font-size: clamp(1.3rem, 4.6vw, 2.2rem); font-weight: 800; letter-spacing: .08em; text-align: center; overflow-wrap: anywhere; margin: 0; }
+        .gal__keys { display: grid; grid-template-columns: repeat(auto-fill, minmax(2.4rem, 1fr)); gap: 6px; width: min(100%, 520px); }
+        .gal__keys button { height: 2.5rem; border-radius: 8px; border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--text); font: 700 1rem var(--mono); cursor: pointer; }
+        .gal__keys button:hover:not(:disabled) { border-color: var(--accent); }
+        .gal__keys .is-hit { background: color-mix(in srgb, var(--accent-2) 30%, var(--surface-2)); }
+        .gal__keys .is-miss { opacity: .3; }
+    </style>
+</head>
+<body class="theme-arcade">
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">▶ Spielhalle · Wort</span>
+        <h1>Galgenmännchen</h1>
+        <p class="lead">Errate das Wort, bevor das Männchen fertig gezeichnet ist. Jeder falsche Buchstabe bringt einen Strich mehr.</p>
+    </header>
+    <div class="game">
+        <div>
+            <div class="game__hud" id="hud">
+                <div><span>Serie</span><b id="h-streak">0</b></div>
+                <div><span>Fehler</span><b id="h-miss">0/8</b></div>
+                <div><span>Kategorie</span><b id="h-cat">–</b></div>
+            </div>
+            <div class="game__stage" id="stage">
+                <div class="gal">
+                    <svg class="gal__pic" viewBox="0 0 120 130" aria-hidden="true" id="pic">
+                        <path class="gal__base" d="M10 125 H70 M30 125 V8 H85 V20"/>
+                        <g id="parts"><circle cx="85" cy="30" r="10"/><path d="M85 40 V75"/><path d="M85 50 L70 64"/><path d="M85 50 L100 64"/><path d="M85 75 L72 98"/><path d="M85 75 L98 98"/><path d="M30 30 L52 8"/><path d="M80 28 l3 3 M88 28 l3 3 M83 28 l-3 3 M91 28 l-3 3"/></g>
+                    </svg>
+                    <p class="gal__word mono" id="word" aria-live="polite"></p>
+                    <div class="gal__keys" id="keys"></div>
+                </div>
+                <div class="game__overlay" id="ov" hidden></div>
+            </div>
+            <div class="row mt-1"><button class="btn btn--sm" type="button" id="b-new">↺ Neues Wort</button></div>
+        </div>
+        <aside class="game__side">
+            <div class="card">
+                <h3>Steuerung</h3>
+                <ul class="keys-help"><li><b>Tastatur</b> oder Knöpfe – Buchstaben raten</li><li>Umlaute zählen extra (Ä, Ö, Ü)</li><li>Rekord = längste Serie ohne Niederlage</li></ul>
+            </div>
+            <div class="card">
+                <h3>Rekord</h3>
+                <p class="stat__value" id="best">–</p>
+            </div>
+        </aside>
+    </div>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU;
+    const G = X.Game, $ = s => X.$(s);
+    const W = {
+        Technik: ['PROZESSOR', 'GRAFIKKARTE', 'ARBEITSSPEICHER', 'MAINBOARD', 'NETZTEIL', 'TASTATUR', 'BILDSCHIRM', 'DISKETTE', 'FESTPLATTE', 'LÜFTER', 'KÜHLKÖRPER', 'ROUTER', 'LAUTSPRECHER', 'MIKROFON', 'TRANSISTOR'],
+        Spiele: ['HIGHSCORE', 'JOYSTICK', 'SPIELHALLE', 'ENDGEGNER', 'SPEICHERPUNKT', 'BONUSLEVEL', 'PIXELKUNST', 'MEHRSPIELER', 'SCHATZTRUHE', 'LEBENSPUNKTE'],
+        Fantasy: ['DRACHE', 'ZAUBERSTAB', 'RUNENSTEIN', 'MAGIERTURM', 'KRISTALLHÖHLE', 'GOBLIN', 'SCHWERT', 'ZAUBERTRANK', 'VERLIES', 'PHÖNIX', 'EINHORN'],
+        Code: ['VARIABLE', 'SCHLEIFE', 'FUNKTION', 'COMPILER', 'ALGORITHMUS', 'DATENBANK', 'BROWSER', 'SKRIPT', 'FEHLERSUCHE', 'QUELLTEXT']
+    };
+    const ABC = 'ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜ'.split('');
+    let word = '', got = new Set(), miss = 0, streak = 0, over = false;
+    const parts = X.$$('#parts > *');
+    function best() { const b = X.best('galgen'); $('#best').textContent = b == null ? '–' : b + ' Wörter'; }
+    function render() {
+        $('#word').textContent = word.split('').map(c => got.has(c) || over ? c : '_').join(' ');
+        parts.forEach((p, i) => p.classList.toggle('is-on', i < miss));
+        $('#h-miss').textContent = miss + '/8'; $('#h-streak').textContent = streak;
+    }
+    function start() {
+        const cat = X.pick(Object.keys(W)); word = X.pick(W[cat]); got = new Set(); miss = 0; over = false;
+        $('#h-cat').textContent = cat; G.overlay('#ov').hide();
+        X.$$('#keys button').forEach(b => { b.disabled = false; b.className = ''; }); render(); best();
+    }
+    function guess(c) {
+        if (over || got.has(c) || !ABC.includes(c)) return;
+        got.add(c); const b = $('#keys [data-c="' + c + '"]'); if (b) b.disabled = true;
+        if (word.includes(c)) { if (b) b.className = 'is-hit'; G.sfx.coin(); }
+        else { if (b) b.className = 'is-miss'; miss++; G.sfx.hit(); }
+        const solved = word.split('').every(ch => got.has(ch));
+        if (solved || miss >= 8) {
+            over = true;
+            if (solved) { streak++; X.score('galgen', streak); G.sfx.win(); G.overlay('#ov').show({ icon: '🎉', title: 'Richtig: ' + word, text: 'Serie: ' + streak, button: 'Nächstes Wort', onClick: start }); }
+            else { streak = 0; G.sfx.die(); G.overlay('#ov').show({ icon: '💀', title: 'Das Wort war ' + word, text: 'Die Serie beginnt von vorne.', button: 'Neues Wort', onClick: start }); }
+        }
+        render(); best();
+    }
+    $('#keys').innerHTML = ABC.map(c => '<button type="button" data-c="' + c + '">' + c + '</button>').join('');
+    $('#keys').addEventListener('click', e => { const b = e.target.closest('button'); if (b) guess(b.dataset.c); });
+    document.addEventListener('keydown', e => { if (e.ctrlKey || e.metaKey || e.altKey) return; const c = e.key.toUpperCase(); if (c.length === 1) guess(c); else if (e.key === 'Enter' && over) start(); });
+    $('#b-new').addEventListener('click', () => { streak = 0; start(); });
+    start();
+});
+</script>
+</body>
+</html>

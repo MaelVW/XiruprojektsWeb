@@ -9,6 +9,10 @@
     <script src="../assets/js/site.js"></script>
     <script src="../assets/js/core.js"></script>
     <style>
+        .modes { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 1rem; }
+        .mode { display: grid; gap: .35rem; text-align: left; cursor: pointer; font: inherit; color: var(--text); border: 2px solid var(--border); }
+        .mode.is-active { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent); }
+        .mode__icon { font-size: 2rem; }
         .themes { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); }
         .theme { cursor: pointer; text-align: left; font: inherit; color: var(--text); padding: 0; overflow: hidden; }
         .theme__preview { height: 92px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; padding: 12px; }
@@ -37,6 +41,15 @@
         <p class="lead">Mach es dir gemütlich. Einstellungen gelten für <span id="who">dich</span> in diesem Browser.</p>
     </header>
 
+    <h2>Spielmodus</h2>
+    <div class="modes mb-4" id="modes">
+        <button class="card mode" type="button" data-mode="abenteuer"><span class="mode__icon">⚙</span><strong>Abenteuer</strong>
+            <span class="small muted">Bau dir in der Werft einen Mech, reise von Insel zu Insel, handle, kämpfe in der Arena. Inseln und Module schaltest du nach und nach frei.</span></button>
+        <button class="card mode" type="button" data-mode="entdecker"><span class="mode__icon">🧭</span><strong>Entdecker</strong>
+            <span class="small muted">Ohne Mech und ohne Werft: Alle Inseln, Orte und Module sind sofort offen. Für alle, die einfach nur stöbern wollen.</span></button>
+    </div>
+    <p class="small muted mt-0 mb-4">Du kannst jederzeit wechseln. Dein Mech-Fortschritt bleibt erhalten und ist wieder da, sobald du zurück in den Abenteuer-Modus gehst.</p>
+
     <h2>Design</h2>
     <div class="themes mb-4" id="themes"></div>
 
@@ -62,6 +75,21 @@
                 <button class="btn btn--sm btn--danger" id="wipe" type="button">Alle Xiru-Daten löschen</button>
             </div>
             <p class="form-msg" id="data-msg"></p>
+        </section>
+        <section class="card">
+            <h2>🍪 Cookie-Sicherung</h2>
+            <p class="muted small">Zusätzlich zum Browser-Speicher legt die Website zwei kleine, echte Cookies an – nur wenn du „Alles erlauben“ gewählt hast:</p>
+            <ul class="small">
+                <li><b>xiru_sicherung_…</b> – eine Notfall-Sicherung deines Fortschritts (XP, Kristalle, Orte, Module, Inseln, wichtigste Mech-Teile). Wird der Browser-Speicher einmal geleert, kann die Website damit wiederherstellen.</li>
+                <li><b>xiru_zuletzt</b> – welches Konto zuletzt gespielt hat und in welchem Modus, damit der Login-Screen dich begrüssen kann.</li>
+            </ul>
+            <p class="small" id="ck-state"></p>
+            <div class="row mt-2">
+                <button class="btn btn--sm" id="ck-save" type="button">💾 Jetzt sichern</button>
+                <button class="btn btn--sm" id="ck-restore" type="button">♻ Aus Cookie wiederherstellen</button>
+                <button class="btn btn--sm btn--ghost" id="ck-del" type="button">Cookies löschen</button>
+            </div>
+            <p class="small muted mt-1">Keine Passwörter, keine Tracker. Cookies werden technisch bei jedem Seitenaufruf an den Webserver mitgeschickt – sie enthalten aber nur Spielstände in Codeform. Mehr in der <a href="../datenschutz.html">Datenschutzerklärung</a>.</p>
         </section>
     </div>
 </main>
@@ -114,6 +142,35 @@ XIRU.ready(function () {
     });
     $('#test-sound').addEventListener('click', () => { XIRU.audio(); setTimeout(() => { [523, 659, 784].forEach((f, i) => setTimeout(() => XIRU.beep(f, .1, 'triangle', .07), i * 100)); }, 50); if (XIRU.setting('sound') === false) XIRU.toast('Töne sind aus', 'Schalte sie oben ein.', { icon: '🔇' }); });
 
+    // Spielmodus
+    function renderModes() { XIRU.$$('[data-mode]').forEach(b => b.classList.toggle('is-active', b.dataset.mode === XIRU.mode())); }
+    $('#modes').addEventListener('click', e => {
+        const b = e.target.closest('[data-mode]'); if (!b || b.dataset.mode === XIRU.mode()) return;
+        XIRU.setting('modus', b.dataset.mode); renderModes();
+        XIRU.toast(b.dataset.mode === 'entdecker' ? '🧭 Entdecker-Modus' : '⚙ Abenteuer-Modus', b.dataset.mode === 'entdecker' ? 'Alle Inseln und Orte sind jetzt offen.' : 'Willkommen zurück in der Werft!', { icon: b.dataset.mode === 'entdecker' ? '🧭' : '⚓' });
+    });
+    renderModes();
+
+    // Cookie-Sicherung
+    function renderCookies() {
+        const okC = XIRU.cookie.ok(), b = XIRU.backup.read(), c = XIRU.consent.get();
+        $('#ck-state').innerHTML = !okC
+            ? (location.protocol === 'file:' ? '⚠ Direkt von der Festplatte geöffnet: Browser erlauben dort keine Cookies.' : !c || !c.all ? '⚠ Nicht aktiv – dafür braucht es „Alles erlauben“ bei der Speicher-Einwilligung.' : '⚠ Dein Browser blockiert Cookies.')
+            : b ? '✔ Aktiv · letzte Sicherung: ' + new Date(b.t).toLocaleString('de-CH') + ' (Level ' + XIRU.levelInfo(b.xp).level + ', ' + XIRU.fmt(b.xp) + ' XP)' : '✔ Aktiv · noch keine Sicherung geschrieben.';
+        ['ck-save', 'ck-restore'].forEach(id => { $('#' + id).disabled = !okC; });
+        $('#ck-restore').disabled = !okC || !b;
+    }
+    $('#ck-save').addEventListener('click', () => { XIRU.toast(XIRU.backup.write(true) ? 'Gesichert' : 'Sicherung fehlgeschlagen', '', { icon: '🍪' }); renderCookies(); });
+    $('#ck-restore').addEventListener('click', () => {
+        const r = XIRU.backup.restore(); if (!r) return; XIRU.backup.write(true);
+        XIRU.toast('Wiederhergestellt', '+' + r.xp + ' XP · ' + r.eggs + ' Kristalle · ' + r.pages + ' Orte · ' + r.items + ' Teile', { icon: '🍪' }); renderCookies();
+    });
+    $('#ck-del').addEventListener('click', () => {
+        document.cookie.split('; ').map(x => x.split('=')[0]).filter(n => n.startsWith('xiru_')).forEach(n => XIRU.cookie.del(n));
+        XIRU.toast('Cookies gelöscht', 'Ab dem nächsten Seitenaufruf wird wieder gesichert, solange „Alles erlauben“ gilt.', { icon: '🍪' }); renderCookies();
+    });
+    renderCookies();
+
     // Speicherverbrauch
     {
         const keys = XIRU.store.keys();
@@ -130,7 +187,7 @@ XIRU.ready(function () {
             '<div class="row mt-2"><button class="btn btn--danger" id="ok">Zurücksetzen</button><button class="btn" data-close>Abbrechen</button></div>');
         m.el.querySelector('#ok').addEventListener('click', () => {
             ['skills', 'eggs', 'visited', 'days', 'scores', 'rewards', 'data'].forEach(k => { P[k] = {}; });
-            P.xp = 0; P.bonus = 0; XIRU.persist(); location.reload();
+            P.xp = 0; P.bonus = 0; XIRU.persist(); XIRU.cookie.del(XIRU.backup.name()); location.reload();
         });
     });
     $('#wipe').addEventListener('click', () => {
@@ -139,6 +196,7 @@ XIRU.ready(function () {
         m.el.querySelector('#ok').addEventListener('click', () => {
             if (m.el.querySelector('#confirm').value.trim().toUpperCase() !== 'LÖSCHEN') { m.el.querySelector('#confirm').focus(); return; }
             [localStorage, sessionStorage].forEach(st => { try { Object.keys(st).filter(k => k.startsWith('xiru:')).forEach(k => st.removeItem(k)); } catch (e) { } });
+            document.cookie.split('; ').map(x => x.split('=')[0]).filter(n => n.startsWith('xiru_')).forEach(n => XIRU.cookie.del(n));
             location.href = XIRU.url('index.html');
         });
     });

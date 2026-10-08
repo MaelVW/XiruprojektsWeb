@@ -4,78 +4,86 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Weltkarte · Xiruprojekts</title>
-    <meta name="description" content="Alle Regionen der Xiru-Welt – und was du davon schon entdeckt hast.">
+    <meta name="description" content="Sektaria – die Inseln der Nebelsee als Pixel-Seekarte: alle Inseln, Gebäude und Seewege. Reise mit deinem Mech von Insel zu Insel.">
     <link rel="stylesheet" href="assets/css/main.css">
+    <link rel="stylesheet" href="assets/css/welt.css">
     <script src="assets/js/site.js"></script>
     <script src="assets/js/core.js"></script>
+    <script src="assets/js/mech-art.js"></script>
+    <script src="assets/js/weltkarte-art.js"></script>
+    <script src="assets/js/weltkarte-pixel.js"></script>
+    <script src="assets/js/pixel-icons.js"></script>
+    <script src="assets/js/werft.js"></script>
     <style>
-        .map-wrap { position: relative; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); background: radial-gradient(ellipse at 50% 40%, color-mix(in srgb, #0ea5e9 14%, var(--bg-2)), var(--bg-2)); }
-        .map-wrap svg { width: 100%; height: auto; display: block; touch-action: manipulation; }
-        .wave { fill: none; stroke: color-mix(in srgb, #38bdf8 25%, transparent); stroke-width: 1.2; animation: waveMove 9s linear infinite; }
-        @keyframes waveMove { to { transform: translateX(-60px); } }
-        .route { fill: none; stroke: var(--text-faint); stroke-width: 1.5; stroke-dasharray: 2 7; opacity: .55; animation: routeMove 6s linear infinite; }
-        @keyframes routeMove { to { stroke-dashoffset: -90; } }
-        .island { transition: transform .4s var(--ease); transform-box: fill-box; transform-origin: center; }
-        .island:hover { transform: scale(1.03); }
-        .island__land { stroke-width: 2; }
-        .island__label { font: 800 15px var(--font); fill: var(--text); paint-order: stroke; stroke: var(--bg-2); stroke-width: 4px; pointer-events: none; }
-        .island__sub { font: 600 11px var(--font); fill: var(--text-muted); paint-order: stroke; stroke: var(--bg-2); stroke-width: 3px; pointer-events: none; }
-        .dot { cursor: pointer; transition: r .2s; }
-        .dot:hover { r: 7; }
-        .dot.unseen { opacity: .45; }
-        .dot.hiddenp { cursor: help; }
-        .fog { filter: url(#fog); }
-        .cloud { fill: var(--text-muted); opacity: .3; filter: url(#cloud); animation: drift var(--t, 60s) ease-in-out infinite alternate; transform-box: fill-box; pointer-events: none; }
-        @keyframes drift { from { transform: translate(0, 0); } to { transform: translate(var(--dx, 40px), var(--dy, 10px)); } }
-        .unknown-land { fill: var(--text-faint); opacity: .12; cursor: help; transition: opacity .4s; }
-        .unknown-land:hover { opacity: .22; }
-        .unknown-label { font: 700 14px var(--font); fill: var(--text-faint); opacity: .55; letter-spacing: .3em; pointer-events: none; }
-        .fog-title { font: 600 13px var(--font); fill: var(--text-faint); letter-spacing: .5em; text-transform: uppercase; opacity: .5; }
-        .monster { cursor: pointer; animation: monster 14s ease-in-out infinite; }
-        @keyframes monster { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(40px, -8px); } }
-        .portal { cursor: pointer; animation: spin 6s linear infinite; transform-box: fill-box; transform-origin: center; }
-        .tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--border-strong); border-radius: 8px; padding: .45rem .7rem; font-size: .85rem; box-shadow: var(--shadow); transform: translate(-50%, calc(-100% - 12px)); white-space: nowrap; z-index: 3; }
-        .tip small { display: block; color: var(--text-muted); }
+        .atlas { position: relative; height: min(76vh, 860px); min-height: 420px; overflow: hidden; background: #061a2e; touch-action: none; user-select: none; cursor: grab;
+            box-shadow: 0 0 0 3px #000, 0 0 0 6px #7a6230, 8px 8px 0 6px rgba(0,0,0,.45); }
+        .atlas.is-dragging { cursor: grabbing; }
+        .wk-isle { cursor: pointer; }
+        .wk-isle:focus { outline: none; }
+        .wk-isle:hover path, .wk-isle:focus-visible path { fill: rgba(253, 230, 138, .12); }
+        .wk-dragon { cursor: pointer; }
+        .sel-ring { fill: none; stroke: #fde68a; stroke-width: 6; stroke-dasharray: 12 12; pointer-events: none; animation: ringDash 1.2s steps(4) infinite; }
+        @keyframes ringDash { to { stroke-dashoffset: -24; } }
+        html.no-anim .sel-ring { animation: none; }
+        .px-ui { background: #13243a; color: #e2e8f0; box-shadow: 0 0 0 3px #000, 0 0 0 5px #e8c56a, 5px 5px 0 5px rgba(0,0,0,.5); }
+        .px-ui h2, .px-ui b { color: #f4e3ae; }
+        .px-ui h2 { font: 800 1.15rem Consolas, "Cascadia Code", monospace; letter-spacing: .08em; text-transform: uppercase; margin: 0; }
+        .atlas__ctrl { position: absolute; right: .9rem; top: .9rem; display: flex; flex-direction: column; gap: .55rem; z-index: 2; }
+        .atlas__ctrl button { width: 40px; height: 40px; border: 0; background: #13243a; color: #f4e3ae; font: 800 1.2rem Consolas, monospace; cursor: pointer; box-shadow: 0 0 0 3px #000, 0 0 0 5px #e8c56a; display: grid; place-items: center; }
+        .atlas__ctrl button:hover { background: #1e3654; }
+        .atlas__ctrl button:active { transform: translate(1px, 1px); }
+        .atlas__mech { position: absolute; left: .9rem; top: .9rem; z-index: 2; width: min(300px, calc(100% - 5rem)); padding: .65rem .8rem; font-size: .82rem; }
+        .atlas__mech .row { gap: .35rem; margin-top: .45rem; }
+        .chip-px { display: inline-flex; align-items: center; gap: .3rem; padding: .15rem .45rem; background: #0b1726; box-shadow: 0 0 0 2px #000; font: 700 .75rem Consolas, monospace; color: #e2e8f0; text-decoration: none; }
+        a.chip-px:hover { background: #1e3654; }
+        .atlas__panel { position: absolute; right: .9rem; bottom: .9rem; z-index: 2; width: min(380px, calc(100% - 1.8rem)); max-height: calc(100% - 1.8rem); overflow: auto; padding: 1rem; }
+        .atlas__panel .muted { color: #94a3b8; }
+        .atlas__panel a { color: #7dd3fc; }
+        .px-btn { display: flex; gap: .5rem; align-items: center; justify-content: center; width: 100%; padding: .55rem .7rem; border: 0; cursor: pointer; font: 800 .85rem Consolas, monospace; letter-spacing: .05em; text-transform: uppercase;
+            background: #e8c56a; color: #1a1000; box-shadow: inset -3px -3px 0 rgba(0,0,0,.35), inset 3px 3px 0 rgba(255,255,255,.35), 0 0 0 3px #000; }
+        .px-btn:disabled { background: #475569; color: #cbd5e1; cursor: not-allowed; }
+        .px-btn:active:not(:disabled) { transform: translate(1px, 1px); }
+        .px-x { border: 0; background: #0b1726; color: #f4e3ae; width: 30px; height: 30px; font: 800 1rem Consolas, monospace; cursor: pointer; box-shadow: 0 0 0 2px #000; }
+        .bldg { display: grid; gap: .45rem; margin: .8rem 0; }
+        .bldg button { display: flex; gap: .65rem; align-items: center; padding: .45rem .6rem; border: 0; background: #0b1726; color: #f1f5f9; font: inherit; text-align: left; cursor: pointer; box-shadow: 0 0 0 2px #000, 0 0 0 3px #2d4a6b; }
+        .bldg button:hover { background: #1e3654; box-shadow: 0 0 0 2px #000, 0 0 0 3px #e8c56a; }
+        .plist { list-style: none; padding: 0; margin: .4rem 0 0; font-size: .82rem; columns: 2; column-gap: 1rem; }
+        .plist li { break-inside: avoid; padding: .1rem 0; }
+        .plist li.unseen { color: #64748b; }
+        .dot { display: inline-block; width: 6px; height: 6px; margin-right: .35rem; background: #e8c56a; box-shadow: 0 0 0 1px #000; vertical-align: 1px; }
+        .unseen .dot { background: transparent; box-shadow: inset 0 0 0 1px #64748b; }
+        .tipbox { position: absolute; pointer-events: none; z-index: 3; padding: .35rem .6rem; font: 700 .8rem Consolas, monospace; transform: translate(-50%, calc(-100% - 16px)); white-space: nowrap; }
+        .tipbox small { display: block; color: #94a3b8; font-weight: 400; }
+        .tok { filter: drop-shadow(0 0 6px rgba(63, 243, 255, .7)); }
+        @media (max-width: 720px) {
+            .atlas { height: 70vh; }
+            .atlas__mech { font-size: .74rem; padding: .45rem .55rem; }
+            .atlas__panel { left: .7rem; right: .7rem; width: auto; max-height: 55%; }
+        }
         .lists { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); }
         .lists ul { list-style: none; padding: 0; margin: .5rem 0 0; font-size: .88rem; max-height: 220px; overflow-y: auto; }
         .lists li { padding: .2rem 0; }
         .lists li.unseen { color: var(--text-faint); }
-        .legend { display: flex; flex-wrap: wrap; gap: 1rem; font-size: .85rem; color: var(--text-muted); margin-top: .75rem; }
-        .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: .35rem; vertical-align: -1px; }
     </style>
 </head>
 <body>
 <main class="content content--wide">
     <header class="page-head">
-        <span class="eyebrow">◆ Zentrum</span>
-        <h1>Weltkarte</h1>
-        <p class="lead">Jeder Punkt ist ein Ort. Leuchtende Punkte hast du schon besucht. Manche Inseln verbergen mehr, als man sieht.</p>
+        <span class="eyebrow">Zentrum · Seekarte</span>
+        <h1>Sektaria</h1>
+        <p class="lead" id="lead">Die Inseln der Nebelsee. Zieh die Karte mit der Maus oder dem Finger, zoom mit dem Mausrad. Klick auf eine Insel, um ihre Gebäude zu sehen – und reise mit deinem Mech dorthin.</p>
     </header>
 
-    <div class="map-wrap" id="wrap">
-        <svg id="map" viewBox="-170 -120 1340 940" role="img" aria-label="Weltkarte der Xiru-Welt">
-            <defs>
-                <filter id="fog"><feTurbulence type="fractalNoise" baseFrequency=".02" numOctaves="3" seed="7"/><feDisplacementMap in="SourceGraphic" scale="18"/><feGaussianBlur stdDeviation="3"/></filter>
-                <radialGradient id="glow"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
-                <filter id="cloud" x="-50%" y="-50%" width="200%" height="200%"><feTurbulence type="fractalNoise" baseFrequency=".012" numOctaves="4" seed="3" result="n"/>
-                    <feDisplacementMap in="SourceGraphic" in2="n" scale="70"/><feGaussianBlur stdDeviation="18"/></filter>
-                <radialGradient id="vignette" cx="50%" cy="48%" r="62%"><stop offset=".55" stop-color="var(--bg-2)" stop-opacity="0"/><stop offset=".86" stop-color="var(--bg-2)" stop-opacity=".75"/><stop offset="1" stop-color="var(--bg-2)" stop-opacity=".97"/></radialGradient>
-            </defs>
-            <g id="waves"></g>
-            <g id="routes"></g>
-            <g id="islands"></g>
-            <g id="unknown"></g>
-            <g id="fog"></g>
-            <rect x="-170" y="-120" width="1340" height="940" fill="url(#vignette)" pointer-events="none"/>
-            <g id="extras"></g>
-        </svg>
-        <div class="tip" id="tip" hidden></div>
-    </div>
-    <div class="legend">
-        <span><i style="background:var(--rc)"></i>besucht</span>
-        <span><i style="background:var(--text-faint)"></i>noch nicht besucht</span>
-        <span>🔒 per Modul gesperrt</span>
-        <span id="legend-skill"></span>
+    <div class="atlas" id="atlas" role="img" aria-label="Pixel-Seekarte von Sektaria">
+        <div class="atlas__mech px-ui" id="mechbox"></div>
+        <div class="atlas__ctrl">
+            <button type="button" id="z-in" title="Hineinzoomen" aria-label="Hineinzoomen">+</button>
+            <button type="button" id="z-out" title="Herauszoomen" aria-label="Herauszoomen">−</button>
+            <button type="button" id="z-fit" title="Ganze Karte" aria-label="Ganze Karte"><i data-px="st-R"></i></button>
+            <button type="button" id="z-mech" title="Zu meinem Mech" aria-label="Zu meinem Mech"><i data-px="z-anker"></i></button>
+        </div>
+        <section class="atlas__panel px-ui" id="panel" hidden aria-live="polite"></section>
+        <div class="tipbox px-ui" id="tip" hidden></div>
     </div>
 
     <h2 class="mt-4">Alle Orte</h2>
@@ -83,146 +91,181 @@
 </main>
 <script>
 XIRU.ready(function () {
-    const P = XIRU.profile(), NS = 'http://www.w3.org/2000/svg';
-    const LAYOUT = { hardware: [200, 250], studio: [430, 115], arcade: [790, 205], zentrum: [500, 340], konto: [645, 470], ki: [850, 505], mixer: [560, 605], werkzeuge: [275, 540], geheim: [100, 625] };
-    const kompass = XIRU.hasSkill('e1'), karto = XIRU.hasSkill('e3');
-    XIRU.$('#legend-skill').textContent = karto ? '🧭 Kartograph: versteckte Orte als „?"' : kompass ? '🧭 Kompass aktiv' : '';
-    const el = (tag, attrs, parent) => { const n = document.createElementNS(NS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); if (parent) parent.appendChild(n); return n; };
-    const rng = s => () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; };
+    const X = XIRU, M = X.mech, W = X.werft, P = X.profile(), NS = 'http://www.w3.org/2000/svg', PX = W.px;
+    const atlas = X.$('#atlas'), panel = X.$('#panel'), tip = X.$('#tip');
+    const easy = X.easy(), kompass = X.hasSkill('e1'), karto = X.hasSkill('e3');
+    const visitedSecret = X.pages.some(p => p.r === 'geheim' && P.visited[p.p]);
+    const anim = X.setting('anim') !== false;
+    let sel = null, moved = false, ctl = null, tokCv = null, tokT = null;
+    W.pxify(atlas);
 
-    // Wellen
-    const waves = XIRU.$('#waves');
-    for (let y = -100; y < 820; y += 48) {
-        let d = 'M-230 ' + y;
-        for (let x = -230; x < 1240; x += 60) d += ' q15 -6 30 0 t30 0';
-        el('path', { d, class: 'wave', style: 'animation-duration:' + (7 + (y % 5)) + 's;opacity:' + (.4 + (y % 3) * .2) }, waves);
-    }
-    // Routen vom Zentrum aus
-    const routes = XIRU.$('#routes'), [zx, zy] = LAYOUT.zentrum;
-    Object.keys(LAYOUT).filter(k => k !== 'zentrum' && k !== 'geheim').forEach(k => {
-        const [x, y] = LAYOUT[k], mx = (x + zx) / 2 + (y - zy) * .15, my = (y + zy) / 2 - (x - zx) * .15;
-        el('path', { d: 'M' + zx + ' ' + zy + ' Q' + mx + ' ' + my + ' ' + x + ' ' + y, class: 'route' }, routes);
-    });
-
-    const tip = XIRU.$('#tip'), wrap = XIRU.$('#wrap');
-    function showTip(evt, html) {
-        const r = wrap.getBoundingClientRect();
-        tip.innerHTML = html; tip.hidden = false;
-        tip.style.left = (evt.clientX - r.left) + 'px'; tip.style.top = (evt.clientY - r.top) + 'px';
-    }
-    const hideTip = () => { tip.hidden = true; };
-
-    const islands = XIRU.$('#islands');
-    XIRU.regions.forEach((reg, ri) => {
-        const pages = XIRU.pages.filter(p => p.r === reg.id);
-        const isSecret = reg.id === 'geheim';
-        const veiled = !XIRU.mech.discovered(reg.id);   // noch keine Expedition dorthin
-        const visibleDots = pages.filter(p => !p.hidden || P.visited[p.p] || karto);
-        const n = Math.max(isSecret ? 8 : 4, visibleDots.length);
-        const spacing = 8.2, inner = spacing * Math.sqrt(n), R = Math.max(46, inner + 26);
-        const [cx, cy] = LAYOUT[reg.id];
-        const g = el('g', { class: 'island' }, islands);
-        // Inselform aus Zufallsradien (pro Region immer gleich)
-        const rand = rng(ri * 977 + 13), pts = [], N = 22;
-        for (let i = 0; i < N; i++) { const a = i / N * Math.PI * 2, rr = R * (0.86 + rand() * .28); pts.push([cx + Math.cos(a) * rr, cy + Math.sin(a) * rr * .82]); }
-        let d = 'M' + ((pts[0][0] + pts[N - 1][0]) / 2) + ' ' + ((pts[0][1] + pts[N - 1][1]) / 2);
-        pts.forEach((p, i) => { const q = pts[(i + 1) % N]; d += ' Q' + p[0] + ' ' + p[1] + ' ' + (p[0] + q[0]) / 2 + ' ' + (p[1] + q[1]) / 2; });
-        el('path', { d, fill: 'color-mix(in srgb, #38bdf8 18%, transparent)', transform: 'translate(0,6) scale(1)', opacity: .6 }, g);
-        const land = el('path', { d, class: 'island__land' + ((isSecret && !pages.some(p => P.visited[p.p])) || veiled ? ' fog' : ''), fill: 'color-mix(in srgb, ' + reg.color + ' 16%, var(--surface))', stroke: reg.color }, g);
-        if (isSecret && !pages.some(p => P.visited[p.p])) land.setAttribute('opacity', '.55');
-        // Punkte im Sonnenblumen-Muster
-        const seenCount = pages.filter(p => P.visited[p.p]).length;
-        if (veiled) land.setAttribute('opacity', '.5');
-        (veiled ? [] : visibleDots).forEach((p, i) => {
-            const a = i * 2.39996, rr = spacing * Math.sqrt(i + .5);
-            const x = cx + Math.cos(a) * rr, y = cy + Math.sin(a) * rr * .82 + 6;
-            const seen = !!P.visited[p.p], locked = !XIRU.isUnlocked(p), hiddenUnknown = p.hidden && !seen;
-            const c = el('circle', { cx: x, cy: y, r: 4.6, class: 'dot' + (seen ? '' : ' unseen') + (hiddenUnknown ? ' hiddenp' : ''), fill: seen ? reg.color : hiddenUnknown ? 'var(--warning)' : 'var(--text-faint)', tabindex: 0 }, g);
-            const label = hiddenUnknown ? '<b>???</b><small>' + XIRU.esc(p.d) + '</small>'
-                : '<b>' + (locked ? '🔒 ' : '') + XIRU.esc(seen ? p.t : (p.hw ? p.t : p.t)) + '</b><small>' + (seen ? 'besucht' : 'noch nicht besucht') + (locked ? ' · Modul nötig' : '') + '</small>';
-            c.addEventListener('pointerenter', e => showTip(e, label));
-            c.addEventListener('pointermove', e => showTip(e, label));
-            c.addEventListener('pointerleave', hideTip);
-            const go = () => { if (!hiddenUnknown) location.href = XIRU.url(p.p); };
-            c.addEventListener('click', go);
-            c.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
+    /* ── Pixel-Karte einsetzen ── */
+    function build() {
+        if (ctl) { clearInterval(tokT); ctl.destroy(); }
+        ctl = X.mapPix.mount(atlas, { discovered: id => M.discovered(id), visitedSecret, anim });
+        atlas.insertBefore(ctl.cam, atlas.firstChild);
+        X.$$('.wk-isle', ctl.ov).forEach(g => {
+            const id = g.dataset.isle;
+            g.addEventListener('click', () => { if (!moved) select(id); });
+            g.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(id); } });
+            hover(g, () => tipFor(id));
         });
-        if (isSecret && !visibleDots.length) {
-            for (let i = 0; i < 6; i++) el('circle', { cx: cx + (rand() - .5) * 50, cy: cy + (rand() - .5) * 35, r: 3, fill: 'var(--text-faint)', opacity: .3 }, g);
+        X.$$('.wk-dragon', ctl.ov).forEach(d => hover(d, () => '<b>Hic sunt dracones</b><small>Hier sind Drachen.</small>'));
+        X.$$('.wk-unknown', ctl.ov).forEach(u => {
+            hover(u, () => '<b>Unbekanntes Land</b><small>' + X.pick(['Noch im Nebel …', 'Hier ist die Karte noch leer.', 'Unerforschtes Land.', 'Man hört leises Laufwerk-Rattern.']) + '</small>');
+            if (u.dataset.u === '5') X.riss.bind(1, u, 5);
+        });
+        // Riss in der Karte (Weltenwanderer)
+        if (X.hasSkill('e6')) {
+            const g = document.createElementNS(NS, 'g'); g.setAttribute('transform', 'translate(2150 300)'); g.style.cursor = 'pointer';
+            g.innerHTML = '<rect x="-30" y="-30" width="60" height="60" fill="#000" stroke="#a78bfa" stroke-width="6" stroke-dasharray="12 6"/><rect x="-14" y="-14" width="28" height="28" fill="#f472b6"/>';
+            g.addEventListener('click', () => { location.href = X.url('geheim/void.html'); });
+            hover(g, () => '<b>Ein Riss in der Karte</b><small>Weltenwanderer dürfen hindurch.</small>');
+            ctl.layer('top').appendChild(g);
         }
-        // Beschriftung
-        const ly = cy - R * .82 - 12;
-        const t = el('text', { x: cx, y: ly, 'text-anchor': 'middle', class: 'island__label' }, g); t.textContent = reg.icon + ' ' + reg.name;
-        const visibleTotal = pages.filter(p => !p.hidden).length;
-        const sub = el('text', { x: cx, y: ly + 15, 'text-anchor': 'middle', class: 'island__sub' }, g);
-        sub.textContent = veiled ? '🌫 Expedition nötig' : isSecret ? (seenCount ? seenCount + ' Orte gefunden' : 'unerforscht') :
-            seenCount + '/' + visibleTotal + (kompass ? ' · ' + (visibleTotal - pages.filter(p => !p.hidden && P.visited[p.p]).length) + ' unentdeckt' : '');
-        const idx = pages.find(p => /index\.html$/.test(p.p));
-        land.style.cursor = idx ? 'pointer' : 'default';
-        land.addEventListener('click', () => { if (veiled) location.href = XIRU.url('konto/skilltree.html#reisen'); else if (idx) location.href = XIRU.url(idx.p); });
-        if (veiled) {
-            const tipTxt = '<b>' + XIRU.esc(reg.name) + ' liegt im Nebel</b><small>Benötigt: ' + XIRU.esc(XIRU.mech.islandReqText(reg.id)) + ' · Klick: zur Werft</small>';
-            land.addEventListener('pointerenter', e => showTip(e, tipTxt)); land.addEventListener('pointermove', e => showTip(e, tipTxt)); land.addEventListener('pointerleave', hideTip);
+        applyView(); drawOverlay();
+    }
+    function tipFor(id) {
+        const i = M.isle(id), secret = i.secret && !visitedSecret;
+        if (secret) return '<b>???</b><small>Ein Ort im Nebel</small>';
+        const seen = M.discovered(id);
+        return '<b>' + X.esc(i.n) + '</b><small>' + (easy ? 'Klick: Gebäude ansehen' : seen ? (M.pos() === id ? 'Dein Mech ist hier' : Math.round(M.travelSecs(id)) + ' s Reise') : 'Expedition: ' + X.esc(M.islandReqText(id))) + '</small>';
+    }
+
+    /* ── Mech-Figur (Pixel-Sprite) und Auswahl ── */
+    function drawOverlay() {
+        const top = ctl.layer('route'); top.innerHTML = '';
+        if (sel) {
+            const i = M.isle(sel), r = document.createElementNS(NS, 'rect');
+            [['x', i.x - i.s * 1.3], ['y', i.y - i.s * 1.02], ['width', i.s * 2.6], ['height', i.s * 2.04]].forEach(([k, v]) => r.setAttribute(k, Math.round(v)));
+            r.setAttribute('class', 'sel-ring'); top.appendChild(r);
         }
+        if (tokCv) { tokCv.remove(); tokCv = null; } clearInterval(tokT);
+        if (easy) return;
+        const pos = M.isle(M.pos()), S = ctl.S;
+        tokCv = document.createElement('canvas'); tokCv.width = 44; tokCv.height = 44;
+        ctl.place(tokCv, Math.round((pos.x + pos.s * .38) / S) * S, Math.round((pos.y + pos.s * .02) / S) * S, 44 * S, 44 * S, 'tok' + (anim ? ' pm-bob' : ''));
+        const paint = () => X.mapPix.mechSprite(tokCv, performance.now() / 1000);
+        paint(); if (anim) tokT = setInterval(() => { if (!document.hidden) paint(); }, 220);
+    }
+
+    /* ── Mech-Status oben links ── */
+    function drawMechBox() {
+        const box = X.$('#mechbox');
+        if (easy) { box.innerHTML = PX('z-kompass', 18) + ' <b>Entdecker-Modus</b><br><span class="small">Alle Inseln sind offen. Klick eine Insel an und betritt ihre Gebäude.</span>'; return; }
+        const st = M.stats(), pos = M.isle(M.pos());
+        box.innerHTML = PX('z-anker', 16) + ' Dein Mech: <b>' + X.esc(pos.n) + '</b>' + (M.ready() ? '' : ' · <span style="color:#fca5a5">nicht fahrbereit</span>') +
+            '<div class="row">' + ['R', 'E', 'S', 'P', 'A'].map(k => '<span class="chip-px" title="' + W.STAT[k] + '">' + W.STAT_I[k] + ' ' + st[k] + '</span>').join('') + '</div>' +
+            '<div class="row"><span class="chip-px">' + PX('schrott') + ' ' + X.fmt(M.scrap()) + '</span><span class="chip-px">' + PX('taler') + ' ' + X.fmt(M.taler()) + '</span><a class="chip-px" href="' + X.url('konto/skilltree.html') + '">' + PX('mat-zahnrad') + ' Werft</a></div>';
+    }
+
+    /* ── Insel-Panel ── */
+    function select(id) {
+        sel = id; drawOverlay();
+        const i = M.isle(id), secret = i.secret && !visitedSecret, seen = M.discovered(id), here = !easy && M.pos() === id;
+        const reg = X.region(i.r), pages = X.pages.filter(p => (i.game ? p.isle === id : p.r === i.r && !p.isle) && (!p.hidden || P.visited[p.p] || karto));
+        let h = '<div class="row"><h2>' + (secret ? '???' : X.esc(i.n)) + '</h2><span class="spacer"></span><button class="px-x" type="button" data-x aria-label="Schliessen">×</button></div>';
+        if (secret) {
+            h += '<p class="small muted mt-1">Ruinen im Nebel. Kein Seeweg führt dorthin – man sagt, nur wer Geheimnisse sammelt, findet einen Eingang.</p>';
+            panel.innerHTML = h; panel.hidden = false; wirePanel(); return;
+        }
+        h += '<p class="small muted mt-1">' + X.esc(i.d || (reg ? reg.desc : '')) + '</p>';
+        if (!easy) {
+            if (here) h += '<p class="small">' + PX('z-anker') + ' <b>Dein Mech liegt hier vor Anker.</b></p>';
+            else if (!seen) h += '<p class="small">' + PX('ev-nebel') + ' <b>Noch im Nebel.</b> Erste Reise braucht: ' + X.esc(M.islandReqText(id)) + (M.canReach(id) ? ' – <span style="color:#86efac">dein Mech schafft das!</span>' : '<br><span style="color:#fca5a5">Es fehlt: ' + X.esc(M.missing(id).join(' · ')) + '</span>') + '</p>';
+            else h += '<p class="small">' + PX('ev-schiff') + ' ' + Math.round(M.dist(M.pos(), id) / 10) + ' Seemeilen · ca. ' + Math.round(M.travelSecs(id)) + ' s Reise von ' + X.esc(W.isleName(M.pos())) + '</p>';
+            if (!here) h += '<button class="px-btn" type="button" data-travel' + (!seen && !M.canReach(id) ? ' disabled' : '') + '>' + PX(seen ? 'ev-schiff' : 'z-kompass') + ' ' + (seen ? 'Hinreisen' : 'Expedition starten') + '</button>';
+        }
+        if (seen || easy) {
+            h += '<div class="bldg">' + i.b.map(b => {
+                const pg = X.pageFor(b[1]), lock = pg && !X.isUnlocked(pg);
+                return '<button type="button" data-enter="' + X.esc(b[1]) + '">' + (X.pix.has(b[2]) ? PX(b[2], 26) : '<span style="width:26px;text-align:center">' + X.esc(b[2]) + '</span>') + '<span><b>' + X.esc(b[0]) + '</b><br><span class="small muted">' + (lock ? 'gesperrt · ' : '') + X.esc(pg ? pg.t : '') + '</span></span></button>';
+            }).join('') + '</div>';
+            if (!i.game && pages.length) {
+                const seenN = pages.filter(p => P.visited[p.p]).length;
+                h += '<p class="small mb-0"><b>Orte auf der Insel:</b> ' + seenN + '/' + pages.length + ' besucht' + (kompass ? ' · ' + (pages.length - seenN) + ' unentdeckt' : '') + '</p><ul class="plist">' +
+                    pages.map(p => { const v = P.visited[p.p], hid = p.hidden && !v; return '<li class="' + (v ? '' : 'unseen') + '"><span class="dot"></span>' + (hid ? '???' : '<a href="' + X.url(p.p) + '">' + X.esc(p.t) + '</a>') + '</li>'; }).join('') + '</ul>';
+            }
+        }
+        panel.innerHTML = h; panel.hidden = false; wirePanel();
+    }
+    function wirePanel() {
+        const close = panel.querySelector('[data-x]'); if (close) close.addEventListener('click', () => { panel.hidden = true; sel = null; drawOverlay(); });
+        const tr = panel.querySelector('[data-travel]'); if (tr) tr.addEventListener('click', () => go(sel, null));
+        X.$$('[data-enter]', panel).forEach(b => b.addEventListener('click', () => {
+            const page = b.dataset.enter, i = M.isle(sel);
+            if (easy || !i.game || M.pos() === sel) { location.href = X.url(page); return; }   // Spiel-Inseln brauchen den Mech vor Ort
+            go(sel, page);
+        }));
+    }
+    function go(id, page) { W.travel(id, { page }).then(r => { if (r && r.arrived) { build(); drawMechBox(); select(id); renderLists(); } }); }
+
+    /* ── Tooltip ── */
+    function hover(el, html) {
+        const show = e => { if (moved) return; const r = atlas.getBoundingClientRect(); tip.innerHTML = html(); tip.hidden = false; tip.style.left = (e.clientX - r.left) + 'px'; tip.style.top = (e.clientY - r.top) + 'px'; };
+        el.addEventListener('pointerenter', show); el.addEventListener('pointermove', show); el.addEventListener('pointerleave', () => { tip.hidden = true; });
+    }
+
+    /* ── Ziehen & Zoomen ── */
+    const VW = 2400, VH = 1600;
+    let vb = { x: 0, y: 0, w: VW };
+    const aspect = () => atlas.clientWidth / Math.max(1, atlas.clientHeight);
+    function applyView() {
+        vb.w = X.clamp(vb.w, 300, VW * 1.1); const h = vb.w / aspect();
+        vb.x = X.clamp(vb.x, -vb.w * .2, VW - vb.w * .8); vb.y = X.clamp(vb.y, -h * .2, VH - h * .8);
+        ctl.setView(vb.x, vb.y, vb.w, h, 'contain');
+    }
+    function fit() { const a = aspect(); vb.w = a > VW / VH ? VH * a : VW; vb.x = (VW - vb.w) / 2; vb.y = (VH - vb.w / a) / 2; applyView(); }
+    function centerOn(x, y, w) { vb.w = w || vb.w; vb.x = x - vb.w / 2; vb.y = y - vb.w / aspect() / 2; applyView(); }
+    function zoom(f, cx, cy) {
+        const r = atlas.getBoundingClientRect(), px = cx == null ? .5 : (cx - r.left) / r.width, py = cy == null ? .5 : (cy - r.top) / r.height;
+        const h = vb.w / aspect(), mx = vb.x + vb.w * px, my = vb.y + h * py;
+        vb.w *= f; vb.x = mx - vb.w * px; vb.y = my - (vb.w / aspect()) * py; applyView();
+    }
+    const ptrs = new Map(); let start = null, pinch = null;
+    atlas.addEventListener('pointerdown', e => {
+        if (e.target.closest('.atlas__ctrl, .atlas__panel, .atlas__mech')) return;
+        ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY }); moved = false;
+        if (ptrs.size === 1) start = { x: e.clientX, y: e.clientY, vx: vb.x, vy: vb.y };
+        if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), w: vb.w }; }
     });
-
-    // Unbekannte Landmassen im Nebel – hier wächst die Welt später weiter
-    const unknown = XIRU.$('#unknown');
-    const SHAPES = [[-70, 40, 95], [1080, 70, 110], [1110, 720, 90], [470, -55, 80], [-90, 430, 85], [760, 770, 75]];
-    SHAPES.forEach(([cx, cy, R], i) => {
-        const rand = rng(4242 + i * 31), pts = [], N = 18;
-        for (let k = 0; k < N; k++) { const a = k / N * Math.PI * 2, rr = R * (0.7 + rand() * .45); pts.push([cx + Math.cos(a) * rr, cy + Math.sin(a) * rr * .75]); }
-        let d = 'M' + ((pts[0][0] + pts[N - 1][0]) / 2) + ' ' + ((pts[0][1] + pts[N - 1][1]) / 2);
-        pts.forEach((p, k) => { const q = pts[(k + 1) % N]; d += ' Q' + p[0] + ' ' + p[1] + ' ' + (p[0] + q[0]) / 2 + ' ' + (p[1] + q[1]) / 2; });
-        const land = el('path', { d, class: 'unknown-land' }, unknown);
-        const lbl = el('text', { x: cx, y: cy + 5, 'text-anchor': 'middle', class: 'unknown-label' }, unknown); lbl.textContent = '???';
-        const msg = XIRU.pick(['Noch im Nebel …', 'Hier entsteht vielleicht bald etwas.', 'Unerforschtes Land.', 'Die Karte ist hier noch leer.', 'Man hört leises Laufwerk-Rattern.']);
-        land.addEventListener('pointerenter', e => showTip(e, '<b>Unbekanntes Land</b><small>' + msg + '</small>'));
-        land.addEventListener('pointerleave', hideTip);
-        if (i === 2) XIRU.riss.bind(1, land, 5);
+    atlas.addEventListener('pointermove', e => {
+        if (!ptrs.has(e.pointerId)) return;
+        ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (ptrs.size === 2 && pinch) { const [a, b] = [...ptrs.values()], d = Math.hypot(a.x - b.x, a.y - b.y); zoom(pinch.w * pinch.d / Math.max(20, d) / vb.w, (a.x + b.x) / 2, (a.y + b.y) / 2); moved = true; return; }
+        if (!start) return;
+        const dx = e.clientX - start.x, dy = e.clientY - start.y;
+        if (!moved && Math.hypot(dx, dy) < 6) return;
+        if (!moved) { moved = true; tip.hidden = true; atlas.classList.add('is-dragging'); try { atlas.setPointerCapture(e.pointerId); } catch (err) { } }
+        const s = atlas.clientWidth / vb.w; vb.x = start.vx - dx / s; vb.y = start.vy - dy / s; applyView();
     });
-    // Nebelbänke rund um die bekannten Inseln
-    const fog = XIRU.$('#fog'), frand = rng(99);
-    for (let i = 0; i < 26; i++) {
-        const a = i / 26 * Math.PI * 2 + frand() * .2;
-        const cx = 500 + Math.cos(a) * (640 + frand() * 90), cy = 350 + Math.sin(a) * (450 + frand() * 70);
-        el('ellipse', { cx, cy, rx: 150 + frand() * 120, ry: 70 + frand() * 60, class: 'cloud',
-            style: '--t:' + (40 + frand() * 50) + 's;--dx:' + ((frand() - .5) * 90) + 'px;--dy:' + ((frand() - .5) * 40) + 'px;animation-delay:-' + (frand() * 40) + 's' }, fog);
-    }
-    // ein paar dünne Schwaden auch zwischen den Inseln
-    for (let i = 0; i < 6; i++) {
-        el('ellipse', { cx: 150 + frand() * 700, cy: 80 + frand() * 560, rx: 90 + frand() * 70, ry: 30 + frand() * 25, class: 'cloud',
-            style: 'opacity:.1;--t:' + (50 + frand() * 40) + 's;--dx:' + ((frand() - .5) * 120) + 'px;--dy:8px' }, fog);
-    }
-    const ft = el('text', { x: 500, y: -78, 'text-anchor': 'middle', class: 'fog-title' }, fog); ft.textContent = 'Unerforschte Gewässer';
+    const end = e => { ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = null; if (!ptrs.size) { start = null; atlas.classList.remove('is-dragging'); setTimeout(() => { moved = false; }, 0); } };
+    atlas.addEventListener('pointerup', end); atlas.addEventListener('pointercancel', end);
+    atlas.addEventListener('wheel', e => { e.preventDefault(); zoom(e.deltaY > 0 ? 1.15 : 1 / 1.15, e.clientX, e.clientY); }, { passive: false });
+    X.$('#z-in').addEventListener('click', () => zoom(1 / 1.3));
+    X.$('#z-out').addEventListener('click', () => zoom(1.3));
+    X.$('#z-fit').addEventListener('click', fit);
+    X.$('#z-mech').addEventListener('click', () => { const i = M.isle(easy ? 'zentrum' : M.pos()); centerOn(i.x, i.y, 900); });
+    addEventListener('resize', () => applyView());
 
-    // Extras: Seeungeheuer und Portal
-    const ex = XIRU.$('#extras');
-    const m = el('g', { class: 'monster', 'data-egg': 'p-seemonster' }, ex);
-    el('path', { d: 'M340 660 q12 -22 24 0 q12 -22 24 0 q12 -22 24 0', fill: 'none', stroke: '#22c55e', 'stroke-width': 6, 'stroke-linecap': 'round' }, m);
-    el('circle', { cx: 414, cy: 652, r: 7, fill: '#22c55e' }, m);
-    el('circle', { cx: 417, cy: 650, r: 1.8, fill: '#000' }, m);
-    m.addEventListener('pointerenter', e => showTip(e, '<b>Hic sunt dracones</b><small>Hier sind Drachen.</small>'));
-    m.addEventListener('pointerleave', hideTip);
-    if (XIRU.hasSkill('e6')) {
-        const pg = el('g', { class: 'portal' }, ex);
-        el('circle', { cx: 960, cy: 60, r: 22, fill: 'none', stroke: '#a78bfa', 'stroke-width': 3, 'stroke-dasharray': '10 6' }, pg);
-        el('circle', { cx: 960, cy: 60, r: 12, fill: '#000', stroke: '#f472b6', 'stroke-width': 2 }, pg);
-        pg.addEventListener('click', () => { location.href = XIRU.url('geheim/void.html'); });
-        pg.addEventListener('pointerenter', e => showTip(e, '<b>Ein Riss in der Karte</b><small>Weltenwanderer dürfen hindurch.</small>'));
-        pg.addEventListener('pointerleave', hideTip);
+    /* ── Listenansicht (auch für Screenreader und kleine Bildschirme) ── */
+    function renderLists() {
+        X.$('#lists').innerHTML = X.regions.map(reg => {
+            const pages = X.pages.filter(p => p.r === reg.id && (!p.hidden || P.visited[p.p] || karto));
+            if (!pages.length) return '';
+            return '<section class="card" style="border-top:3px solid ' + reg.color + '"><h3 class="mb-0">' + X.esc(reg.name) + '</h3><ul>' +
+                pages.map(p => {
+                    const seen = P.visited[p.p], hid = p.hidden && !seen;
+                    return '<li class="' + (seen ? '' : 'unseen') + '">' + (seen ? '● ' : '○ ') + (hid ? '??? <span class="small">– ' + X.esc(p.d) + '</span>' : '<a href="' + X.url(p.p) + '">' + (X.isUnlocked(p) ? '' : (M.discovered(p.isle || p.r) ? '(gesperrt) ' : '(im Nebel) ')) + X.esc(p.t) + '</a>') + '</li>';
+                }).join('') + '</ul></section>';
+        }).join('');
     }
 
-    // Listenansicht (auch für Screenreader und kleine Bildschirme)
-    XIRU.$('#lists').innerHTML = XIRU.regions.map(reg => {
-        const pages = XIRU.pages.filter(p => p.r === reg.id && (!p.hidden || P.visited[p.p] || karto));
-        if (!pages.length) return '';
-        return '<section class="card" style="border-top:3px solid ' + reg.color + '"><h3 class="mb-0">' + reg.icon + ' ' + XIRU.esc(reg.name) + '</h3><ul>' +
-            pages.map(p => {
-                const seen = P.visited[p.p], hid = p.hidden && !seen;
-                return '<li class="' + (seen ? '' : 'unseen') + '">' + (seen ? '● ' : '○ ') + (hid ? '??? <span class="small">– ' + XIRU.esc(p.d) + '</span>' : '<a href="' + XIRU.url(p.p) + '">' + (XIRU.isUnlocked(p) ? '' : '🔒 ') + XIRU.esc(p.t) + '</a>') + '</li>';
-            }).join('') + '</ul></section>';
-    }).join('');
+    if (easy) X.$('#lead').textContent = 'Die Inseln der Nebelsee. Zieh die Karte mit der Maus oder dem Finger, zoom mit dem Mausrad. Im Entdecker-Modus ist jede Insel offen – klick eine an und betritt ihre Gebäude.';
+    build(); drawMechBox(); renderLists(); fit();
+    if (!easy && innerWidth < 900) { const i = M.isle(M.pos()); centerOn(i.x, i.y, 1100); }
+    const want = location.hash.slice(1); if (want && M.isle(want)) { const i = M.isle(want); centerOn(i.x, i.y, 1000); select(want); }
+    X.on('mech', drawMechBox);
 });
 </script>
 </body>

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sträwkcüR · Xiruprojekts</title>
+    <meta name="description" content=".tlerhekmu tsi seilA">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <style>
+        .page-head h1, .page-head .lead { transform: scaleX(-1); display: inline-block; }
+        .rw p { font-size: 1.1rem; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">🗝 Geheimer Ort</span>
+        <h1>sträwkcüR</h1>
+        <p class="lead">Hier steht alles auf dem Kopf. Oder besser: rückwärts.</p>
+    </header>
+    <section class="card rw" id="box">
+        <p data-r>Willkommen auf der Seite, die rückwärts läuft.</p>
+        <p data-r>Wer das lesen kann, hat Geduld oder einen Spiegel.</p>
+        <p data-r>Schreib das Wort Diskette rückwärts in das Feld unten.</p>
+        <div class="row"><input class="input mono" id="in" maxlength="20" aria-label="Antwort"><button class="btn" type="button" id="ok" data-r>Prüfen</button><button class="btn btn--ghost" type="button" id="flip" data-r>Spiegel</button></div>
+        <p class="small" id="res" aria-live="polite"></p>
+    </section>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU;
+    const $ = s => X.$(s), rev = s => Array.from(s).reverse().join('');
+    X.$$('[data-r]').forEach(el => { el.dataset.txt = el.textContent; el.textContent = rev(el.textContent); });
+    let mirrored = false;
+    $('#flip').addEventListener('click', () => { mirrored = !mirrored; X.$$('[data-r]').forEach(el => { el.textContent = mirrored ? el.dataset.txt : rev(el.dataset.txt); }); });
+    $('#ok').addEventListener('click', () => {
+        const ok = $('#in').value.trim().toLowerCase() === 'ettekisd';
+        $('#res').textContent = ok ? rev('Richtig! Du denkst rückwärts.') : rev('Leider nicht.');
+        if (ok) X.once('geheim-rueckwaerts', 15, 'Rückwärts gedacht');
+    });
+    $('#in').addEventListener('keydown', e => { if (e.key === 'Enter') $('#ok').click(); });
+});
+</script>
+</body>
+</html>

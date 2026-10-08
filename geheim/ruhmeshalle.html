@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ruhmeshalle · Xiruprojekts</title>
+    <meta name="description" content="Die Ruhmeshalle der Spielhalle: Deine Rekorde in Gold.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <style>
+        .rh { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 1rem; }
+        .rh__plate { display: flex; flex-direction: column; align-items: center; gap: .3rem; padding: 1.1rem; text-align: center; border-radius: 10px;
+            background: linear-gradient(160deg, #3f3420, #1c1709); border: 2px solid #a16207; box-shadow: inset 0 0 0 4px #1c1709, inset 0 0 0 5px #ca8a04; color: #fef3c7; }
+        .rh__plate--top { background: linear-gradient(160deg, #854d0e, #422006); box-shadow: inset 0 0 0 4px #422006, inset 0 0 0 5px #facc15, 0 0 24px #facc1544; }
+        .rh__medal { font-size: 2rem; } .rh__val { font: 800 1.6rem var(--mono); color: #facc15; } .rh__plate small { color: #d6c69a; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">🗝 Geheimer Ort</span>
+        <h1>Ruhmeshalle</h1>
+        <p class="lead">Marmor, Samt und goldene Tafeln. Hier hängen deine besten Leistungen aus der Spielhalle.</p>
+    </header>
+    <div class="rh" id="hall"></div>
+    <p class="small muted mt-1" id="sum"></p>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU;
+    const $ = s => X.$(s), sc = (X.profile() && X.profile().scores) || {}, games = (X.pages || []).filter(p => p.game);
+    const title = k => { const g = games.find(p => p.p.replace(/^.*\/|\.html$/g, '') === k.replace(/-\w+$/, '')) || games.find(p => p.p.replace(/^.*\/|\.html$/g, '') === k); return g ? g.t + (g.p.includes(k) ? '' : ' (' + k.split('-').pop() + ')') : k; };
+    const list = Object.keys(sc).filter(k => sc[k] && sc[k].best != null).sort((a, b) => (sc[b].plays || 0) - (sc[a].plays || 0));
+    $('#hall').innerHTML = list.length ? list.map((k, i) => '<div class="rh__plate' + (i < 3 ? ' rh__plate--top' : '') + '"><span class="rh__medal">' + (['🥇', '🥈', '🥉'][i] || '🏅') + '</span><b>' + X.esc(title(k)) + '</b><span class="rh__val">' + X.esc(X.fmt(sc[k].best)) + '</span><small>' + X.fmt(sc[k].plays || 0) + '× gespielt</small></div>').join('')
+        : '<div class="empty"><div class="empty__icon">🏛</div><p>Die Wände sind noch leer. Spiel in der <a href="../arcade/index.html">Spielhalle</a>, um deine erste Tafel zu bekommen.</p></div>';
+    $('#sum').textContent = list.length ? list.length + ' Tafeln · ' + X.fmt(list.reduce((s, k) => s + (sc[k].plays || 0), 0)) + ' Spiele insgesamt' : '';
+});
+</script>
+</body>
+</html>

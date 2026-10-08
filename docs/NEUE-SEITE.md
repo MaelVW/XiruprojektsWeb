@@ -173,12 +173,39 @@ Seiten mit `skill: 'xy'` in `site.js` zeigen automatisch einen Sperrbildschirm,
 solange der Skill fehlt (`XIRU.ready` läuft dann nicht). Seiten mit `hidden: true` erscheinen
 erst nach dem ersten Besuch in Navigation, Suche und Weltkarte.
 
+## Welt & Mech (Werft, Weltkarte, Spiel-Inseln)
+
+- **Spielmodus:** `XIRU.mode()` → `'abenteuer'` (Standard) oder `'entdecker'`; `XIRU.easy()` = Entdecker-Modus (alles offen, kein Mech,
+  `hasSkill` ist dann immer wahr). Umschalten: `XIRU.setting('modus', 'entdecker')`.
+- **Inseln:** `XIRU.islands` in `site.js` (Position auf der Karte 2400×1600, Grösse `s`, Zeichnung `art`, Erstreise-Werte `req`, Gebäude `b`).
+  Inhalts-Inseln gehören zu einer Region; Spiel-Inseln (`game: true`) haben Seiten unter `welt/` (Region `meer`, Feld `isle` am Seiteneintrag).
+- **Mech-Daten (v2)** in `P.data.mech`: Inventar `inv` (Gegenstände `{u, id, q, c, up}`), Ausrüstung `eq`, `mat`, `taler`, `pos` (Insel des Mechs).
+  Wichtigste API (`XIRU.mech`): `items() add(id, q) remove(u) equip(u) installed(slot) loadout() stats() ready() value(it)`,
+  `scrap() taler() addTaler(n) spendTaler(n) mats() addMat(id, n) spendMats({…})`, `discovered(id) canReach(id) travelSecs(to) arrive(to) pos()`.
+- **Seltenheiten:** `XIRU.rarities[q]` (1 Gewöhnlich … 6 Mythisch, Faktor `m`). Werte eines Teils: `XIRU.mech.itemStats(it)`.
+- **Gemeinsame Spiel-Bausteine:** `assets/js/werft.js` (`XIRU.werft`: Item-Karten, Beute `loot()/grant()`, Reise-Ladebildschirm `travel(to)`,
+  Notruf `tow()`, Seitengerüst `islePage(id)` für `welt/*.html`) + `assets/css/welt.css`. Karte: `assets/js/weltkarte-art.js` (`XIRU.mapArt.svg()`),
+  Mech-Grafik: `assets/js/mech-art.js` (`XIRU.mechArt.draw(f, run, loadout)`, Gegner per `loadoutOf({slot: [id, q, up]})`).
+- **Pixel-Stil (32 Bit):** Die Weltkarte heisst **Sektaria** und wird als Pixel-Karte gerendert (`assets/js/weltkarte-pixel.js`, `XIRU.mapPix.mount(host, opts)`;
+  Gelände Pixel für Pixel, Wahrzeichen/Drache als gerasterte Sprites, Grundkarte im sessionStorage zwischengespeichert – bei Kartenänderungen `VERSION` erhöhen).
+  Icons in Werft, Inventar und Spiel-Inseln sind **Pixel-Icons statt Emojis**: `XIRU.pix.svg(name, px)` aus `assets/js/pixel-icons.js`
+  (Namen = Teil-IDs, `mat-…`, `st-…`, `npc-…`, `ev-…`, `ic-…`, `schrott`, `taler`, `inventar`; im HTML als Platzhalter `<i data-px="name">`, ersetzt durch `XIRU.werft.pxify()`).
+  Neue Icons: Pixelkarten im Generator (Scratchpad `pix_icons.py`) ergänzen oder direkt im JSON von pixel-icons.js. Spiel-Inseln nutzen `<body class="theme-pixel">` (welt.css), die Werft `theme-werft`.
+- Neue Spiel-Insel: Eintrag in `XIRU.islands` (+ `game: true`), Seite in `welt/` mit `#isle-head #here #wallet #game #easy`, Seiteneintrag mit `r: 'meer', isle: '…'`.
+- XP-Schlüssel für `XIRU.once()` nicht wie Kristall-IDs benennen (z. B. `geheim-…` statt `g-…-…`), sonst meldet sie `check_site.py`.
+
+## Cookies
+
+Nur mit „Alles erlauben“ und über http/https (`XIRU.cookie.ok()`): `xiru_zuletzt` (letztes Konto + Modus, für den Login-Screen) und
+`xiru_sicherung_<hash>` (Notfall-Sicherung, `XIRU.backup.make()/write()/read()/restore()`; Bitmasken über die Register-Reihenfolge mit Prüfsumme).
+Weitere Cookies nur nach Rücksprache – sie gehen bei jedem Aufruf an den Server und müssen im Datenschutz stehen.
+
 ## Bereichs-Designs & leere Seiten
 
 - Bereiche dürfen ein eigenes Design haben: Klasse auf `<body>` (z. B. `theme-werft`), die die Farb-Variablen überschreibt.
 - `<html data-bare>`: Seite ohne Kopf, Fuss, Banner und Toasts – nur für den Liminal-Teil (`Why.html`, `why/`). Diese Seiten sind bewusst
   **nicht im Register**, geben **keine XP, Kristalle oder Besuche**. Hinein kommt man nur durch einen „Riss" (`XIRU.riss`, siehe core.js):
-  Riss 1 = Weltkarte, unbekanntes Land unten rechts 5× klicken · Riss 2 = 404-Seite, Laufwerksschlitz 4× · Riss 3 = Netzteil-Rechner, Anzeige 4×.
+  Riss 1 = Weltkarte, unbekanntes Land ganz unten rechts (`data-u="5"`) 5× klicken · Riss 2 = 404-Seite, Laufwerksschlitz 4× · Riss 3 = Netzteil-Rechner, Anzeige 4×.
   Riss n wirkt nur nach n−1 Rauswürfen (`XIRU.riss.lock()` in `why/abdrift2.html`); nach 3 Rauswürfen ist der Teil zu. Zurücksetzen: `dev/testkonto.html`.
   Pro Raum einstellbar: `<body data-lm-ton="brumm klopfen schritte stimmen schreie band lueftung riss">` (Geräusche, `assets/js/liminal-ton.js`;
   leer = Stille) und am zurück-Link `data-lm-weiter="80 10 10"` (Weiter-Knopf: tiefer / nichts / zurück in %, nur mit `data-lm-next`).

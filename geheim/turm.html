@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Der Magierturm · Xiruprojekts</title>
+    <meta name="description" content="Sieben Stockwerke, sieben Rätsel. Ganz oben wohnt der Erzmagier.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <style>
+        .tw { text-align: center; background: radial-gradient(circle at 50% 0, #312e81, #0f0a2a); }
+        .tw__floor { font: 700 .85rem var(--mono); letter-spacing: .15em; text-transform: uppercase; color: #c4b5fd; margin-bottom: .5rem; }
+        .tw__q { margin: 1.4rem 0; font-family: Georgia, serif; }
+        .tw__opts { display: flex; flex-wrap: wrap; gap: .6rem; justify-content: center; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">🗝 Geheimer Ort</span>
+        <h1>Der Magierturm</h1>
+        <p class="lead">Eine Wendeltreppe ohne Ende. Auf jedem Stockwerk wartet ein Rätsel. Wer alle löst, trifft den Erzmagier.</p>
+    </header>
+    <section class="card tw">
+        <div class="tw__floor" id="floor">Stockwerk 1 / 7</div>
+        <div class="bar bar--sm"><div class="bar__fill" id="prog" style="width:0%"></div></div>
+        <h2 class="tw__q" id="q"></h2>
+        <div class="tw__opts" id="opts"></div>
+        <p class="small muted" id="msg" aria-live="polite"></p>
+    </section>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU;
+    const $ = s => X.$(s);
+    const Q = [
+        ['Je mehr du davon nimmst, desto mehr lässt du zurück. Was ist es?', ['Schritte', 'Kristalle', 'Bücher'], 0],
+        ['Ich habe Tasten, aber keine Schlösser. Was bin ich?', ['Ein Klavier', 'Eine Tastatur', 'Beides'], 2],
+        ['Was wird nasser, je mehr es trocknet?', ['Ein Handtuch', 'Ein Schwamm', 'Die Sonne'], 0],
+        ['Wie viele Bits hat ein Byte?', ['4', '8', '16'], 1],
+        ['Ich spreche ohne Mund und höre ohne Ohren. Was bin ich?', ['Ein Echo', 'Ein Geist', 'Ein Radio'], 0],
+        ['Welche Farbe entsteht, wenn man rotes und grünes Licht mischt?', ['Braun', 'Gelb', 'Violett'], 1],
+        ['Was gehört dir, wird aber von anderen öfter benutzt als von dir?', ['Dein Name', 'Dein Mech', 'Dein Passwort'], 0]
+    ];
+    let f = 0;
+    function show() {
+        if (f >= Q.length) return top();
+        $('#floor').textContent = 'Stockwerk ' + (f + 1) + ' / ' + Q.length; $('#prog').style.width = f / Q.length * 100 + '%';
+        $('#q').textContent = Q[f][0];
+        $('#opts').innerHTML = Q[f][1].map((o, i) => '<button class="btn" type="button" data-i="' + i + '">' + X.esc(o) + '</button>').join('');
+    }
+    function top() {
+        $('#prog').style.width = '100%'; $('#floor').textContent = '🌟 Turmspitze';
+        $('#q').textContent = 'Der Erzmagier blickt von seinem Buch auf: „Du hast den Weg gefunden. Nimm diesen Segen mit.“';
+        $('#opts').innerHTML = ''; $('#msg').textContent = 'Von hier oben siehst du alle Inseln.';
+        X.once('geheim-turm', 30, 'Segen des Erzmagiers'); X.confetti(60);
+    }
+    $('#opts').addEventListener('click', e => {
+        const b = e.target.closest('button'); if (!b) return;
+        if (+b.dataset.i === Q[f][2]) { f++; $('#msg').textContent = 'Die Tür zum nächsten Stockwerk öffnet sich.'; X.beep(660, .12, 'triangle'); show(); }
+        else { f = Math.max(0, f - 1); $('#msg').textContent = 'Falsch! Die Treppe dreht sich – du landest ein Stockwerk tiefer.'; X.beep(150, .2, 'sawtooth', .04); show(); }
+    });
+    show();
+});
+</script>
+</body>
+</html>

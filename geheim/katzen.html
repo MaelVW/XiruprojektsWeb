@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Katzenzimmer · Xiruprojekts</title>
+    <meta name="description" content="Miau.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <style>
+        .kz { position: relative; height: min(65vh, 520px); border-radius: 14px; overflow: hidden; background: repeating-linear-gradient(90deg, #3f2d20 0 60px, #4a3426 60px 120px); box-shadow: inset 0 -80px 0 #2b1d14; }
+        .kz__cat { position: absolute; font-size: clamp(1.8rem, 5vw, 2.8rem); background: none; border: 0; cursor: pointer; transition: left .6s, top .6s; animation: kzBreath 4s ease-in-out infinite; }
+        @keyframes kzBreath { 50% { transform: scale(1.06) rotate(3deg); } } html.no-anim .kz__cat { animation: none; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">🗝 Geheimer Ort</span>
+        <h1>Katzenzimmer</h1>
+        <p class="lead">Du hast dich verlaufen. Hier sind Katzen. Sehr viele Katzen.</p>
+    </header>
+    <section class="kz" id="room" aria-label="Zimmer voller Katzen"></section>
+    <p class="small muted mt-1">Gestreichelt: <b id="n">0</b> · <span id="hint">Klick eine Katze an.</span></p>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU;
+    const $ = s => X.$(s), C = ['🐈', '🐈‍⬛', '😺', '😸', '😻', '🙀', '😼', '😽'], SAY = ['Miau.', 'Mrrrp?', 'Schnurr …', 'Miau!', '*ignoriert dich*', 'Mau.', '*stupst die Diskette vom Tisch*'];
+    const room = $('#room'); let n = 0;
+    for (let i = 0; i < 18; i++) {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'kz__cat'; b.textContent = X.pick(C); b.setAttribute('aria-label', 'Katze');
+        const place = () => { b.style.left = X.rand(2, 90) + '%'; b.style.top = X.rand(4, 82) + '%'; };
+        place(); b.style.animationDelay = -Math.random() * 4 + 's';
+        b.addEventListener('click', () => {
+            n++; $('#n').textContent = n; $('#hint').textContent = X.pick(SAY); X.beep(X.rand(600, 900), .12, 'sine', .05);
+            setTimeout(() => X.beep(X.rand(400, 600), .18, 'sine', .04), 110);
+            if (Math.random() < .35) place();
+            if (n === 30) { X.once('geheim-katzen-30', 15, 'Katzenflüsterer'); X.toast('😻 Katzenflüsterer', 'Die Katzen akzeptieren dich.'); }
+        });
+        room.appendChild(b);
+    }
+});
+</script>
+</body>
+</html>

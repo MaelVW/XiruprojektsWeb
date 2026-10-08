@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kristallschrein · Xiruprojekts</title>
+    <meta name="description" content="Ein Altar für Sammler. Er leuchtet nur für jene, die mindestens 50 Realitätskristalle gefunden haben.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <style>
+        .ks { position: relative; min-height: 340px; border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.2rem; background: linear-gradient(#0c0a09, #1c1917); }
+        .ks__glow { position: absolute; inset: 0; opacity: 0; transition: opacity 2s; background: radial-gradient(circle at 50% 55%, #a78bfa55, transparent 60%); }
+        .ks.is-awake .ks__glow { opacity: 1; animation: ksPulse 3s ease-in-out infinite; } @keyframes ksPulse { 50% { opacity: .55; } }
+        html.no-anim .ks.is-awake .ks__glow { animation: none; }
+        .ks__altar { position: relative; display: flex; gap: 1rem; padding: 1.2rem 1.6rem; border-radius: 10px 10px 4px 4px; background: linear-gradient(#57534e, #292524); box-shadow: 0 14px 0 #1c1917; }
+        .ks:not(.is-awake) .ks__slot { filter: grayscale(.85) brightness(.6); }
+        .ks__txt { position: relative; margin: 0 1rem; text-align: center; color: #e7e5e4; font-family: Georgia, serif; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">🗝 Geheimer Ort</span>
+        <h1>Kristallschrein</h1>
+        <p class="lead">Ein steinerner Altar mit fünf Fassungen. Man sagt, er erwacht, wenn ein Sammler mit genug Kristallen vor ihm steht.</p>
+    </header>
+    <section class="ks" id="shrine"><div class="ks__glow"></div><div class="ks__altar" id="altar"></div><p class="ks__txt" id="txt"></p></section>
+    <div class="grid-2 mt-1" id="stats"></div>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU;
+    const $ = s => X.$(s), NEED = 50, n = X.eggCount(), eggs = X.eggs || [];
+    const by = [1, 2, 3, 4].map(r => eggs.filter(e => e.r === r && X.hasEgg(e.id)).length), all = [1, 2, 3, 4].map(r => eggs.filter(e => e.r === r).length);
+    $('#altar').innerHTML = [1, 2, 3, 4].map(r => '<span class="ks__slot" title="' + X.rarity[r] + '">' + X.crystalSVG(r, 54, !by[r - 1]) + '</span>').join('');
+    $('#stats').innerHTML = [1, 2, 3, 4].map(r => '<div class="card stat"><span class="stat__label" style="color:' + X.rarityColor[r] + '">' + X.rarity[r] + '</span><span class="stat__value">' + by[r - 1] + ' / ' + all[r - 1] + '</span></div>').join('');
+    if (n >= NEED) {
+        $('#shrine').classList.add('is-awake'); X.egg('o-schrein');
+        $('#txt').textContent = 'Der Schrein erwacht. ' + n + ' Kristalle summen im Gleichklang.';
+    } else $('#txt').textContent = 'Der Schrein bleibt dunkel. ' + n + ' von ' + NEED + ' Kristallen. Komm wieder, wenn du mehr gefunden hast.';
+});
+</script>
+</body>
+</html>

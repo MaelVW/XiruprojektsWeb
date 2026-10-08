@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PIXMAG · Xiruprojekts</title>
+    <meta name="description" content="PIXMAG: düsteres Mittelalter-Dungeon-RPG. Ein verbannter Magier, ein mysteriöses Buch und über hundert Zauber-Kombinationen. Mit Zauber-Kombinator zum Ausprobieren.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="../assets/css/themes/studio.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <style>
+        .pm-hero p { line-height: 1.7; }
+        .pm-els { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: .5rem; }
+        .pm-el { display: flex; flex-direction: column; align-items: center; gap: .2rem; padding: .6rem .3rem; border-radius: 10px; border: 1px solid var(--border-strong); background: var(--surface-2); font-size: 1.6rem; cursor: pointer; color: var(--text); }
+        .pm-el small { font-size: .7rem; } .pm-el.is-on { border-color: var(--accent); box-shadow: 0 0 14px color-mix(in srgb, var(--accent) 50%, transparent); }
+        .pm-out { margin: 1rem 0 .5rem; min-height: 4.5rem; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 10px; background: radial-gradient(circle, rgba(124,58,237,.25), transparent 70%); }
+        .pm-spell { font: 800 1.6rem Georgia, serif; color: #e9d5ff; text-shadow: 0 0 18px #a855f7; }
+    </style>
+</head>
+<body class="theme-studio">
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">🎬 Studio</span>
+        <h1>PIXMAG</h1>
+        <p class="lead">Ein verbannter Magier. Ein Buch, das nicht gelesen werden will. Und ein Dungeon, das tiefer reicht, als jede Karte zeigt.</p>
+    </header>
+    <div class="grid-2">
+        <section class="card pm-hero">
+            <span class="badge badge--danger">Alpha 1.2 · Python</span>
+            <h2>Die Geschichte</h2>
+            <p>Du warst Hofmagier – bis ein Zauber schiefging. Verbannt in die Katakomben unter der Burg findest du ein Buch ohne Titel. Seine Seiten zeigen Zeichen, die nur bei Kerzenlicht sichtbar werden. Jedes Element, das du lernst, lässt sich mit den anderen verbinden. Über hundert Kombinationen warten darauf, entdeckt zu werden.</p>
+            <ul class="small"><li>🗡 Rundenbasierte Kämpfe in dunklen Gängen</li><li>📖 Ein Zauberbuch, das mit dir wächst</li><li>🕯 Licht ist kostbar – und Schatten haben Augen</li></ul>
+            <div class="row mt-1"><a class="btn btn--primary" href="../arcade/dungeon.html">🗡 PIXMAG Mini im Browser spielen</a></div>
+        </section>
+        <section class="card">
+            <h2>Zauber-Kombinator</h2>
+            <p class="small muted">Wähle zwei Elemente aus dem Buch. Welcher Zauber entsteht?</p>
+            <div class="pm-els" id="els"></div>
+            <div class="pm-out" id="out"><span class="muted">Zwei Elemente wählen …</span></div>
+            <p class="small muted">Entdeckt: <b id="found">0</b> / <span id="total">0</span></p>
+        </section>
+    </div>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU;
+    const $ = s => X.$(s), E = [['🔥', 'Feuer'], ['💧', 'Wasser'], ['🌪', 'Wind'], ['🪨', 'Erde'], ['⚡', 'Blitz'], ['🌑', 'Schatten'], ['✨', 'Licht']];
+    const S = { 'Feuer+Wasser': 'Dampfschleier', 'Feuer+Wind': 'Flammenwirbel', 'Feuer+Erde': 'Lavafaust', 'Feuer+Blitz': 'Sternenfunke', 'Feuer+Schatten': 'Schwarzglut', 'Feuer+Licht': 'Sonnenlanze',
+        'Wasser+Wind': 'Eissturm', 'Wasser+Erde': 'Sumpfgriff', 'Wasser+Blitz': 'Kettenwelle', 'Wasser+Schatten': 'Tintenflut', 'Wasser+Licht': 'Heilquelle', 'Wind+Erde': 'Sandsturm',
+        'Wind+Blitz': 'Gewitterkrähe', 'Wind+Schatten': 'Flüsterwind', 'Wind+Licht': 'Federschild', 'Erde+Blitz': 'Magnetgolem', 'Erde+Schatten': 'Grabesruf', 'Erde+Licht': 'Kristallwall',
+        'Blitz+Schatten': 'Phantomschlag', 'Blitz+Licht': 'Blendfunke', 'Schatten+Licht': 'Zwielicht', 'Feuer+Feuer': 'Inferno', 'Wasser+Wasser': 'Flutwelle', 'Wind+Wind': 'Orkan',
+        'Erde+Erde': 'Beben', 'Blitz+Blitz': 'Donnerkeil', 'Schatten+Schatten': 'Leere', 'Licht+Licht': 'Erleuchtung' };
+    let pick = [], found = X.load('pixmag-zauber', []);
+    $('#total').textContent = Object.keys(S).length;
+    $('#els').innerHTML = E.map(([i, n]) => '<button type="button" class="pm-el" data-n="' + n + '">' + i + '<small>' + n + '</small></button>').join('');
+    function show() { $('#found').textContent = found.length; X.$$('.pm-el').forEach(b => b.classList.toggle('is-on', pick.includes(b.dataset.n))); }
+    X.$$('.pm-el').forEach(b => b.addEventListener('click', () => {
+        pick.push(b.dataset.n); if (pick.length < 2) { show(); X.beep(440, .05, 'triangle'); return; }
+        const order = E.map(e => e[1]), k = pick.slice().sort((a, c) => order.indexOf(a) - order.indexOf(c)).join('+'), s = S[k];
+        const isNew = !found.includes(s); if (isNew) { found.push(s); X.save('pixmag-zauber', found); }
+        $('#out').innerHTML = '<b class="pm-spell">' + X.esc(s) + '</b><span class="small muted">' + X.esc(pick.join(' + ')) + (isNew ? ' · neu entdeckt!' : '') + '</span>';
+        [330, 440, 660].forEach((f, i) => setTimeout(() => X.beep(f, .09, 'sawtooth', .03), i * 70));
+        if (found.length >= 10) X.once('st-pixmag-10', 10, 'Zehn Zauber entdeckt');
+        pick = []; show();
+    }));
+    show();
+});
+</script>
+</body>
+</html>

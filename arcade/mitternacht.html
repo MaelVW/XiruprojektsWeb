@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mitternachts-Arcade · Xiruprojekts</title>
+    <meta name="description" content="Die Mitternachts-Arcade: Geisterjagd im Dunkeln. Nur mit der Taschenlampe siehst du, was durch die Spielhalle schwebt.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="../assets/css/themes/arcade.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/arcade.js"></script>
+    <style>
+        .mn-cv { display: block; width: 100%; height: auto; cursor: none; touch-action: none; border-radius: 8px; }
+        body.theme-arcade .game__stage:has(.mn-cv) { background: #05030c; }
+    </style>
+</head>
+<body class="theme-arcade">
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">▶ Spielhalle · nach Ladenschluss</span>
+        <h1>Mitternachts-Arcade</h1>
+        <p class="lead">Die Spielhalle hat geschlossen. Das Licht ist aus. Aber irgendetwas spielt noch … Fang die Geister mit deiner Taschenlampe, bevor die Batterie leer ist.</p>
+    </header>
+    <div class="game">
+        <div>
+            <div class="game__hud" id="hud">
+                <div><span>Geister</span><b id="h-score">0</b></div>
+                <div><span>Batterie</span><b id="h-bat">100 %</b></div>
+                <div><span>Serie</span><b id="h-combo">x1</b></div>
+            </div>
+            <div class="game__stage" id="stage">
+                <canvas id="cv" class="mn-cv" width="720" height="460"></canvas>
+                <div class="game__overlay" id="ov" hidden></div>
+            </div>
+            <div class="row mt-1"><button class="btn btn--sm" type="button" id="b-start">▶ Jagd starten</button></div>
+        </div>
+        <aside class="game__side">
+            <div class="card">
+                <h3>Regeln</h3>
+                <ul class="keys-help"><li><b>Maus / Finger</b> – Taschenlampe bewegen</li><li><b>Klick</b> auf einen beleuchteten Geist – fangen</li><li>Goldene Geister laden die Batterie auf</li><li>Danebenklicken kostet Batterie</li></ul>
+            </div>
+            <div class="card">
+                <h3>Rekord</h3>
+                <p class="stat__value" id="best">–</p>
+            </div>
+        </aside>
+    </div>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU;
+    const G = X.Game, $ = s => X.$(s), cv = $('#cv'), ctx = cv.getContext('2d'), W = 720, H = 460;
+    let ghosts = [], light = { x: W / 2, y: H / 2 }, score = 0, bat = 100, combo = 1, run = false, last = 0, spawn = 0, pops = [];
+    function pos(e) { const r = cv.getBoundingClientRect(), p = e.touches ? e.touches[0] : e; return { x: (p.clientX - r.left) / r.width * W, y: (p.clientY - r.top) / r.height * H }; }
+    cv.addEventListener('pointermove', e => { light = pos(e); });
+    cv.addEventListener('pointerdown', e => {
+        light = pos(e); if (!run) return;
+        const hit = ghosts.find(g => Math.hypot(g.x - light.x, g.y - light.y) < g.r + 8 && Math.hypot(g.x - light.x, g.y - light.y) < 95);
+        if (hit) {
+            ghosts = ghosts.filter(g => g !== hit); score += combo; combo = Math.min(combo + 1, 5); pops.push({ x: hit.x, y: hit.y, t: 0, txt: '+' + (combo - 1) + (hit.gold ? ' ⚡' : '') });
+            if (hit.gold) bat = Math.min(100, bat + 25); G.sfx.coin();
+        } else { combo = 1; bat -= 4; G.sfx.hit(); }
+    });
+    function start() { ghosts = []; score = 0; bat = 100; combo = 1; run = true; spawn = 0; G.overlay('#ov').hide(); }
+    function end() {
+        run = false; G.sfx.die(); const r = X.score('mitternacht', score); $('#best').textContent = X.best('mitternacht');
+        G.overlay('#ov').show({ icon: '👻', title: score + ' Geister gefangen', text: (r.isNew ? 'Neuer Rekord! ' : '') + 'Die Batterie ist leer. Die Geister lachen leise.', button: 'Nochmal', onClick: start });
+    }
+    function frame(t) {
+        const dt = Math.min(50, t - (last || t)) / 1000; last = t;
+        if (run) {
+            bat -= dt * 3.2; spawn -= dt;
+            if (spawn <= 0) { spawn = Math.max(.35, 1.2 - score * .02); const gold = Math.random() < .1;
+                ghosts.push({ x: Math.random() * W, y: H + 30, vx: (Math.random() - .5) * 60, vy: -(40 + Math.random() * 50 + score), r: gold ? 18 : 22 + Math.random() * 8, ph: Math.random() * 6, gold }); }
+            ghosts.forEach(g => { g.ph += dt * 3; g.x += (g.vx + Math.sin(g.ph) * 40) * dt; g.y += g.vy * dt; });
+            const before = ghosts.length; ghosts = ghosts.filter(g => g.y > -40); if (ghosts.length < before) combo = 1;
+            if (bat <= 0) { bat = 0; end(); }
+            $('#h-score').textContent = score; $('#h-bat').textContent = Math.ceil(bat) + ' %'; $('#h-combo').textContent = 'x' + combo;
+        }
+        // Zeichnen: dunkle Halle, Lichtkegel, Geister nur im Licht sichtbar
+        ctx.fillStyle = '#05030c'; ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = '#120a24'; for (let i = 0; i < 6; i++) ctx.fillRect(40 + i * 115, 250, 70, 180);   // Automaten-Silhouetten
+        ctx.save(); ctx.beginPath(); const R = 60 + bat * .45; ctx.arc(light.x, light.y, R, 0, Math.PI * 2); ctx.clip();
+        const g0 = ctx.createRadialGradient(light.x, light.y, 0, light.x, light.y, R); g0.addColorStop(0, 'rgba(255,240,200,.28)'); g0.addColorStop(1, 'rgba(255,240,200,0)');
+        ctx.fillStyle = g0; ctx.fillRect(0, 0, W, H);
+        ghosts.forEach(g => {
+            ctx.fillStyle = g.gold ? '#facc15' : 'rgba(226,232,240,.92)'; ctx.beginPath(); ctx.arc(g.x, g.y, g.r, Math.PI, 0);
+            for (let k = 0; k <= 4; k++) ctx.lineTo(g.x + g.r - k * g.r / 2, g.y + g.r * .9 + (k % 2 ? -6 : 4) + Math.sin(g.ph + k) * 2);
+            ctx.closePath(); ctx.fill(); ctx.fillStyle = '#0b0614'; ctx.beginPath(); ctx.arc(g.x - g.r * .35, g.y - g.r * .1, g.r * .16, 0, 7); ctx.arc(g.x + g.r * .35, g.y - g.r * .1, g.r * .16, 0, 7); ctx.fill();
+        });
+        ctx.restore();
+        ghosts.forEach(g => { ctx.fillStyle = 'rgba(167,139,250,.35)'; ctx.beginPath(); ctx.arc(g.x - g.r * .35, g.y - g.r * .1, 2, 0, 7); ctx.arc(g.x + g.r * .35, g.y - g.r * .1, 2, 0, 7); ctx.fill(); });   // nur Augen glimmen im Dunkeln
+        pops = pops.filter(p => (p.t += dt) < .8); pops.forEach(p => { ctx.fillStyle = 'rgba(250,204,21,' + (1 - p.t / .8) + ')'; ctx.font = '700 20px system-ui'; ctx.fillText(p.txt, p.x, p.y - p.t * 40); });
+        requestAnimationFrame(frame);
+    }
+    $('#b-start').addEventListener('click', start);
+    $('#best').textContent = X.best('mitternacht') == null ? '–' : X.best('mitternacht');
+    G.overlay('#ov').show({ icon: '🕛', title: 'Mitternachts-Arcade', text: 'Psst … du bist nach Ladenschluss hier. Fang die Geister im Lichtkegel.', button: 'Taschenlampe an', onClick: start });
+    requestAnimationFrame(frame);
+});
+</script>
+</body>
+</html>

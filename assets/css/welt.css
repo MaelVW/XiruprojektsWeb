@@ -1,0 +1,140 @@
+/* ==========================================================================
+   Welt & Mech – gemeinsame Bausteine (Werft, Weltkarte, Spiel-Inseln)
+   Seltenheitsfarben: --q1 … --q6 (wie XIRU.rarities)
+   ========================================================================== */
+:root { --q1: #9ca3af; --q2: #4ade80; --q3: #60a5fa; --q4: #c084fc; --q5: #fbbf24; --q6: #f472b6; }
+
+/* ── Währungsleiste ── */
+.wallet { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.wallet span { display: inline-flex; align-items: center; gap: .35rem; padding: .3rem .7rem; border-radius: 99px; background: var(--surface-2); border: 1px solid var(--border); font-weight: 700; font-variant-numeric: tabular-nums; }
+.wallet small { color: var(--text-muted); font-weight: 600; }
+
+/* ── Gegenstands-Karte ── */
+.items { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: .55rem; }
+.item { --qc: var(--q1); position: relative; display: flex; flex-direction: column; align-items: center; gap: .2rem; padding: .6rem .45rem .5rem; border-radius: 12px;
+    background: radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--qc) 22%, transparent), transparent 70%), var(--surface-2);
+    border: 2px solid color-mix(in srgb, var(--qc) 70%, var(--border)); color: var(--text); font: inherit; text-align: center; cursor: pointer; min-height: 132px;
+    transition: transform .15s, box-shadow .15s; }
+.item:hover, .item:focus-visible { transform: translateY(-2px); box-shadow: 0 6px 18px -6px var(--qc); }
+.item.is-selected { outline: 3px solid var(--qc); outline-offset: 2px; }
+.item[data-q="2"] { --qc: var(--q2); } .item[data-q="3"] { --qc: var(--q3); } .item[data-q="4"] { --qc: var(--q4); }
+.item[data-q="5"] { --qc: var(--q5); box-shadow: 0 0 14px -4px var(--q5); } .item[data-q="6"] { --qc: var(--q6); box-shadow: 0 0 18px -3px var(--q6); }
+.item[data-q="5"]::after, .item[data-q="6"]::after { content: ""; position: absolute; inset: 0; border-radius: 10px; pointer-events: none;
+    background: linear-gradient(115deg, transparent 35%, rgba(255,255,255,.28) 50%, transparent 65%) -150% 0 / 250% 100% no-repeat; animation: itemShine 3.6s ease-in-out infinite; }
+@keyframes itemShine { 60%, 100% { background-position: 150% 0; } }
+html.no-anim .item::after { animation: none !important; }
+.item__icon { font-size: 2rem; line-height: 1.1; filter: drop-shadow(0 2px 4px rgba(0,0,0,.5)); }
+.item__name { font-weight: 700; font-size: .78rem; line-height: 1.2; overflow-wrap: anywhere; hyphens: auto; }
+.item__q { font-size: .66rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--qc); }
+.item__up { position: absolute; top: 4px; right: 6px; font: 800 .72rem var(--mono); color: var(--qc); }
+.item__tag { position: absolute; top: 4px; left: 5px; font-size: .62rem; font-weight: 800; padding: .05rem .35rem; border-radius: 99px; background: var(--accent); color: #001417; }
+.item__tag--new { background: #facc15; color: #1a1000; }
+.item__cond { width: 100%; height: 4px; border-radius: 2px; background: var(--surface-3); overflow: hidden; margin-top: auto; }
+.item__cond i { display: block; height: 100%; background: #4ade80; }
+.item__cond i.low { background: #facc15; } .item__cond i.dead { background: #f87171; }
+.item--empty { border-style: dashed; opacity: .6; cursor: default; justify-content: center; }
+.item--mat { cursor: default; min-height: 96px; }
+.item__count { font: 800 .9rem var(--mono); }
+
+/* Seltenheits-Text */
+.q1 { color: var(--q1); } .q2 { color: var(--q2); } .q3 { color: var(--q3); } .q4 { color: var(--q4); } .q5 { color: var(--q5); } .q6 { color: var(--q6); }
+.qbadge { display: inline-block; padding: .1rem .5rem; border-radius: 99px; font-size: .72rem; font-weight: 800; border: 1px solid currentColor; }
+
+/* ── Detail-Panel eines Teils ── */
+.idetail { border: 2px solid var(--qc, var(--border)); border-radius: 14px; padding: 1rem; background: var(--surface); }
+.idetail__head { display: flex; gap: .8rem; align-items: center; }
+.idetail__icon { font-size: 2.6rem; }
+.idetail h3 { margin: 0; }
+.statrow { display: flex; flex-wrap: wrap; gap: .35rem; margin: .6rem 0; }
+.stat-chip { display: inline-flex; gap: .3rem; align-items: center; padding: .15rem .55rem; border-radius: 99px; background: var(--surface-2); border: 1px solid var(--border); font-size: .78rem; font-weight: 700; }
+.stat-chip .up { color: #4ade80; } .stat-chip .down { color: #f87171; }
+
+/* ── Spiel-Insel-Seiten ── */
+.isle-head { position: relative; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); background: #0a3550; min-height: 220px; display: grid; }
+.isle-head svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.isle-head__text { position: relative; align-self: end; padding: 1.2rem 1.4rem; background: linear-gradient(transparent, rgba(2, 8, 20, .85)); color: #f1f5f9; }
+.isle-head__text h1 { margin: 0; color: #f8fafc; text-shadow: 0 2px 10px rgba(0,0,0,.6); }
+.isle-head__text p { margin: .3rem 0 0; color: #cbd5e1; max-width: 60ch; }
+.here { display: flex; flex-wrap: wrap; gap: .8rem; align-items: center; justify-content: space-between; padding: .8rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); }
+.here--away { border-color: #facc15; background: color-mix(in srgb, #facc15 8%, var(--surface)); }
+.npc { display: grid; grid-template-columns: auto 1fr; gap: .9rem; align-items: start; }
+.npc__face { font-size: 2.6rem; width: 64px; height: 64px; display: grid; place-items: center; border-radius: 16px; background: var(--surface-2); border: 1px solid var(--border); }
+.npc__say { position: relative; padding: .7rem .9rem; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--border); font-style: italic; }
+.easy-note { text-align: center; padding: 2rem 1rem; }
+
+/* ── Reise-Overlay (Ladebildschirm auf der Karte) ── */
+.voyage { position: fixed; inset: 0; z-index: 1200; display: grid; grid-template-rows: 1fr auto; background: #041320; animation: voyIn .4s ease both; }
+@keyframes voyIn { from { opacity: 0; } }
+.voyage__map { position: relative; overflow: hidden; }
+.voyage__map { position: relative; }
+.voyage__route { fill: none; stroke: #f4e3ae; stroke-width: 6; stroke-dasharray: 12 12; stroke-linecap: butt; opacity: .9; }
+.voyage__done { fill: none; stroke: #e8c56a; stroke-width: 8; stroke-linecap: butt; }
+.isle-head__map { position: absolute; inset: 0; }
+.voyage__bar { padding: .9rem clamp(1rem, 4vw, 2rem) 1.2rem; background: linear-gradient(180deg, rgba(4, 19, 32, .2), #041320 30%); color: #e2e8f0; display: grid; gap: .55rem; }
+.voyage__top { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+.voyage__top h2 { margin: 0; font-size: clamp(1.05rem, 3vw, 1.4rem); color: #f8fafc; }
+.voyage__progress { height: 10px; border-radius: 99px; background: rgba(148, 163, 184, .2); overflow: hidden; }
+.voyage__progress i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #22d3ee, #fde68a); }
+.voyage__log { list-style: none; margin: 0; padding: 0; display: grid; gap: .3rem; max-height: 7.5rem; overflow: auto; font-size: .9rem; }
+.voyage__log li { animation: voyIn .4s ease both; }
+.voyage__log li b { color: #fde68a; }
+.voyage .btn { --tc: #e2e8f0; }
+.voyage__tip { font-size: .82rem; color: #94a3b8; font-style: italic; }
+.voyage__mech { filter: drop-shadow(0 0 8px rgba(63, 243, 255, .7)); }
+
+/* Spiel-Insel: Bereiche, die nur vor Ort funktionieren */
+.is-away [data-here] { opacity: .45; pointer-events: none; filter: grayscale(.4); }
+.shop { display: grid; gap: 1.2rem; }
+.shop__grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 360px); gap: 1rem; align-items: start; }
+@media (max-width: 900px) { .shop__grid { grid-template-columns: 1fr; } }
+.offer { position: relative; }
+.offer__price { display: block; margin-top: .3rem; font: 800 .8rem var(--mono); }
+.offer.is-sold { opacity: .35; pointer-events: none; }
+.offer.is-sold::before { content: "VERKAUFT"; position: absolute; z-index: 2; inset: 40% 0 auto; text-align: center; font: 800 .8rem var(--mono); color: #f87171; transform: rotate(-12deg); }
+.mtable { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.mtable td, .mtable th { padding: .4rem .5rem; border-bottom: 1px solid var(--border); text-align: left; }
+.mtable td:last-child { text-align: right; white-space: nowrap; }
+
+/* Pixel-Icons (assets/js/pixel-icons.js) */
+.px { display: inline-block; vertical-align: -3px; image-rendering: pixelated; flex-shrink: 0; }
+.item__icon { line-height: 0; filter: drop-shadow(0 2px 0 rgba(0, 0, 0, .55)); }
+.idetail__icon { line-height: 0; filter: drop-shadow(0 3px 0 rgba(0, 0, 0, .55)); }
+.npc__face .px { width: 52px; height: 52px; }
+.stat-chip .px, .wallet .px { vertical-align: -4px; }
+.btn .px { vertical-align: -3px; margin-right: .15rem; }
+
+/* ── Pixel-Design für die Spiel-Inseln (wie die Werft, aber mit Gold statt Cyan) ── */
+body.theme-pixel {
+    --bg: #050811; --bg-2: #04060d; --surface: #0d1524; --surface-2: #13203a; --surface-3: #1b2a46; --border: #000; --border-strong: #2d4a6b;
+    --text: #e2e8f0; --text-muted: #94a3b8; --text-faint: #5b6b82; --accent: #e8c56a; --accent-2: #3ff3ff; --rc: #e8c56a; --rc-raw: #e8c56a; --accent-ink: #1a1000;
+    --font: "Cascadia Code", Consolas, "Courier New", monospace; --radius: 0px; --radius-sm: 0px;
+    background: repeating-linear-gradient(0deg, rgba(255,255,255,.022) 0 2px, transparent 2px 4px), var(--bg);
+}
+.theme-pixel h1, .theme-pixel h2, .theme-pixel h3 { text-transform: uppercase; letter-spacing: .06em; text-shadow: 3px 3px 0 #000; }
+.theme-pixel h1 { color: #f4e3ae; }
+.theme-pixel .card, .theme-pixel .modal, .theme-pixel .here, .theme-pixel .idetail, .theme-pixel .isle-head {
+    border: 0; border-radius: 0; box-shadow: 0 0 0 3px #000, 0 0 0 6px var(--border-strong), 6px 6px 0 6px rgba(0,0,0,.55); }
+.theme-pixel .isle-head { box-shadow: 0 0 0 3px #000, 0 0 0 6px #7a6230, 6px 6px 0 6px rgba(0,0,0,.55); }
+.theme-pixel .here--away { box-shadow: 0 0 0 3px #000, 0 0 0 6px #e8c56a; }
+.theme-pixel .btn { border-radius: 0; border: 0; box-shadow: inset -3px -3px 0 rgba(0,0,0,.45), inset 3px 3px 0 rgba(255,255,255,.18), 0 0 0 3px #000; text-transform: uppercase; letter-spacing: .05em; }
+.theme-pixel .btn:active { box-shadow: inset 3px 3px 0 rgba(0,0,0,.45), 0 0 0 3px #000; transform: translate(1px, 1px); }
+.theme-pixel .btn--primary { background: var(--accent); color: #1a1000; }
+.theme-pixel .badge, .theme-pixel .chip, .theme-pixel .stat-chip, .theme-pixel .qbadge, .theme-pixel .wallet span { border-radius: 0; box-shadow: 0 0 0 2px #000; border: 0; }
+.theme-pixel .bar { border-radius: 0; height: 10px; box-shadow: 0 0 0 2px #000; }
+.theme-pixel .bar__fill { border-radius: 0; background: repeating-linear-gradient(90deg, var(--accent) 0 6px, #b8913a 6px 8px); }
+.theme-pixel .tabs button[aria-selected="true"] { color: var(--accent); border-bottom: 4px solid var(--accent); }
+.theme-pixel .tabs button { display: inline-flex; align-items: center; gap: .4rem; }
+.theme-pixel .item, .theme-pixel .npc__face, .theme-pixel .npc__say, .theme-pixel .input, .theme-pixel .select, .theme-pixel input, .theme-pixel .shaft, .theme-pixel .foe, .theme-pixel .job, .theme-pixel .tile-s { border-radius: 0 !important; }
+.theme-pixel .item { box-shadow: 0 0 0 3px #000; }
+.theme-pixel .npc__face { background: #0b1220; box-shadow: 0 0 0 3px #000, 0 0 0 5px var(--border-strong); border: 0; line-height: 0; }
+.theme-pixel .npc__say { box-shadow: 0 0 0 3px #000; border: 0; font-style: normal; }
+.theme-pixel .isle-head__text { background: linear-gradient(transparent, rgba(2, 6, 16, .92)); }
+.theme-pixel .isle-head__text h1 { text-shadow: 3px 3px 0 #000; }
+
+/* Reiseleiste im Pixel-Stil */
+.voyage__bar { font-family: "Cascadia Code", Consolas, monospace; box-shadow: 0 -3px 0 #000, 0 -6px 0 #7a6230; }
+.voyage__top h2 { font: 800 clamp(.95rem, 2.6vw, 1.25rem) Consolas, "Cascadia Code", monospace; letter-spacing: .08em; text-transform: uppercase; color: #f4e3ae; text-shadow: 2px 2px 0 #000; }
+.voyage__progress { border-radius: 0; height: 12px; box-shadow: 0 0 0 2px #000, 0 0 0 4px #7a6230; background: #0b1726; }
+.voyage__progress i { background: repeating-linear-gradient(90deg, #e8c56a 0 8px, #b8913a 8px 10px); }
+.voyage .btn { border-radius: 0; border: 0; background: #13243a; color: #f4e3ae; box-shadow: inset -3px -3px 0 rgba(0,0,0,.45), inset 3px 3px 0 rgba(255,255,255,.12), 0 0 0 3px #000; text-transform: uppercase; }
+.voyage .btn--primary { background: #e8c56a; color: #1a1000; }

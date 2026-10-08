@@ -19,6 +19,7 @@ XIRU.regions = [
     { id: 'werkzeuge', name: 'Werkzeugkasten',   icon: '⚒', color: '#facc15', desc: 'Kleine Helfer für den Alltag am PC.' },
     { id: 'studio',    name: 'Studio',           icon: '⬇', color: '#4ade80', desc: 'Software und Spiele von Xiruprojekts.' },
     { id: 'konto',     name: 'Heimathafen',      icon: '⚓', color: '#38bdf8', desc: 'Dein Konto, deine Werft, deine Sammlung.' },
+    { id: 'meer',      name: 'Offenes Meer',     icon: '⛵', color: '#22d3ee', desc: 'Spiel-Inseln: Handel, Schmiede, Arena, Wracks und Minen.' },
     { id: 'geheim',    name: '???',              icon: '?', color: '#f87171', desc: 'Niemand weiss genau, was hier liegt.' }
 ];
 
@@ -47,6 +48,11 @@ XIRU.pages = [
     { p: 'konto/erfolge.html',       t: 'Rekorde',             r: 'konto', d: 'Deine Bestwerte in der Spielhalle.', nav: true },
     { p: 'konto/einstellungen.html', t: 'Einstellungen',       r: 'konto', d: 'Design, Animationen, Ton und Daten.', nav: true },
     { p: 'konto/dienste.html',       t: 'Dienste & Schlüssel', r: 'konto', d: 'API-Schlüssel für Hugging Face und Co. verwalten.', nav: true },
+    { p: 'welt/markt.html',          t: 'Händlerbucht',        r: 'meer', isle: 'markt',    d: 'Bauteile und Materialien kaufen, verkaufen und tauschen.' },
+    { p: 'welt/schmiede.html',       t: 'Funkenschmiede',      r: 'meer', isle: 'schmiede', d: 'Teile aufwerten, zerlegen und verschmelzen.' },
+    { p: 'welt/arena.html',          t: 'Schrott-Arena',       r: 'meer', isle: 'arena',    d: 'Mech gegen Mech – steig in der Rangliste auf.' },
+    { p: 'welt/wrack.html',          t: 'Wrackriff',           r: 'meer', isle: 'wrack',    d: 'Mit dem Sonar nach versunkenen Schätzen tauchen.' },
+    { p: 'welt/mine.html',           t: 'Nebelmine',           r: 'meer', isle: 'mine',     d: 'Kristallsplitter und Nebelkerne abbauen.' },
 
     // Hardware
     { p: 'hardware/index.html',            t: 'Hardware-Archiv',     r: 'hardware', d: 'Übersicht über alle Datenblätter.', nav: true },
@@ -293,55 +299,143 @@ XIRU.skills = [
 ];
 
 /* ── Werft: der Erkundungs-Mech ───────────────────────────────────────────
-   Bauteile schaltet man über Level, Realitätskristalle, entdeckte Orte und
-   gespielte Spiele frei. Gebaut werden sie mit Schrott (1 Schrott pro 4 XP).
-   Werte: R Reichweite · E Energie · S Sensor · P Panzerung
+   Bauteile (Baupläne) schaltet man über Level, Realitätskristalle, entdeckte
+   Orte und gespielte Spiele frei und baut sie mit Schrott (1 Schrott pro 4 XP).
+   Jedes gebaute oder gefundene Teil ist ein Gegenstand im Inventar – mit
+   Seltenheit (q 1–6), Zustand (0–100 %) und Aufwertung (+0 bis +5).
+   Werte: R Reichweite · E Energie · S Sensor · P Panzerung · A Angriff
    rep: Rabatt auf Reparaturen (Werkzeugarm)
+   fx:  Sondereffekte (Zubehör): speed Reisetempo · storm Sturmschutz ·
+        events mehr Reise-Ereignisse · luck bessere Beute · taler mehr Taler
+   i:   Symbol im Inventar
    ------------------------------------------------------------------------- */
+XIRU.rarities = [
+    null,
+    { n: 'Gewöhnlich',   c: '#9ca3af', m: 1 },
+    { n: 'Ungewöhnlich', c: '#4ade80', m: 1.25 },
+    { n: 'Selten',       c: '#60a5fa', m: 1.5 },
+    { n: 'Episch',       c: '#c084fc', m: 1.9 },
+    { n: 'Legendär',     c: '#fbbf24', m: 2.4 },
+    { n: 'Mythisch',     c: '#f472b6', m: 3 }
+];
 XIRU.mechSlots = [
-    { id: 'rahmen',  n: 'Rahmen',      icon: '▣' },
-    { id: 'antrieb', n: 'Antrieb',     icon: '⚙' },
-    { id: 'kern',    n: 'Energiekern', icon: '◆' },
-    { id: 'sensor',  n: 'Sensor',      icon: '📡' },
-    { id: 'arm',     n: 'Werkzeugarm', icon: '🔧' },
-    { id: 'panzer',  n: 'Panzerung',   icon: '🛡' }
+    { id: 'rahmen',   n: 'Rahmen',      icon: '▣' },
+    { id: 'antrieb',  n: 'Antrieb',     icon: '⚙' },
+    { id: 'kern',     n: 'Energiekern', icon: '◆' },
+    { id: 'sensor',   n: 'Sensor',      icon: '📡' },
+    { id: 'arm',      n: 'Werkzeugarm', icon: '🔧' },
+    { id: 'panzer',   n: 'Panzerung',   icon: '🛡' },
+    { id: 'waffe',    n: 'Waffe',       icon: '⚔' },
+    { id: 'zubehoer', n: 'Zubehör',     icon: '🎒' }
 ];
 XIRU.mechParts = [
-    { id: 'r-schrott',   slot: 'rahmen',  t: 1, n: 'Schrottrahmen',        s: { P: 1 },                 req: {},                    cost: 0,   d: 'Zusammengeschweisst aus alten PC-Gehäusen. Hält. Meistens.' },
-    { id: 'r-alu',       slot: 'rahmen',  t: 2, n: 'Aluminiumrahmen',      s: { P: 1, R: 1 },           req: { level: 3 },          cost: 40,  d: 'Leichter, also kommt der Antrieb weiter.' },
-    { id: 'r-titan',     slot: 'rahmen',  t: 3, n: 'Titanrahmen',          s: { P: 2, R: 1, E: 1 },     req: { level: 7 },          cost: 120, d: 'Mit Kabelkanälen für zusätzliche Energie.' },
-    { id: 'r-kristall',  slot: 'rahmen',  t: 4, n: 'Kristallgerüst',       s: { P: 3, R: 2, E: 2, S: 1 }, req: { eggs: 30 },        cost: 300, d: 'Ein Gerüst aus gewachsenen Realitätskristallen.' },
-    { id: 'a-paddel',    slot: 'antrieb', t: 1, n: 'Paddelrad',            s: { R: 1 },                 req: {},                    cost: 0,   d: 'Ein Lüfterrad mit angeschraubten Schaufeln.' },
-    { id: 'a-raupe',     slot: 'antrieb', t: 2, n: 'Raupenkette',          s: { R: 2, P: 1 },           req: { pages: 15 },         cost: 60,  d: 'Aus Druckerbändern geflochten. Kommt über jeden Strand.' },
-    { id: 'a-schraube',  slot: 'antrieb', t: 3, n: 'Schiffsschraube',      s: { R: 3 },                 req: { level: 5 },          cost: 120, d: 'Gedreht aus drei Festplatten-Scheiben.' },
-    { id: 'a-duesen',    slot: 'antrieb', t: 4, n: 'Kristalldüsen',        s: { R: 4, E: -1 },          req: { eggs: 20 },          cost: 250, d: 'Schnell, aber durstig.' },
-    { id: 'a-beine',     slot: 'antrieb', t: 5, n: 'Mech-Beine',           s: { R: 4, P: 2 },           req: { level: 12 },         cost: 400, d: 'Läuft über Wasser? Nein – durch. Ganz unten.' },
-    { id: 'k-batterie',  slot: 'kern',    t: 1, n: 'Autobatterie',         s: { E: 1 },                 req: {},                    cost: 0,   d: '12 Volt Zuversicht.' },
-    { id: 'k-diskette',  slot: 'kern',    t: 2, n: 'Diskettenreaktor',     s: { E: 2 },                 req: { eggs: 5 },           cost: 50,  d: 'Liefert stabile 1,44 Megawatt.' },
-    { id: 'k-cd',        slot: 'kern',    t: 3, n: 'CD-Dynamo',            s: { E: 3 },                 req: { level: 6 },          cost: 140, d: 'Dreht mit 52-facher Geschwindigkeit.' },
-    { id: 'k-kristall',  slot: 'kern',    t: 4, n: 'Realitätskern',        s: { E: 5, S: 1 },           req: { eggs: 40 },          cost: 350, d: 'Ein Kernkristall, der in alle Richtungen leuchtet.' },
-    { id: 's-antenne',   slot: 'sensor',  t: 1, n: 'Drahtantenne',         s: { S: 1 },                 req: { pages: 8 },          cost: 20,  d: 'Ein gebogener Kleiderbügel. Empfang: ok.' },
-    { id: 's-radar',     slot: 'sensor',  t: 2, n: 'Radarschüssel',        s: { S: 2 },                 req: { level: 4 },          cost: 80,  d: 'Dreht sich. Piept. Findet Dinge.' },
-    { id: 's-hdd',       slot: 'sensor',  t: 3, n: 'Festplatten-Kompass',  s: { S: 3, R: 1 },           req: { eggs: 15 },          cost: 180, d: 'Der Lesekopf zeigt immer zum nächsten Geheimnis.' },
-    { id: 's-prisma',    slot: 'sensor',  t: 4, n: 'Nebelprisma',          s: { S: 4 },                 req: { eggs: 35, level: 10 }, cost: 300, d: 'Bricht den Nebel wie Licht.' },
-    { id: 'w-schluessel', slot: 'arm',    t: 1, n: 'Schraubenschlüssel',   s: {}, rep: .25,             req: { games: 1 },          cost: 30,  d: 'Reparaturen kosten 25 % weniger.' },
-    { id: 'w-greifer',   slot: 'arm',     t: 2, n: 'Greifarm',             s: { P: 1 }, rep: .4,        req: { games: 5 },          cost: 90,  d: 'Hält Teile fest, während man schraubt. −40 % Reparaturkosten.' },
-    { id: 'w-bohrer',    slot: 'arm',     t: 3, n: 'Kristallbohrer',       s: { E: 1, S: 1 }, rep: .5,  req: { level: 9 },          cost: 200, d: 'Bohrt sich durch alles. −50 % Reparaturkosten.' },
-    { id: 'p-blech',     slot: 'panzer',  t: 1, n: 'Blechplatten',         s: { P: 1 },                 req: { level: 2 },          cost: 30,  d: 'Seitenteile alter Gehäuse.' },
-    { id: 'p-ram',       slot: 'panzer',  t: 2, n: 'RAM-Lamellen',         s: { P: 2 },                 req: { pages: 30 },         cost: 110, d: 'Dutzende RAM-Riegel, schuppenartig vernietet.' },
-    { id: 'p-tower',     slot: 'panzer',  t: 3, n: 'Tower-Panzer',         s: { P: 3 },                 req: { level: 10 },         cost: 220, d: 'Aus einem Big-Tower von 2008. Unzerstörbar.' }
+    /* Rahmen */
+    { id: 'r-schrott',    slot: 'rahmen',   t: 1, i: '🧱', n: 'Schrottrahmen',        s: { P: 1 },                       req: {},                     cost: 0,   d: 'Zusammengeschweisst aus alten PC-Gehäusen. Hält. Meistens.' },
+    { id: 'r-alu',        slot: 'rahmen',   t: 2, i: '🥫', n: 'Aluminiumrahmen',      s: { P: 1, R: 1 },                 req: { level: 3 },           cost: 40,  d: 'Leichter, also kommt der Antrieb weiter.' },
+    { id: 'r-carbon',     slot: 'rahmen',   t: 3, i: '🕸', n: 'Carbonrahmen',         s: { P: 1, R: 2, E: 1 },           req: { pages: 40 },          cost: 140, d: 'Gewebt aus den Fasern alter Mauspads.' },
+    { id: 'r-titan',      slot: 'rahmen',   t: 3, i: '🗼', n: 'Titanrahmen',          s: { P: 2, R: 1, E: 1 },           req: { level: 7 },           cost: 120, d: 'Mit Kabelkanälen für zusätzliche Energie.' },
+    { id: 'r-kristall',   slot: 'rahmen',   t: 4, i: '💎', n: 'Kristallgerüst',       s: { P: 3, R: 2, E: 2, S: 1 },     req: { eggs: 30 },           cost: 300, d: 'Ein Gerüst aus gewachsenen Realitätskristallen.' },
+    { id: 'r-obsidian',   slot: 'rahmen',   t: 5, i: '🌋', n: 'Obsidianrahmen',       s: { P: 4, R: 2, E: 2, S: 1, A: 1 }, req: { level: 15 },        cost: 500, d: 'Aus dem Glas eines erloschenen Vulkans. Schwarz wie ein ausgeschalteter Monitor.' },
+    /* Antrieb */
+    { id: 'a-paddel',     slot: 'antrieb',  t: 1, i: '🛶', n: 'Paddelrad',            s: { R: 1 },                       req: {},                     cost: 0,   d: 'Ein Lüfterrad mit angeschraubten Schaufeln.' },
+    { id: 'a-segel',      slot: 'antrieb',  t: 2, i: '⛵', n: 'Datensegel',           s: { R: 2 },                       req: { games: 3 },           cost: 50,  d: 'Fängt Wind und, wenn man Glück hat, WLAN.' },
+    { id: 'a-raupe',      slot: 'antrieb',  t: 2, i: '🚜', n: 'Raupenkette',          s: { R: 2, P: 1 },                 req: { pages: 15 },          cost: 60,  d: 'Aus Druckerbändern geflochten. Kommt über jeden Strand.' },
+    { id: 'a-schraube',   slot: 'antrieb',  t: 3, i: '🌀', n: 'Schiffsschraube',      s: { R: 3 },                       req: { level: 5 },           cost: 120, d: 'Gedreht aus drei Festplatten-Scheiben.' },
+    { id: 'a-duesen',     slot: 'antrieb',  t: 4, i: '🚀', n: 'Kristalldüsen',        s: { R: 4, E: -1 },                req: { eggs: 20 },           cost: 250, d: 'Schnell, aber durstig.' },
+    { id: 'a-beine',      slot: 'antrieb',  t: 5, i: '🦿', n: 'Mech-Beine',           s: { R: 4, P: 2 },                 req: { level: 12 },          cost: 400, d: 'Läuft über Wasser? Nein – durch. Ganz unten.' },
+    { id: 'a-hover',      slot: 'antrieb',  t: 5, i: '🛸', n: 'Schwebeplatten',       s: { R: 5, P: 1, E: -1 },          req: { eggs: 50 },           cost: 520, d: 'Magnetplatten aus alten Festplatten. Der Mech schwebt eine Handbreit über dem Wasser.' },
+    /* Energiekern */
+    { id: 'k-batterie',   slot: 'kern',     t: 1, i: '🔋', n: 'Autobatterie',         s: { E: 1 },                       req: {},                     cost: 0,   d: '12 Volt Zuversicht.' },
+    { id: 'k-solar',      slot: 'kern',     t: 2, i: '☀', n: 'Solarzellen',          s: { E: 2 },                       req: { pages: 20 },          cost: 45,  d: 'Aus Taschenrechnern geklaubt. Nachts etwas müde.' },
+    { id: 'k-diskette',   slot: 'kern',     t: 2, i: '💾', n: 'Diskettenreaktor',     s: { E: 2, S: 1 },                 req: { eggs: 5 },            cost: 50,  d: 'Liefert stabile 1,44 Megawatt.' },
+    { id: 'k-cd',         slot: 'kern',     t: 3, i: '💿', n: 'CD-Dynamo',            s: { E: 3 },                       req: { level: 6 },           cost: 140, d: 'Dreht mit 52-facher Geschwindigkeit.' },
+    { id: 'k-kristall',   slot: 'kern',     t: 4, i: '🔮', n: 'Realitätskern',        s: { E: 5, S: 1 },                 req: { eggs: 40 },           cost: 350, d: 'Ein Kernkristall, der in alle Richtungen leuchtet.' },
+    { id: 'k-fusion',     slot: 'kern',     t: 5, i: '⚛', n: 'Taschen-Fusion',       s: { E: 6, A: 1 },                 req: { level: 16 },          cost: 560, d: 'Eine kleine Sonne im Brustkorb. Bitte nicht schütteln.' },
+    /* Sensor */
+    { id: 's-antenne',    slot: 'sensor',   t: 1, i: '📶', n: 'Drahtantenne',         s: { S: 1 },                       req: { pages: 8 },           cost: 20,  d: 'Ein gebogener Kleiderbügel. Empfang: ok.' },
+    { id: 's-radar',      slot: 'sensor',   t: 2, i: '📡', n: 'Radarschüssel',        s: { S: 2 },                       req: { level: 4 },           cost: 80,  d: 'Dreht sich. Piept. Findet Dinge.' },
+    { id: 's-sonar',      slot: 'sensor',   t: 3, i: '🔊', n: 'Lautsprecher-Sonar',   s: { S: 2, R: 1 },                 req: { pages: 25 },          cost: 110, d: 'Ein Subwoofer, der unter Wasser „Hallo?" ruft und auf Antwort wartet.' },
+    { id: 's-hdd',        slot: 'sensor',   t: 3, i: '💽', n: 'Festplatten-Kompass',  s: { S: 3, R: 1 },                 req: { eggs: 15 },           cost: 180, d: 'Der Lesekopf zeigt immer zum nächsten Geheimnis.' },
+    { id: 's-prisma',     slot: 'sensor',   t: 4, i: '🔺', n: 'Nebelprisma',          s: { S: 4 },                       req: { eggs: 35, level: 10 }, cost: 300, d: 'Bricht den Nebel wie Licht.' },
+    { id: 's-auge',       slot: 'sensor',   t: 5, i: '👁', n: 'Allsehendes Auge',     s: { S: 5, A: 1 },                 req: { eggs: 60 },           cost: 520, d: 'Es blinzelt nie. Man gewöhnt sich daran. Irgendwann.' },
+    /* Werkzeugarm */
+    { id: 'w-schluessel', slot: 'arm',      t: 1, i: '🔧', n: 'Schraubenschlüssel',   s: {}, rep: .25,                   req: { games: 1 },           cost: 30,  d: 'Reparaturen kosten 25 % weniger.' },
+    { id: 'w-schweiss',   slot: 'arm',      t: 2, i: '🔥', n: 'Schweissarm',          s: { A: 1 }, rep: .35,             req: { level: 4 },           cost: 70,  d: 'Flickt Löcher – und brennt welche. −35 % Reparaturkosten.' },
+    { id: 'w-greifer',    slot: 'arm',      t: 2, i: '🦾', n: 'Greifarm',             s: { P: 1 }, rep: .4,              req: { games: 5 },           cost: 90,  d: 'Hält Teile fest, während man schraubt. −40 % Reparaturkosten.' },
+    { id: 'w-bohrer',     slot: 'arm',      t: 3, i: '🪛', n: 'Kristallbohrer',       s: { E: 1, S: 1 }, rep: .5,        req: { level: 9 },           cost: 200, d: 'Bohrt sich durch alles. −50 % Reparaturkosten.' },
+    { id: 'w-nano',       slot: 'arm',      t: 5, i: '🐝', n: 'Nanoschwarm',          s: { P: 1 }, rep: .7,              req: { eggs: 45 },           cost: 450, d: 'Tausende winzige Helfer, die summend alles zusammenflicken. −70 % Reparaturkosten.' },
+    /* Panzerung */
+    { id: 'p-blech',      slot: 'panzer',   t: 1, i: '🛡', n: 'Blechplatten',         s: { P: 1 },                       req: { level: 2 },           cost: 30,  d: 'Seitenteile alter Gehäuse.' },
+    { id: 'p-ram',        slot: 'panzer',   t: 2, i: '🎞', n: 'RAM-Lamellen',         s: { P: 2 },                       req: { pages: 30 },          cost: 110, d: 'Dutzende RAM-Riegel, schuppenartig vernietet.' },
+    { id: 'p-tower',      slot: 'panzer',   t: 3, i: '🏢', n: 'Tower-Panzer',         s: { P: 3 },                       req: { level: 10 },          cost: 220, d: 'Aus einem Big-Tower von 2008. Unzerstörbar.' },
+    { id: 'p-schild',     slot: 'panzer',   t: 4, i: '🔰', n: 'Energieschild',        s: { P: 4, E: -1 },                req: { eggs: 25 },           cost: 320, d: 'Ein flimmerndes Feld, das nach heissem Staub riecht.' },
+    { id: 'p-kristall',   slot: 'panzer',   t: 5, i: '💠', n: 'Kristallschuppen',     s: { P: 5, S: 1 },                 req: { level: 18 },          cost: 520, d: 'Jede Schuppe ein kleiner Realitätskristall.' },
+    /* Waffen (für die Arena) */
+    { id: 'f-nagel',      slot: 'waffe',    t: 1, i: '📌', n: 'Nagelpistole',         s: { A: 2 },                       req: {},                     cost: 0,   d: 'Aus dem Baumarkt. Klackert beruhigend.' },
+    { id: 'f-loet',       slot: 'waffe',    t: 2, i: '🖊', n: 'Lötlanze',             s: { A: 3 },                       req: { games: 3 },           cost: 50,  d: 'Ein Lötkolben auf einer Besenstange. 450 Grad Überzeugungskraft.' },
+    { id: 'f-laser',      slot: 'waffe',    t: 3, i: '🔦', n: 'Laserpointer-Kanone',  s: { A: 4, S: 1 },                 req: { level: 6 },           cost: 140, d: 'Zweihundert Laserpointer, gebündelt. Katzen lieben sie.' },
+    { id: 'f-bohr',       slot: 'waffe',    t: 3, i: '👊', n: 'Bohrfaust',            s: { A: 5, P: 1 },                 req: { pages: 35 },          cost: 170, d: 'Ein Akkuschrauber in Faustgrösse.' },
+    { id: 'f-tesla',      slot: 'waffe',    t: 4, i: '⚡', n: 'Tesla-Spule',          s: { A: 7, E: -1 },                req: { eggs: 25 },           cost: 300, d: 'Blitze in Dosenform. Haare stehen zu Berge.' },
+    { id: 'f-klinge',     slot: 'waffe',    t: 5, i: '🗡', n: 'Kristallklinge',       s: { A: 9, S: 1 },                 req: { level: 14 },          cost: 480, d: 'Geschliffen aus einem einzigen Prisma. Schneidet Nebel.' },
+    /* Zubehör */
+    { id: 'z-laterne',    slot: 'zubehoer', t: 1, i: '🏮', n: 'Sturmlaterne',         s: { S: 1 }, fx: { events: .15 },  req: { level: 2 },           cost: 25,  d: 'Im Laternenlicht entdeckt man unterwegs mehr.' },
+    { id: 'z-kompass',    slot: 'zubehoer', t: 2, i: '🧭', n: 'Messingkompass',       s: { R: 1 }, fx: { speed: .15 },   req: { pages: 12 },          cost: 60,  d: 'Zeigt immer nach Norden. Reisen gehen 15 % schneller.' },
+    { id: 'z-anker',      slot: 'zubehoer', t: 2, i: '⚓', n: 'Treibanker',           s: { P: 1 }, fx: { storm: .5 },    req: { level: 4 },           cost: 60,  d: 'Hält den Mech im Sturm ruhig. Halber Sturmschaden.' },
+    { id: 'z-sparschwein', slot: 'zubehoer', t: 3, i: '🐷', n: 'Sparschwein',         s: {}, fx: { taler: .2 },          req: { games: 6 },           cost: 120, d: 'Grunzt bei jedem Taler. +20 % Taler.' },
+    { id: 'z-funk',       slot: 'zubehoer', t: 3, i: '📻', n: 'Funkgerät',            s: { S: 1 }, fx: { events: .3 },   req: { eggs: 12 },           cost: 130, d: 'Fängt Hilferufe, Wetterberichte und Händlergeplauder auf.' },
+    { id: 'z-kleeblatt',  slot: 'zubehoer', t: 4, i: '🍀', n: 'Vierblättriges Kleeblatt', s: {}, fx: { luck: .25 },      req: { eggs: 30 },           cost: 260, d: 'In Harz gegossen. Beute fällt öfter seltener aus.' }
 ];
-/* Welche Werte braucht der Mech, um eine Insel zum ersten Mal zu erreichen? */
-XIRU.islandReq = {
-    zentrum: null, konto: null,
-    werkzeuge: { R: 1 },
-    studio:    { R: 1 },
-    arcade:    { R: 2 },
-    hardware:  { R: 2, S: 1 },
-    mixer:     { R: 3, E: 2 },
-    ki:        { R: 3, E: 3, S: 2 },
-    geheim:    null   // geheime Orte erreicht man über Geheimnisse, nicht per Expedition
-};
+/* Startausrüstung (Tutorial): klar erkennbares Anfänger-Set, alles Gewöhnlich */
+XIRU.starterSet = ['r-schrott', 'a-paddel', 'k-batterie', 'f-nagel'];
+
+/* Materialien (Beute, Handel, Schmiede) – v = Wert in Talern */
+XIRU.materials = [
+    { id: 'kabel',     n: 'Kupferkabel',      i: '🔌', v: 3,  d: 'Aus alten Ladegeräten.' },
+    { id: 'zahnrad',   n: 'Zahnrad',          i: '⚙', v: 4,  d: 'Messing, leicht verbogen.' },
+    { id: 'oel',       n: 'Altöl',            i: '🛢', v: 5,  d: 'Riecht nach Garage.' },
+    { id: 'platine',   n: 'Platine',          i: '🟩', v: 8,  d: 'Grün, mit vielen Lötpunkten.' },
+    { id: 'chip',      n: 'Mikrochip',        i: '🔲', v: 14, d: 'Winzig. Wertvoll. Leicht zu verlieren.' },
+    { id: 'splitter',  n: 'Kristallsplitter', i: '💠', v: 25, d: 'Ein Bruchstück eines Realitätskristalls.' },
+    { id: 'nebelkern', n: 'Nebelkern',        i: '🌀', v: 80, d: 'Verdichteter Nebel. Kalt und schwer.' }
+];
+
+/* ── Inseln der Weltkarte (Karte 2400 × 1600) ─────────────────────────────
+   Inhalts-Inseln gehören zu einer Region (r). Spiel-Inseln (game: true) haben
+   eine eigene Seite unter welt/. req = Mech-Werte für die erste Reise dorthin.
+   b = Gebäude: [Name, Seite, Pixel-Icon aus assets/js/pixel-icons.js]
+   ------------------------------------------------------------------------- */
+XIRU.islands = [
+    { id: 'konto',     r: 'konto',     n: 'Heimathafen',     x: 1010, y: 1030, s: 118, art: 'hafen',    req: null,
+      b: [['Werft', 'konto/skilltree.html', 'z-anker'], ['Kapitänshaus', 'konto/profil.html', 'npc-otto'], ['Kristallsammlung', 'konto/sammlung.html', 'k-kristall'], ['Hafenamt', 'konto/einstellungen.html', 'mat-zahnrad']] },
+    { id: 'zentrum',   r: 'zentrum',   n: 'Zentrum',         x: 1190, y: 720,  s: 122, art: 'zentrum',  req: null,
+      b: [['Marktplatz', 'index.html', 'z-kompass'], ['Kartenturm', 'weltkarte.html', 'st-R'], ['Bibliothek', 'suche.html', 's-hdd'], ['Rathaus', 'hilfe.html', 'npc-frieda']] },
+    { id: 'werkzeuge', r: 'werkzeuge', n: 'Werkzeugkasten',  x: 640,  y: 1110, s: 104, art: 'werkstatt', req: { R: 1 },
+      b: [['Werkzeugschuppen', 'werkzeuge/index.html', 'w-schluessel']] },
+    { id: 'studio',    r: 'studio',    n: 'Studio',          x: 985,  y: 385,  s: 110, art: 'studio',   req: { R: 1 },
+      b: [['Filmstudio', 'studio/index.html', 'k-cd'], ['Floppy-Hub-Halle', 'studio/floppy-hub.html', 'k-diskette']] },
+    { id: 'arcade',    r: 'arcade',    n: 'Spielhalle',      x: 1560, y: 470,  s: 126, art: 'arcade',   req: { R: 2 },
+      b: [['Neon-Halle', 'arcade/index.html', 'ic-joystick'], ['PIXMAG-Verlies', 'arcade/dungeon.html', 'f-klinge']] },
+    { id: 'hardware',  r: 'hardware',  n: 'Hardware-Archiv', x: 560,  y: 650,  s: 126, art: 'archiv',   req: { R: 2, S: 1 },
+      b: [['Archivturm', 'hardware/index.html', 'mat-chip'], ['Code-Bibliothek', 'hardware/code/index.html', 'mat-platine']] },
+    { id: 'mixer',     r: 'mixer',     n: 'Mixer-Studio',    x: 1430, y: 1170, s: 108, art: 'mixer',    req: { R: 3, E: 2 },
+      b: [['Klangturm', 'mixer/index.html', 'ic-note']] },
+    { id: 'ki',        r: 'ki',        n: 'KI-Labor',        x: 1880, y: 900,  s: 120, art: 'labor',    req: { R: 3, E: 3, S: 2 },
+      b: [['Observatorium', 'ki/index.html', 'k-fusion'], ['Taverne', 'ki/taverne.html', 'ic-krug']] },
+    { id: 'geheim',    r: 'geheim',    n: '???',             x: 250,  y: 1390, s: 92,  art: 'ruinen',   req: null, secret: true, b: [] },
+    { id: 'markt',     r: 'meer', game: true, n: 'Händlerbucht',   x: 1520, y: 790,  s: 86, art: 'markt',    req: { R: 2 },
+      b: [['Basar', 'welt/markt.html', 'taler']], d: 'Händler aus allen Ecken von Sektaria: Bauteile kaufen, verkaufen, tauschen.' },
+    { id: 'schmiede',  r: 'meer', game: true, n: 'Funkenschmiede', x: 800,  y: 1390, s: 82, art: 'schmiede', req: { R: 2, E: 2 },
+      b: [['Esse', 'welt/schmiede.html', 'ic-amboss']], d: 'Hier werden Teile aufgewertet, zerlegt und verschmolzen.' },
+    { id: 'wrack',     r: 'meer', game: true, n: 'Wrackriff',      x: 1930, y: 1370, s: 84, art: 'wrack',    req: { R: 3, S: 2 },
+      b: [['Tauchplatz', 'welt/wrack.html', 'npc-muschel']], d: 'Ein Riff voller gesunkener Frachter. Mit Sonar findet man Schätze.' },
+    { id: 'arena',     r: 'meer', game: true, n: 'Schrott-Arena',  x: 2080, y: 560,  s: 98, art: 'arena',    req: { R: 3, P: 2, A: 3 },
+      b: [['Kampfring', 'welt/arena.html', 'st-A']], d: 'Mechs aus ganz Sektaria treten hier gegeneinander an.' },
+    { id: 'mine',      r: 'meer', game: true, n: 'Nebelmine',      x: 330,  y: 300,  s: 100, art: 'mine',     req: { R: 4, E: 3, S: 3 },
+      b: [['Stollen', 'welt/mine.html', 'npc-kiesel']], d: 'Tief im Berg wachsen Kristallsplitter und Nebelkerne.' }
+];
+/* Kompatibilität: Mech-Werte für die erste Reise je Insel/Region */
+XIRU.islandReq = {};
+XIRU.islands.forEach(i => { XIRU.islandReq[i.id] = i.req; });
 
 /* ── Designs (Themes) ─────────────────────────────────────────────────── */
 XIRU.themes = [
@@ -521,7 +615,7 @@ XIRU.eggs.push(
     { id: 'm-erste-reise', pg: 'konto/skilltree.html', n: 'Leinen los',      h: 'Erreiche mit dem Mech eine neue Insel.', x: 30, r: 1, m: 'Land in Sicht!' },
     { id: 'm-reparatur',   pg: 'konto/skilltree.html', n: 'Schrauberherz',   h: 'Repariere ein beschädigtes Bauteil.', x: 20, r: 1, m: 'Wie neu. Fast.' },
     { id: 'm-kaputt',      pg: 'konto/skilltree.html', n: 'Totalschaden',    h: 'Fahr ein Bauteil komplett zu Schrott.', x: 25, r: 2, m: 'Das war mal ein Antrieb.' },
-    { id: 'm-vollausbau',  pg: 'konto/skilltree.html', n: 'Vollausstattung', h: 'Belege alle sechs Bauplätze des Mechs.', x: 60, r: 3, m: 'Ein richtiger Mech!' },
+    { id: 'm-vollausbau',  pg: 'konto/skilltree.html', n: 'Vollausstattung', h: 'Belege alle acht Bauplätze des Mechs.', x: 60, r: 3, m: 'Ein richtiger Mech!' },
     { id: 'm-beine',       pg: 'konto/skilltree.html', n: 'Mech-Pilot',      h: 'Gib deinem Mech echte Beine.', x: 80, r: 3, m: 'STAMPF. STAMPF. STAMPF.' },
     { id: 'm-alle-inseln', pg: 'weltkarte.html',       n: 'Kartenmacher',    h: 'Erreiche jede Insel der bekannten Welt.', x: 200, r: 4, m: 'Die bekannte Welt gehört dir. Aber was liegt im Nebel? +1 Modulpunkt' }
     ,
@@ -618,6 +712,7 @@ XIRU.eggs.push(
     { id: 'k-taverne-prost',   pg: 'ki/taverne.html', n: 'Prost!', h: 'In der Taverne gehört es sich, anzustossen.', x: 15, r: 1, m: 'Zum Wohl!' },
     { id: 'k-taverne-runde',   pg: 'ki/taverne.html', n: 'Stammgast', h: 'Sprich in der Taverne mit allen Gästen.', x: 40, r: 2, m: 'Jetzt kennt dich hier jeder.' },
     /* Mixer */
+    { id: 'x-elf',             pg: 'mixer/index.html', n: 'Eins lauter', h: 'Im Mixer-Studio geht ein Regler weiter als bis zehn.', x: 30, r: 2, m: 'Diese hier gehen bis elf.' },
     { id: 'x-klang-alle',      pg: 'mixer/klang.html', n: 'Klangteppich', h: 'Lass im Klangmixer wirklich jeden Kanal gleichzeitig laufen.', x: 25, r: 1, m: 'Ein ganzer Wald voller Geräusche.' },
     { id: 'x-klang-schlaf',    pg: 'mixer/klang.html', n: 'Eingeschlafen', h: 'Lass den Schlaf-Timer im Klangmixer ablaufen.', x: 30, r: 2, m: 'Gute Nacht!' },
     { id: 'x-klang-blitz',     pg: 'mixer/klang.html', n: 'Blitzfänger', h: 'Wenn es im Klangmixer gewittert: schnell sein!', x: 30, r: 2, m: 'Gefangen! Und kein bisschen elektrisiert.' },
@@ -633,6 +728,17 @@ XIRU.eggs.push(
     { id: 'k-code-tutor', pg: 'ki/code-tutor.html',       n: 'Nachhilfe',        h: 'Lass dir vom Code-Tutor etwas erklären.', x: 20, r: 1, m: 'Fragen ist der schnellste Weg zum Können.' },
     { id: 'c-lektion',    pg: 'hardware/code/index.html', n: 'Hallo Welt',       h: 'Schliess in der Code-Bibliothek eine Lektion ab.', x: 20, r: 1, m: 'Jede Programmiererin, jeder Programmierer hat so angefangen.' },
     { id: 'c-cheatsheet', pg: 'hardware/code/index.html', n: 'Spickzettel',      h: 'Nimm dir ein Cheat-Sheet mit nach Hause.', x: 25, r: 1, m: 'Erlaubter Spickzettel. Der beste.' },
-    { id: 'c-kurs',       pg: 'hardware/code/index.html', n: 'Absolvent',        h: 'Bring einen ganzen Kurs zu Ende.', x: 80, r: 2, m: 'Zertifikat? Gibt es nicht. Aber Respekt.' }
+    { id: 'c-kurs',       pg: 'hardware/code/index.html', n: 'Absolvent',        h: 'Bring einen ganzen Kurs zu Ende.', x: 80, r: 2, m: 'Zertifikat? Gibt es nicht. Aber Respekt.' },
+    /* Welt & Mech */
+    { id: 'm-handel',     pg: 'welt/markt.html',    n: 'Pfeffersack',      h: 'Schliess in der Händlerbucht einen Handel ab.', x: 20, r: 1, m: 'Die Händler kennen jetzt dein Gesicht.' },
+    { id: 'm-schmied',    pg: 'welt/schmiede.html', n: 'Funkenflug',       h: 'Werte in der Funkenschmiede ein Teil auf.', x: 25, r: 1, m: 'Klonk. Klonk. Besser.' },
+    { id: 'm-arena',      pg: 'welt/arena.html',    n: 'Erster Sieg',      h: 'Gewinne einen Kampf in der Schrott-Arena.', x: 40, r: 2, m: 'Die Menge tobt (alle drei Zuschauer).' },
+    { id: 'm-champion',   pg: 'welt/arena.html',    n: 'Arena-Champion',   h: 'Besiege den Champion der Schrott-Arena.', x: 200, r: 4, m: 'Dein Name steht jetzt auf dem Pokal.' },
+    { id: 'm-taucher',    pg: 'welt/wrack.html',    n: 'Schatztaucher',    h: 'Hol im Wrackriff einen Schatz an die Oberfläche.', x: 25, r: 1, m: 'Blubb.' },
+    { id: 'm-bergbau',    pg: 'welt/mine.html',     n: 'Glück auf!',       h: 'Bring eine Schicht in der Nebelmine zu Ende.', x: 25, r: 1, m: 'Die Lore ist voll.' },
+    { id: 'm-legendaer',  pg: 'konto/skilltree.html', n: 'Goldglanz',      h: 'Besitze ein legendäres Bauteil.', x: 60, r: 3, m: 'Es leuchtet golden in der Werft.' },
+    { id: 'm-mythisch',   pg: 'konto/skilltree.html', n: 'Mythos',         h: 'Besitze ein mythisches Bauteil.', x: 120, r: 3, m: 'Manche sagen, es sei nur eine Legende.' },
+    { id: 'm-weltreise',  pg: 'weltkarte.html',     n: 'Weltreisende:r',   h: 'Besuche mit dem Mech jede Insel – auch die Spiel-Inseln.', x: 100, r: 3, m: 'Der Archipel hat keine Geheimnisse mehr vor dir. Fast.' },
+    { id: 'm-flaschenpost', pg: 'weltkarte.html',   n: 'Flaschenpost',     h: 'Fisch unterwegs eine Flaschenpost aus dem Meer.', x: 20, r: 1, m: 'Jemand da draussen denkt an dich.' }
     /* EGGS:ENDE */
 );

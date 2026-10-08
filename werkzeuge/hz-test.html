@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hz-Test · Xiruprojekts</title>
+    <meta name="description" content="Wie viele Bilder pro Sekunde zeigt dein Bildschirm? Misst die Bildwiederholrate (Hz) live, mit Frame-Zeit-Grafik und Bewegungstest.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="css/werkzeuge.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <style>
+        .hz-big { color: var(--accent); }
+        .hz-graph { width: 100%; height: 120px; display: block; background: var(--bg-2); border-radius: 8px; }
+        .hz-lane { position: relative; height: 3rem; margin-top: .6rem; border-radius: 8px; background: var(--bg-2); overflow: hidden; }
+        .hz-ufo { position: absolute; left: 0; top: .45rem; font-size: 1.7rem; will-change: transform; }
+        .hz-tag { position: absolute; right: .6rem; top: .85rem; font: 600 .75rem var(--mono); color: var(--text-muted); }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">⚒ Werkzeugkasten</span>
+        <h1>Hz-Test</h1>
+        <p class="lead">Der Browser zeichnet so oft, wie dein Bildschirm es kann. Hier siehst du, wie viele Hz tatsächlich ankommen – und wie flüssig Bewegung bei dir aussieht.</p>
+    </header>
+    <div class="grid-3">
+        <div class="card stat"><span class="stat__label">Bildwiederholrate</span><span class="stat__value hz-big" id="hz">…</span></div>
+        <div class="card stat"><span class="stat__label">Frame-Zeit</span><span class="stat__value" id="ft">…</span></div>
+        <div class="card stat"><span class="stat__label">Ruckler (letzte 10 s)</span><span class="stat__value" id="drops">0</span></div>
+    </div>
+    <section class="card mt-1">
+        <h3>Frame-Zeiten</h3>
+        <canvas id="graph" class="hz-graph" height="120"></canvas>
+        <h3 class="mt-1">Bewegungstest</h3>
+        <p class="small muted">Oben bewegt sich das Ufo jedes Bild, darunter nur mit 30 Bildern pro Sekunde. Siehst du einen Unterschied?</p>
+        <div class="hz-lane"><span class="hz-ufo" id="u1">🛸</span><span class="hz-tag" id="t1">volle Hz</span></div>
+        <div class="hz-lane"><span class="hz-ufo" id="u2">🛸</span><span class="hz-tag">30 fps</span></div>
+    </section>
+    <p class="small muted mt-1">Tipp: Mit Energiesparmodus, in einem Hintergrund-Tab oder bei vollem Prozessor misst der Browser weniger, als dein Bildschirm kann.</p>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU;
+    const cv = X.$('#graph'), ctx = cv.getContext('2d'), times = [], drops = [];
+    let last = 0, pos = 0, acc30 = 0, x2 = 0, shown = 0;
+    const COMMON = [60, 75, 90, 100, 120, 144, 165, 170, 180, 200, 240, 280, 360];
+    function size() { const r = cv.getBoundingClientRect(); cv.width = Math.round(r.width * devicePixelRatio); cv.height = Math.round(120 * devicePixelRatio); }
+    size(); addEventListener('resize', size);
+    function frame(t) {
+        if (last) {
+            const dt = t - last; times.push(dt); if (times.length > 240) times.shift();
+            const sorted = times.slice().sort((a, b) => a - b), med = sorted[sorted.length >> 1], hz = 1000 / med;
+            if (dt > med * 1.7 && times.length > 30) drops.push(t);
+            while (drops.length && drops[0] < t - 10000) drops.shift();
+            if (t - shown > 250) {
+                shown = t;
+                const near = COMMON.reduce((a, b) => Math.abs(b - hz) < Math.abs(a - hz) ? b : a);
+                X.$('#hz').textContent = (Math.abs(near - hz) < hz * .04 ? near : Math.round(hz)) + ' Hz';
+                X.$('#ft').textContent = med.toFixed(2) + ' ms'; X.$('#drops').textContent = drops.length;
+                X.$('#t1').textContent = Math.round(hz) + ' fps';
+                if (times.length > 120) X.once('wz-hz', 5, 'Hz gemessen');
+            }
+            draw(med);
+            const lane = X.$('.hz-lane').clientWidth - 40, speed = lane / 2000;
+            pos = (pos + dt * speed) % lane; X.$('#u1').style.transform = 'translateX(' + pos + 'px)';
+            acc30 += dt; if (acc30 >= 1000 / 30) { x2 = (x2 + acc30 * speed) % lane; acc30 = 0; X.$('#u2').style.transform = 'translateX(' + x2 + 'px)'; }
+        }
+        last = t; requestAnimationFrame(frame);
+    }
+    function draw(med) {
+        const W = cv.width, H = cv.height, max = Math.max(med * 3, 20), bw = W / 240;
+        ctx.clearRect(0, 0, W, H);
+        ctx.strokeStyle = 'rgba(148,163,184,.35)'; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(0, H - med / max * H); ctx.lineTo(W, H - med / max * H); ctx.stroke(); ctx.setLineDash([]);
+        times.forEach((v, k) => { ctx.fillStyle = v > med * 1.7 ? '#f87171' : getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#22d3ee'; const h = Math.min(H, v / max * H); ctx.fillRect(k * bw, H - h, Math.max(1, bw - 1), h); });
+    }
+    document.addEventListener('visibilitychange', () => { last = 0; times.length = 0; });
+    requestAnimationFrame(frame);
+});
+</script>
+</body>
+</html>

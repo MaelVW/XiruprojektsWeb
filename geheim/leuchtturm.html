@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Der Leuchtturm · Xiruprojekts</title>
+    <meta name="description" content="Ein Leuchtturm im Sternenmeer. Sein Licht blinkt eine Botschaft – kannst du sie entschlüsseln?">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <style>
+        .lt { position: relative; height: min(60vh, 460px); border-radius: 14px; overflow: hidden; background: linear-gradient(#020617, #0b1a3a 70%); }
+        .lt__sky { position: absolute; inset: 0; background: radial-gradient(1px 1px at 10% 20%, #fff, transparent), radial-gradient(1px 1px at 30% 10%, #fff, transparent), radial-gradient(1.5px 1.5px at 55% 25%, #fff, transparent), radial-gradient(1px 1px at 75% 15%, #fff, transparent), radial-gradient(1px 1px at 90% 35%, #fff, transparent), radial-gradient(1px 1px at 40% 40%, #fff, transparent); }
+        .lt__sea { position: absolute; left: 0; right: 0; bottom: 0; height: 22%; background: repeating-linear-gradient(170deg, #0c2a55 0 8px, #0a2148 8px 16px); }
+        .lt__tower { position: absolute; left: 50%; bottom: 18%; width: 46px; height: 58%; transform: translateX(-50%); background: repeating-linear-gradient(#f1f5f9 0 22%, #dc2626 22% 44%); clip-path: polygon(22% 0, 78% 0, 100% 100%, 0 100%); }
+        .lt__lamp { position: absolute; top: -18px; left: 50%; width: 22px; height: 22px; transform: translateX(-50%); border-radius: 50%; background: #422006; transition: background .05s, box-shadow .05s; }
+        .lt__lamp.is-on { background: #fef08a; box-shadow: 0 0 40px 18px #fde047aa, 0 0 140px 50px #fde04744; }
+        .lt__beam { position: absolute; top: -14px; left: 50%; width: 900px; height: 14px; transform-origin: 0 50%; background: linear-gradient(90deg, #fde04755, transparent); animation: ltBeam 8s linear infinite; }
+        @keyframes ltBeam { to { transform: rotate(360deg); } } html.no-anim .lt__beam { animation: none; opacity: 0; }
+        .lt__table { display: grid; grid-template-columns: repeat(auto-fill, minmax(4.6rem, 1fr)); gap: .25rem; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">🗝 Geheimer Ort</span>
+        <h1>Der Leuchtturm</h1>
+        <p class="lead">Draussen auf den Klippen steht ein Leuchtturm. Sein Licht blinkt nicht zufällig. Es spricht – in Morsezeichen.</p>
+    </header>
+    <section class="lt">
+        <div class="lt__sky"></div>
+        <div class="lt__tower"><span class="lt__lamp" id="lamp"></span><span class="lt__beam"></span></div>
+        <div class="lt__sea"></div>
+    </section>
+    <div class="grid-2 mt-1">
+        <section class="card"><h3>Entschlüssle das Licht</h3><p class="small muted">Kurz = ·, lang = –. Zwischen Buchstaben ist eine kleine Pause, nach dem Wort eine lange.</p>
+            <div class="row"><input class="input mono" id="ans" maxlength="20" placeholder="Botschaft" aria-label="Botschaft"><button class="btn btn--primary" type="button" id="check">Prüfen</button></div><p class="small" id="res" aria-live="polite"></p></section>
+        <section class="card"><h3>Morse-Tafel</h3><div class="lt__table mono small" id="table"></div></section>
+    </div>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU;
+    const $ = s => X.$(s);
+    const MC = { A: '·–', B: '–···', C: '–·–·', D: '–··', E: '·', F: '··–·', G: '––·', H: '····', I: '··', J: '·–––', K: '–·–', L: '·–··', M: '––', N: '–·', O: '–––', P: '·––·', Q: '––·–', R: '·–·', S: '···', T: '–', U: '··–', V: '···–', W: '·––', X: '–··–', Y: '–·––', Z: '––··' };
+    const WORD = 'LICHT', U = 260;
+    $('#table').innerHTML = Object.keys(MC).map(k => '<span><b>' + k + '</b> ' + MC[k] + '</span>').join('');
+    const seq = []; WORD.split('').forEach(ch => { MC[ch].split('').forEach(s => { seq.push([1, s === '·' ? U : U * 3]); seq.push([0, U]); }); seq.push([0, U * 2]); }); seq.push([0, U * 6]);
+    let i = 0;
+    (function blink() { const [on, d] = seq[i]; $('#lamp').classList.toggle('is-on', !!on); i = (i + 1) % seq.length; setTimeout(blink, d); })();
+    $('#check').addEventListener('click', () => {
+        const a = $('#ans').value.trim().toUpperCase();
+        if (a === WORD) { $('#res').textContent = '✔ Das Licht hat dich gefunden. Der Leuchtturmwärter nickt dir zu.'; X.once('geheim-morse', 20, 'Morse entschlüsselt'); X.confetti(40); }
+        else $('#res').textContent = a ? '✖ Das Licht blinkt unbeirrt weiter …' : '';
+    });
+    $('#ans').addEventListener('keydown', e => { if (e.key === 'Enter') $('#check').click(); });
+});
+</script>
+</body>
+</html>

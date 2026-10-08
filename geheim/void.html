@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Die Leere · Xiruprojekts</title>
+    <meta name="description" content="…">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <style>
+        .site-header, .site-footer, .page-head { opacity: .08; transition: opacity 2s; } .site-header:hover, .site-footer:hover { opacity: 1; }
+        body { background: #000; }
+        .vd { min-height: 65vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2rem; }
+        .vd__t { color: #d4d4d4; font: 300 clamp(1.1rem, 3vw, 1.6rem) Georgia, serif; letter-spacing: .05em; opacity: 0; margin: 0; text-align: center; }
+        .vd__t.is-in { animation: vdIn 3s ease both; } @keyframes vdIn { 0% { opacity: 0; filter: blur(6px); } 30%, 80% { opacity: 1; filter: none; } 100% { opacity: .35; } }
+        .vd__in { opacity: 0; pointer-events: none; background: transparent; border: 0; border-bottom: 1px solid #333; color: #aaa; text-align: center; font: 1rem Georgia, serif; outline: none; width: min(80vw, 320px); transition: opacity 3s; }
+        .vd__in.is-on { opacity: 1; pointer-events: auto; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">…</span>
+        <h1>Die Leere</h1>
+        <p class="lead"></p>
+    </header>
+    <section class="vd" id="void"><p class="vd__t" id="t"></p><input class="vd__in" id="in" maxlength="40" aria-label="Sag etwas in die Leere" autocomplete="off"></section>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU;
+    const $ = s => X.$(s), L = ['…', 'Hier ist nichts.', 'Wirklich nichts.', 'Du bist immer noch da?', 'Die meisten gehen nach drei Sekunden.', 'Gut. Dann bleib kurz.', 'Hörst du das? Genau. Gar nichts.', 'Schreib etwas. Die Leere antwortet manchmal.'];
+    let i = 0, still = 0;
+    const show = s => { const t = $('#t'); t.classList.remove('is-in'); void t.offsetWidth; t.textContent = s; t.classList.add('is-in'); };
+    const tick = setInterval(() => { if (i < L.length) show(L[i++]); else { clearInterval(tick); $('#in').classList.add('is-on'); $('#in').focus(); } }, 3200);
+    $('#in').addEventListener('keydown', e => {
+        if (e.key !== 'Enter') return; const v = $('#in').value.trim(); if (!v) return; $('#in').value = '';
+        show(v.toLowerCase().includes('hallo') ? 'hallo … hallo … hallo …' : v.split('').reverse().join('') + ' … ' + v.toLowerCase());
+        if (++still >= 3) X.once('geheim-leere', 10, 'Mit der Leere gesprochen');
+    });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tipp-Trainer · Xiruprojekts</title>
+    <meta name="description" content="Tipp-Trainer: Wie viele Anschläge pro Minute schaffst du? Deutsche Wörter, 30 oder 60 Sekunden, mit Genauigkeit und Rekord.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="../assets/css/themes/arcade.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/arcade.js"></script>
+    <style>
+        .tp { width: 100%; padding: clamp(12px, 3vw, 28px); display: flex; flex-direction: column; gap: 1rem; }
+        .tp__text { font-size: clamp(1.05rem, 2.6vw, 1.4rem); line-height: 1.9; color: var(--text-muted); min-height: 7.6em; overflow: hidden; }
+        .tp__text .is-cur { color: var(--text); background: color-mix(in srgb, var(--accent) 22%, transparent); border-radius: 4px; padding: 0 .15em; }
+        .tp__text .is-bad { background: color-mix(in srgb, #f87171 35%, transparent); }
+        .tp__in { font-size: 1.2rem; }
+    </style>
+</head>
+<body class="theme-arcade">
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">▶ Spielhalle · Geschick</span>
+        <h1>Tipp-Trainer</h1>
+        <p class="lead">Tippe die Wörter so schnell und genau wie möglich. Die Zeit läuft ab dem ersten Buchstaben.</p>
+    </header>
+    <div class="game">
+        <div>
+            <div class="game__hud" id="hud">
+                <div><span>Zeit</span><b id="h-time">60</b></div>
+                <div><span>Anschläge/Min</span><b id="h-apm">0</b></div>
+                <div><span>Wörter/Min</span><b id="h-wpm">0</b></div>
+                <div><span>Genauigkeit</span><b id="h-acc">100 %</b></div>
+            </div>
+            <div class="game__stage" id="stage">
+                <div class="tp">
+                    <div class="tp__text mono" id="text" aria-hidden="true"></div>
+                    <input class="input tp__in mono" id="in" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Hier tippen" placeholder="Hier tippen …">
+                </div>
+                <div class="game__overlay" id="ov" hidden></div>
+            </div>
+            <div class="row mt-1"><button class="btn btn--sm" type="button" id="b-new">↺ Neustart <kbd>Esc</kbd></button><button class="btn btn--sm" type="button" data-s="30">30 s</button><button class="btn btn--sm btn--primary" type="button" data-s="60">60 s</button></div>
+        </div>
+        <aside class="game__side">
+            <div class="card">
+                <h3>Tipps</h3>
+                <ul class="keys-help"><li>Leertaste schliesst ein Wort ab</li><li>Falsche Wörter zählen nicht</li><li>Ab ~200 Anschlägen/Min tippst du schneller als die meisten</li></ul>
+            </div>
+            <div class="card">
+                <h3>Rekord</h3>
+                <p class="stat__value" id="best">–</p><p class="small muted">Anschläge pro Minute</p>
+            </div>
+        </aside>
+    </div>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU;
+    const G = X.Game, $ = s => X.$(s), inp = $('#in');
+    const WORDS = ('und der die das ist nicht mit auf für ein eine sich auch wie nach wird bei aus noch nur oder aber vor zur bis mehr durch über '
+        + 'Kristall Insel Werft Mech Spiel Pixel Code Taste Maus Welt Karte Nebel Diskette Server Drache Zauber Turm Licht Hafen Schiff Anker Modul '
+        + 'schnell leise heute morgen immer wieder zusammen vielleicht wirklich spielen bauen finden laufen springen tippen lernen sammeln entdecken').split(' ');
+    let secs = 60, words = [], idx = 0, ok = 0, keys = 0, errs = 0, t0 = 0, timer = null, done = false;
+    function best() { const b = X.best('tippen'); $('#best').textContent = b == null ? '–' : b; }
+    function gen() { words = Array.from({ length: 120 }, () => X.pick(WORDS)); }
+    function show() {
+        const box = $('#text'); box.textContent = '';
+        words.slice(idx, idx + 24).forEach((w, k) => { const s = document.createElement('span'); s.textContent = w; if (!k) s.className = 'is-cur'; box.append(s, ' '); });
+        mark();
+    }
+    function mark() { const cur = $('#text .is-cur'); if (cur) cur.classList.toggle('is-bad', !words[idx].startsWith(inp.value)); }
+    function stats() {
+        const min = Math.max((Date.now() - t0) / 60000, 1 / 60);
+        $('#h-apm').textContent = Math.round(ok / min); $('#h-wpm').textContent = Math.round(ok / 5 / min);
+        $('#h-acc').textContent = (keys ? Math.round((keys - errs) / keys * 100) : 100) + ' %';
+    }
+    function reset() {
+        clearInterval(timer); t0 = 0; idx = 0; ok = 0; keys = 0; errs = 0; done = false; inp.value = ''; inp.disabled = false;
+        $('#h-time').textContent = secs; ['h-apm', 'h-wpm'].forEach(i => $('#' + i).textContent = 0); $('#h-acc').textContent = '100 %';
+        gen(); show(); best(); G.overlay('#ov').hide(); inp.focus();
+    }
+    function end() {
+        clearInterval(timer); done = true; inp.disabled = true; stats();
+        const apm = +$('#h-apm').textContent, r = X.score('tippen', apm); best(); G.sfx.win();
+        G.overlay('#ov').show({ icon: '⌨', title: apm + ' Anschläge pro Minute', text: $('#h-wpm').textContent + ' Wörter/Min · Genauigkeit ' + $('#h-acc').textContent + (r.isNew ? ' · Neuer Rekord!' : ''), button: 'Nochmal', onClick: reset });
+    }
+    inp.addEventListener('input', e => {
+        if (done) return;
+        if (!t0) { t0 = Date.now(); timer = setInterval(() => { const left = secs - Math.floor((Date.now() - t0) / 1000); $('#h-time').textContent = Math.max(0, left); stats(); if (left <= 0) end(); }, 200); }
+        if (e.inputType && e.inputType.startsWith('insert')) { keys++; if (!words[idx].startsWith(inp.value.trimEnd())) errs++; }
+        if (inp.value.endsWith(' ')) {
+            const typed = inp.value.trim();
+            if (typed === words[idx]) ok += typed.length + 1; else if (typed) { G.sfx.hit(); }
+            idx++; inp.value = ''; if (idx > words.length - 30) words = words.concat(Array.from({ length: 60 }, () => X.pick(WORDS))); show();
+        } else mark();
+    });
+    inp.addEventListener('keydown', e => { if (e.key === 'Escape') reset(); });
+    $('#b-new').addEventListener('click', reset);
+    X.$$('[data-s]').forEach(b => b.addEventListener('click', () => { secs = +b.dataset.s; X.$$('[data-s]').forEach(x => x.classList.toggle('btn--primary', x === b)); reset(); }));
+    reset();
+});
+</script>
+</body>
+</html>

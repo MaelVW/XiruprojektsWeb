@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Archiv 1999 · Xiruprojekts</title>
+    <meta name="description" content="Diese Seite ist im Aufbau. Seit 1999. Mit Gästebuch, Besucherzähler und Webring.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <style>
+        body { background: #000080 repeating-conic-gradient(#00008b 0 25%, #000070 0 50%) 0 0 / 40px 40px; }
+        .y2k { font-family: "Comic Sans MS", "Comic Sans", cursive; color: #ffff00; text-align: center; }
+        .y2k a { color: #00ffff; } .y2k h2 { color: #ff00ff; font-family: inherit; }
+        .y2k__marquee { overflow: hidden; white-space: nowrap; background: #000; border: 3px ridge #c0c0c0; padding: .3rem 0; }
+        .y2k__marquee span { display: inline-block; padding-left: 100%; animation: y2kRun 18s linear infinite; }
+        @keyframes y2kRun { to { transform: translateX(-100%); } }
+        .y2k__uc { font-size: 1.6rem; font-weight: 700; color: #ff0; background: repeating-linear-gradient(45deg, #000 0 14px, #fc0 14px 28px); padding: .5rem; text-shadow: 2px 2px #000; }
+        .y2k__count b { font-family: monospace; background: #000; color: #0f0; padding: 0 .4rem; border: 2px inset #888; letter-spacing: .2em; }
+        .y2k__tab { width: 100%; border: 4px outset #c0c0c0; background: #000040; border-spacing: 10px; } .y2k__tab td { vertical-align: top; border: 2px inset #808080; padding: .6rem; }
+        .y2k__side { width: 32%; } @media (max-width: 640px) { .y2k__tab td { display: block; width: auto; } }
+        .y2k__in { display: block; width: 100%; margin: .3rem 0; font-family: inherit; background: #fff; color: #000; border: 2px inset #808080; }
+        .y2k form button { font-family: inherit; background: #c0c0c0; border: 3px outset #fff; padding: .2rem 1rem; cursor: pointer; }
+        .y2k__entries { list-style: none; padding: 0; text-align: left; } .y2k__entries li { border-bottom: 1px dashed #ff00ff; padding: .4rem 0; overflow-wrap: anywhere; } .y2k__entries p { margin: .2rem 0 0; color: #fff; }
+        .y2k__blink { animation: y2kBlink 1s steps(1) infinite; color: #f00; font-weight: 700; } @keyframes y2kBlink { 50% { opacity: 0; } }
+        html.no-anim .y2k__marquee span, html.no-anim .y2k__blink { animation: none; padding-left: 0; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">🗝 Geheimer Ort</span>
+        <h1>Archiv 1999</h1>
+        <p class="lead">Willkommen auf meiner Homepage!!! Diese Seite ist noch im Aufbau. Bitte trag dich ins Gästebuch ein!!!</p>
+    </header>
+    <div class="y2k">
+        <div class="y2k__marquee"><span>★ Willkommen im Jahr 1999 ★ Optimiert für Netscape Navigator 4.0 bei 800×600 ★ Kein Y2K-Problem hier (hoffentlich) ★</span></div>
+        <p class="y2k__uc">🚧 UNDER CONSTRUCTION 🚧</p>
+        <p class="y2k__count">Du bist Besucher Nr. <b id="count">000000</b></p>
+        <table class="y2k__tab"><tr><td>
+            <h2>📖 Gästebuch</h2>
+            <form id="gb"><input class="y2k__in" id="g-name" maxlength="30" placeholder="Name" required><textarea class="y2k__in" id="g-text" maxlength="300" rows="3" placeholder="Deine Nachricht!!!" required></textarea><button type="submit">Eintragen</button></form>
+            <ul id="entries" class="y2k__entries"></ul>
+        </td><td class="y2k__side">
+            <h2>🔗 Webring</h2>
+            <p><a href="keller.html">&lt;&lt; Zurück</a> | <a href="leuchtturm.html">Zufall</a> | <a href="katzen.html">Weiter &gt;&gt;</a></p>
+            <p class="y2k__blink">NEU!!!</p>
+            <p>Diese Seite wurde mit <b>Notepad</b> gemacht.</p>
+        </td></tr></table>
+    </div>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU;
+    const $ = s => X.$(s);
+    const c = (X.load('archiv-zaehler', 0) || 0) + 1; X.save('archiv-zaehler', c);
+    $('#count').textContent = String(1337 + c * 7).padStart(6, '0');
+    const SEED = [{ n: 'CoolDude99', t: 'Geile Seite!!! Besuch auch meine Homepage!!!', d: '14.03.1999' }, { n: 'Webmasterin', t: 'Dein Lauftext ist toll. Wie hast du den gemacht?', d: '02.11.1999' }];
+    function render() {
+        const ul = $('#entries'); ul.textContent = '';
+        (X.load('gaestebuch-1999', []) || []).concat(SEED).forEach(e => {   // nur textContent – nie HTML aus dem Gästebuch
+            const li = document.createElement('li'), b = document.createElement('b'), s = document.createElement('span'), p = document.createElement('p');
+            b.textContent = String(e.n).slice(0, 30); s.textContent = ' am ' + String(e.d).slice(0, 12); p.textContent = String(e.t).slice(0, 300);
+            li.append(b, s, p); ul.appendChild(li);
+        });
+    }
+    $('#gb').addEventListener('submit', e => {
+        e.preventDefault(); const n = $('#g-name').value.trim(), t = $('#g-text').value.trim(); if (!n || !t) return;
+        const list = X.load('gaestebuch-1999', []) || []; list.unshift({ n: n.slice(0, 30), t: t.slice(0, 300), d: new Date().toLocaleDateString('de-CH').replace(/\d{4}$/, '1999') });
+        X.save('gaestebuch-1999', list.slice(0, 20)); $('#gb').reset(); render(); X.once('geheim-gaestebuch', 5, 'Ins Gästebuch eingetragen');
+    });
+    render();
+});
+</script>
+</body>
+</html>

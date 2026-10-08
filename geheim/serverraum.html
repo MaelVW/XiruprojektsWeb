@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Serverraum · Xiruprojekts</title>
+    <meta name="description" content="Der Serverraum von Xiruprojekts. Bitte nichts anfassen.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <style>
+        .sr { padding: 1.2rem; border-radius: 14px; background: linear-gradient(#0b1120, #020617); }
+        .sr__racks { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: .7rem; }
+        .sr__rack { display: grid; gap: 4px; padding: 8px; border-radius: 6px; border: 2px solid #334155; background: #111827; cursor: pointer; }
+        .sr__unit { display: flex; gap: 4px; padding: 5px 6px; background: #1f2937; border-radius: 2px; }
+        .sr__unit i { width: 6px; height: 6px; border-radius: 50%; background: #22c55e; animation: srBlink 1s steps(1) infinite; }
+        .sr__unit i:nth-child(3n) { background: #38bdf8; } .sr__unit i:nth-child(5n) { background: #f59e0b; }
+        @keyframes srBlink { 50% { opacity: .15; } } html.no-anim .sr__unit i { animation: none; }
+        .sr__rack.is-off i { background: #1e293b !important; animation: none; }
+        .sr__sign { text-align: center; margin: 1rem 0 0; font: 700 .9rem var(--mono); color: #facc15; letter-spacing: .1em; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">🗝 Geheimer Ort</span>
+        <h1>Serverraum</h1>
+        <p class="lead">Hier summt das Herz der Website. Sechs Racks, hunderte Lämpchen. Auf einem Schild steht: BITTE NICHTS ANFASSEN.</p>
+    </header>
+    <section class="sr" id="room"><div class="sr__racks" id="racks"></div><p class="sr__sign">⚠ BITTE NICHTS ANFASSEN ⚠</p></section>
+    <p class="small muted mt-1" id="log" aria-live="polite">Alle Systeme laufen normal.</p>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU;
+    const $ = s => X.$(s), N = 6, MSG = ['Ein Rack geht aus. Niemand hat es gesehen.', 'Noch eins. Die Lüfter werden leiser.', 'Du solltest wirklich aufhören.', 'Ernsthaft.', 'Fast alles ist dunkel …'];
+    let off = new Set();
+    $('#racks').innerHTML = Array.from({ length: N }, (_, r) => '<button type="button" class="sr__rack" data-r="' + r + '" aria-label="Rack ' + (r + 1) + '">' + Array.from({ length: 10 }, () => '<span class="sr__unit">' + Array.from({ length: 6 }, () => '<i style="animation-delay:-' + (Math.random() * 2).toFixed(2) + 's;animation-duration:' + (0.4 + Math.random() * 1.6).toFixed(2) + 's"></i>').join('') + '</span>').join('') + '</button>').join('');
+    X.$$('.sr__rack').forEach(b => b.addEventListener('click', () => {
+        const r = +b.dataset.r; if (off.has(r)) { off.delete(r); b.classList.remove('is-off'); $('#log').textContent = 'Rack ' + (r + 1) + ' fährt wieder hoch. Puh.'; return; }
+        off.add(r); b.classList.add('is-off'); X.beep(80, .3, 'sawtooth', .04);
+        if (off.size < N) { $('#log').textContent = MSG[off.size - 1]; return; }
+        $('#log').textContent = 'Du hast das Internet ausgeschaltet.';
+        if (X.fx) X.fx('bsod');
+        X.once('geheim-server-aus', 15, 'Alles ausgeschaltet');
+        setTimeout(() => { off.clear(); X.$$('.sr__rack').forEach(x => x.classList.remove('is-off')); $('#log').textContent = 'Neustart abgeschlossen. Wir reden nicht darüber.'; }, 4000);
+    }));
+});
+</script>
+</body>
+</html>

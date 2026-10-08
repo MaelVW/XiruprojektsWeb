@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beatmaschine · Xiruprojekts</title>
+    <meta name="description" content="Beatmaschine: Step-Sequencer mit 16 Schritten und 6 synthetisierten Drums. Tempo, Vorlagen und Speichern inklusive.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="css/mixer.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="js/mixer.js"></script>
+    <style>
+        .bm { display: grid; grid-template-columns: 4.6rem repeat(16, minmax(1.5rem, 1fr)); gap: 4px; margin-top: 1rem; overflow-x: auto; }
+        .bm__name { font: 700 .75rem var(--mono); color: var(--text-muted); align-self: center; }
+        .bm__s { aspect-ratio: 1; min-width: 1.5rem; border-radius: 5px; border: 1px solid var(--border-strong); background: var(--surface-2); cursor: pointer; padding: 0; }
+        .bm__s.is-beat { background: color-mix(in srgb, var(--surface-2) 80%, var(--text)); }
+        .bm__s.is-on { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 60%, transparent); }
+        .bm__s.is-now { outline: 2px solid #facc15; outline-offset: 1px; }
+        .bm-bpm { flex: 1 1 12rem; } .bm-sel { width: auto; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">🎛 Mixer-Studio</span>
+        <h1>Beatmaschine</h1>
+        <p class="lead">Klick Felder an, um Schläge zu setzen. Drück Play – und schon groovt es. Alle Klänge entstehen live im Browser.</p>
+    </header>
+    <div id="sound-off" hidden></div>
+    <section class="card">
+        <div class="row">
+            <button class="btn btn--primary" type="button" id="play">▶ Play <kbd>Leertaste</kbd></button>
+            <div class="field mb-0 bm-bpm"><label for="bpm">Tempo <span id="bpm-v"></span></label><input type="range" class="mx-range" id="bpm" min="60" max="180" value="110"></div>
+            <select class="select bm-sel" id="preset" aria-label="Vorlage"><option value="">Vorlage laden …</option><option value="0">Rock</option><option value="1">Hip-Hop</option><option value="2">Techno</option><option value="3">Reggaeton</option></select>
+            <button class="btn btn--sm" type="button" id="clear">Leeren</button>
+        </div>
+        <div class="bm" id="grid"></div>
+    </section>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU;
+    const M = X.Mixer, $ = s => X.$(s), gate = M.soundGate('#sound-off');
+    const INS = ['Kick', 'Snare', 'Hi-Hat', 'Clap', 'Tom', 'Blip'];
+    const PRE = [
+        ['x...x...x...x...', '....x.......x...', 'x.x.x.x.x.x.x.x.', '................', '..............x.', '................'],
+        ['x......x..x.....', '....x.......x...', 'x.xxx.x.x.xxx.x.', '....x.......x...', '................', '...........x....'],
+        ['x...x...x...x...', '................', '..x...x...x...x.', '....x.......x...', '................', 'x..x..x...x..x..'],
+        ['x...x...x...x...', '...x..x....x..x.', 'x.x.x.x.x.x.x.x.', '................', '......x.......x.', '................']
+    ];
+    let pat = M.load('beat', null) || PRE[0].map(r => r.split('').map(c => c === 'x'));
+    let ctx = null, playing = false, step = 0, next = 0, timer = null;
+    const grid = $('#grid');
+    grid.innerHTML = INS.map((n, r) => '<div class="bm__name">' + n + '</div>' + Array.from({ length: 16 }, (_, s) => '<button type="button" class="bm__s' + (s % 4 === 0 ? ' is-beat' : '') + '" data-r="' + r + '" data-s="' + s + '" aria-label="' + n + ' Schritt ' + (s + 1) + '"></button>').join('')).join('');
+    function paint() { X.$$('.bm__s', grid).forEach(b => b.classList.toggle('is-on', pat[b.dataset.r][b.dataset.s])); }
+    grid.addEventListener('click', e => { const b = e.target.closest('.bm__s'); if (!b) return; pat[b.dataset.r][b.dataset.s] = !pat[b.dataset.r][b.dataset.s]; M.save('beat', pat); paint(); if (pat[b.dataset.r][b.dataset.s] && engine()) hit(+b.dataset.r, ctx.currentTime); });
+    function engine() { if (ctx) return true; if (!gate.check()) return false; ctx = M.ctx(); return !!ctx; }
+    function env(g, t, a, d) { g.gain.setValueAtTime(a, t); g.gain.exponentialRampToValueAtTime(.001, t + d); }
+    function noise(t, d, type, f, vol) { const s = M.noiseSource(ctx, 'white', t), fl = ctx.createBiquadFilter(), g = ctx.createGain(); fl.type = type; fl.frequency.value = f; s.connect(fl); fl.connect(g); g.connect(ctx.destination); env(g, t, vol, d); s.stop(t + d + .05); }
+    function tone(t, f0, f1, d, type, vol) { const o = ctx.createOscillator(), g = ctx.createGain(); o.type = type; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + d); o.connect(g); g.connect(ctx.destination); env(g, t, vol, d); o.start(t); o.stop(t + d + .05); }
+    function hit(r, t) {
+        if (r === 0) tone(t, 150, 40, .35, 'sine', .9);
+        if (r === 1) { noise(t, .18, 'highpass', 1200, .5); tone(t, 220, 120, .1, 'triangle', .3); }
+        if (r === 2) noise(t, .05, 'highpass', 7000, .25);
+        if (r === 3) [0, .012, .024].forEach(o => noise(t + o, .09, 'bandpass', 1500, .45));
+        if (r === 4) tone(t, 200, 90, .3, 'sine', .55);
+        if (r === 5) tone(t, 880, 860, .09, 'square', .12);
+    }
+    function sched() {
+        const spb = 60 / $('#bpm').value / 4;
+        while (next < ctx.currentTime + .12) {
+            const s = step; pat.forEach((row, r) => { if (row[s]) hit(r, next); });
+            const delay = Math.max(0, (next - ctx.currentTime) * 1000);
+            setTimeout(() => { X.$$('.bm__s.is-now', grid).forEach(b => b.classList.remove('is-now')); X.$$('.bm__s[data-s="' + s + '"]', grid).forEach(b => b.classList.add('is-now')); }, delay);
+            next += spb; step = (step + 1) % 16;
+        }
+    }
+    function toggle() {
+        if (playing) { playing = false; clearInterval(timer); $('#play').innerHTML = '▶ Play <kbd>Leertaste</kbd>'; X.$$('.bm__s.is-now', grid).forEach(b => b.classList.remove('is-now')); return; }
+        if (!engine()) return; playing = true; step = 0; next = ctx.currentTime + .05; timer = setInterval(sched, 25); sched();
+        $('#play').innerHTML = '⏸ Stopp <kbd>Leertaste</kbd>'; X.once('mx-beat', 5, 'Erster Beat');
+    }
+    $('#play').addEventListener('click', toggle);
+    document.addEventListener('keydown', e => { if (e.key === ' ' && !M.isTyping(e)) { e.preventDefault(); toggle(); } });
+    $('#bpm').addEventListener('input', () => { $('#bpm-v').textContent = $('#bpm').value + ' BPM'; M.paintRange($('#bpm')); M.save('beat-bpm', +$('#bpm').value); });
+    $('#preset').addEventListener('change', e => { if (e.target.value === '') return; pat = PRE[+e.target.value].map(r => r.split('').map(c => c === 'x')); M.save('beat', pat); paint(); e.target.value = ''; });
+    $('#clear').addEventListener('click', () => { pat = pat.map(r => r.map(() => false)); M.save('beat', pat); paint(); });
+    $('#bpm').value = M.load('beat-bpm', 110); $('#bpm-v').textContent = $('#bpm').value + ' BPM';
+    paint(); M.paintRanges(document);
+});
+</script>
+</body>
+</html>

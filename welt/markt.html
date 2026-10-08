@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Händlerbucht · Xiruprojekts</title>
+    <meta name="description" content="Die Händlerbucht in Sektaria: Bauteile kaufen, Materialien handeln und alte Teile verkaufen.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="../assets/css/welt.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/mech-art.js"></script>
+    <script src="../assets/js/weltkarte-art.js"></script>
+    <script src="../assets/js/weltkarte-pixel.js"></script>
+    <script src="../assets/js/pixel-icons.js"></script>
+    <script src="../assets/js/werft.js"></script>
+</head>
+<body class="theme-pixel">
+<main class="content content--wide">
+    <div class="isle-head" id="isle-head"><div class="isle-head__text"><span class="eyebrow">Offenes Meer · Spiel-Insel</span><h1>Händlerbucht</h1>
+        <p>Bunte Zelte, knarrende Stege, Stimmengewirr. Hier treffen sich Händler aus allen Ecken von Sektaria – und jeder hat etwas, das du brauchst.</p></div></div>
+    <div id="easy" hidden></div>
+    <div id="game" class="shop">
+        <div class="here mt-2" id="here"></div>
+        <div class="wallet" id="wallet"></div>
+
+        <section class="card" data-here>
+            <div class="npc"><div class="npc__face"><i data-px="npc-kraehe"></i></div><div><h2 class="mb-1">Kapitänin Krähe · Bauteile</h2><p class="npc__say" id="say-kraehe"></p></div></div>
+            <div class="row mt-2"><span class="small muted" id="stock-info"></span><span class="spacer"></span><button class="btn btn--sm" type="button" id="reroll">Neue Ladung holen · 25 <i data-px="taler"></i></button></div>
+            <div class="shop__grid mt-1"><div class="items" id="offers"></div><div id="offer-detail"><p class="muted small">Klick ein Teil an, um es genauer anzusehen.</p></div></div>
+        </section>
+
+        <section class="card" data-here>
+            <div class="npc"><div class="npc__face"><i data-px="npc-otto"></i></div><div><h2 class="mb-1">Öl-Otto · Materialien</h2><p class="npc__say">„Kabel, Zahnräder, Öl – alles, was eine Schmiede glücklich macht. Ich kauf auch an. Für die Hälfte. Ich bin ja kein Wohltäter.“</p></div></div>
+            <div class="table-wrap mt-2"><table class="mtable" id="mats"><thead><tr><th>Material</th><th>Lager</th><th>Kaufen</th><th>Verkaufen</th></tr></thead><tbody></tbody></table></div>
+        </section>
+
+        <section class="card" data-here>
+            <div class="npc"><div class="npc__face"><i data-px="npc-frieda"></i></div><div><h2 class="mb-1">Fundbüro-Frieda · Ankauf</h2><p class="npc__say">„Gib her, was du nicht brauchst. Eingebaute Teile nehme ich nicht – die hängen ja noch an dir dran.“</p></div></div>
+            <div class="shop__grid mt-2"><div class="items" id="sell"></div><div id="sell-detail"><p class="muted small">Wähle ein Teil aus deinem Inventar.</p></div></div>
+            <h3 class="mt-3">Schrott gegen Taler</h3>
+            <p class="small muted">Frieda nimmt auch losen Schrott: 5 <i data-px="schrott"></i> ergeben 1 <i data-px="taler"></i>.</p>
+            <div class="row"><input class="input" id="sc-n" type="number" min="5" step="5" value="50" style="width:8rem" aria-label="Schrott-Menge"><button class="btn btn--sm" type="button" id="sc-go">Schrott in Taler tauschen</button></div>
+        </section>
+    </div>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU, M = X.mech, W = X.werft, esc = X.esc, $ = X.$;
+    const page = W.islePage('markt', render);
+    if (page.easy) return;
+    const SAY = ['„Frische Ware! Direkt aus dem Wrackriff – äh, aus seriöser Quelle.“', '„Glänzt das? Dann kostet es extra.“', '„Für dich mache ich einen Sonderpreis. Den gleichen wie für alle.“', '„Krah! Wer zuerst kommt, baut zuerst.“'];
+    $('#say-kraehe').textContent = X.pick(SAY);
+    let selOffer = null, selSell = null;
+    const traded = () => { X.egg('m-handel'); };
+
+    /* ── Tagesangebot der Kapitänin (für alle gleich je Tag & Konto, neu würfeln kostet) ── */
+    function market() {
+        const m = M.state();
+        if (!m.markt || m.markt.date !== X.today()) { m.markt = { date: X.today(), roll: 0, bought: [] }; X.persist(); }
+        return m.markt;
+    }
+    function stock() {
+        const mk = market(), r = W.seeded(W.dayKey() + ':' + mk.roll), lvl = X.levelInfo().level, maxT = Math.min(5, 2 + Math.floor(lvl / 5));
+        const pool = X.mechParts.filter(p => p.t <= maxT), out = [];
+        for (let i = 0; i < 6; i++) {
+            const p = pool[Math.floor(r() * pool.length)], x = r() * (1 - (M.stats().fx.luck || 0) * .2);
+            const q = x < .45 ? 1 : x < .78 ? 2 : x < .93 ? 3 : x < .985 ? 4 : 5;
+            out.push({ u: 'offer-' + i, id: p.id, q, up: 0, c: 100, price: Math.round(M.value({ id: p.id, q, up: 0, c: 100 }) * 2.2) });
+        }
+        return out;
+    }
+    function renderOffers() {
+        const mk = market(), st = stock();
+        $('#stock-info').textContent = 'Ladung vom ' + new Date().toLocaleDateString('de-CH') + ' · morgen gibt es neue Ware';
+        $('#offers').innerHTML = st.map((o, i) => '<div class="offer' + (mk.bought.includes(i) ? ' is-sold' : '') + '">' + W.itemCard(o, { sel: selOffer === i ? o.u : null }).replace('class="item', 'data-i="' + i + '" class="item') + '<span class="offer__price">' + X.fmt(o.price) + ' ' + W.px('taler') + '</span></div>').join('');
+        if (selOffer != null) {
+            const o = st[selOffer], sold = mk.bought.includes(selOffer);
+            $('#offer-detail').innerHTML = W.detail(o, { actions: sold ? '<span class="badge">verkauft</span>' : '<button class="btn btn--primary btn--sm" type="button" id="buy"' + (M.taler() < o.price || M.full() ? ' disabled' : '') + '>Kaufen · ' + X.fmt(o.price) + ' ' + W.px('taler') + '</button>' });
+            const b = $('#buy'); if (b) b.addEventListener('click', () => {
+                if (!page.at() || !M.spendTaler(o.price)) return;
+                if (!M.add(o.id, o.q)) { M.addTaler(o.price); return; }
+                mk.bought.push(selOffer); X.persist(); traded(); X.beep(880, .08); X.toast('Gekauft: ' + M.part(o.id).n, 'Liegt in deinem Inventar.', { iconHtml: W.px('npc-kraehe', 26) }); render();
+            });
+        }
+    }
+    $('#offers').addEventListener('click', e => { const b = e.target.closest('[data-i]'); if (b) { selOffer = +b.dataset.i; renderOffers(); } });
+    $('#reroll').addEventListener('click', () => { if (!page.at() || !M.spendTaler(25)) { X.toast('Zu wenig Taler', 'Eine neue Ladung kostet 25 Taler.', { iconHtml: W.px('taler', 26), type: 'error' }); return; } market().roll++; market().bought = []; X.persist(); selOffer = null; $('#say-kraehe').textContent = '„Krah! Frisch vom Schiff!“'; render(); });
+
+    /* ── Materialien ── */
+    const buyP = m => Math.ceil(m.v * 1.6), sellP = m => Math.max(1, Math.floor(m.v * .6));
+    function renderMats() {
+        const have = M.mats();
+        $('#mats tbody').innerHTML = X.materials.map(m => '<tr><td>' + W.px('mat-' + m.id, 20) + ' <b>' + esc(m.n) + '</b><br><span class="small muted">' + esc(m.d) + '</span></td><td>' + X.fmt(have[m.id] || 0) + '</td>' +
+            '<td><button class="btn btn--sm" type="button" data-buy="' + m.id + '"' + (M.taler() < buyP(m) ? ' disabled' : '') + '>+1 · ' + buyP(m) + ' ' + W.px('taler') + '</button></td>' +
+            '<td><button class="btn btn--sm btn--ghost" type="button" data-sell="' + m.id + '"' + (!have[m.id] ? ' disabled' : '') + '>−1 · ' + sellP(m) + ' ' + W.px('taler') + '</button> <button class="btn btn--sm btn--ghost" type="button" data-sellall="' + m.id + '"' + (!have[m.id] ? ' disabled' : '') + '>alle</button></td></tr>').join('');
+    }
+    $('#mats').addEventListener('click', e => {
+        const b = e.target.closest('button'); if (!b || !page.at()) return;
+        if (b.dataset.buy) { const m = M.mat(b.dataset.buy); if (M.spendTaler(buyP(m))) { M.addMat(m.id, 1); traded(); } }
+        if (b.dataset.sell) { const m = M.mat(b.dataset.sell); if (M.mats()[m.id]) { M.addMat(m.id, -1); M.addTaler(sellP(m)); traded(); } }
+        if (b.dataset.sellall) { const m = M.mat(b.dataset.sellall), n = M.mats()[m.id] || 0; if (n) { M.addMat(m.id, -n); const got = M.addTaler(n * sellP(m)); traded(); X.toast('Verkauft', n + '× ' + m.n + ' für ' + got + ' Taler', { iconHtml: W.px('npc-otto', 26) }); } }
+        render();
+    });
+
+    /* ── Ankauf ── */
+    function renderSell() {
+        const list = M.items().filter(x => !M.equipped(x.u)).sort((a, b) => M.value(b) - M.value(a));
+        $('#sell').innerHTML = list.length ? list.map(x => W.itemCard(x, { sel: selSell })).join('') : '<p class="muted">Du hast nichts übrig, was du verkaufen könntest.</p>';
+        const it = selSell && M.item(selSell);
+        if (it && !M.equipped(it.u)) {
+            $('#sell-detail').innerHTML = W.detail(it, { actions: '<button class="btn btn--primary btn--sm" type="button" id="sellit">Verkaufen · ' + X.fmt(M.value(it)) + ' ' + W.px('taler') + '</button>' });
+            $('#sellit').addEventListener('click', () => {
+                if (!page.at()) return;
+                const v = M.value(it), n = M.part(it.id).n; M.remove(it.u); const got = M.addTaler(v); traded(); selSell = null;
+                X.beep(660, .08); X.toast('Verkauft: ' + n, '+' + got + ' Taler', { iconHtml: W.px('npc-frieda', 26) }); render();
+            });
+        } else $('#sell-detail').innerHTML = '<p class="muted small">Wähle ein Teil aus deinem Inventar.</p>';
+    }
+    $('#sell').addEventListener('click', e => { const b = e.target.closest('[data-u]'); if (b) { selSell = b.dataset.u; renderSell(); } });
+    $('#sc-go').addEventListener('click', () => {
+        if (!page.at()) return;
+        const n = Math.floor(Math.max(0, +$('#sc-n').value || 0) / 5) * 5;
+        if (n < 5 || !M.spendScrap(n)) { X.toast('Nicht genug Schrott', 'Du hast ' + M.scrap() + ' Schrott.', { iconHtml: W.px('schrott', 26), type: 'error' }); return; }
+        const got = M.addTaler(n / 5); traded(); X.toast('Eingetauscht', n + ' Schrott → ' + got + ' Taler', { iconHtml: W.px('npc-frieda', 26) }); render();
+    });
+
+    function render() { page.redraw && page.redraw(); renderOffers(); renderMats(); renderSell(); }
+    render();
+});
+</script>
+</body>
+</html>

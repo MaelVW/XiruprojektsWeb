@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Floppy Hub · Xiruprojekts</title>
+    <meta name="description" content="Floppy Hub: Aus Disketten wird eine physische Spielebibliothek. Diskette einlegen, Spiel startet – mit Retro-Menü und Diskettenbespieler. Ein PowerShell-Projekt.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="../assets/css/themes/studio.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <style>
+        .fh-steps { display: grid; gap: .6rem; padding-left: 1.2rem; }
+        .fh-disks { display: flex; gap: .6rem; flex-wrap: wrap; }
+        .fh-disk { width: 74px; height: 78px; border: 0; border-radius: 4px; cursor: grab; position: relative; background: var(--c); box-shadow: inset 0 -6px 0 rgba(0,0,0,.25); transition: transform .3s; padding: 0; }
+        .fh-disk::before { content: ""; position: absolute; top: 0; left: 18px; width: 38px; height: 22px; background: linear-gradient(90deg, #cbd5e1 0 60%, #94a3b8 60% 75%, #cbd5e1 75%); }
+        .fh-label { position: absolute; left: 8px; right: 8px; bottom: 6px; height: 38px; background: #f8fafc; color: #0f172a; font: 700 .58rem/1.2 var(--mono); display: grid; place-items: center; border-radius: 2px; }
+        .fh-disk.is-in { transform: translateY(14px) scale(.92); opacity: .55; }
+        .fh-drive { position: relative; margin: 1rem 0 .6rem; height: 54px; border-radius: 8px; background: linear-gradient(#d6d3c4, #b9b5a3); box-shadow: inset 0 -4px 0 rgba(0,0,0,.2); }
+        .fh-slot { position: absolute; left: 18%; right: 18%; top: 20px; height: 8px; background: #1f2937; border-radius: 4px; }
+        .fh-led { position: absolute; right: 16px; top: 22px; width: 10px; height: 6px; border-radius: 2px; background: #3f6212; }
+        .fh-led.is-on { background: #a3e635; box-shadow: 0 0 10px #a3e635; }
+        .fh-term { min-height: 9.5rem; margin: 0; padding: .8rem 1rem; background: #0b1020; color: #7dd3fc; border-radius: 8px; white-space: pre-wrap; }
+    </style>
+</head>
+<body class="theme-studio">
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">🎬 Studio</span>
+        <h1>Floppy Hub</h1>
+        <p class="lead">Eine echte Diskette ins Laufwerk – und dein Spiel startet. Floppy Hub macht aus einem Stapel alter Disketten eine Spielebibliothek zum Anfassen.</p>
+    </header>
+    <div class="grid-2">
+        <section class="card">
+            <h2>So funktioniert's</h2>
+            <ol class="fh-steps">
+                <li><b>Diskette bespielen</b> – Der Diskettenbespieler schreibt eine kleine <code>game.txt</code> auf die Diskette: Name, Cover und welcher Befehl das Spiel startet.</li>
+                <li><b>Einlegen</b> – Floppy Hub merkt, wenn eine Diskette eingelegt wird, und liest die Datei.</li>
+                <li><b>Bestätigen</b> – Bevor etwas gestartet wird, fragt Floppy Hub nach. Sicherheit zuerst.</li>
+                <li><b>Spielen</b> – Das Spiel startet. Diskette raus, nächste rein.</li>
+            </ol>
+            <div class="row mt-1">
+                <a class="btn btn--primary" href="https://github.com/MaelVW/Floppy/releases/latest" rel="noopener noreferrer" target="_blank">⤓ Download (Windows)</a>
+                <a class="btn" href="../hardware/code/powershell.html">PS · PowerShell lernen</a>
+            </div>
+        </section>
+        <section class="card">
+            <h2>Probier's aus</h2>
+            <p class="small muted">Leg eine der Disketten ins Laufwerk (klicken oder ziehen).</p>
+            <div class="fh-disks" id="disks"></div>
+            <div class="fh-drive" id="drive"><span class="fh-slot"></span><span class="fh-led" id="led"></span></div>
+            <pre class="fh-term mono" id="term" aria-live="polite">A:\&gt; _</pre>
+        </section>
+    </div>
+    <section class="card mt-1">
+        <h2>Technik</h2>
+        <div class="grid-3">
+            <div><h3>💻 PowerShell</h3><p class="small">Komplett in PowerShell geschrieben – Cmdlets wie <code>Get-Content</code>, <code>Test-Path</code> und <code>Read-Host</code> machen die Arbeit.</p></div>
+            <div><h3>📟 Retro-Menü</h3><p class="small">Ein Menü im Stil alter DOS-Programme, steuerbar mit der Tastatur.</p></div>
+            <div><h3>🔒 Nachfragen</h3><p class="small">Nichts startet ohne deine Bestätigung – eine Diskette kann niemals heimlich etwas ausführen.</p></div>
+        </div>
+    </section>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU;
+    const $ = s => X.$(s), D = [['🧱', 'Blockwelt', '#3b6fd8'], ['🏎', 'Turbo Rennen', '#b8322a'], ['🧙', 'PIXMAG', '#6d28d9'], ['🐍', 'Snake', '#15803d']];
+    let busy = false;
+    $('#disks').innerHTML = D.map((d, i) => '<button type="button" class="fh-disk" draggable="true" data-i="' + i + '" style="--c:' + d[2] + '"><span class="fh-label">' + d[0] + '<br>' + d[1] + '</span></button>').join('');
+    function type(lines, done) {
+        const t = $('#term'); let i = 0; t.textContent = '';
+        (function next() { if (i >= lines.length) return done && done(); t.textContent += lines[i++] + '\n'; X.beep(1200, .015, 'square', .02); setTimeout(next, 260); })();
+    }
+    function insert(i) {
+        if (busy) return; busy = true; const d = D[i]; $('#led').classList.add('is-on');
+        X.$$('.fh-disk').forEach(b => b.classList.toggle('is-in', +b.dataset.i === i));
+        type(['A:\\> Diskette erkannt …', 'A:\\> Lese game.txt', '     name=' + d[1], '     start=' + d[1].toLowerCase().replace(/\s+/g, '') + '.exe', 'Spiel starten? (J/N) J', '▶ Viel Spass mit ' + d[1] + '!'], () => { $('#led').classList.remove('is-on'); busy = false; X.once('st-floppy', 5, 'Diskette eingelegt'); });
+    }
+    X.$$('.fh-disk').forEach(b => { b.addEventListener('click', () => insert(+b.dataset.i)); b.addEventListener('dragstart', e => e.dataTransfer.setData('text/plain', b.dataset.i)); });
+    $('#drive').addEventListener('dragover', e => e.preventDefault());
+    $('#drive').addEventListener('drop', e => { e.preventDefault(); const i = +e.dataTransfer.getData('text/plain'); if (D[i]) insert(i); });
+});
+</script>
+</body>
+</html>

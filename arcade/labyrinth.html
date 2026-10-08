@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Labyrinth · Xiruprojekts</title>
+    <meta name="description" content="Labyrinth: jedes Level ein neuer, zufälliger Irrgarten. Finde den Ausgang – mit Taschenlampen-Modus für Mutige.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="../assets/css/themes/arcade.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/arcade.js"></script>
+    <style>
+        .lb-cv { display: block; margin: 12px auto; border-radius: 8px; touch-action: none; }
+    </style>
+</head>
+<body class="theme-arcade">
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">▶ Spielhalle · Puzzle</span>
+        <h1>Labyrinth</h1>
+        <p class="lead">Finde den Weg zum Kristall. Jedes Level ist ein neuer Irrgarten – und jedes wird ein bisschen grösser.</p>
+    </header>
+    <div class="game">
+        <div>
+            <div class="game__hud" id="hud">
+                <div><span>Level</span><b id="h-level">1</b></div>
+                <div><span>Zeit</span><b id="h-time">0.0</b></div>
+                <div><span>Schritte</span><b id="h-steps">0</b></div>
+            </div>
+            <div class="game__stage" id="stage">
+                <canvas id="cv" class="lb-cv"></canvas>
+                <div class="game__overlay" id="ov" hidden></div>
+            </div>
+            <div class="row mt-1"><button class="btn btn--sm" type="button" id="b-new">↺ Neuer Lauf</button><label class="small"><input type="checkbox" id="dark"> 🔦 Taschenlampen-Modus</label></div>
+        </div>
+        <aside class="game__side">
+            <div class="card">
+                <h3>Steuerung</h3>
+                <ul class="keys-help"><li><kbd>←</kbd><kbd>↑</kbd><kbd>→</kbd><kbd>↓</kbd> oder <kbd>WASD</kbd> (gedrückt halten)</li><li>Wischen auf dem Handy</li><li>Rekord = höchstes erreichtes Level</li></ul>
+                <div class="touch-pad dpad mt-1" aria-hidden="true"><button type="button" data-key="ArrowUp">▲</button><button type="button" data-key="ArrowLeft">◀</button><button type="button" data-key="ArrowDown">▼</button><button type="button" data-key="ArrowRight">▶</button></div>
+            </div>
+            <div class="card">
+                <h3>Rekord</h3>
+                <p class="stat__value" id="best">–</p>
+            </div>
+        </aside>
+    </div>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU;
+    const G = X.Game, $ = s => X.$(s), cv = $('#cv'), ctx = cv.getContext('2d');
+    let level = 1, N, cells, me, t0, steps, trail, timer;
+    function maze(n) {   // Recursive Backtracker: jede Zelle merkt sich offene Wände (1=N 2=O 4=S 8=W)
+        const c = new Array(n * n).fill(0), seen = new Array(n * n).fill(false), st = [0]; seen[0] = true;
+        while (st.length) {
+            const i = st[st.length - 1], x = i % n, y = (i / n) | 0;
+            const nb = [[0, -1, 1, 4], [1, 0, 2, 8], [0, 1, 4, 1], [-1, 0, 8, 2]].filter(([dx, dy]) => x + dx >= 0 && y + dy >= 0 && x + dx < n && y + dy < n && !seen[(y + dy) * n + x + dx]);
+            if (!nb.length) { st.pop(); continue; }
+            const [dx, dy, a, b] = X.pick(nb), j = (y + dy) * n + x + dx; c[i] |= a; c[j] |= b; seen[j] = true; st.push(j);
+        }
+        return c;
+    }
+    function start(l) {
+        level = l; N = Math.min(6 + l * 2, 30); cells = maze(N); me = [0, 0]; steps = 0; trail = new Set(['0,0']); t0 = Date.now();
+        clearInterval(timer); timer = setInterval(() => $('#h-time').textContent = ((Date.now() - t0) / 1000).toFixed(1), 100);
+        $('#h-level').textContent = level; $('#h-steps').textContent = 0; G.overlay('#ov').hide(); size();
+    }
+    function size() { const w = Math.min(cv.parentElement.clientWidth - 24, 560); cv.width = cv.height = Math.round(w * devicePixelRatio); cv.style.width = cv.style.height = w + 'px'; draw(); }
+    function draw() {
+        const S = cv.width / N, acc = G.css('--accent') || '#22d3ee';
+        ctx.fillStyle = '#0b1020'; ctx.fillRect(0, 0, cv.width, cv.height);
+        ctx.fillStyle = 'rgba(34,211,238,.10)'; trail.forEach(k => { const [x, y] = k.split(',').map(Number); ctx.fillRect(x * S, y * S, S, S); });
+        ctx.strokeStyle = acc; ctx.lineWidth = Math.max(2, S / 9); ctx.lineCap = 'round'; ctx.beginPath();
+        cells.forEach((c, i) => { const x = (i % N) * S, y = ((i / N) | 0) * S;
+            if (!(c & 1)) { ctx.moveTo(x, y); ctx.lineTo(x + S, y); } if (!(c & 8)) { ctx.moveTo(x, y); ctx.lineTo(x, y + S); }
+            if (!(c & 2) && i % N === N - 1) { ctx.moveTo(x + S, y); ctx.lineTo(x + S, y + S); } if (!(c & 4) && ((i / N) | 0) === N - 1) { ctx.moveTo(x, y + S); ctx.lineTo(x + S, y + S); } });
+        ctx.stroke();
+        ctx.font = (S * .7) + 'px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('💎', (N - .5) * S, (N - .5) * S);
+        ctx.fillStyle = '#facc15'; ctx.beginPath(); ctx.arc((me[0] + .5) * S, (me[1] + .5) * S, S * .3, 0, Math.PI * 2); ctx.fill();
+        if ($('#dark').checked) {
+            const g = ctx.createRadialGradient((me[0] + .5) * S, (me[1] + .5) * S, S * 1.2, (me[0] + .5) * S, (me[1] + .5) * S, S * 3.4);
+            g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,.97)'); ctx.fillStyle = g; ctx.fillRect(0, 0, cv.width, cv.height);
+        }
+    }
+    function move(dx, dy) {
+        if (G.overlay('#ov').visible) return;
+        const c = cells[me[1] * N + me[0]], bit = dx === 1 ? 2 : dx === -1 ? 8 : dy === 1 ? 4 : 1;
+        if (!(c & bit)) return;
+        me = [me[0] + dx, me[1] + dy]; steps++; trail.add(me.join(',')); $('#h-steps').textContent = steps; draw();
+        if (me[0] === N - 1 && me[1] === N - 1) {
+            clearInterval(timer); G.sfx.coin(); X.score('labyrinth', level); $('#best').textContent = X.best('labyrinth');
+            G.overlay('#ov').show({ icon: '💎', title: 'Level ' + level + ' geschafft!', text: 'In ' + $('#h-time').textContent + ' s und ' + steps + ' Schritten. Das nächste wird grösser …', button: 'Weiter', onClick: () => start(level + 1) });
+        }
+    }
+    const DIR = { ArrowUp: [0, -1], w: [0, -1], ArrowDown: [0, 1], s: [0, 1], ArrowLeft: [-1, 0], a: [-1, 0], ArrowRight: [1, 0], d: [1, 0] };
+    document.addEventListener('keydown', e => { const d = DIR[e.key] || DIR[e.key.toLowerCase()]; if (d) { e.preventDefault(); move(...d); } });
+    X.$$('.dpad [data-key]').forEach(b => b.addEventListener('click', () => move(...DIR[b.dataset.key])));
+    G.swipe('#stage', d => move(...{ up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }[d]));
+    $('#b-new').addEventListener('click', () => start(1)); $('#dark').addEventListener('change', draw);
+    addEventListener('resize', size);
+    $('#best').textContent = X.best('labyrinth') || '–';
+    start(1);
+});
+</script>
+</body>
+</html>

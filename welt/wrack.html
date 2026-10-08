@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wrackriff · Xiruprojekts</title>
+    <meta name="description" content="Das Wrackriff: Mit dem Sonar nach versunkenen Schätzen tauchen – jeden Tag ein neues Riff.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="../assets/css/welt.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/mech-art.js"></script>
+    <script src="../assets/js/weltkarte-art.js"></script>
+    <script src="../assets/js/weltkarte-pixel.js"></script>
+    <script src="../assets/js/pixel-icons.js"></script>
+    <script src="../assets/js/werft.js"></script>
+    <style>
+        .reef { position: relative; display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; padding: 12px; border-radius: 14px; overflow: hidden;
+            background: linear-gradient(#0e5a7a, #073047 60%, #04202f); max-width: 720px; }
+        .reef::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(100deg, rgba(255,255,255,.05) 0 30px, transparent 30px 90px); animation: caustic 8s linear infinite; }
+        @keyframes caustic { to { background-position: 180px 0; } }
+        html.no-anim .reef::before { animation: none; }
+        .tile-s { position: relative; aspect-ratio: 1; border: 0; border-radius: 6px; cursor: pointer; font: 800 1.1rem var(--mono); color: #fff;
+            background: radial-gradient(circle at 40% 30%, #e7d3a1, #b8995c); box-shadow: inset 0 -4px 0 rgba(0,0,0,.25); transition: transform .12s; }
+        .tile-s:hover { transform: translateY(-2px); }
+        .tile-s.is-open { cursor: default; background: rgba(2, 20, 32, .55); box-shadow: inset 0 0 0 2px rgba(125, 211, 252, .25); transform: none; }
+        .tile-s.is-gold { background: radial-gradient(circle, #fde68a, #b45309); box-shadow: 0 0 16px #fde68a; }
+        .tile-s[data-d="1"] { color: #fca5a5; } .tile-s[data-d="2"] { color: #fdba74; } .tile-s[data-d="3"] { color: #fde68a; } .tile-s[data-d="4"] { color: #a7f3d0; }
+        .tile-s .ring { position: absolute; inset: 20%; border-radius: 50%; border: 2px solid currentColor; opacity: .5; animation: ping 1.2s ease-out 1; }
+        @keyframes ping { from { transform: scale(.3); opacity: 1; } }
+        .air { display: flex; gap: 3px; flex-wrap: wrap; }
+        .air i { width: 14px; height: 14px; border-radius: 50%; background: #7dd3fc; box-shadow: inset -2px -2px 0 rgba(0,0,0,.25); }
+        .air i.used { background: rgba(125, 211, 252, .18); box-shadow: none; }
+        .found { display: grid; gap: .3rem; list-style: none; padding: 0; font-size: .9rem; }
+    </style>
+</head>
+<body class="theme-pixel">
+<main class="content content--wide">
+    <div class="isle-head" id="isle-head"><div class="isle-head__text"><span class="eyebrow">Offenes Meer · Spiel-Insel</span><h1>Wrackriff</h1>
+        <p>Unter der Oberfläche liegen gesunkene Frachter, verstreute Kisten und blinkender Kram. Taucherin Muschel leiht dir ein Sonar – den Rest musst du selbst finden.</p></div></div>
+    <div id="easy" hidden></div>
+    <div id="game" class="shop">
+        <div class="here mt-2" id="here"></div>
+        <div class="wallet" id="wallet"></div>
+        <div class="npc"><div class="npc__face"><i data-px="npc-muschel"></i></div><div><h2 class="mb-1">Taucherin Muschel</h2><p class="npc__say">„Jedes Feld kostet einen Atemzug. Findest du nichts, zeigt dir das Sonar, wie viele Felder es bis zum nächsten Schatz sind – waagrecht plus senkrecht gezählt. Morgen ist das Riff wieder anders.“</p></div></div>
+        <div class="shop__grid" data-here>
+            <div class="reef" id="reef" aria-label="Meeresboden, 8 mal 6 Felder"></div>
+            <aside class="card">
+                <h3>Luft</h3><div class="air" id="air"></div>
+                <p class="small muted mt-1" id="air-info"></p>
+                <button class="btn btn--sm" type="button" id="tank">Pressluftflasche · +5 Luft · 15 <i data-px="taler"></i></button>
+                <h3 class="mt-2">Heute gefunden</h3><ul class="found" id="found"></ul>
+            </aside>
+        </div>
+    </div>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU, M = X.mech, W = X.werft, $ = X.$;
+    const page = W.islePage('wrack', render);
+    if (page.easy) return;
+    const COLS = 8, ROWS = 6, N = COLS * ROWS;
+    const maxAir = () => Math.min(30, 10 + Math.max(0, M.stats().S) * 2);
+    function day() {
+        const m = M.state();
+        if (!m.wrack || m.wrack.date !== X.today()) { m.wrack = { date: X.today(), open: [], found: [], used: 0, tanks: 0, log: [] }; X.persist(); }
+        return m.wrack;
+    }
+    /* Das Riff des Tages: Schätze an festen Stellen (je Tag und Konto) */
+    function layout() {
+        const r = W.seeded(W.dayKey() + ':riff'), spots = new Set();
+        while (spots.size < 7) spots.add(Math.floor(r() * N));
+        return [...spots].map((i, k) => ({ i, kind: ['kiste', 'muschel', 'kram', 'kram', 'muschel', 'kiste', 'kristall'][k] }));
+    }
+    const T = layout();
+    const dist = (a, b) => Math.abs(a % COLS - b % COLS) + Math.abs(Math.floor(a / COLS) - Math.floor(b / COLS));
+    function loot(kind) {
+        const S = Math.max(0, M.stats().S);
+        if (kind === 'kiste') return W.loot({ item: .6, maxT: 4, luck: S * .05, mats: 1, taler: [5, 15] });
+        if (kind === 'muschel') return [{ type: 'taler', n: X.rand(10, 26) }];
+        if (kind === 'kristall') return W.loot({ mats: 2, rare: .8 });
+        return W.loot({ mats: 2, taler: [2, 6] });
+    }
+    function render() {
+        page.redraw && page.redraw();
+        const d = day(), air = maxAir() + d.tanks * 5 - d.used;
+        $('#reef').innerHTML = Array.from({ length: N }, (_, i) => {
+            const open = d.open.includes(i), t = T.find(x => x.i === i);
+            if (!open) return '<button class="tile-s" type="button" data-i="' + i + '" aria-label="Feld ' + (i + 1) + '"></button>';
+            if (t) return '<button class="tile-s is-open is-gold" type="button" disabled>' + W.px({ kiste: 'ev-kiste', muschel: 'taler', kram: 'mat-zahnrad', kristall: 'mat-splitter' }[t.kind], 32) + '</button>';
+            const rest = T.filter(x => !d.found.includes(x.i)), nd = rest.length ? Math.min(...rest.map(x => dist(x.i, i))) : 0;
+            return '<button class="tile-s is-open" type="button" disabled data-d="' + Math.min(nd, 5) + '">' + (rest.length ? nd : '·') + '</button>';
+        }).join('');
+        $('#air').innerHTML = Array.from({ length: maxAir() + d.tanks * 5 }, (_, k) => '<i class="' + (k < d.used ? 'used' : '') + '"></i>').join('');
+        $('#air-info').textContent = air > 0 ? air + ' Atemzüge übrig · Dein Sensor (S ' + Math.max(0, M.stats().S) + ') gibt dir mehr Luft.' : 'Keine Luft mehr. Morgen ist das Riff neu – oder du kaufst eine Flasche.';
+        $('#tank').disabled = d.tanks >= 2 || M.taler() < 15;
+        $('#found').innerHTML = d.log.length ? d.log.map(l => '<li>' + l + '</li>').join('') : '<li class="muted">Noch nichts. Fang irgendwo an!</li>';
+    }
+    $('#reef').addEventListener('click', e => {
+        const b = e.target.closest('[data-i]'); if (!b || !page.at()) return;
+        const d = day(), i = +b.dataset.i;
+        if (d.open.includes(i)) return;
+        if (maxAir() + d.tanks * 5 - d.used <= 0) { X.toast('Keine Luft mehr', 'Komm morgen wieder oder kauf eine Pressluftflasche.', { iconHtml: W.px('npc-muschel', 26), type: 'error' }); return; }
+        d.used++; d.open.push(i);
+        const t = T.find(x => x.i === i);
+        if (t) {
+            d.found.push(i);
+            const lines = W.grant(loot(t.kind));
+            d.log.push(({ kiste: W.px('ev-kiste') + ' Kiste: ', muschel: W.px('taler') + ' Muschelschatz: ', kram: W.px('mat-zahnrad') + ' Wrackteile: ', kristall: W.px('mat-splitter') + ' Kristallader: ' }[t.kind]) + lines.join(', '));
+            X.egg('m-taucher'); X.beep(784, .1); setTimeout(() => X.beep(1046, .12), 90);
+            if (d.found.length === T.length) { X.toast('Riff leergeräumt!', 'Alle Schätze des Tages gehoben. +20 XP', { iconHtml: W.px('npc-muschel', 26) }); X.addXP(20, 'Wrackriff'); }
+        } else X.beep(300 - Math.min(5, d.open.length) * 10, .08, 'sine', .04);
+        X.persist(); render();
+        if (!t) { const el = $('#reef').children[i]; if (el) el.insertAdjacentHTML('beforeend', '<span class="ring"></span>'); }
+    });
+    $('#tank').addEventListener('click', () => {
+        if (!page.at()) return; const d = day();
+        if (d.tanks >= 2 || !M.spendTaler(15)) return;
+        d.tanks++; X.persist(); render();
+    });
+    render();
+});
+</script>
+</body>
+</html>

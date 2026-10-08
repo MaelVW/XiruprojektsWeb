@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Funkenschmiede · Xiruprojekts</title>
+    <meta name="description" content="Die Funkenschmiede in Sektaria: Bauteile aufwerten, zerlegen, verschmelzen und gegen Taler reparieren.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="../assets/css/welt.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/mech-art.js"></script>
+    <script src="../assets/js/weltkarte-art.js"></script>
+    <script src="../assets/js/weltkarte-pixel.js"></script>
+    <script src="../assets/js/pixel-icons.js"></script>
+    <script src="../assets/js/werft.js"></script>
+    <style>
+        .anvil { position: relative; height: 170px; border-radius: 12px; overflow: hidden; background: radial-gradient(ellipse at 50% 100%, #7c2d12, #1c1917 70%); cursor: pointer; user-select: none; touch-action: manipulation; }
+        .anvil svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+        .anvil__hint { position: absolute; left: 0; right: 0; bottom: .5rem; text-align: center; font: 700 .85rem var(--mono); color: #fed7aa; }
+        .hammer { transform-origin: 300px 40px; transition: transform .08s; }
+        .anvil.is-hit .hammer { transform: rotate(38deg); }
+        .spark { animation: spk .5s ease-out forwards; }
+        @keyframes spk { to { opacity: 0; transform: translate(var(--dx), var(--dy)); } }
+        .fuse-pick .item.is-picked { outline: 3px solid #fde68a; outline-offset: 2px; }
+        .tabs { margin-top: .5rem; }
+    </style>
+</head>
+<body class="theme-pixel">
+<main class="content content--wide">
+    <div class="isle-head" id="isle-head"><div class="isle-head__text"><span class="eyebrow">Offenes Meer · Spiel-Insel</span><h1>Funkenschmiede</h1>
+        <p>Es riecht nach Kohle und heissem Metall. Meisterin Esse wischt sich den Russ von der Stirn: „Bring mir Teile. Ich mach sie besser. Oder zu Material.“</p></div></div>
+    <div id="easy" hidden></div>
+    <div id="game" class="shop">
+        <div class="here mt-2" id="here"></div>
+        <div class="wallet" id="wallet"></div>
+        <div class="npc"><div class="npc__face"><i data-px="npc-esse"></i></div><div><p class="npc__say" id="say">„Was darf es sein?“</p></div></div>
+        <div class="tabs" role="tablist">
+            <button role="tab" aria-selected="true" data-tab="up"><i data-px="ic-amboss"></i> Aufwerten</button>
+            <button role="tab" aria-selected="false" data-tab="zer"><i data-px="mat-zahnrad"></i> Zerlegen</button>
+            <button role="tab" aria-selected="false" data-tab="fuse"><i data-px="mat-splitter"></i> Verschmelzen</button>
+            <button role="tab" aria-selected="false" data-tab="rep"><i data-px="w-schluessel"></i> Reparieren</button>
+        </div>
+        <section data-panel="up" data-here>
+            <p class="small muted">Jede Stufe (+1 bis +5) macht ein Teil stärker. Kostet Taler und Material – je seltener das Teil, desto teurer. Klappt immer: Esse versteht ihr Handwerk.</p>
+            <div class="shop__grid"><div class="items" id="up-items"></div><div id="up-detail"><p class="muted small">Wähle ein Teil.</p></div></div>
+        </section>
+        <section data-panel="zer" data-here hidden>
+            <p class="small muted">Zerlegen macht aus einem Teil Materialien. Je seltener und stärker, desto mehr kommt heraus. Eingebaute Teile kann man nicht zerlegen.</p>
+            <div class="shop__grid"><div class="items" id="zer-items"></div><div id="zer-detail"><p class="muted small">Wähle ein Teil.</p></div></div>
+        </section>
+        <section data-panel="fuse" data-here hidden>
+            <p class="small muted">Drei Teile <b>gleicher Seltenheit</b> werden zu einem zufälligen Teil der <b>nächsthöheren</b> Seltenheit. Es kommt aus einem der drei Bauplätze. Kostet Kristallsplitter und Taler.</p>
+            <div class="row mb-1"><span class="small" id="fuse-info">Gewählt: 0/3</span><span class="spacer"></span><button class="btn btn--primary btn--sm" type="button" id="fuse-go" disabled>Verschmelzen</button></div>
+            <div class="items fuse-pick" id="fuse-items"></div>
+        </section>
+        <section data-panel="rep" data-here hidden>
+            <p class="small muted">Keine Werft in der Nähe? Esse flickt auch – gegen Taler statt Schrott.</p>
+            <div class="items" id="rep-items"></div>
+        </section>
+    </div>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU, M = X.mech, W = X.werft, esc = X.esc, $ = X.$;
+    const page = W.islePage('schmiede', render);
+    if (page.easy) return;
+    const say = t => { $('#say').textContent = t; };
+    let tab = 'up', selUp = null, selZer = null, picks = [];
+
+    /* ── Kosten ── */
+    function upCost(it) {
+        const p = M.part(it.id), r = M.rarity(it.q), n = (it.up || 0) + 1;
+        const mats = { zahnrad: n + 1, kabel: n };
+        if (n >= 2) mats.platine = n - 1;
+        if (n >= 3) mats.chip = n - 2;
+        if (it.q >= 4) mats.splitter = Math.max(1, n - 2);
+        if (n === 5 && it.q >= 5) mats.nebelkern = 1;
+        return { taler: Math.round((15 + p.t * 12) * r.m * n), mats };
+    }
+    const costHTML = c => '<b>' + X.fmt(c.taler) + '</b> ' + W.px('taler') + ' · ' + Object.keys(c.mats).map(k => { const have = M.mats()[k] || 0, ok = have >= c.mats[k]; return '<span class="' + (ok ? '' : 'text-danger') + '">' + W.px('mat-' + k) + ' ' + c.mats[k] + ' ' + esc(M.mat(k).n) + ' (' + have + ')</span>'; }).join(' · ');
+    const canPay = c => M.taler() >= c.taler && M.hasMats(c.mats);
+    function salvage(it) {
+        const t = M.part(it.id).t, q = it.q, up = it.up || 0, out = { kabel: t + 1 + up, zahnrad: t + up };
+        if (t >= 2 || q >= 2) out.platine = Math.floor(t / 2) + q - 1;
+        if (q >= 3) out.chip = q - 2 + Math.floor(up / 2);
+        if (q >= 4) out.splitter = q - 3;
+        if (q >= 6) out.nebelkern = 1;
+        Object.keys(out).forEach(k => { if (!out[k]) delete out[k]; });
+        return out;
+    }
+
+    /* ── Amboss-Minispiel: fünf Schläge, dann ist das Teil aufgewertet ── */
+    function forge(it, done) {
+        const m = X.modal('<h2>' + esc(M.part(it.id).n) + ' → +' + ((it.up || 0) + 1) + '</h2><div class="anvil" id="anvil"><svg viewBox="0 0 400 170">' +
+            '<rect x="120" y="110" width="160" height="22" fill="#374151"/><path d="M110 92 H290 L270 110 H130Z" fill="#4b5563"/><rect x="170" y="132" width="60" height="30" fill="#1f2937"/>' +
+            '<rect id="glow" x="170" y="80" width="60" height="12" rx="4" fill="#f97316"/>' +
+            '<g class="hammer"><rect x="292" y="30" width="16" height="70" fill="#78350f"/><rect x="262" y="18" width="70" height="26" rx="4" fill="#6b7280"/></g><g id="sparks"></g></svg>' +
+            '<div class="anvil__hint" id="hint">Klick 5× auf den Amboss!</div></div>', { onClose: () => { if (!fin) say('„Abgebrochen? Das Eisen wird kalt …“'); } });
+        let hits = 0, fin = false;
+        const anvil = m.el.querySelector('#anvil');
+        anvil.addEventListener('pointerdown', () => {
+            if (fin) return;
+            hits++; anvil.classList.add('is-hit'); setTimeout(() => anvil.classList.remove('is-hit'), 90);
+            X.beep(180 + hits * 90, .07, 'square', .06);
+            const sp = m.el.querySelector('#sparks');
+            for (let i = 0; i < 8; i++) { const s = document.createElementNS('http://www.w3.org/2000/svg', 'circle'); s.setAttribute('cx', 200); s.setAttribute('cy', 82); s.setAttribute('r', 2.5); s.setAttribute('fill', i % 2 ? '#fde047' : '#fb923c'); s.setAttribute('class', 'spark'); s.style.setProperty('--dx', (Math.random() * 120 - 60) + 'px'); s.style.setProperty('--dy', (-Math.random() * 70 - 10) + 'px'); sp.appendChild(s); setTimeout(() => s.remove(), 520); }
+            m.el.querySelector('#glow').setAttribute('fill', ['#f97316', '#fb923c', '#fdba74', '#fde68a', '#fef9c3'][Math.min(4, hits - 1)]);
+            m.el.querySelector('#hint').textContent = hits < 5 ? (5 - hits) + ' Schläge noch …' : 'Fertig!';
+            if (hits >= 5) { fin = true; setTimeout(() => { m.close(); done(); }, 450); }
+        });
+    }
+
+    /* ── Aufwerten ── */
+    function renderUp() {
+        const list = M.items().slice().sort((a, b) => b.q - a.q || (b.up || 0) - (a.up || 0));
+        $('#up-items').innerHTML = list.length ? list.map(x => W.itemCard(x, { sel: selUp })).join('') : '<p class="muted">Dein Inventar ist leer.</p>';
+        const it = selUp && M.item(selUp);
+        if (!it) { $('#up-detail').innerHTML = '<p class="muted small">Wähle ein Teil.</p>'; return; }
+        if ((it.up || 0) >= 5) { $('#up-detail').innerHTML = W.detail(it, { actions: '<span class="badge badge--success">Maximal aufgewertet</span>' }); return; }
+        const c = upCost(it), next = Object.assign({}, it, { up: (it.up || 0) + 1 });
+        $('#up-detail').innerHTML = W.detail(it) + '<div class="card mt-1"><p class="small mb-1"><b>Nach +' + next.up + ':</b></p><div class="statrow">' + W.statChips(M.itemStats(next), M.itemStats(it)) + '</div>' +
+            '<p class="small">Kosten: ' + costHTML(c) + '</p><button class="btn btn--primary btn--sm" type="button" id="do-up"' + (canPay(c) ? '' : ' disabled') + '>Schmieden</button></div>';
+        const b = $('#do-up'); if (b) b.addEventListener('click', () => {
+            if (!page.at() || !canPay(c)) return;
+            forge(it, () => {
+                if (!M.spendTaler(c.taler) || !M.spendMats(c.mats)) return;
+                it.up = (it.up || 0) + 1; X.persist(); X.egg('m-schmied');
+                say(X.pick(['„Klonk. Klonk. Besser.“', '„Siehst du den Glanz? Das war ich.“', '„Noch heiss. Nicht anfassen.“']));
+                X.toast('Aufgewertet: ' + M.part(it.id).n + ' +' + it.up, 'Die Werte sind gestiegen.', { iconHtml: W.px('ic-amboss', 26) }); render();
+            });
+        });
+    }
+    $('#up-items').addEventListener('click', e => { const b = e.target.closest('[data-u]'); if (b) { selUp = b.dataset.u; renderUp(); } });
+
+    /* ── Zerlegen ── */
+    function renderZer() {
+        const list = M.items().filter(x => !M.equipped(x.u)).sort((a, b) => a.q - b.q);
+        $('#zer-items').innerHTML = list.length ? list.map(x => W.itemCard(x, { sel: selZer })).join('') : '<p class="muted">Nichts zum Zerlegen – eingebaute Teile bleiben dran.</p>';
+        const it = selZer && M.item(selZer);
+        if (!it || M.equipped(it.u)) { $('#zer-detail').innerHTML = '<p class="muted small">Wähle ein Teil.</p>'; return; }
+        const out = salvage(it);
+        $('#zer-detail').innerHTML = W.detail(it) + '<div class="card mt-1"><p class="small">Ergibt: ' + Object.keys(out).map(k => W.px('mat-' + k) + ' ' + out[k] + '× ' + esc(M.mat(k).n)).join(', ') + '</p><button class="btn btn--danger btn--sm" type="button" id="do-zer">Zerlegen</button></div>';
+        $('#do-zer').addEventListener('click', () => {
+            if (!page.at()) return;
+            const n = M.part(it.id).n; M.remove(it.u); Object.keys(out).forEach(k => M.addMat(k, out[k])); selZer = null;
+            X.beep(220, .12, 'sawtooth', .05); say('„Schraube für Schraube. Nichts geht verloren.“'); X.toast('Zerlegt: ' + n, Object.keys(out).map(k => out[k] + '× ' + M.mat(k).n).join(', '), { iconHtml: W.px('mat-zahnrad', 26) }); render();
+        });
+    }
+    $('#zer-items').addEventListener('click', e => { const b = e.target.closest('[data-u]'); if (b) { selZer = b.dataset.u; renderZer(); } });
+
+    /* ── Verschmelzen ── */
+    function fuseCost(q) { return { taler: 30 * q, mats: { splitter: q } }; }
+    function renderFuse() {
+        picks = picks.filter(u => M.item(u) && !M.equipped(u));
+        const list = M.items().filter(x => !M.equipped(x.u) && x.q < 6).sort((a, b) => a.q - b.q);
+        $('#fuse-items').innerHTML = list.length ? list.map(x => W.itemCard(x).replace('class="item', 'class="item' + (picks.includes(x.u) ? ' is-picked' : ''))).join('') : '<p class="muted">Keine passenden Teile.</p>';
+        const q = picks.length ? M.item(picks[0]).q : 0, c = q ? fuseCost(q) : null;
+        $('#fuse-info').innerHTML = 'Gewählt: ' + picks.length + '/3' + (c ? ' · Ergebnis: <b class="q' + (q + 1) + '">' + W.qName(q + 1) + '</b> · Kosten: ' + costHTML(c) : '');
+        $('#fuse-go').disabled = !(picks.length === 3 && canPay(c));
+    }
+    $('#fuse-items').addEventListener('click', e => {
+        const b = e.target.closest('[data-u]'); if (!b) return;
+        const u = b.dataset.u, it = M.item(u);
+        if (picks.includes(u)) picks = picks.filter(x => x !== u);
+        else if (picks.length < 3) { if (picks.length && M.item(picks[0]).q !== it.q) { say('„Nur gleiche Seltenheit! Sonst gibt es Matsch.“'); return; } picks.push(u); }
+        renderFuse();
+    });
+    $('#fuse-go').addEventListener('click', () => {
+        if (!page.at() || picks.length !== 3) return;
+        const items = picks.map(u => M.item(u)), q = items[0].q, c = fuseCost(q);
+        if (!canPay(c)) return;
+        forge(items[0], () => {
+            if (!M.spendTaler(c.taler) || !M.spendMats(c.mats)) return;
+            const slot = M.part(X.pick(items).id).slot, maxT = Math.min(5, Math.max(...items.map(i => M.part(i.id).t)) + 1);
+            const p = W.rollPart({ slot, maxT, minQ: q + 1, maxQ: q + 1 });
+            items.forEach(i => M.remove(i.u)); picks = [];
+            const it = M.add(p.id, p.q);
+            say('„Drei werden eins. So war das schon immer.“');
+            X.toast('Verschmolzen!', (it ? M.part(it.id).n : 'Teil') + ' (' + W.qName(p.q) + ')', { iconHtml: W.px('mat-splitter', 26) }); X.confetti(50); render();
+        });
+    });
+
+    /* ── Reparieren gegen Taler ── */
+    function renderRep() {
+        const list = M.items().filter(x => x.c < 100);
+        $('#rep-items').innerHTML = list.length ? list.map(x => '<div>' + W.itemCard(x) + '<button class="btn btn--sm btn--block mt-1" type="button" data-rep="' + x.u + '"' + (M.taler() < M.repairCost(x.u) ? ' disabled' : '') + '>' + W.px('w-schluessel') + ' ' + M.repairCost(x.u) + ' ' + W.px('taler') + '</button></div>').join('') : '<p class="muted">Alles heil. Esse ist fast enttäuscht.</p>';
+    }
+    $('#rep-items').addEventListener('click', e => {
+        const b = e.target.closest('[data-rep]'); if (!b || !page.at()) return;
+        if (M.repair(b.dataset.rep, true)) { X.beep(523, .08); say('„Wie neu. Fast.“'); render(); }
+    });
+
+    X.$$('[data-tab]').forEach(b => b.addEventListener('click', () => {
+        tab = b.dataset.tab; X.$$('[data-tab]').forEach(x => x.setAttribute('aria-selected', x === b));
+        X.$$('[data-panel]').forEach(p => { p.hidden = p.dataset.panel !== tab; });
+    }));
+    function render() { page.redraw && page.redraw(); renderUp(); renderZer(); renderFuse(); renderRep(); }
+    render();
+});
+</script>
+</body>
+</html>

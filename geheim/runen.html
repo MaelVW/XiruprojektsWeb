@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Runenkammer · Xiruprojekts</title>
+    <meta name="description" content="Uralte Zeichen an den Wänden einer Kammer. Wer sie lesen kann, bringt sie zum Leuchten.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <style>
+        .rn { background: radial-gradient(circle at 50% 0, #292524, #0c0a09); color: #d6d3d1; }
+        .rn__row { padding: .8rem 0; border-bottom: 1px solid #44403c; }
+        .rn__runes { font-size: clamp(1.6rem, 5vw, 2.4rem); letter-spacing: .25em; margin: 0; color: #78716c; transition: color .6s, text-shadow .6s; }
+        .rn__row.is-lit .rn__runes { color: #fcd34d; text-shadow: 0 0 18px #f59e0b; }
+        .rn__row.is-wrong { animation: rnShake .35s; } @keyframes rnShake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+        .rn__in { width: 10rem; }
+        .rn__table { display: grid; grid-template-columns: repeat(auto-fill, minmax(4rem, 1fr)); gap: .3rem; font-family: var(--mono); }
+        .rn__table b { font-size: 1.3rem; color: var(--accent); }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">🗝 Geheimer Ort</span>
+        <h1>Runenkammer</h1>
+        <p class="lead">In die Wände sind Runen geritzt. Die Tafel rechts verrät, welcher Laut zu welchem Zeichen gehört. Lies die drei Inschriften.</p>
+    </header>
+    <div class="grid-2">
+        <section class="card rn">
+            <div id="walls"></div>
+        </section>
+        <aside class="card"><h3>Runentafel</h3><div class="rn__table" id="table"></div></aside>
+    </div>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU;
+    const $ = s => X.$(s);
+    const R = { A: 'ᚨ', B: 'ᛒ', D: 'ᛞ', E: 'ᛖ', F: 'ᚠ', G: 'ᚷ', H: 'ᚺ', I: 'ᛁ', K: 'ᚲ', L: 'ᛚ', M: 'ᛗ', N: 'ᚾ', O: 'ᛟ', P: 'ᛈ', R: 'ᚱ', S: 'ᛊ', T: 'ᛏ', U: 'ᚢ', W: 'ᚹ' };
+    const WORDS = [['NEBEL', 'Was die Inseln verbirgt.'], ['ANKER', 'Was das Schiff im Hafen hält.'], ['KRISTALL', 'Was Sammler suchen.']];
+    const solved = new Set(X.load('runen', []) || []);
+    $('#table').innerHTML = Object.keys(R).map(k => '<span><b>' + R[k] + '</b> ' + k + '</span>').join('');
+    $('#walls').innerHTML = WORDS.map(([w, h], i) => '<div class="rn__row" data-i="' + i + '"><p class="rn__runes">' + w.split('').map(c => R[c]).join(' ') + '</p><p class="small muted">' + h + '</p>' +
+        '<div class="row"><input class="input mono rn__in" maxlength="12" aria-label="Lösung ' + (i + 1) + '"><button class="btn btn--sm" type="button">Lesen</button></div></div>').join('');
+    function mark() { X.$$('.rn__row').forEach(r => r.classList.toggle('is-lit', solved.has(+r.dataset.i))); }
+    X.$$('.rn__row').forEach(r => {
+        const i = +r.dataset.i, inp = X.$('input', r), go = () => {
+            if (inp.value.trim().toUpperCase() !== WORDS[i][0]) { r.classList.remove('is-wrong'); void r.offsetWidth; r.classList.add('is-wrong'); return; }
+            solved.add(i); X.save('runen', [...solved]); mark(); X.beep(523, .2, 'sine', .08);
+            if (solved.size === WORDS.length) { X.once('geheim-runen', 25, 'Alle Runen gelesen'); X.toast('ᚱᚢᚾᛖ', 'Die Kammer leuchtet. Die Runen haben dich erkannt.'); }
+        };
+        X.$('button', r).addEventListener('click', go); inp.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
+    });
+    mark();
+});
+</script>
+</body>
+</html>

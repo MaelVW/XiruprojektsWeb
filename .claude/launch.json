@@ -4,8 +4,9 @@
     {
       "name": "xiru",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-u", "tools/serve.py", "5510"],
-      "port": 5510
+      "runtimeArgs": ["-u", "tools/serve.py"],
+      "port": 5510,
+      "autoPort": true
     }
   ]
 }

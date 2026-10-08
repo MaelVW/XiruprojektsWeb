@@ -18,7 +18,7 @@ XIRU.regions = [
     { id: 'mixer',     name: 'Mixer-Studio',     icon: '≋', color: '#60a5fa', desc: 'Klänge, Beats, Farben und Namen mischen.' },
     { id: 'werkzeuge', name: 'Werkzeugkasten',   icon: '⚒', color: '#facc15', desc: 'Kleine Helfer für den Alltag am PC.' },
     { id: 'studio',    name: 'Studio',           icon: '⬇', color: '#4ade80', desc: 'Software und Spiele von Xiruprojekts.' },
-    { id: 'konto',     name: 'Heimathafen',      icon: '⚓', color: '#38bdf8', desc: 'Dein Konto, dein Skilltree, deine Sammlung.' },
+    { id: 'konto',     name: 'Heimathafen',      icon: '⚓', color: '#38bdf8', desc: 'Dein Konto, deine Werft, deine Sammlung.' },
     { id: 'geheim',    name: '???',              icon: '?', color: '#f87171', desc: 'Niemand weiss genau, was hier liegt.' }
 ];
 
@@ -33,7 +33,7 @@ XIRU.pages = [
     { p: 'index.html',               t: 'Startseite',          r: 'zentrum', d: 'Willkommen bei Xiruprojekts.', nav: true },
     { p: 'weltkarte.html',           t: 'Weltkarte',           r: 'zentrum', d: 'Alle Regionen und was du schon entdeckt hast.', nav: true },
     { p: 'suche.html',               t: 'Suche',               r: 'zentrum', d: 'Durchsuche die ganze Website.', nav: true },
-    { p: 'hilfe.html',               t: 'Hilfe & FAQ',         r: 'zentrum', d: 'Wie XP, Skills und Realitätskristalle funktionieren.', nav: true },
+    { p: 'hilfe.html',               t: 'Hilfe & FAQ',         r: 'zentrum', d: 'Wie XP, Werft, Module und Realitätskristalle funktionieren.', nav: true },
     { p: 'ueber-uns.html',           t: 'Über uns',            r: 'zentrum', d: 'Zwei Freunde, ein Hobby-Gamestudio.', nav: true },
     { p: 'datenschutz.html',         t: 'Datenschutz',         r: 'zentrum', d: 'Was gespeichert wird (Spoiler: nur bei dir).' },
     { p: 'nutzungsbedingungen.html', t: 'Nutzungsbedingungen', r: 'zentrum', d: 'Die Regeln dieser Website.' },
@@ -342,7 +342,7 @@ XIRU.themes = [
 
 /* ── Realitätskristalle (Easter Eggs) ──────────────────────────────────────────────
    id   eindeutig        n  Name           h  Hinweis (sichtbar, solange nicht gefunden)
-   x    XP               r  Seltenheit 1–4 (4 = Meilenstein, gibt +1 Skillpunkt)
+   x    XP               r  Seltenheit 1–4 (4 = Meilenstein, gibt +1 Modulpunkt)
    w    getipptes Wort (irgendwo auf der Seite, nicht in Eingabefeldern)
    m    Nachricht beim Finden          pg Seite, auf der es versteckt ist (für „Spürnase")
    fx   Effekt, den core.js abspielt
@@ -435,18 +435,18 @@ XIRU.eggs = [
     { id: 'b-theme',     n: 'Modeexperte',         h: 'Probiere jedes freigeschaltete Design aus.', x: 30, r: 2, m: 'Du hast Stil.' },
     { id: 'b-regionen',  n: 'Weltenbummler',       h: 'Besuche jede (bekannte) Region mindestens einmal.', x: 50, r: 2, m: 'Du warst schon überall. Fast.' },
     { id: 'b-seiten10',  n: 'Neugierig',           h: 'Entdecke 10 Seiten.', x: 30, r: 1, m: '10 Seiten entdeckt!' },
-    { id: 'b-seiten50',  n: 'Forscher',            h: 'Entdecke 50 Seiten.', x: 100, r: 4, m: '50 Seiten entdeckt! +1 Skillpunkt' },
-    { id: 'b-seiten100', n: 'Pionier',             h: 'Entdecke 100 Seiten.', x: 200, r: 4, m: '100 Seiten entdeckt! +1 Skillpunkt' },
+    { id: 'b-seiten50',  n: 'Forscher',            h: 'Entdecke 50 Seiten.', x: 100, r: 4, m: '50 Seiten entdeckt! +1 Modulpunkt' },
+    { id: 'b-seiten100', n: 'Pionier',             h: 'Entdecke 100 Seiten.', x: 200, r: 4, m: '100 Seiten entdeckt! +1 Modulpunkt' },
     { id: 'b-seiten-alle', n: 'Allwissend',        h: 'Entdecke wirklich jede Seite.', x: 500, r: 4, m: 'Es gibt nichts mehr zu entdecken. Wirklich nicht. Glaube ich.' },
     { id: 'b-eier10',    n: 'Sammler',             h: 'Finde 10 Realitätskristalle.', x: 50, r: 2, m: '10 Kristalle funkeln in deiner Sammlung!' },
-    { id: 'b-eier50',    n: 'Archivar',            h: 'Finde 50 Realitätskristalle.', x: 150, r: 4, m: '50 Kristalle! Irgendwo beginnt ein Schrein zu leuchten. +1 Skillpunkt' },
-    { id: 'b-eier100',   n: 'Bibliothekar',        h: 'Finde 100 Realitätskristalle.', x: 300, r: 4, m: '100 Kristalle! Die Realität bekommt Risse. +1 Skillpunkt' },
+    { id: 'b-eier50',    n: 'Archivar',            h: 'Finde 50 Realitätskristalle.', x: 150, r: 4, m: '50 Kristalle! Irgendwo beginnt ein Schrein zu leuchten. +1 Modulpunkt' },
+    { id: 'b-eier100',   n: 'Bibliothekar',        h: 'Finde 100 Realitätskristalle.', x: 300, r: 4, m: '100 Kristalle! Die Realität bekommt Risse. +1 Modulpunkt' },
     { id: 'b-level5',    n: 'Aufsteiger',          h: 'Erreiche Level 5.', x: 50, r: 2, m: 'Level 5!' },
-    { id: 'b-level10',   n: 'Veteran',             h: 'Erreiche Level 10.', x: 100, r: 4, m: 'Level 10! +1 Skillpunkt' },
-    { id: 'b-level20',   n: 'Legende',             h: 'Erreiche Level 20.', x: 200, r: 4, m: 'Level 20! +1 Skillpunkt' },
+    { id: 'b-level10',   n: 'Veteran',             h: 'Erreiche Level 10.', x: 100, r: 4, m: 'Level 10! +1 Modulpunkt' },
+    { id: 'b-level20',   n: 'Legende',             h: 'Erreiche Level 20.', x: 200, r: 4, m: 'Level 20! +1 Modulpunkt' },
     { id: 'b-konto',     n: 'Angekommen',          h: 'Erstelle ein Konto.', x: 50, r: 1, m: 'Willkommen im Heimathafen!' },
-    { id: 'b-skill',     n: 'Erste Fähigkeit',     h: 'Lerne deinen ersten Skill.', x: 30, r: 1, m: 'Der Anfang einer langen Reise.' },
-    { id: 'b-ast',       n: 'Meister eines Astes', h: 'Lerne alle Skills eines Astes.', x: 150, r: 4, m: 'Ein ganzer Ast gemeistert! +1 Skillpunkt' },
+    { id: 'b-skill',     n: 'Erste Fähigkeit',     h: 'Baue dein erstes Modul ein.', x: 30, r: 1, m: 'Der Anfang einer langen Reise.' },
+    { id: 'b-ast',       n: 'Meister eines Astes', h: 'Baue alle Module eines Astes ein.', x: 150, r: 4, m: 'Ein ganzer Ast gemeistert! +1 Modulpunkt' },
     { id: 'b-export',    n: 'Datensicherung',      h: 'Exportiere deinen Spielstand.', x: 20, r: 1, m: 'Backup gemacht. Vorbildlich!' },
     { id: 'b-suche-leer', n: 'Nichts gefunden',    h: 'Suche nach etwas, das es nicht gibt.', x: 15, r: 1, m: 'Nichts gefunden – ausser diesem Kristall.' },
     { id: 'b-suche-sinn', n: 'Tiefgründig',        h: 'Suche nach dem Sinn des Lebens.', x: 42, r: 2, m: '42.' },
@@ -483,7 +483,7 @@ XIRU.eggs = [
     { id: 'o-schrein',    pg: 'geheim/kristallschrein.html', manual: true, n: 'Pilgerreise',       h: 'Wer genug Kristalle hat, findet einen Schrein.', x: 100, r: 3, m: 'Der Schrein leuchtet für dich.' },
     { id: 'o-katzen',     pg: 'geheim/katzen.html',           n: 'Katzenzimmer',      h: 'Verirrte finden manchmal Katzen.', x: 50, r: 2, m: 'Du bist umzingelt. Von Katzen.' },
     { id: 'o-rueck',      pg: 'geheim/rueckwaerts.html',      n: 'gnagsgnälkcüR',     h: 'Eine Seite steht spiegelverkehrt.', x: 60, r: 3, m: '.tgiehcsed nehesegfua ednE muz tsah uD' },
-    { id: 'o-ende',       pg: 'geheim/ende.html', manual: true, n: 'Das Ende',          h: 'Wer alle Äste meistert, findet das Ende.', x: 500, r: 4, m: 'Das Ende ist erst der Anfang. +1 Skillpunkt' },
+    { id: 'o-ende',       pg: 'geheim/ende.html', manual: true, n: 'Das Ende',          h: 'Wer alle Äste meistert, findet das Ende.', x: 500, r: 4, m: 'Das Ende ist erst der Anfang. +1 Modulpunkt' },
     { id: 'o-mitternacht', pg: 'arcade/mitternacht.html',     n: 'Insider',           h: 'Ein Highscore-Jäger kennt ein besonderes Spiel.', x: 60, r: 3, m: 'Willkommen in der Mitternachts-Arcade.' }
 ];
 
@@ -509,7 +509,7 @@ XIRU.eggs.push(
     { id: 'm-kaputt',      pg: 'konto/skilltree.html', n: 'Totalschaden',    h: 'Fahr ein Bauteil komplett zu Schrott.', x: 25, r: 2, m: 'Das war mal ein Antrieb.' },
     { id: 'm-vollausbau',  pg: 'konto/skilltree.html', n: 'Vollausstattung', h: 'Belege alle sechs Bauplätze des Mechs.', x: 60, r: 3, m: 'Ein richtiger Mech!' },
     { id: 'm-beine',       pg: 'konto/skilltree.html', n: 'Mech-Pilot',      h: 'Gib deinem Mech echte Beine.', x: 80, r: 3, m: 'STAMPF. STAMPF. STAMPF.' },
-    { id: 'm-alle-inseln', pg: 'weltkarte.html',       n: 'Kartenmacher',    h: 'Erreiche jede Insel der bekannten Welt.', x: 200, r: 4, m: 'Die bekannte Welt gehört dir. Aber was liegt im Nebel? +1 Skillpunkt' }
+    { id: 'm-alle-inseln', pg: 'weltkarte.html',       n: 'Kartenmacher',    h: 'Erreiche jede Insel der bekannten Welt.', x: 200, r: 4, m: 'Die bekannte Welt gehört dir. Aber was liegt im Nebel? +1 Modulpunkt' }
     ,
     /* Spielhalle */
     { id: 'g-2048-kilobyte',   pg: 'arcade/2048.html', n: 'Ein Kilobyte', h: 'Bau in 2048 eine Kachel mit 1024.', x: 30, r: 2, m: '1024 – ein echtes Kilobyte. Fast.' },

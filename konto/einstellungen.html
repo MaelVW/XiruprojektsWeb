@@ -79,7 +79,7 @@ XIRU.ready(function () {
         pixmag: ['#0c0a09', '#1c1714', '#d4a24c', '#b4442e', '#eadcc6', '#4a3b2e']
     };
     function req(t) {
-        if (t.skill) { const s = XIRU.skillInfo(t.skill); return 'Skill „' + s.n + '"'; }
+        if (t.skill) { const s = XIRU.skillInfo(t.skill); return 'Modul „' + s.n + '"'; }
         if (t.egg) { const e = XIRU.eggInfo(t.egg); return XIRU.hasEgg(t.egg) ? '' : 'Ein Geheimnis: ' + e.h; }
         return '';
     }
@@ -126,7 +126,7 @@ XIRU.ready(function () {
     }
 
     $('#reset-progress').addEventListener('click', () => {
-        const m = XIRU.modal('<h2>Fortschritt zurücksetzen?</h2><p class="muted">XP, Entdeckungen, Kristalle, Skills und Rekorde von <strong>' + XIRU.esc(XIRU.user || 'Gast') + '</strong> werden gelöscht. Das Konto selbst bleibt bestehen.</p>' +
+        const m = XIRU.modal('<h2>Fortschritt zurücksetzen?</h2><p class="muted">XP, Entdeckungen, Kristalle, Module und Rekorde von <strong>' + XIRU.esc(XIRU.user || 'Gast') + '</strong> werden gelöscht. Das Konto selbst bleibt bestehen.</p>' +
             '<div class="row mt-2"><button class="btn btn--danger" id="ok">Zurücksetzen</button><button class="btn" data-close>Abbrechen</button></div>');
         m.el.querySelector('#ok').addEventListener('click', () => {
             ['skills', 'eggs', 'visited', 'days', 'scores', 'rewards', 'data'].forEach(k => { P[k] = {}; });

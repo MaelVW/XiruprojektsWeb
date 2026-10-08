@@ -313,7 +313,7 @@
         if (!X.canLearn(id)) return false;
         P.skills[id] = Date.now(); persist();
         const s = skillMap[id];
-        X.toast('Skill gelernt: ' + s.n, s.d, { icon: '✦', type: 'level' });
+        X.toast('Modul eingebaut: ' + s.n, s.d, { icon: '✦', type: 'level' });
         X.egg('b-skill');
         const branch = X.skills.filter(k => k.b === s.b);
         if (branch.every(k => P.skills[k.id])) X.egg('b-ast');
@@ -443,7 +443,7 @@
         const after = X.levelInfo().level;
         emit('xp', { n, reason });
         if (after > before) {
-            X.toast('Level ' + after + '!', X.user ? 'Du hast einen neuen Skillpunkt.' : 'Erstelle ein Konto, um Skillpunkte zu nutzen.', { icon: '⬆', type: 'level' });
+            X.toast('Level ' + after + '!', X.user ? 'Du hast einen neuen Modulpunkt.' : 'Erstelle ein Konto, um Modulpunkte zu nutzen.', { icon: '⬆', type: 'level' });
             X.confetti();
             X.beep(660, .08); setTimeout(() => X.beep(880, .12), 90);
             if (after >= 5) X.egg('b-level5');
@@ -820,7 +820,7 @@
         const pts = X.user ? X.skillPoints().free : 0;
         const acc = X.user
             ? '<div class="nav__item" id="hud-account"><button class="hud__btn" type="button" aria-haspopup="true">' +
-              '<span aria-hidden="true">⚓</span>' + X.esc(X.user) + (pts ? ' <span class="badge badge--accent" title="Freie Skillpunkte">' + pts + '</span>' : '') + '</button>' +
+              '<span aria-hidden="true">⚓</span>' + X.esc(X.user) + (pts ? ' <span class="badge badge--accent" title="Freie Modulpunkte">' + pts + '</span>' : '') + '</button>' +
               '<div class="nav__menu nav__menu--right">' +
               X.pages.filter(p => p.r === 'konto' && p.p !== 'konto/login.html').map(p => navLink(p, p.p === 'konto/skilltree.html' && pts ? pts + ' frei' : '')).join('') +
               '<a href="#" data-logout><span>Abmelden</span></a></div></div>'
@@ -896,10 +896,10 @@
         return '<div class="lock-screen">' +
             '<div class="lock-screen__icon">' + (secret ? '🌫' : '🔒') + '</div>' +
             '<h1 style="font-size:1.8rem">' + (secret ? 'Ein Ort im Nebel' : X.esc(pg.t) + ' ist versiegelt') + '</h1>' +
-            '<p class="muted">' + (secret ? 'Du spürst, dass hier etwas ist – aber du kannst es noch nicht betreten.' : 'Diese Seite wird über den Skilltree freigeschaltet.') + '</p>' +
+            '<p class="muted">' + (secret ? 'Du spürst, dass hier etwas ist – aber du kannst es noch nicht betreten.' : 'Diese Seite wird über ein Modul in der Werft freigeschaltet.') + '</p>' +
             (s ? '<p>Benötigt: <strong style="color:' + (br ? br.color : 'inherit') + '">' + X.esc(s.n) + '</strong> (' + X.esc(br ? br.name : '') + ', ' + s.c + ' Punkt' + (s.c > 1 ? 'e' : '') + ')</p>' : '') +
             '<div class="row">' + (X.user
-                ? '<a class="btn btn--primary" href="' + X.url('konto/skilltree.html') + '">Zum Skilltree</a>'
+                ? '<a class="btn btn--primary" href="' + X.url('konto/skilltree.html#module') + '">Zu den Modulen</a>'
                 : '<a class="btn btn--primary" href="' + X.url('konto/login.html') + '?weiter=' + encodeURIComponent(X.path) + '">Anmelden</a><a class="btn" href="' + X.url('hilfe.html') + '">Wie funktioniert das?</a>') +
             '</div></div>';
     }

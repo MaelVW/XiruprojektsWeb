@@ -45,7 +45,7 @@
         <div class="card card--flat stat"><span class="stat__value" id="st-eggs">0</span><span class="stat__label">Kristalle</span></div>
         <div class="card card--flat stat"><span class="stat__value" id="st-games">0</span><span class="stat__label">Spiele gespielt</span></div>
         <div class="card card--flat stat"><span class="stat__value" id="st-days">0</span><span class="stat__label">Besuchstage</span></div>
-        <div class="card card--flat stat"><span class="stat__value" id="st-skills">0</span><span class="stat__label">Skills</span></div>
+        <div class="card card--flat stat"><span class="stat__value" id="st-skills">0</span><span class="stat__label">Module</span></div>
     </div>
 
     <div class="grid-2">
@@ -116,7 +116,7 @@ XIRU.ready(function () {
     $('#xp-next').textContent = li.into + ' / ' + li.need + ' bis Level ' + (li.level + 1);
     requestAnimationFrame(() => $('#xp-bar').style.setProperty('--v', li.pct + '%'));
 
-    if (!XIRU.user) $('#guest-note').innerHTML = '<div class="callout mb-3">Du bist als Gast unterwegs. <a href="login.html?weiter=konto%2Fprofil.html">Erstelle ein lokales Konto</a> – dein Gast-Fortschritt wird übernommen und du kannst Skills lernen.</div>';
+    if (!XIRU.user) $('#guest-note').innerHTML = '<div class="callout mb-3">Du bist als Gast unterwegs. <a href="login.html?weiter=konto%2Fprofil.html">Erstelle ein lokales Konto</a> – dein Gast-Fortschritt wird übernommen und du kannst Module einbauen.</div>';
     else $('#account-box').hidden = false;
 
     const pages = XIRU.pages;

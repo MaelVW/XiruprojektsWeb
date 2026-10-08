@@ -38,7 +38,7 @@ Arbeitsliste für alle weiteren Sitzungen (auch automatische Nachtschichten).
       Je Seite: lädt ohne Konsolenfehler, Spiel startet/endet, `XIRU.score` wird gemeldet, Texte sprechen von Kristallen.
 - [x] Testreste suchen und löschen (z. B. temporäre Kopien wie `*-test.html`, Debug-Hooks `window.__debug…`).
 - [x] `grep -ri "diskette" --include=*.html --include=*.js` durchgehen: wo „Diskette" ein **Sammelobjekt** meint → Kristall.
-- [ ] „Skilltree" in **sichtbaren Texten** durch „Werft" bzw. „Module" ersetzen (z. B. `arcade/index.html`: „…den lüftest du im Skilltree").
+- [x] „Skilltree" in **sichtbaren Texten** durch „Werft" bzw. „Module" ersetzen (z. B. `arcade/index.html`: „…den lüftest du im Skilltree").
       Dateinamen (`konto/skilltree.html`) und Code-Bezeichner bleiben. Kurz, dann weiter.
 
 ## A2 · Eigene Designs pro Bereich (Wunsch von Mael, direkt nach A)
@@ -47,16 +47,16 @@ Jeder Bereich bekommt ein eigenes Design über eine Body-Klasse, die die Farb-Va
 (Vorbild: `body.theme-werft` in `konto/skilltree.html`). Gemeinsame Bereichs-Designs gehören in
 `assets/css/themes/<bereich>.css` und werden auf allen Seiten des Bereichs eingebunden. KI-Labor und Zentrum („Entdecken") bleiben wie sie sind.
 
-- [ ] **Spielhalle = 80er-Arcade-Halle – Sichtprüfung & Feinschliff** (Design `assets/css/themes/arcade.css` ist seit Nachtschicht 2 eingebaut):
+- [x] **Spielhalle = 80er-Arcade-Halle – Sichtprüfung & Feinschliff** (Design `assets/css/themes/arcade.css` ist seit Nachtschicht 2 eingebaut):
       jedes `arcade/*.html` kurz öffnen (eigener Tab, Inseln freischalten), Screenshot/Prüfung: Gehäuse + Marquee sitzen, Spielfeld lesbar,
       Spiele mit eigenen Stage-Stilen (`dungeon`, `2048`, `pc-bauer`, `hardware-quiz`, `tower-defense`) nicht zerschossen, 375 px ohne Querscrollen,
       Kontraste ok. Gefundenes direkt beheben, dann abhaken.
-- [ ] **Hardware = im Inneren eines Cyber-Anime-Computers** (`theme-hardware`, alle `hardware/**`; die Datenblätter erzeugt
+- [x] **Hardware = im Inneren eines Cyber-Anime-Computers** (`theme-hardware`, alle `hardware/**`; die Datenblätter erzeugt
       `tools/build_hardware.py` → Vorlage `HEAD` dort anpassen und neu generieren): dunkles Mainboard mit leuchtenden Leiterbahnen
       (Cyan/Magenta), Hologramm-Fenster (Glas, Scanlines, Eck-Klammern), fliessende Datenströme, Reiter/Tabs wie Bauteile auf der Platine
       (Chips mit Pins). Animationen dezent, `prefers-reduced-motion` beachten.
       Achtung: `hardware/netzteil-rechner.html` enthält `XIRU.riss.bind(3, …)` – diese Zeile drin lassen (versteckter Eingang).
-- [ ] **Studio = Aufnahme- bzw. Mix-Studio** (`theme-studio`, alle `studio/*.html`): Schaumstoff-Akustikwände (CSS-Muster), warmes Licht,
+- [x] **Studio = Aufnahme- bzw. Mix-Studio** (`theme-studio`, alle `studio/*.html`): Schaumstoff-Akustikwände (CSS-Muster), warmes Licht,
       an der Seite hängende Kopfhörer nur als Schatten/Silhouetten (SVG, unscharf), Mischpult-Optik mit Schiebereglern.
       **Downloads: Man zieht den Datenträger (Diskette/CD) in ein Laufwerk** (Drag & Drop mit Laufwerk-Animation und Geräusch),
       Klick/Enter auf „Einlegen" als barrierefreie Alternative. Externe Links (GitHub) danach normal öffnen.
@@ -106,7 +106,7 @@ Jeder Bereich bekommt ein eigenes Design über eine Body-Klasse, die die Farb-Va
 
 ## F · Studio
 
-- [ ] `studio/floppy-hub` – Projektseite nach `F:\Code stuff\Floppy\README-FloppyHub.md` (nur lesen): was es tut, game.txt-Beispiele,
+- [ ] `studio/floppy-hub` – (alle Studio-Seiten: `themes/studio.css` + `<body class="theme-studio">`, Downloads über `studio/js/laufwerk.js`) Projektseite nach `F:\Code stuff\Floppy\README-FloppyHub.md` (nur lesen): was es tut, game.txt-Beispiele,
       Installation (Setup von GitHub Releases, SmartScreen-Hinweis), Sicherheitsregeln (pcrun mit J/N-Rückfrage), animierte Terminal-Demo,
       Link `https://github.com/MaelVW/Floppy/releases/latest`.
 - [ ] `studio/pixmag` – nach `F:\Code stuff\pixmag\README.md`: Story, Features, Steuerung, Status Alpha, Link zu PIXMAG Mini.
@@ -156,6 +156,36 @@ Der Liminal-Teil (`Why.html`, `why/*`, `liminal*.js`) wird mitgeprüft, aber **n
 ---
 
 ## Notizen der letzten Sitzung
+
+- 2026-10-08 (01:55, Nachtschicht 3): **Studio-Design** fertig: `assets/css/themes/studio.css` (`body.theme-studio`, immer dunkel): Keil-Schaumstoff
+  (SVG-Muster), warme Spots, zwei hängende Kopfhörer als unscharfe Schatten (`body::before`), „ON AIR“-Lämpchen, Karten als Kanalzüge mit Schrauben,
+  Pult-Tasten. `studio/index.html`: klebendes Mischpult mit Deko-Schiebereglern + **Laufwerk XIRU-DRIVE 2000** (Disketten-Schlitz, CD-Schublade, LED,
+  LCD). Neu `studio/js/laufwerk.js` (`XIRU.laufwerk(driveEl, getItem)`): Datenträger (`[data-medium]`, Diskette/CD in CSS) per Zeiger ziehen
+  (Maus/Touch/Stift) oder Knopf „Einlegen“; Animation + live erzeugte Laufwerksgeräusche (WebAudio, Einstellung „Ton“ beachtet), danach normaler Link
+  (GitHub `target=_blank`), „Auswerfen“; Projekt ohne Datei → Fehler-LED „unbespielt“. Kein automatisches Öffnen (Pop-up-Blocker).
+  Getestet: Einlegen-Knopf + echtes Ziehen (CD → Laufwerk), keine Konsolenfehler, 375 px ok. Studio-Unterseiten fehlen noch (Abschnitt F) – dort Theme einbinden.
+
+- 2026-10-08 (01:55) – **Zusammenfassung Nachtschicht 3:** 4 Aufgaben erledigt (Skilltree-Texte, Spielhalle-Sichtprüfung, Hardware-Design, Studio-Design).
+  **Werft-Minispiele übersprungen** (laut NACHTSCHICHT.md `konto/skilltree.html` diese Nacht nur bei Fehlern anfassen) → bleibt offen für eine Sitzung mit Mael.
+  Nächste Schicht: Abschnitt B (`memory`). Im Testkonto „tester“ sind alle Inseln freigeschaltet und einige Besuche/Kristalle durch Tests dazugekommen.
+- 2026-10-08 (01:20, Nachtschicht 3): **Hardware-Design** fertig: `assets/css/themes/hardware.css` (`body.theme-hardware`, immer dunkel):
+  Mainboard-Hintergrund (SVG-Leiterbahnen Cyan/Magenta, Durchkontaktierungen, Chip mit Pins), fliessende Datenströme als maskierte Ebene
+  (`body::before`, aus bei Animationen aus/reduced-motion), Karten/Kacheln als Hologramm-Fenster (Glas, Scanlines, Eck-Klammern),
+  Chips/Reiter/Tabs als Bauteile mit Pins (aktiv = goldene Pins), Hologramm-H1, Tabellen/Balken im Datenstrom-Look.
+  Eingebunden in alle 93 `hardware/**` (Skript, nicht neu generiert) + Vorlage `HEAD` in `tools/build_hardware.py`. Riss-Zeile im
+  Netzteil-Rechner unverändert. Getestet: index, cpu, Datenblatt, netzteil-rechner, zeitleiste, sockel (Screenshots), 15 Seiten bei 375 px ohne Überbreite.
+  Achtung CSS-Kommentare: „hardware/**/*.html“ im Kommentar beendet ihn (`*/`) – hat die erste Regel verschluckt, behoben.
+- 2026-10-08 (00:55, Nachtschicht 3): **Spielhalle-Sichtprüfung** erledigt: alle registrierten `arcade/*.html` per iframe bei 375 + 1280 px geprüft
+  (Gehäuse + Marquee überall ausser `klicker` – Idle-Spiel ohne `.game__stage`, so gewollt), Screenshots von 2048, pc-bauer, hardware-quiz,
+  tower-defense, dungeon (Desktop + Handy) sehen sauber aus. **Behoben:** Neon-Schriftzug „Spielhalle“ neben dem Logo schob bei 1100–1400 px
+  das Konto-Menü rechts aus dem Bild → erst ab 1400 px sichtbar. (Seiten `kisten`, `labyrinth`, `rohre`, `memory`, `galgen`, `tippen`, `gluecksrad`,
+  `mitternacht` sind registriert, aber noch nicht gebaut → 404, siehe Abschnitt B.) Hinweis: Im Browser-Pane ist das Testkonto „tester“ angemeldet;
+  dort wurden zum Testen alle Inseln freigeschaltet.
+- 2026-10-08 (00:40, Nachtschicht 3): **„Skilltree“ → Werft/Module in sichtbaren Texten** erledigt: arcade/index, mixer/index, hilfe (FAQ umgeschrieben),
+  index, konto/login, konto/profil, konto/einstellungen, konto/sammlung, weltkarte, ki/index, datenschutz, hardware/vergleich, geheim/terminal
+  (`gehe werft`/`gehe module` neu), core.js (Sperrseite → „Zu den Modulen“, Toast „Modul eingebaut“), site.js (Texte, „Skillpunkt“ → „Modulpunkt“),
+  `tools/build_hardware.py` + alle generierten CPU-Datenblätter (per sed, nicht neu generiert). Code-Bezeichner/Dateinamen unverändert.
+  Hilfe-Überschrift „Module (früher Skills)“ bewusst behalten. Getestet: hilfe/arcade laden fehlerfrei.
 
 - 2026-10-08 (00:05, mit Mael): Aufgaben für Nachtschicht 3 aktualisiert. Reihenfolge: „Skilltree“-Texte → Spielhalle-Sichtprüfung →
   Hardware-Design → Studio-Design → Werft-Minispiele → B–G (fehlende Seiten). H überspringen. 06:30-Schicht: zuerst J (Sicherheit).

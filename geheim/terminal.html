@@ -298,7 +298,7 @@ Ich bin Mael, einer der zwei Köpfe hinter Xiruprojekts.
 Diese Website ist unser grösstes Projekt – grösser als
 der Floppy Hub, grösser als jede ZIP-Datei von Luka.
 
-Wenn du das hier liest, hast du dir einen Skill im
+Wenn du das hier liest, hast du dir ein Modul im
 Techniker-Ast verdient. Respekt. Die meisten klicken
 nur auf bunte Knöpfe. Du tippst. Das mag ich.
 
@@ -372,7 +372,7 @@ Wer es kennt, sollte es dem Erzmagier sagen.`)
             'LEERE.TXT': F('\n\n\n                                        .\n\n\n(Diese Datei ist fast leer. Wie der Ort, den sie beschreibt.\n Weltenwanderer finden dorthin.)'),
             'SCHREIN.TXT': F('Fünfzig Kristalle, ein Licht.\nIn einer Höhle steht ein Schrein für Sammler.'),
             'TURM.TXT': F('Ganz oben wohnt jemand. Er mag Rätsel, Tee\nund Leute, die die Treppe nicht scheuen.'),
-            'ENDE.TXT': F('Gibt es ein Ende?\nNur wer alle vier Äste des Skilltrees meistert,\nwird es erfahren.\n\n(Und wer rückwärts liest, kommt vielleicht schneller hin.)')
+            'ENDE.TXT': F('Gibt es ein Ende?\nNur wer alle vier Modul-Äste der Werft meistert,\nwird es erfahren.\n\n(Und wer rückwärts liest, kommt vielleicht schneller hin.)')
         }),
         'SYSTEM': D({
             'KRISTALL.LOG': F(() => `KRISTALL.LOG – Sensorprotokoll
@@ -464,7 +464,7 @@ Wer es kennt, sollte es dem Erzmagier sagen.`)
         cd: 'cd ORDNER   wechselt in einen Ordner\ncd ..       eine Ebene nach oben\ncd \\        zurück zur Wurzel A:\\',
         type: 'type DATEI   zeigt eine Textdatei an.\n  Pfade gehen auch: type PIXMAG\\BUCH.TXT',
         starte: 'starte SPIEL   lädt ein Spiel aus der Spielhalle.\n  Ohne Namen: Liste aller Spiele.\n  Beispiel: starte snake',
-        gehe: 'gehe ORT   bringt dich an einen Ort der Website.\n  Beispiele: gehe weltkarte · gehe skilltree · gehe keller\n  Geheime Orte musst du erst selbst gefunden haben.',
+        gehe: 'gehe ORT   bringt dich an einen Ort der Website.\n  Beispiele: gehe weltkarte · gehe werft · gehe keller\n  Geheime Orte musst du erst selbst gefunden haben.',
         farbe: 'farbe [NAME]   wechselt die Phosphorfarbe.\n  ' + Object.keys(COLORS).join(' · ') + '\n  Ohne Namen: nächste Farbe.',
         kristalle: 'kristalle          Übersicht deiner Realitätskristalle\nkristalle hinweis  flüstert dir ein Gerücht zu',
         format: 'format a:   formatiert die Diskette in Laufwerk A:.\n  Achtung: Das ist sehr, sehr dramatisch.',
@@ -568,8 +568,8 @@ Wer es kennt, sollte es dem Erzmagier sagen.`)
         print('STATUS VON ' + name().toUpperCase(), 'br');
         print('  Level        ' + li.level + '   ' + bar(li.into, li.need, 20) + ' ' + li.pct + ' %');
         print('  XP gesamt    ' + X.fmt(P().xp));
-        print('  Skillpunkte  ' + sp.free + ' frei (' + sp.spent + ' ausgegeben)');
-        print('  Skills       ' + skills + '/' + X.skills.length + '  ' + bar(skills, X.skills.length, 20));
+        print('  Modulpunkte  ' + sp.free + ' frei (' + sp.spent + ' ausgegeben)');
+        print('  Module       ' + skills + '/' + X.skills.length + '  ' + bar(skills, X.skills.length, 20));
         print('  Kristalle    ' + X.eggCount() + '/' + X.eggs.length + '  ' + bar(X.eggCount(), X.eggs.length, 20));
         print('  Orte         ' + visited + '/' + pagesTotal + '  ' + bar(visited, pagesTotal, 20));
         print('  Besuchstage  ' + Object.keys(P().days).length);
@@ -617,7 +617,7 @@ Wer es kennt, sollte es dem Erzmagier sagen.`)
     function launch(g) {
         if (!X.isUnlocked(g.page)) {
             const s = X.skillInfo(g.page.skill);
-            print('ZUGRIFF VERWEIGERT: ' + g.page.t + ' braucht den Skill „' + (s ? s.n : g.page.skill) + '".');
+            print('ZUGRIFF VERWEIGERT: ' + g.page.t + ' braucht das Modul „' + (s ? s.n : g.page.skill) + '".');
             return;
         }
         setBusy(true);
@@ -641,7 +641,7 @@ Wer es kennt, sollte es dem Erzmagier sagen.`)
     const PLACES = {
         start: 'index.html', startseite: 'index.html', home: 'index.html', weltkarte: 'weltkarte.html', karte: 'weltkarte.html',
         suche: 'suche.html', hilfe: 'hilfe.html', faq: 'hilfe.html', ueberuns: 'ueber-uns.html', profil: 'konto/profil.html',
-        skilltree: 'konto/skilltree.html', skills: 'konto/skilltree.html', sammlung: 'konto/sammlung.html', rekorde: 'konto/erfolge.html',
+        werft: 'konto/skilltree.html', module: 'konto/skilltree.html', skilltree: 'konto/skilltree.html', skills: 'konto/skilltree.html', sammlung: 'konto/sammlung.html', rekorde: 'konto/erfolge.html',
         einstellungen: 'konto/einstellungen.html', spielhalle: 'arcade/index.html', arcade: 'arcade/index.html', hardware: 'hardware/index.html',
         ki: 'ki/index.html', kilabor: 'ki/index.html', mixer: 'mixer/index.html', werkzeuge: 'werkzeuge/index.html', studio: 'studio/index.html',
         downloads: 'studio/index.html', floppyhub: 'studio/floppy-hub.html', pixmag: 'studio/pixmag.html',

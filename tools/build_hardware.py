@@ -206,10 +206,11 @@ HEAD = '''<!DOCTYPE html>
     <title>{title} · Xiruprojekts</title>
     <meta name="description" content="{desc}">
     <link rel="stylesheet" href="{up}assets/css/main.css">
+    <link rel="stylesheet" href="{up}assets/css/themes/hardware.css">
     <script src="{up}assets/js/site.js"></script>
     <script src="{up}assets/js/core.js"></script>
 </head>
-<body>
+<body class="theme-hardware">
 '''
 
 
@@ -263,8 +264,8 @@ def detail_page(cat, it, idx):
                            % (esc(l), v, min(100, v), esc(r)) for l, v, r in bars)
         expert = ('<section class="card" id="expert"><h3>🔧 Expertenmodus</h3>'
                   '<div data-expert hidden>%s<p class="small muted mb-0">%s</p></div>'
-                  '<div data-expert-lock><p class="muted">Leistungsindex, Rangliste und Preis-Leistung siehst du mit dem Skill '
-                  '<strong>Schraubenzieher</strong> (Ast Techniker).</p><a class="btn btn--sm" href="../../konto/skilltree.html">Zum Skilltree</a></div></section>'
+                  '<div data-expert-lock><p class="muted">Leistungsindex, Rangliste und Preis-Leistung siehst du mit dem Modul '
+                  '<strong>Schraubenzieher</strong> (Techniker-Ast).</p><a class="btn btn--sm" href="../../konto/skilltree.html#module">Zu den Modulen</a></div></section>'
                   % (bar_html, esc(extra)))
 
     pager = '<nav class="hw-pager" aria-label="Weitere %s">' % esc(cat['plural'])

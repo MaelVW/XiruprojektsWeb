@@ -37,7 +37,7 @@
     <header class="page-head">
         <span class="eyebrow">⚓ Heimathafen</span>
         <h1>Kristallsammlung</h1>
-        <p class="lead">Wo die Xiru-Welt einen Riss hat, steckt ein Realitätskristall. Manche findest du durch Tippen, manche auf Seiten, manche nur zu bestimmten Zeiten. Seltene Kristalle verraten ihre Hinweise erst mit dem Skill „Spürnase".</p>
+        <p class="lead">Wo die Xiru-Welt einen Riss hat, steckt ein Realitätskristall. Manche findest du durch Tippen, manche auf Seiten, manche nur zu bestimmten Zeiten. Seltene Kristalle verraten ihre Hinweise erst mit dem Modul „Spürnase".</p>
         <div class="tiers" id="tiers"></div>
     </header>
 
@@ -68,10 +68,10 @@ XIRU.ready(function () {
     XIRU.$('#count').textContent = found + '/' + total;
     requestAnimationFrame(() => XIRU.$('#bar').style.setProperty('--v', (found / total * 100) + '%'));
     const r4 = XIRU.eggs.filter(e => e.r === 4), r4f = r4.filter(e => P.eggs[e.id]).length;
-    XIRU.$('#sub').innerHTML = r4f + ' von ' + r4.length + ' Kernkristallen (je +1 Skillpunkt). ' +
+    XIRU.$('#sub').innerHTML = r4f + ' von ' + r4.length + ' Kernkristallen (je +1 Modulpunkt). ' +
         (found >= 50 ? '<a href="../geheim/kristallschrein.html">Der Kristallschrein leuchtet für dich →</a>' : 'Ab 50 Kristallen soll irgendwo ein Schrein zu leuchten beginnen …');
     XIRU.$('#hero-gem').innerHTML = XIRU.crystalSVG(4, 40);
-    XIRU.$('#tiers').innerHTML = [1, 2, 3, 4].map(r => '<span>' + XIRU.crystalSVG(r, 14) + XIRU.rarity[r] + (r === 4 ? ' (+1 Skillpunkt)' : '') + '</span>').join('');
+    XIRU.$('#tiers').innerHTML = [1, 2, 3, 4].map(r => '<span>' + XIRU.crystalSVG(r, 14) + XIRU.rarity[r] + (r === 4 ? ' (+1 Modulpunkt)' : '') + '</span>').join('');
 
     XIRU.$('#cats').innerHTML = CATS.map(c => {
         const n = XIRU.eggs.filter(e => !c[0] || catOf(e.id) === c[0]);

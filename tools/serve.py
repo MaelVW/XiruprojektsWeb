@@ -1,6 +1,6 @@
 """Startet einen lokalen Webserver für die Website.
 
-    python tools/serve.py          -> http://localhost:5510
+    python tools/serve.py          -> http://localhost:5510 (oder Port aus der Umgebungsvariable PORT)
     python tools/serve.py 8080     -> anderer Port
 
 Funktioniert ab Python 3.6. Alternativ geht auch VS Code „Live Server".
@@ -11,7 +11,7 @@ import socketserver
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 5510
+PORT = int(sys.argv[1]) if len(sys.argv) > 1 else int(os.environ.get('PORT') or 5510)
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):

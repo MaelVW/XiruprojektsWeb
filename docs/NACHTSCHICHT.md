@@ -33,7 +33,7 @@ Diese Sitzung wird unterwegs sehr wahrscheinlich komprimiert – danach erinners
 - Keine Konten bei externen Diensten anlegen, keine Zugangsdaten eingeben.
 
 ## Testen
-- Dev-Server: Browser-Pane-Konfiguration „xiru" aus `.claude/launch.json` starten (`preview_start` mit name „xiru", Port 5510) oder `python tools/serve.py` im Hintergrund.
+- Dev-Server: Browser-Pane-Konfiguration „xiru" aus `.claude/launch.json` starten (`preview_start` mit name „xiru"; der Port wird automatisch vergeben, die Antwort nennt ihn) oder `python tools/serve.py` im Hintergrund.
 - Im Browser-Pane immer einen **eigenen Tab** öffnen (`tabs_create`) und bei jedem Aufruf `tabId` angeben. Prüfen mit `javascript_tool` (Elemente da, Spiel startet/endet, keine Exceptions) und `read_console_messages` (nach frischem Laden; alte Meldungen ignorieren). Screenshots sind optional.
 - Inseln sind erst nach Werft-Expedition offen; zum Testen im eigenen Tab: `XIRU.mech.state().islands = {werkzeuge:1,studio:1,arcade:1,hardware:1,mixer:1,ki:1}; XIRU.persist();` – Skill-Seiten per Testkonto (siehe `docs/NEUE-SEITE.md`). Testdaten danach wieder entfernen.
 

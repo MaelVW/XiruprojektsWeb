@@ -284,7 +284,7 @@ XIRU.ready(function () {
         '<b>Neu im Archiv:</b> ' + XIRU.pages.filter(p => p.hw).length + ' Hardware-Datenblätter.',
         '<b>Spielhalle:</b> ' + XIRU.pages.filter(p => p.game).length + ' Spiele warten auf deinen Highscore.',
         '<b>Gerücht:</b> Unter der Website soll es einen Keller geben.',
-        '<b>Tipp:</b> Mit einem Konto lernst du Skills und öffnest neue Orte.',
+        '<b>Tipp:</b> Mit einem Konto baust du Module ein und öffnest neue Orte.',
         '<span data-egg="p-ticker" class="egg-spot"><b>Eilmeldung:</b> Jemand liest diese Laufschrift. Klick hier, um es zuzugeben.</span>',
         '<b>Wusstest du?</b> Alle Daten bleiben in deinem Browser. Kein Server, keine Tracker.',
         '<b>Rätsel:</b> Wer zu viel auf das Logo klickt, wird beobachtet.'
@@ -301,8 +301,8 @@ XIRU.ready(function () {
     XIRU.$('#s-eggs').textContent = XIRU.eggCount() + '/' + XIRU.eggs.length;
     XIRU.$('#s-xp').textContent = XIRU.fmt(P.xp);
     XIRU.$('#progress-text').textContent = XIRU.user
-        ? 'Noch ' + (li.need - li.into) + ' XP bis Level ' + (li.level + 1) + '. ' + (XIRU.skillPoints().free ? 'Du hast ' + XIRU.skillPoints().free + ' freie Skillpunkte!' : '')
-        : 'Du spielst als Gast. Dein Fortschritt wird gespeichert – mit einem (lokalen) Konto kannst du ihn im Skilltree einsetzen.';
+        ? 'Noch ' + (li.need - li.into) + ' XP bis Level ' + (li.level + 1) + '. ' + (XIRU.skillPoints().free ? 'Du hast ' + XIRU.skillPoints().free + ' freie Modulpunkte!' : '')
+        : 'Du spielst als Gast. Dein Fortschritt wird gespeichert – mit einem (lokalen) Konto kannst du ihn in der Werft einsetzen.';
     { const a = XIRU.$('#cta-account'); a.textContent = '⚙ Zur Werft'; a.href = 'konto/skilltree.html'; }
     const unseen = pages.filter(p => !P.visited[p.p] && XIRU.isUnlocked(p));
     if (unseen.length) {

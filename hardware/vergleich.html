@@ -6,6 +6,7 @@
     <title>Vergleich · Xiruprojekts</title>
     <meta name="description" content="Bis zu drei Prozessoren, Grafikkarten oder andere Teile nebeneinander vergleichen.">
     <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="../assets/css/themes/hardware.css">
     <script src="../assets/js/site.js"></script>
     <script src="../assets/js/core.js"></script>
     <script src="../assets/js/hardware-data.js"></script>
@@ -20,7 +21,7 @@
         .cmp-table th:first-child { width: 26%; }
     </style>
 </head>
-<body>
+<body class="theme-hardware">
 <main class="content">
     <header class="page-head">
         <span class="eyebrow">▣ Hardware-Archiv</span>
@@ -141,7 +142,7 @@ XIRU.ready(function () {
         });
         XIRU.$('#result').innerHTML = '<table class="table cmp-table"><thead><tr><th></th>' +
             chosen.map(c => '<th><a href="' + XIRU.url(c.url) + '">' + XIRU.esc(c.name) + '</a></th>').join('') + '</tr></thead><tbody>' + rows + '</tbody></table>' +
-            (!expert && (state.cat === 'cpu' || state.cat === 'gpu') ? '<p class="small muted" style="padding:.8rem 1rem">🔒 Leistungsindex und Preis-Leistung siehst du mit dem Skill „Schraubenzieher".</p>' : '');
+            (!expert && (state.cat === 'cpu' || state.cat === 'gpu') ? '<p class="small muted" style="padding:.8rem 1rem">🔒 Leistungsindex und Preis-Leistung siehst du mit dem Modul „Schraubenzieher".</p>' : '');
         requestAnimationFrame(() => XIRU.$$('.cmp-bar span').forEach(s => { s.style.width = s.dataset.w + '%'; }));
         if (chosen.length === 3) XIRU.once('vergleich-3', 15, 'Drei auf einen Streich!');
         if (state.cat === 'gpu' && chosen.some(c => c.id === 'gtx-1080-ti') && chosen.some(c => c.id === 'rtx-5090')) XIRU.egg('hw-generationen');

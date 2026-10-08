@@ -1,0 +1,198 @@
+/* ==========================================================================
+   Bereichs-Design Studio – Aufnahme- und Mix-Studio (body.theme-studio)
+   Schaumstoff-Akustikwände, warmes Licht, hängende Kopfhörer als unscharfe
+   Silhouetten, Karten wie Kanalzüge eines Mischpults, Laufwerk-Einschub für Downloads.
+   Wird auf allen Seiten unter studio/ nach main.css eingebunden; das Laufwerk
+   (Drag & Drop) steuert studio/js/laufwerk.js. Immer dunkel, auch bei „Hell".
+   ========================================================================== */
+body.theme-studio {
+    --bg: #0f0d0c; --bg-2: #15120f; --surface: #1c1916; --surface-2: #231f1b; --surface-3: #2d2822;
+    --border: #3a332b; --border-strong: #574b3e;
+    --text: #f6efe6; --text-muted: #c9bba9; --text-faint: #978a7a;
+    --accent: #ffb547; --accent-2: #ff7a45; --accent-ink: #1e1100;
+    --success: #7ee081; --warning: #ffd166; --danger: #ff6b5a;
+    --rc: #ffb547; --rc-raw: #ffb547;
+    --st-amber: #ffb547; --st-red: #ff5a3d; --st-green: #7ee081;
+    --glow: 0 0 0 1px rgba(255, 181, 71, .4), 0 0 26px -6px rgba(255, 181, 71, .45);
+    color-scheme: dark;
+    background-color: var(--bg);
+    /* Warmes Licht von oben (zwei Spots) über Keil-Schaumstoff (abwechselnd waagrecht/senkrecht gerillte Platten) */
+    background-image:
+        radial-gradient(700px 420px at 22% -6%, rgba(255, 170, 70, .2), transparent 70%),
+        radial-gradient(650px 400px at 82% -4%, rgba(255, 140, 60, .15), transparent 70%),
+        radial-gradient(1200px 700px at 50% 120%, rgba(0, 0, 0, .65), transparent 70%),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Cdefs%3E%3ClinearGradient id='h' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23302a25'/%3E%3Cstop offset='.5' stop-color='%23201c18'/%3E%3Cstop offset='1' stop-color='%23141210'/%3E%3C/linearGradient%3E%3ClinearGradient id='v' x1='0' y1='0' x2='1' y2='0'%3E%3Cstop offset='0' stop-color='%23302a25'/%3E%3Cstop offset='.5' stop-color='%23201c18'/%3E%3Cstop offset='1' stop-color='%23141210'/%3E%3C/linearGradient%3E%3Cpattern id='ph' width='48' height='12' patternUnits='userSpaceOnUse'%3E%3Crect width='48' height='12' fill='url(%23h)'/%3E%3C/pattern%3E%3Cpattern id='pv' width='12' height='48' patternUnits='userSpaceOnUse'%3E%3Crect width='12' height='48' fill='url(%23v)'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='48' height='48' fill='url(%23ph)'/%3E%3Crect x='48' y='48' width='48' height='48' fill='url(%23ph)'/%3E%3Crect x='48' width='48' height='48' fill='url(%23pv)'/%3E%3Crect y='48' width='48' height='48' fill='url(%23pv)'/%3E%3Cpath d='M48 0v96M0 48h96' stroke='%230a0908' stroke-width='1.5'/%3E%3C/svg%3E");
+    background-size: auto, auto, auto, 96px 96px;
+    background-attachment: fixed;
+}
+/* Kopfhörer, die links und rechts an Haken hängen – nur als unscharfe Schatten */
+body.theme-studio::before {
+    content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    background:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='300' viewBox='0 0 160 300'%3E%3Cg fill='none' stroke='%23000' stroke-linecap='round'%3E%3Cpath d='M80 0v26' stroke-width='5'/%3E%3Cpath d='M66 30q14-10 28 0' stroke-width='7'/%3E%3Cpath d='M30 120q0-84 50-84t50 84' stroke-width='12'/%3E%3Cpath d='M32 205q-8 40 18 60t10 35' stroke-width='4'/%3E%3C/g%3E%3Cg fill='%23000'%3E%3Crect x='12' y='112' width='40' height='96' rx='18'/%3E%3Crect x='108' y='112' width='40' height='96' rx='18'/%3E%3C/g%3E%3C/svg%3E") left -34px top 130px / 150px auto no-repeat,
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='300' viewBox='0 0 160 300'%3E%3Cg fill='none' stroke='%23000' stroke-linecap='round'%3E%3Cpath d='M80 0v40' stroke-width='5'/%3E%3Cpath d='M66 44q14-10 28 0' stroke-width='7'/%3E%3Cpath d='M28 140q4-90 52-90t52 90' stroke-width='14'/%3E%3Cpath d='M128 220q10 30-14 48t-6 32' stroke-width='4'/%3E%3C/g%3E%3Cg fill='%23000'%3E%3Cellipse cx='30' cy='178' rx='24' ry='46'/%3E%3Cellipse cx='130' cy='178' rx='24' ry='46'/%3E%3C/g%3E%3C/svg%3E") right -40px top 300px / 170px auto no-repeat;
+    filter: blur(3px);
+    opacity: .55;
+}
+@media (max-width: 900px) { body.theme-studio::before { opacity: .3; } }
+
+/* ── Kopf & Überschriften: Licht „ON AIR" ─────────────────────────────── */
+.theme-studio .site-header {
+    background: color-mix(in srgb, #0f0d0c 88%, transparent);
+    border-bottom: 1px solid rgba(255, 181, 71, .35);
+    box-shadow: 0 8px 26px -16px rgba(255, 160, 60, .8);
+}
+.theme-studio h1 { color: #fff3e2; text-shadow: 0 0 22px rgba(255, 170, 70, .35); }
+.theme-studio h2 { color: #ffe2bb; }
+.theme-studio .eyebrow { color: var(--st-amber); }
+.theme-studio .page-head .eyebrow::after {
+    content: "● ON AIR"; margin-left: .8rem; padding: .1rem .5rem; border-radius: 3px;
+    font-size: .7rem; letter-spacing: .12em; color: #fff; background: #8a1d12;
+    box-shadow: 0 0 0 1px #c33a26, 0 0 14px rgba(255, 70, 40, .6);
+    animation: stOnAir 3.2s ease-in-out infinite;
+}
+@keyframes stOnAir { 50% { box-shadow: 0 0 0 1px #c33a26, 0 0 4px rgba(255, 70, 40, .3); opacity: .85; } }
+
+/* ── Karten = Kanalzüge (gebürstetes Metall, Schrauben, Klebeband-Beschriftung) ── */
+.theme-studio .card, .theme-studio .tile {
+    border-radius: 8px;
+    border: 1px solid #423a31;
+    background:
+        radial-gradient(circle at 10px 10px, #6d6255 0 2.5px, #1b1815 3px, transparent 3.5px),
+        radial-gradient(circle at calc(100% - 10px) 10px, #6d6255 0 2.5px, #1b1815 3px, transparent 3.5px),
+        radial-gradient(circle at 10px calc(100% - 10px), #6d6255 0 2.5px, #1b1815 3px, transparent 3.5px),
+        radial-gradient(circle at calc(100% - 10px) calc(100% - 10px), #6d6255 0 2.5px, #1b1815 3px, transparent 3.5px),
+        repeating-linear-gradient(90deg, rgba(255, 255, 255, .018) 0 1px, transparent 1px 3px),
+        linear-gradient(180deg, #26221d, #1a1714);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06), 0 10px 26px -14px #000;
+}
+.theme-studio .card--flat { background: linear-gradient(180deg, #221e1a, #191613); }
+.theme-studio .card--accent { border-color: rgba(255, 181, 71, .55); box-shadow: var(--glow); }
+.theme-studio .tile:hover { border-color: var(--st-amber); box-shadow: 0 0 0 1px rgba(255, 181, 71, .3), 0 14px 30px -14px rgba(255, 160, 60, .55); }
+
+/* Knöpfe wie beleuchtete Pult-Tasten */
+.theme-studio .btn { border-radius: 5px; background: linear-gradient(180deg, #3a332b, #28231e); border-color: #54493d; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 2px 0 #0b0a09; }
+.theme-studio .btn:hover { background: linear-gradient(180deg, #463d33, #2f2923); }
+.theme-studio .btn:active { box-shadow: inset 0 1px 3px #000; transform: translateY(1px); }
+.theme-studio .btn--primary { background: linear-gradient(180deg, #ffc56b, #f29a2e); color: var(--accent-ink); border-color: #ffd28a; box-shadow: 0 0 16px -4px rgba(255, 170, 60, .8), 0 2px 0 #6b3d00; }
+.theme-studio .btn--primary:hover { background: linear-gradient(180deg, #ffd38a, #ffab45); color: var(--accent-ink); }
+.theme-studio .btn--ghost { background: transparent; box-shadow: none; border-color: transparent; }
+.theme-studio .chip { border-radius: 4px; background: linear-gradient(180deg, #332d26, #221e1a); border-color: #4c4237; box-shadow: 0 2px 0 #0b0a09; }
+.theme-studio .chip.is-active, .theme-studio .chip[aria-pressed="true"] {
+    background: linear-gradient(180deg, #ffcf7d, #f7a43a); color: var(--accent-ink); border-color: #ffe0a8;
+    box-shadow: 0 0 14px -2px rgba(255, 175, 60, .85), 0 2px 0 #6b3d00;
+}
+.theme-studio .site-footer { border-top-color: rgba(255, 181, 71, .25); background: rgba(12, 10, 9, .85); }
+
+/* ── Mischpult mit Laufwerk (studio/index.html) ───────────────────────── */
+.desk {
+    position: sticky; top: calc(var(--header-h, 64px) + .5rem); z-index: 20;
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1.25rem; align-items: stretch;
+    margin-bottom: 1.75rem; padding: .9rem 1rem;
+    border-radius: 10px; border: 1px solid #4a4035;
+    background:
+        repeating-linear-gradient(90deg, rgba(255, 255, 255, .02) 0 1px, transparent 1px 3px),
+        linear-gradient(180deg, #2c2721, #1b1814);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 18px 40px -18px #000, 0 0 0 1px #0b0a09;
+}
+.desk__faders { display: flex; gap: .55rem; align-items: stretch; overflow: hidden; min-width: 0; }
+.fader { position: relative; width: 22px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: .3rem; }
+.fader__tape { width: 100%; height: 12px; border-radius: 2px; background: #efe6c8; color: #3b3326; font: 700 .5rem/12px var(--mono); text-align: center; overflow: hidden; }
+.fader__slot { position: relative; flex: 1; min-height: 70px; width: 4px; border-radius: 2px; background: #080706; box-shadow: 0 0 0 1px #3d352c; }
+.fader__knob {
+    position: absolute; left: 50%; width: 20px; height: 11px; margin-left: -10px; border-radius: 2px;
+    top: calc((1 - var(--v, .6)) * (100% - 11px));
+    background: linear-gradient(180deg, #d9d2c6 0 40%, #2a2520 40% 60%, #b8afa2 60%);
+    box-shadow: 0 2px 3px #000;
+    animation: stFader var(--t, 7s) ease-in-out infinite alternate;
+}
+@keyframes stFader { from { top: calc((1 - var(--v, .6)) * (100% - 11px)); } to { top: calc((1 - var(--v2, .4)) * (100% - 11px)); } }
+.fader__led { width: 6px; height: 6px; border-radius: 50%; background: #3a2a10; }
+.fader__led.is-on { background: var(--st-green); box-shadow: 0 0 6px var(--st-green); }
+@media (max-width: 720px) {
+    .desk { grid-template-columns: 1fr; padding: .7rem; }
+    .desk__faders { display: none; }
+    .drive { width: 100%; }
+    .drive__hint { display: none; }   /* Platz sparen: das Pult klebt oben */
+}
+
+/* Laufwerk: Disketten-Schlitz + CD-Schublade, LED, Anzeige */
+.drive {
+    position: relative; width: min(100%, 380px);
+    display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto auto auto; gap: .45rem .75rem; align-items: center;
+    padding: .7rem .8rem; border-radius: 6px;
+    background: linear-gradient(180deg, #d8d0c0, #b9b09f);
+    color: #2b251d; box-shadow: inset 0 1px 0 #fff8, inset 0 -2px 0 #0003, 0 0 0 1px #0b0a09;
+    transition: box-shadow .2s, transform .2s;
+}
+.drive.is-target { box-shadow: inset 0 1px 0 #fff8, 0 0 0 2px var(--st-amber), 0 0 28px rgba(255, 175, 60, .7); transform: scale(1.02); }
+.drive__label { font: 700 .62rem/1 var(--mono); letter-spacing: .14em; color: #5b5244; grid-column: 1 / -1; display: flex; justify-content: space-between; }
+.drive__slot, .drive__tray {
+    position: relative; height: 14px; border-radius: 3px; background: #15120f;
+    box-shadow: inset 0 2px 4px #000, 0 1px 0 #fff6; overflow: visible;
+}
+.drive__slot::after { content: ""; position: absolute; left: 6px; right: 6px; top: 6px; height: 2px; background: #2c2620; }
+.drive__tray { height: 16px; }
+.drive__traybox {
+    position: absolute; left: 4px; right: 4px; top: 2px; height: 12px; border-radius: 2px;
+    background: linear-gradient(180deg, #2a2622, #171411); transform: translateY(0); transition: transform .45s cubic-bezier(.3, .7, .3, 1), height .45s;
+}
+.drive.is-tray-open .drive__traybox { transform: translateY(14px); height: 40px; box-shadow: 0 6px 14px #0009; }
+.drive__led { width: 9px; height: 9px; border-radius: 50%; background: #3b1a12; box-shadow: inset 0 1px 1px #0008; justify-self: center; }
+.drive.is-busy .drive__led { background: var(--st-green); box-shadow: 0 0 8px var(--st-green); animation: stLed .14s steps(2) infinite; }
+.drive.is-ready .drive__led { background: var(--st-amber); box-shadow: 0 0 8px var(--st-amber); }
+.drive.is-error .drive__led { background: var(--st-red); box-shadow: 0 0 8px var(--st-red); }
+@keyframes stLed { 50% { opacity: .25; } }
+.drive__lcd {
+    grid-column: 1 / -1; min-height: 2.3em; padding: .3rem .5rem; border-radius: 3px;
+    background: #1d2a12; color: #b8f36a; font: 600 .74rem/1.25 var(--mono);
+    box-shadow: inset 0 2px 5px #000; text-shadow: 0 0 6px rgba(184, 243, 106, .6);
+    overflow-wrap: anywhere;
+}
+.drive__actions { grid-column: 1 / -1; display: flex; gap: .5rem; flex-wrap: wrap; }
+.drive__actions:empty { display: none; }
+.drive__hint { font-size: .78rem; color: var(--text-faint); margin: .5rem 0 0; }
+
+/* Datenträger: 3,5"-Diskette und CD, ziehbar */
+.medium {
+    position: relative; flex-shrink: 0; width: 54px; height: 54px; cursor: grab; touch-action: none; user-select: none;
+    -webkit-user-select: none; transition: transform .2s;
+}
+.medium:hover { transform: translateY(-2px) rotate(-3deg); }
+.medium.is-dragging { opacity: .25; }
+.medium--floppy {
+    border-radius: 3px 3px 3px 3px; clip-path: polygon(0 0, 92% 0, 100% 8%, 100% 100%, 0 100%);
+    background: var(--mc, #3b6fd8);
+    box-shadow: inset 0 0 0 1px #0004, inset 0 -3px 0 #0003;
+}
+.medium--floppy::before {   /* Metallschieber */
+    content: ""; position: absolute; left: 22%; width: 52%; top: 0; height: 34%;
+    background: linear-gradient(90deg, #c9ccd1, #f1f2f4 40%, #a9adb3); border-radius: 0 0 2px 2px;
+    box-shadow: inset 6px 0 0 -3px transparent;
+}
+.medium--floppy::after {    /* Etikett */
+    content: attr(data-label); position: absolute; left: 12%; right: 12%; bottom: 6%; height: 44%;
+    background: #f7f3e8; border-radius: 2px 2px 0 0; color: #2a2a2a;
+    font: 700 7px/1.15 var(--mono); padding: 3px; overflow: hidden; text-transform: uppercase;
+}
+.medium--cd {
+    border-radius: 50%;
+    background:
+        radial-gradient(circle, #1a1714 0 9%, #d9dde3 9.5% 16%, transparent 16.5%),
+        conic-gradient(from 20deg, #e7ecf2, #b7f1ff, #f4c3ff, #fff2b3, #c8ffd4, #e7ecf2, #b9c9ff, #ffd0e5, #e7ecf2);
+    box-shadow: 0 0 0 1px #0005, inset 0 0 0 1px #fff8;
+}
+.medium--cd::after {
+    content: attr(data-label); position: absolute; left: 0; right: 0; top: 64%; text-align: center;
+    font: 700 6.5px/1 var(--mono); color: #33302b; text-transform: uppercase; letter-spacing: .04em;
+}
+.medium-ghost { position: fixed; z-index: 9990; pointer-events: none; margin: 0; transform: rotate(-6deg) scale(1.08); filter: drop-shadow(0 12px 14px #000a); transition: none; }
+.medium-ghost.is-back { transition: left .35s cubic-bezier(.3, .7, .3, 1), top .35s cubic-bezier(.3, .7, .3, 1), opacity .35s; opacity: 0; }
+.medium-ghost.is-in { transition: left .3s ease-in, top .3s ease-in, transform .45s ease-in .2s, opacity .3s ease-in .45s; opacity: 0; }
+.medium-ghost.is-in.medium--floppy { transform: rotate(0) scale(.6, .12); }
+.medium-ghost.is-in.medium--cd { transform: rotate(540deg) scale(.5); }
+.dl__media { display: flex; align-items: center; gap: .75rem; padding: .6rem; border-radius: 6px; background: #12100e; box-shadow: inset 0 2px 6px #000; }
+.dl__media .small { flex: 1; color: var(--text-faint); }
+
+@media (prefers-reduced-motion: reduce) { .theme-studio .page-head .eyebrow::after, .fader__knob { animation: none; } }
+html.no-anim .medium-ghost { transition: none !important; }

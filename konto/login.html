@@ -29,7 +29,7 @@
         <div>
             <span class="eyebrow">⚓ Heimathafen</span>
             <h1>Dein Konto – nur bei dir</h1>
-            <p class="lead">Mit einem Konto sammelst du XP, lernst Skills im Skilltree und schaltest neue Orte, Spiele und Designs frei.</p>
+            <p class="lead">Mit einem Konto sammelst du XP, baust Module in der Werft ein und schaltest neue Orte, Spiele und Designs frei.</p>
             <ul class="mt-2">
                 <li><strong>Lokal:</strong> Das Konto existiert nur in diesem Browser. Es gibt keinen Server, keine E-Mail, keine Weitergabe.</li>
                 <li><strong>Sicher gespeichert:</strong> Dein Passwort wird nie im Klartext gespeichert, sondern mit PBKDF2 (150’000 Runden) gehasht.</li>
@@ -96,7 +96,7 @@ XIRU.ready(function () {
         $('#logged').hidden = false;
         $('#logged').innerHTML = '<div style="font-size:3rem">⚓</div><h2>Angemeldet als ' + XIRU.esc(XIRU.user) + '</h2>' +
             '<p class="muted">Level ' + XIRU.levelInfo().level + ' · ' + XIRU.fmt(XIRU.profile().xp) + ' XP</p>' +
-            '<div class="row" style="justify-content:center"><a class="btn btn--primary" href="profil.html">Zum Profil</a><a class="btn" href="skilltree.html">Skilltree</a>' +
+            '<div class="row" style="justify-content:center"><a class="btn btn--primary" href="profil.html">Zum Profil</a><a class="btn" href="skilltree.html">Werft</a>' +
             '<button class="btn btn--ghost" id="logout" type="button">Abmelden</button></div>';
         $('#logout').addEventListener('click', () => { XIRU.auth.logout(); location.reload(); });
         return;

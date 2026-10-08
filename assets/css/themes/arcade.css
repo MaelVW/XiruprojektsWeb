@@ -44,7 +44,8 @@ body.theme-arcade {
     text-shadow: 0 0 2px #fff, 0 0 6px var(--neon-pink), 0 0 14px var(--neon-pink), 0 0 30px rgba(255, 79, 176, .75);
     animation: arcadeFlicker 7s linear infinite;
 }
-@media (max-width: 1100px) { .theme-arcade .brand::after { display: none; } }
+/* Schriftzug nur, wenn die Kopfzeile genug Platz hat (sonst schiebt er das Konto-Menü aus dem Bild) */
+@media (max-width: 1400px) { .theme-arcade .brand::after { display: none; } }
 
 /* ── Neonschilder: Überschriften ──────────────────────────────────────── */
 .theme-arcade .page-head h1 {

@@ -74,7 +74,7 @@
     <div class="legend">
         <span><i style="background:var(--rc)"></i>besucht</span>
         <span><i style="background:var(--text-faint)"></i>noch nicht besucht</span>
-        <span>🔒 per Skill gesperrt</span>
+        <span>🔒 per Modul gesperrt</span>
         <span id="legend-skill"></span>
     </div>
 
@@ -139,7 +139,7 @@ XIRU.ready(function () {
             const seen = !!P.visited[p.p], locked = !XIRU.isUnlocked(p), hiddenUnknown = p.hidden && !seen;
             const c = el('circle', { cx: x, cy: y, r: 4.6, class: 'dot' + (seen ? '' : ' unseen') + (hiddenUnknown ? ' hiddenp' : ''), fill: seen ? reg.color : hiddenUnknown ? 'var(--warning)' : 'var(--text-faint)', tabindex: 0 }, g);
             const label = hiddenUnknown ? '<b>???</b><small>' + XIRU.esc(p.d) + '</small>'
-                : '<b>' + (locked ? '🔒 ' : '') + XIRU.esc(seen ? p.t : (p.hw ? p.t : p.t)) + '</b><small>' + (seen ? 'besucht' : 'noch nicht besucht') + (locked ? ' · Skill nötig' : '') + '</small>';
+                : '<b>' + (locked ? '🔒 ' : '') + XIRU.esc(seen ? p.t : (p.hw ? p.t : p.t)) + '</b><small>' + (seen ? 'besucht' : 'noch nicht besucht') + (locked ? ' · Modul nötig' : '') + '</small>';
             c.addEventListener('pointerenter', e => showTip(e, label));
             c.addEventListener('pointermove', e => showTip(e, label));
             c.addEventListener('pointerleave', hideTip);

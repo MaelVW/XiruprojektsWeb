@@ -1,0 +1,161 @@
+/* ==========================================================================
+   Bereichs-Design Hardware – im Inneren eines Cyber-Anime-Computers (body.theme-hardware)
+   Dunkles Mainboard mit leuchtenden Leiterbahnen (Cyan/Magenta), Hologramm-Fenster
+   (Glas, Scanlines, Eck-Klammern), fliessende Datenströme, Reiter wie Chips mit Pins.
+   Wird auf allen Seiten unter hardware/ nach main.css eingebunden (Datenblätter: Vorlage
+   HEAD in tools/build_hardware.py). Immer dunkel, auch bei „Hell".
+   Animationen: dezent; aus bei „Animationen aus" und prefers-reduced-motion (main.css).
+   ========================================================================== */
+body.theme-hardware {
+    --bg: #02070c; --bg-2: #04101a; --surface: rgba(6, 22, 34, .72); --surface-2: rgba(8, 30, 46, .7); --surface-3: #0c2a3d;
+    --border: #12384e; --border-strong: #1f5b78;
+    --text: #e6fbff; --text-muted: #9cc4d2; --text-faint: #6b93a3;
+    --accent: #2ef2ff; --accent-2: #ff3df0; --accent-ink: #001218;
+    --success: #4dffb0; --warning: #ffd84d; --danger: #ff4f7a;
+    --rc: #2ef2ff; --rc-raw: #2ef2ff;
+    --hw-cyan: #2ef2ff; --hw-mag: #ff3df0; --hw-pcb: #03130f;
+    --glow: 0 0 0 1px rgba(46, 242, 255, .45), 0 0 24px -4px rgba(46, 242, 255, .45);
+    color-scheme: dark;
+    background-color: var(--bg);
+    /* Mainboard: Lötstopplack-Grün fast schwarz, Leiterbahnen mit Durchkontaktierungen, Lichtschein der Bauteile */
+    background-image:
+        radial-gradient(900px 500px at 15% -10%, rgba(46, 242, 255, .12), transparent 65%),
+        radial-gradient(800px 520px at 100% 30%, rgba(255, 61, 240, .09), transparent 70%),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240' viewBox='0 0 240 240'%3E%3Cg fill='none' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M0 40h60l20 20h70l15-15h75' stroke='%232ef2ff' stroke-opacity='.32'/%3E%3Cpath d='M0 48h56l20 20h78l15-15h71' stroke='%232ef2ff' stroke-opacity='.16'/%3E%3Cpath d='M40 240v-60l25-25v-55' stroke='%23ff3df0' stroke-opacity='.28'/%3E%3Cpath d='M200 0v50l-20 20v60l20 20h40' stroke='%232ef2ff' stroke-opacity='.22'/%3E%3Cpath d='M110 240v-40h50l20-20' stroke='%23ff3df0' stroke-opacity='.2'/%3E%3Cpath d='M0 200h20l15-15' stroke='%232ef2ff' stroke-opacity='.2'/%3E%3C/g%3E%3Cg fill='%2302070c' stroke-width='1.6'%3E%3Ccircle cx='150' cy='60' r='3.5' stroke='%232ef2ff' stroke-opacity='.6'/%3E%3Ccircle cx='65' cy='100' r='3.5' stroke='%23ff3df0' stroke-opacity='.55'/%3E%3Ccircle cx='180' cy='180' r='3.5' stroke='%23ff3df0' stroke-opacity='.45'/%3E%3Ccircle cx='35' cy='185' r='3' stroke='%232ef2ff' stroke-opacity='.5'/%3E%3Ccircle cx='200' cy='130' r='3' stroke='%232ef2ff' stroke-opacity='.5'/%3E%3C/g%3E%3Cg fill='%232ef2ff' fill-opacity='.18'%3E%3Crect x='95' y='110' width='34' height='26' rx='2'/%3E%3C/g%3E%3Cg stroke='%232ef2ff' stroke-opacity='.25' stroke-width='1.4'%3E%3Cpath d='M99 106v4M105 106v4M111 106v4M117 106v4M123 106v4M99 136v4M105 136v4M111 136v4M117 136v4M123 136v4'/%3E%3C/g%3E%3C/svg%3E"),
+        linear-gradient(180deg, #02080d, #030d10 60%, #02070c);
+    background-size: auto, auto, 240px 240px, auto;
+    background-attachment: fixed;
+}
+/* Fliessende Datenströme: feine Lichtpunkte, die langsam über die Platine wandern */
+body.theme-hardware::before {
+    content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    background-image:
+        repeating-linear-gradient(90deg, transparent 0 118px, rgba(46, 242, 255, .5) 118px 120px, transparent 120px 240px),
+        repeating-linear-gradient(0deg, transparent 0 178px, rgba(255, 61, 240, .4) 178px 180px, transparent 180px 360px);
+    -webkit-mask-image: repeating-linear-gradient(0deg, #000 0 14px, transparent 14px 90px), repeating-linear-gradient(90deg, #000 0 14px, transparent 14px 140px);
+    mask-image: repeating-linear-gradient(0deg, #000 0 14px, transparent 14px 90px), repeating-linear-gradient(90deg, #000 0 14px, transparent 14px 140px);
+    -webkit-mask-composite: source-over; mask-composite: add;
+    opacity: .35;
+    animation: hwStream 14s linear infinite;
+}
+@keyframes hwStream {
+    from { -webkit-mask-position: 0 0, 0 0; mask-position: 0 0, 0 0; }
+    to   { -webkit-mask-position: 0 -360px, 420px 0; mask-position: 0 -360px, 420px 0; }
+}
+
+/* ── Kopf: Bus-Leitung als Leuchtlinie ────────────────────────────────── */
+.theme-hardware .site-header {
+    background: color-mix(in srgb, #02070c 86%, transparent);
+    border-bottom: 1px solid rgba(46, 242, 255, .45);
+    box-shadow: 0 1px 0 rgba(255, 61, 240, .25), 0 8px 26px -14px rgba(46, 242, 255, .7);
+}
+.theme-hardware .brand__logo { filter: drop-shadow(0 0 4px var(--hw-cyan)); }
+
+/* ── Überschriften: Hologramm-Schrift ─────────────────────────────────── */
+.theme-hardware h1 {
+    background: linear-gradient(100deg, #e9feff 0%, var(--hw-cyan) 45%, var(--hw-mag) 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 0 10px rgba(46, 242, 255, .35));
+}
+.theme-hardware .eyebrow { color: var(--hw-cyan); font-family: var(--mono, ui-monospace, Consolas, monospace); letter-spacing: .14em; }
+.theme-hardware h2 { color: #dffcff; text-shadow: 0 0 12px rgba(46, 242, 255, .35); }
+.theme-hardware .card h3 { color: var(--hw-cyan); letter-spacing: .02em; }
+
+/* ── Hologramm-Fenster: Glas, Scanlines, Eck-Klammern ─────────────────── */
+.theme-hardware .card,
+.theme-hardware .tile {
+    --hb: rgba(46, 242, 255, .85);
+    border: 1px solid rgba(46, 242, 255, .22);
+    border-radius: 6px;
+    background:
+        linear-gradient(var(--hb), var(--hb)) top left / 16px 2px no-repeat,
+        linear-gradient(var(--hb), var(--hb)) top left / 2px 16px no-repeat,
+        linear-gradient(var(--hb), var(--hb)) top right / 16px 2px no-repeat,
+        linear-gradient(var(--hb), var(--hb)) top right / 2px 16px no-repeat,
+        linear-gradient(var(--hb), var(--hb)) bottom left / 16px 2px no-repeat,
+        linear-gradient(var(--hb), var(--hb)) bottom left / 2px 16px no-repeat,
+        linear-gradient(var(--hb), var(--hb)) bottom right / 16px 2px no-repeat,
+        linear-gradient(var(--hb), var(--hb)) bottom right / 2px 16px no-repeat,
+        repeating-linear-gradient(0deg, rgba(46, 242, 255, .045) 0 1px, transparent 1px 3px),
+        linear-gradient(160deg, rgba(46, 242, 255, .07), rgba(255, 61, 240, .035) 60%, transparent),
+        var(--surface);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    box-shadow: inset 0 0 30px -12px rgba(46, 242, 255, .35);
+}
+.theme-hardware .card--flat { --hb: rgba(46, 242, 255, .45); background-color: transparent; }
+.theme-hardware .card--accent { --hb: var(--hw-mag); border-color: rgba(255, 61, 240, .45); box-shadow: inset 0 0 34px -12px rgba(255, 61, 240, .4), 0 0 26px -10px rgba(255, 61, 240, .55); }
+.theme-hardware .tile:hover {
+    --hb: var(--hw-mag);
+    border-color: rgba(46, 242, 255, .6);
+    box-shadow: inset 0 0 36px -10px rgba(46, 242, 255, .45), 0 14px 30px -14px rgba(46, 242, 255, .6);
+}
+.theme-hardware .tile__title { text-shadow: 0 0 10px rgba(46, 242, 255, .3); }
+.theme-hardware .stat__value { color: var(--hw-cyan); text-shadow: 0 0 10px rgba(46, 242, 255, .5); font-variant-numeric: tabular-nums; }
+
+/* ── Reiter, Filter & Abzeichen als Chips mit Pins ────────────────────── */
+.theme-hardware .chip,
+.theme-hardware .tabs button {
+    position: relative; margin-block: 5px;
+    border-radius: 3px;
+    background: linear-gradient(180deg, #0d2231, #07141e);
+    border: 1px solid #24506a; color: #b9e6f2;
+    font-family: var(--mono, ui-monospace, Consolas, monospace); letter-spacing: .03em;
+}
+.theme-hardware .chip::before, .theme-hardware .chip::after,
+.theme-hardware .tabs button::before, .theme-hardware .tabs button::after {
+    content: ""; position: absolute; left: 6px; right: 6px; height: 4px; pointer-events: none;
+    background: repeating-linear-gradient(90deg, #7fa9b8 0 2px, transparent 2px 6px);
+    opacity: .75;
+}
+.theme-hardware .chip::before, .theme-hardware .tabs button::before { top: -5px; }
+.theme-hardware .chip::after, .theme-hardware .tabs button::after { bottom: -5px; }
+.theme-hardware .chip:hover, .theme-hardware .tabs button:hover { border-color: var(--hw-cyan); color: #fff; }
+.theme-hardware .chip.is-active, .theme-hardware .chip[aria-pressed="true"],
+.theme-hardware .tabs button[aria-selected="true"] {
+    background: linear-gradient(180deg, #0f3a4a, #0a2733); color: #fff;
+    border-color: var(--hw-cyan);
+    box-shadow: 0 0 0 1px rgba(46, 242, 255, .35), 0 0 16px -2px rgba(46, 242, 255, .7);
+}
+.theme-hardware .chip.is-active::before, .theme-hardware .chip.is-active::after,
+.theme-hardware .chip[aria-pressed="true"]::before, .theme-hardware .chip[aria-pressed="true"]::after,
+.theme-hardware .tabs button[aria-selected="true"]::before, .theme-hardware .tabs button[aria-selected="true"]::after {
+    background: repeating-linear-gradient(90deg, #ffd27a 0 2px, transparent 2px 6px); opacity: 1;
+}
+.theme-hardware .tabs { border-bottom-color: rgba(46, 242, 255, .25); padding-top: 4px; gap: .5rem; }
+.theme-hardware .badge { border-radius: 3px; background: rgba(12, 42, 61, .8); border-color: #1d4a62; color: #a9dbe8; }
+.theme-hardware .badge--accent { color: var(--hw-cyan); border-color: rgba(46, 242, 255, .5); }
+
+/* ── Knöpfe & Eingaben ────────────────────────────────────────────────── */
+.theme-hardware .btn { border-radius: 4px; border-color: #24506a; background: rgba(10, 34, 50, .85); }
+.theme-hardware .btn:hover { border-color: var(--hw-cyan); background: rgba(14, 48, 68, .95); }
+.theme-hardware .btn--primary { background: linear-gradient(100deg, var(--hw-cyan), #6af8ff); color: var(--accent-ink); border-color: transparent; box-shadow: 0 0 18px -4px var(--hw-cyan); }
+.theme-hardware .btn--primary:hover { box-shadow: 0 0 0 1px #fff inset, 0 0 26px 0 var(--hw-cyan); }
+.theme-hardware .btn--ghost { background: transparent; border-color: transparent; }
+.theme-hardware .input, .theme-hardware select, .theme-hardware textarea { background: rgba(3, 14, 22, .85); border-color: #1f4d66; }
+
+/* ── Tabellen wie Datenblatt-Anzeigen ─────────────────────────────────── */
+.theme-hardware .table th { background: rgba(46, 242, 255, .08); color: var(--hw-cyan); font-family: var(--mono, ui-monospace, Consolas, monospace); }
+.theme-hardware .table th, .theme-hardware .table td { border-bottom-color: rgba(46, 242, 255, .12); }
+.theme-hardware .spec-table th { background: transparent; color: var(--text-muted); font-family: inherit; }
+.theme-hardware .table tbody tr:hover td { background: rgba(46, 242, 255, .06); }
+
+/* ── Balken: Datenstrom von Cyan nach Magenta ─────────────────────────── */
+.theme-hardware .bar { background: rgba(46, 242, 255, .1); border-radius: 2px; box-shadow: inset 0 0 0 1px rgba(46, 242, 255, .15); }
+.theme-hardware .bar__fill {
+    background: linear-gradient(90deg, var(--hw-cyan), var(--hw-mag), var(--hw-cyan)) 0 0 / 200% 100%;
+    box-shadow: 0 0 10px rgba(46, 242, 255, .55);
+    animation: hwFlow 4s linear infinite;
+}
+@keyframes hwFlow { to { background-position: -200% 0; } }
+
+/* ── Fusszeile ────────────────────────────────────────────────────────── */
+.theme-hardware .site-footer { border-top-color: rgba(46, 242, 255, .25); background: rgba(2, 7, 12, .8); }
+
+/* Handy: Hintergrund nicht fixieren (ruckelt sonst auf manchen Geräten), Strom-Ebene leiser */
+@media (max-width: 640px) {
+    body.theme-hardware { background-attachment: scroll; }
+    body.theme-hardware::before { opacity: .22; }
+}
+@media (prefers-reduced-motion: reduce) { body.theme-hardware::before { animation: none; } }
+html.no-anim body.theme-hardware::before { animation: none; }

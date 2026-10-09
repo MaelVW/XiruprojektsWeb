@@ -62,12 +62,14 @@
                 <label class="switch"><input type="checkbox" data-set="sound" aria-label="Töne"><span></span></label></div>
             <div class="toggle-row"><div><strong>Entdeckungs-Hinweise</strong><div class="small muted">Kurze Meldung, wenn du einen neuen Ort entdeckst.</div></div>
                 <label class="switch"><input type="checkbox" data-set="visitToasts" aria-label="Entdeckungs-Hinweise"><span></span></label></div>
+            <div id="promo-control"></div>
             <button class="btn btn--sm mt-2" id="test-sound" type="button">🔊 Ton testen</button>
         </section>
         <section class="card">
             <h2>Deine Daten</h2>
-            <p class="muted small">Alles liegt im localStorage dieses Browsers. Wenn du die Browserdaten löschst, ist auch hier alles weg – darum: <a href="profil.html">exportieren</a>.</p>
+            <p class="muted small">Dein Fortschritt liegt nur in diesem Browser. Wenn du die Browserdaten löschst, ist auch hier alles weg – darum: <a href="profil.html">exportieren</a>.</p>
             <p class="small" id="usage"></p>
+            <p class="small" id="activity-usage"></p>
             <p class="small" id="consent-state"></p>
             <div class="row mt-2">
                 <button class="btn btn--sm" id="consent" type="button">🍪 Speicher-Einwilligung ändern</button>
@@ -75,6 +77,11 @@
                 <button class="btn btn--sm btn--danger" id="wipe" type="button">Alle Xiru-Daten löschen</button>
             </div>
             <p class="form-msg" id="data-msg"></p>
+        </section>
+        <section class="card">
+            <h2>Deine Xiru-Spiele</h2>
+            <p class="small muted">Wir empfehlen gelegentlich eigene Spiele wie PIXMAG Mini. Empfehlungen sind als Eigenwerbung markiert und werden nicht an Dritte übertragen.</p>
+            <p class="small" id="promo-account-note"></p>
         </section>
         <section class="card">
             <h2>🍪 Cookie-Sicherung</h2>
@@ -89,7 +96,7 @@
                 <button class="btn btn--sm" id="ck-restore" type="button">♻ Aus Cookie wiederherstellen</button>
                 <button class="btn btn--sm btn--ghost" id="ck-del" type="button">Cookies löschen</button>
             </div>
-            <p class="small muted mt-1">Keine Passwörter, keine Tracker. Cookies werden technisch bei jedem Seitenaufruf an den Webserver mitgeschickt – sie enthalten aber nur Spielstände in Codeform. Mehr in der <a href="../datenschutz.html">Datenschutzerklärung</a>.</p>
+            <p class="small muted mt-1">Keine Passwörter in Cookies und keine Drittanbieter-Tracker. Cookies werden technisch bei jedem Seitenaufruf an den Webserver mitgeschickt – sie enthalten aber nur Spielstände in Codeform. Mehr in der <a href="../datenschutz.html">Datenschutzerklärung</a>.</p>
         </section>
     </div>
 </main>
@@ -97,6 +104,14 @@
 XIRU.ready(function () {
     const $ = XIRU.$, P = XIRU.profile();
     $('#who').textContent = XIRU.user ? XIRU.user : 'Gäste';
+    if (XIRU.user) {
+        $('#promo-control').innerHTML = '<div class="toggle-row"><div><strong>Eigenwerbung anzeigen</strong><div class="small muted">Kostenlos abschaltbar. Die Einstellung gilt für dein Konto.</div></div>' +
+            '<label class="switch"><input type="checkbox" data-set="promos" aria-label="Eigenwerbung anzeigen"><span></span></label></div>';
+        $('#promo-account-note').textContent = 'Du bist angemeldet. Du kannst Eigenwerbung oben jederzeit kostenlos ausschalten.';
+    } else {
+        $('#promo-control').innerHTML = '<p class="small muted">Als Gastkonto bleibt Eigenwerbung eingeschaltet. Mit einem angemeldeten Konto kannst du sie kostenlos ausschalten.</p>';
+        $('#promo-account-note').textContent = 'Als Gast kannst du Hinweise schliessen; eine dauerhafte Abschaltung gibt es für angemeldete Konten.';
+    }
     const PREVIEW = {
         nacht: ['#0b0e1a', '#141a2e', '#5eead4', '#a78bfa', '#e8ebf7', '#2a3358'],
         hell: ['#f5f6fb', '#ffffff', '#0d9488', '#7c3aed', '#151a30', '#d8dcec'],
@@ -140,6 +155,12 @@ XIRU.ready(function () {
         cb.checked = XIRU.setting(cb.dataset.set) !== false;
         cb.addEventListener('change', () => { XIRU.setting(cb.dataset.set, cb.checked); if (cb.dataset.set === 'sound' && cb.checked) XIRU.beep(660, .1); });
     });
+    const gameRounds = Object.values(P.scores).reduce((sum, score) => sum + (Number(score.plays) || 0), 0);
+    const arcadeMinutes = Math.floor(XIRU.activity.arcadeSeconds() / 60);
+    const discoveredPages = Object.keys(P.visited).length;
+    $('#activity-usage').textContent = 'Lokal erfasst: ' + XIRU.fmt(discoveredPages) + ' entdeckte Seiten, ' +
+        XIRU.fmt(gameRounds) + ' abgeschlossene Spielrunden und ca. ' + XIRU.fmt(arcadeMinutes) +
+        ' aktive Minuten auf Spielseiten. Keine Übertragung an einen Analysedienst.';
     $('#test-sound').addEventListener('click', () => { XIRU.audio(); setTimeout(() => { [523, 659, 784].forEach((f, i) => setTimeout(() => XIRU.beep(f, .1, 'triangle', .07), i * 100)); }, 50); if (XIRU.setting('sound') === false) XIRU.toast('Töne sind aus', 'Schalte sie oben ein.', { icon: '🔇' }); });
 
     // Spielmodus
@@ -183,11 +204,11 @@ XIRU.ready(function () {
     }
 
     $('#reset-progress').addEventListener('click', () => {
-        const m = XIRU.modal('<h2>Fortschritt zurücksetzen?</h2><p class="muted">XP, Entdeckungen, Kristalle, Module und Rekorde von <strong>' + XIRU.esc(XIRU.user || 'Gast') + '</strong> werden gelöscht. Das Konto selbst bleibt bestehen.</p>' +
+        const m = XIRU.modal('<h2>Fortschritt zurücksetzen?</h2><p class="muted">XP, Entdeckungen, Kristalle, Module, Rekorde und die erfasste Arcade-Zeit von <strong>' + XIRU.esc(XIRU.user || 'Gast') + '</strong> werden gelöscht. Das Konto selbst bleibt bestehen.</p>' +
             '<div class="row mt-2"><button class="btn btn--danger" id="ok">Zurücksetzen</button><button class="btn" data-close>Abbrechen</button></div>');
         m.el.querySelector('#ok').addEventListener('click', () => {
             ['skills', 'eggs', 'visited', 'days', 'scores', 'rewards', 'data'].forEach(k => { P[k] = {}; });
-            P.xp = 0; P.bonus = 0; XIRU.persist(); XIRU.cookie.del(XIRU.backup.name()); location.reload();
+            P.xp = 0; P.bonus = 0; XIRU.persist(); XIRU.save('local-usage', { arcadeSeconds: 0 }); XIRU.cookie.del(XIRU.backup.name()); location.reload();
         });
     });
     $('#wipe').addEventListener('click', () => {

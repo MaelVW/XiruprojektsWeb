@@ -202,7 +202,7 @@ XIRU.ready(function () {
             days: keep(p.days, k => /^\d{4}-\d{2}-\d{2}$/.test(k), () => 1),
             scores: keep(p.scores, () => true, s => s && typeof s === 'object' ? { best: s.best == null ? null : num(s.best), plays: num(s.plays), last: num(s.last), at: num(s.at) } : undefined),
             rewards: keep(p.rewards, () => true, num),
-            settings: keep(p.settings, k => ['theme', 'anim', 'sound', 'visitToasts', 'modus'].includes(k),
+            settings: keep(p.settings, k => ['theme', 'anim', 'sound', 'visitToasts', 'promos', 'modus'].includes(k),
                 (v, k) => k === 'theme' ? (themes.has(v) ? v : null) : k === 'modus' ? (v === 'entdecker' ? 'entdecker' : 'abenteuer') : typeof v === 'boolean' ? v : undefined),
             data: {}
         };

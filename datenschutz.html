@@ -29,7 +29,7 @@
     </header>
 
     <div class="tldr">
-        <div class="card card--flat"><b>0</b><span class="small muted">Tracker</span></div>
+        <div class="card card--flat"><b>0</b><span class="small muted">Drittanbieter-Tracker</span></div>
         <div class="card card--flat"><b>0</b><span class="small muted">Werbe- oder Tracking-Cookies</span></div>
         <div class="card card--flat"><b>2</b><span class="small muted">technische Cookies (nur mit Einwilligung)</span></div>
         <div class="card card--flat"><b>0</b><span class="small muted">Server-Datenbanken</span></div>
@@ -41,15 +41,16 @@
         Kontaktangaben ergänzen wir hier, sobald die Website öffentlich online geht.</p>
 
     <h2>2. Was wird gespeichert – und wo?</h2>
-    <p>Alle Daten liegen ausschliesslich im <strong>localStorage</strong> deines Browsers, also auf deinem eigenen Gerät. Dazu gehören:</p>
+    <p>Deine Daten bleiben auf deinem Gerät. Mit „Alles erlauben“ werden sie im <strong>localStorage</strong> gespeichert; mit „Nur notwendige“ nur vorübergehend im <strong>sessionStorage</strong> und beim Schliessen des Browsers vergessen. Dazu gehören:</p>
     <ul>
         <li><strong>Lokale Konten:</strong> Name und ein Passwort-Hash (PBKDF2 mit Salt). Das Passwort selbst wird nie gespeichert.</li>
-        <li><strong>Fortschritt:</strong> XP, besuchte Seiten, Realitätskristalle, Module, Spielrekorde und Spielstände.</li>
-        <li><strong>Einstellungen:</strong> Design, Animationen, Töne und Spielmodus (Abenteuer oder Entdecker).</li>
+        <li><strong>Fortschritt und Nutzung:</strong> XP, entdeckte Seiten, Realitätskristalle, Module, Spielrekorde und abgeschlossene Runden. Auf Spielseiten wird zusätzlich die ungefähre aktive Zeit gezählt, solange die Seite im Vordergrund ist.</li>
+        <li><strong>Einstellungen:</strong> Design, Animationen, Töne, Spielmodus (Abenteuer oder Entdecker) und – bei angemeldeten Konten – ob Eigenwerbung angezeigt wird.</li>
         <li><strong>Mech-Spiel:</strong> Inventar, Bauteile, Taler, Materialien und wo dein Mech gerade steht.</li>
         <li><strong>Notizen und Mixer-Voreinstellungen,</strong> die du selbst anlegst.</li>
         <li><strong>API-Schlüssel,</strong> falls du im KI-Labor eigene Schlüssel einträgst (siehe Punkt 4).</li>
     </ul>
+    <p>Die Nutzungswerte bleiben lokal im Browser, werden nicht an einen Analyse-Dienst gesendet und können in den <a href="konto/einstellungen.html">Einstellungen</a> eingesehen werden. Sie folgen derselben Speicher-Einwilligung wie dein übriger Fortschritt.</p>
     <p>Wir können diese Daten nicht sehen. Wenn du die Browserdaten löschst, sind sie weg – darum gibt es im <a href="konto/profil.html">Profil</a> einen Export.</p>
 
     <h2>3. Cookies & Speicher-Einwilligung <span class="crumbs" data-egg="p-krumen" title="Krümel">🍪 · · ·</span></h2>
@@ -68,7 +69,7 @@
     <p>Beide enthalten keine Passwörter und keine Daten von Dritten. Technisch schickt dein Browser Cookies bei jedem Seitenaufruf an den Webserver mit, auf dem die Website liegt;
         wir werten sie dort nicht aus und speichern sie nicht. In den <a href="konto/einstellungen.html">Einstellungen</a> kannst du die Cookies jederzeit löschen.</p>
     <p>Du kannst deine Entscheidung jederzeit ändern: <button class="btn btn--sm" type="button" id="consent-open">🍪 Einstellung ändern</button></p>
-    <p>Wir benutzen keine Analyse- oder Werbedienste und keine eingebetteten Inhalte von Dritten (Videos, Schriftarten, Social-Media-Knöpfe), die beim Laden Daten übertragen würden.</p>
+    <p>Es gibt keine externen Analyse- oder Werbedienste und keine eingebetteten Inhalte von Dritten (Videos, Schriftarten, Social-Media-Knöpfe), die beim Laden Daten übertragen würden. Die Spielhalle zeigt gelegentlich klar markierte Eigenwerbung für Xiruprojekts-Spiele, zum Beispiel PIXMAG Mini. Nach längerer aktiver Spielzeit kann Gästen zusätzlich ein einmaliges, schliessbares Vollbild-Fenster das lokale Konto erklären. Solche Hinweise lassen sich schliessen und werden lokal für eine begrenzte Zeit zurückgestellt. Angemeldete Konten können Eigenwerbung kostenlos deaktivieren; Gäste sehen sie weiterhin. Dafür werden keine zusätzlichen Cookies gesetzt.</p>
 
     <h2>4. KI-Labor und externe Dienste</h2>
     <p>Das KI-Labor funktioniert ohne Internetverbindung mit eingebauten Generatoren. Nur wenn du <strong>selbst</strong> einen KI-Dienst aktivierst
@@ -88,8 +89,7 @@
         gelten dort die Regeln des jeweiligen Betreibers.</p>
 
     <h2>7. Deine Rechte</h2>
-    <p>Da wir keine Daten von dir speichern, gibt es bei uns nichts einzusehen oder zu löschen. Du hast jederzeit die volle Kontrolle:
-        In den <a href="konto/einstellungen.html">Einstellungen</a> kannst du deinen Fortschritt zurücksetzen oder alle Daten dieser Website aus deinem Browser löschen.</p>
+    <p>Wir erhalten keine Nutzungsdaten auf einem Server. In den <a href="konto/einstellungen.html">Einstellungen</a> kannst du deinen Fortschritt zurücksetzen oder alle Daten dieser Website aus deinem Browser löschen.</p>
 </main>
 <script>XIRU.ready(function () { XIRU.$('#consent-open').addEventListener('click', () => XIRU.consent.open()); });</script>
 </body>

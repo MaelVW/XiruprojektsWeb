@@ -62,6 +62,15 @@ XIRU.ready(function () {
         { name: 'PIXMAG', icon: '🧙', medium: 'cd', art: 'Spiel', version: 'Alpha 1.2', status: 'alpha', seite: 'pixmag.html',
           beschreibung: 'Düsteres Mittelalter-Dungeon-RPG: ein verbannter Magier, ein mysteriöses Buch und über hundert Zauber-Kombinationen.',
           datei: '', groesse: 'Python' },
+        { name: 'Xiru Rechner', icon: '🧮', medium: 'floppy', farbe: '#ff3df2', art: 'Werkzeug', version: 'Beta 1', status: 'beta',
+          beschreibung: 'Windows-Rechner mit Klammern, Tastaturbedienung und fünf Farbwelten: RGB, Nacht, CRT, PIXMAG und Hell. Benötigt .NET 10 Desktop Runtime.',
+          datei: 'Xiru-Rechner-1.0.0-beta1-win-x64.zip', groesse: 'Windows x64 · .NET 10' },
+        { name: 'Xiru Pausenplaner', icon: '⏱', medium: 'cd', farbe: '#33f0ff', art: 'Werkzeug', version: 'Beta 1', status: 'beta',
+          beschreibung: 'Ein einfacher Fokus- und Pausentimer mit einstellbaren Intervallen und sichtbarer Erinnerung. Benötigt .NET 10 Desktop Runtime.',
+          datei: 'Xiru-Pausenplaner-1.0.0-beta1-win-x64.zip', groesse: 'Windows x64 · .NET 10' },
+        { name: 'Xiru Code-Notizbuch', icon: '📝', medium: 'floppy', farbe: '#5eead4', art: 'Werkzeug', version: 'Beta 1', status: 'beta',
+          beschreibung: 'Mehrere Coding-Notizen, automatische lokale Speicherung, Sprachwahl und Export als Quellcodedatei. Notizen werden unverschlüsselt lokal abgelegt. Benötigt .NET 10 Desktop Runtime.',
+          datei: 'Xiru-CodeNotizbuch-1.0.0-beta1-win-x64.zip', groesse: 'Windows x64 · .NET 10' },
         { name: 'PIXMAG Mini', icon: '🗡', medium: 'floppy', farbe: '#b8322a', art: 'Spiel', version: 'im Browser', status: 'stabil', seite: '../arcade/dungeon.html',
           beschreibung: 'Der kleine Bruder von PIXMAG – direkt hier in der Spielhalle spielbar, ganz ohne Download.',
           datei: '../arcade/dungeon.html', groesse: '0 KB Download', online: true },
@@ -80,6 +89,8 @@ XIRU.ready(function () {
     function render() {
         XIRU.$('#list').innerHTML = PROJEKTE.map((p, i) => [p, i]).filter(([p]) => !filter || p.art === filter).map(([p, i], n) => {
             const btn = '<button class="btn btn--primary btn--sm" type="button" data-insert="' + i + '">' + (p.medium === 'cd' ? '💿' : '💾') + ' Einlegen</button>';
+            const target = ziel(p);
+            const download = target.download ? '<a class="btn btn--ghost btn--sm" href="' + XIRU.esc(target.href) + '" download>ZIP laden</a>' : '';
             const medium = '<div class="dl__media"><span class="medium medium--' + (p.medium === 'cd' ? 'cd' : 'floppy') + '" data-medium="' + i + '" data-label="' + XIRU.esc(p.name) + '"' +
                 (p.farbe ? ' style="--mc:' + XIRU.esc(p.farbe) + '"' : '') + ' title="Ins Laufwerk ziehen" aria-hidden="true"></span>' +
                 '<span class="small">' + (p.medium === 'cd' ? 'CD' : '3,5"-Diskette') + ' · ' + (p.datei ? 'ins Laufwerk ziehen' : 'noch unbespielt') + '</span></div>';
@@ -87,7 +98,7 @@ XIRU.ready(function () {
                 '<div><div class="dl__name">' + XIRU.esc(p.name) + '</div><span class="badge ' + (BADGE[p.status] || '') + '">' + XIRU.esc(p.status) + '</span> <span class="badge">' + XIRU.esc(p.art) + '</span></div></div>' +
                 '<p class="dl__desc mb-0">' + XIRU.esc(p.beschreibung) + '</p>' + medium +
                 '<div class="dl__foot"><div class="dl__meta"><span>' + XIRU.esc(p.version) + '</span><span>' + XIRU.esc(p.groesse) + '</span></div>' +
-                '<div class="row">' + (p.seite ? '<a class="btn btn--ghost btn--sm" href="' + XIRU.esc(p.seite) + '">Mehr</a>' : '') + btn + '</div></div></article>';
+                '<div class="row">' + (p.seite ? '<a class="btn btn--ghost btn--sm" href="' + XIRU.esc(p.seite) + '">Mehr</a>' : '') + download + btn + '</div></div></article>';
         }).join('');
         XIRU.initReveal();
     }

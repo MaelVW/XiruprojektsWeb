@@ -2,3 +2,8 @@ docs/.nachtschicht-lauf
 
 # Lokale Entwickler-Werkzeuge (Testkonto) – nie veröffentlichen
 dev/
+
+# .NET Build- und Paketierungsdateien
+**/bin/
+**/obj/
+studio/apps/.package-build/

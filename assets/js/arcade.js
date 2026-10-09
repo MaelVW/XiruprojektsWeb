@@ -21,6 +21,79 @@
     const X = window.XIRU;
     const G = X.Game = {};
 
+    const PROMO_ID = 'pixmag-mini';
+    const PROMO_KEY = 'promo-state';
+    const PROMO_DAYS = 30 * 24 * 60 * 60 * 1000;
+    const GUEST_PROMO_ID = 'guest-account';
+    const GUEST_PROMO_DAYS = 14 * 24 * 60 * 60 * 1000;
+    function promoState() {
+        const value = X.load(PROMO_KEY, {});
+        return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+    }
+    X.promo = {
+        isDismissed(id) {
+            const entry = promoState()[id];
+            return !!(entry && Number(entry.dismissedUntil) > Date.now());
+        },
+        dismiss(id) {
+            const state = promoState(), existing = state[id];
+            const entry = existing && typeof existing === 'object' && !Array.isArray(existing) ? existing : {};
+            entry.dismissedUntil = Date.now() + PROMO_DAYS;
+            state[id] = entry;
+            X.save(PROMO_KEY, state);
+        },
+        initFeatured(selector) {
+            const card = document.querySelector(selector);
+            if (!card) return;
+            if (!X.promoAllowed() || X.promo.isDismissed(PROMO_ID)) { card.hidden = true; return; }
+            const close = card.querySelector('[data-promo-dismiss]');
+            if (close) close.addEventListener('click', () => { X.promo.dismiss(PROMO_ID); card.hidden = true; });
+            card.querySelectorAll('[data-promo-link]').forEach(link => link.addEventListener('click', () => X.promo.dismiss(PROMO_ID)));
+        }
+    };
+    if (X.page && X.page.r === 'arcade' && X.page.game) {
+        X.on('score', () => {
+            if (!X.user && X.activity.arcadeSeconds() >= 900 && !X.promo.isDismissed(GUEST_PROMO_ID) &&
+                !document.querySelector('.arcade-guest-backdrop')) {
+                const modal = X.modal(
+                    '<span class="eyebrow">Xiruprojekts-Konto · freiwillig</span>' +
+                    '<h2 id="guest-promo-title">Dein Spielstand. Dein Browser.</h2>' +
+                    '<p>Du spielst gerade als Gast. Mit einem lokalen Konto kannst du deinen Fortschritt klar einem Profil zuordnen und die Eigenwerbung kostenlos ausschalten.</p>' +
+                    '<p class="small muted">Das Konto bleibt auf diesem Gerät – es braucht weder E-Mail-Adresse noch einen Server. Du kannst natürlich auch ohne Konto weiterspielen.</p>' +
+                    '<div class="row mt-2"><a class="btn btn--primary" data-guest-signup href="' + X.url('konto/login.html') + '">Konto ansehen</a>' +
+                    '<button class="btn" type="button" data-close>Weiter als Gast</button></div>',
+                    { onClose: () => X.promo.dismiss(GUEST_PROMO_ID) }
+                );
+                const backdrop = modal.el.closest('.modal-backdrop');
+                backdrop.classList.add('arcade-guest-backdrop');
+                modal.el.setAttribute('aria-labelledby', 'guest-promo-title');
+                modal.el.querySelector('[data-guest-signup]').addEventListener('click', () => X.promo.dismiss(GUEST_PROMO_ID));
+                return;
+            }
+            if (!X.promoAllowed() || X.activity.arcadeSeconds() < 3600 || X.promo.isDismissed(PROMO_ID)) return;
+            if (document.querySelector('.modal-backdrop, .arcade-promo-pop')) return;
+            const state = promoState(), existing = state[PROMO_ID];
+            const entry = existing && typeof existing === 'object' && !Array.isArray(existing) ? existing : {};
+            if (Number(entry.shownUntil) > Date.now() || document.querySelector('.arcade-promo-pop')) return;
+            entry.shownUntil = Date.now() + 7 * 24 * 60 * 60 * 1000;
+            state[PROMO_ID] = entry;
+            X.save(PROMO_KEY, state);
+
+            const pop = document.createElement('aside');
+            pop.className = 'arcade-promo-pop';
+            pop.setAttribute('aria-label', 'Eigenwerbung von Xiruprojekts');
+            pop.setAttribute('role', 'region');
+            pop.setAttribute('aria-live', 'polite');
+            pop.innerHTML = '<button class="arcade-promo-pop__close" type="button" aria-label="Eigenwerbung schliessen">×</button>' +
+                '<span class="eyebrow">Eigenwerbung · Xiru-Spiel</span><strong>Schon PIXMAG Mini ausprobiert?</strong>' +
+                '<p>Ein eigener Roguelike-Dungeon aus der Xiruprojekts-Spielhalle.</p>' +
+                '<a class="btn btn--primary btn--sm" href="' + X.url('arcade/dungeon.html') + '">PIXMAG Mini ansehen</a>';
+            pop.querySelector('button').addEventListener('click', () => { X.promo.dismiss(PROMO_ID); pop.remove(); });
+            pop.querySelector('a').addEventListener('click', () => X.promo.dismiss(PROMO_ID));
+            document.body.appendChild(pop);
+        });
+    }
+
     /* Canvas mit logischer Grösse W×H, gestochen scharf auf HiDPI-Bildschirmen */
     G.canvas = function (sel, W, H) {
         const cv = typeof sel === 'string' ? document.querySelector(sel) : sel;

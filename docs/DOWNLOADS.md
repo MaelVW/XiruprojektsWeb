@@ -25,3 +25,16 @@ Die Download-Liste steht in `studio/index.html` im Array `PROJEKTE`.
 
 Bezahl-Downloads gibt es bewusst nicht mehr: Ohne Server lässt sich ein Download nicht schützen
 (jede Datei in `downloads/` ist für alle erreichbar, die den Namen kennen).
+
+## Xiru Desktop Tools
+
+Die C#-WinForms-Projekte liegen in `studio/apps/`. Zum Erstellen oder Aktualisieren der drei
+Windows-x64-Pakete auf einem Windows-Rechner mit .NET 10 SDK:
+
+```powershell
+.\studio\apps\package.ps1
+```
+
+Das Skript veröffentlicht framework-dependent Apps und legt je ein ZIP in `downloads/` ab.
+Auf dem Ziel-PC wird die kostenlose .NET 10 Desktop Runtime benötigt; die Download-Karten weisen
+darauf hin. Quellcode und Funktionsübersicht stehen in `studio/apps/README.md`.

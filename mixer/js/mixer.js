@@ -211,6 +211,22 @@
     M.paintRanges = root => X.$$('input.mx-range', root).forEach(M.paintRange);
     document.addEventListener('input', e => { if (e.target && e.target.classList && e.target.classList.contains('mx-range')) M.paintRange(e.target); });
 
+    /* ── Pegelbrücke: VU-Meter und LED-Pegel über dem Seitenkopf (Design der Regie) ── */
+    function bridge() {
+        const head = document.querySelector('body.theme-mixer main .page-head');
+        if (!head || document.querySelector('.mx-bridge')) return;
+        const b = document.createElement('div'); b.className = 'mx-bridge'; b.setAttribute('aria-hidden', 'true');
+        const vu = t => '<div class="mx-bridge__vu" style="--t:' + t + 's"><i></i></div>';
+        let bars = '';
+        for (let i = 0; i < 40; i++) {
+            const a = (.08 + Math.random() * .3).toFixed(2), bb = (.55 + Math.random() * .45).toFixed(2), t = (.35 + Math.random() * .9).toFixed(2);
+            bars += '<span style="--a:' + a + ';--b:' + bb + ';--t:' + t + 's;animation-delay:-' + (Math.random() * 2).toFixed(2) + 's"></span>';
+        }
+        b.innerHTML = vu(1.1) + '<div class="mx-bridge__meters">' + bars + '</div>' + vu(1.4);
+        head.parentNode.insertBefore(b, head);
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bridge); else bridge();
+
     /* ── Kleinkram ───────────────────────────────────────────────────────── */
     M.mmss = s => { s = Math.max(0, Math.ceil(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
     M.lerp = (a, b, t) => a + (b - a) * t;

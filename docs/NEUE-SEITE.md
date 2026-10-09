@@ -241,7 +241,13 @@ Weitere Cookies nur nach Rücksprache – sie gehen bei jedem Aufruf an den Serv
 
 - Bereiche dürfen ein eigenes Design haben: Klasse auf `<body>` (z. B. `theme-werft`), die die Farb-Variablen überschreibt.
   Vorhanden: `theme-arcade` (Spielhalle), `theme-hardware`, `theme-studio`, `theme-ki` (KI-Labor: Nacht-Labor mit Neuronen-Netz, Laborglas-Karten,
-  Probenetiketten; `assets/css/themes/ki.css` nach `ki/ki.css` einbinden), `theme-werft`, `theme-pixel` (Spiel-Inseln).
+  Probenetiketten; `assets/css/themes/ki.css` nach `ki/ki.css` einbinden), `theme-mixer` (Regie: Holz-Diffusoren, LED-Licht, Kanalzug-Karten,
+  Pegelbrücke mit VU-Metern – die Brücke baut `mixer/js/mixer.js`), `theme-werft`, `theme-pixel` (Spiel-Inseln).
+- **Website-Designs** (Einstellungen, `XIRU.themes` in site.js, Farben als `:root[data-theme="…"]` in main.css): Nacht, Hell, Floppy, Klassik, RGB, CRT,
+  PIXMAG + seit 2026-10-10 Kirschblüte, Notizbuch, Herbstlaub, Tiefsee, Mooswald, Synthwave, Polarnacht, Vulkan, Handheld, Sternwarte.
+  Freischalten über `skill`, `egg`, `level`, `eggs` (Anzahl) oder `games` (verschiedene Spiele). Effekt-Ebene `#theme-fx` (Blüten, Schnee, Laub, Blasen,
+  Glühwürmchen, Glut, Sterne, Synthwave-Gitter) baut core.js (`THEME_FX`), Stil am Ende von Abschnitt 1 in main.css; aus bei Animationen aus/reduced-motion.
+  Vorschaufarben stehen in `konto/einstellungen.html` (`PREVIEW`).
 - `<html data-bare>`: Seite ohne Kopf, Fuss, Banner und Toasts – nur für den Liminal-Teil (`Why.html`, `why/`). Diese Seiten sind bewusst
   **nicht im Register**, geben **keine XP, Kristalle oder Besuche**. Hinein kommt man nur durch einen „Riss" (`XIRU.riss`, siehe core.js):
   Riss 1 = Weltkarte, unbekanntes Land ganz unten rechts (`data-u="5"`) 5× klicken · Riss 2 = 404-Seite, Laufwerksschlitz 4× · Riss 3 = Netzteil-Rechner, Anzeige 4×.

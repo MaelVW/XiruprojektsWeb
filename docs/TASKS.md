@@ -236,6 +236,12 @@ Der Liminal-Teil (`Why.html`, `why/*`, `liminal*.js`) wird mitgeprüft, aber **n
 
 ## Notizen der letzten Sitzung
 
+- 2026-10-10 (mit Mael): Golem-Tippfehler (6–16). **Mixer-Design** `themes/mixer.css` (Regie, Pegelbrücke). **10 neue Website-Designs** inkl. Kirschblüte
+  mit Blütenblättern/Zweigen (Effekt-Ebene `#theme-fx`). **Kristallhalle** in `konto/sammlung.html`: Kristall-Cluster auf einem Fels – 5 Hauptkristalle (einzeln färbbar, `kristall-farben`), je Fund ein kleiner Kristall (Fundreihenfolge, Mitte → aussen),
+  10 Stufen nach Anteil (Keim … Weltkristall), Freischaltungen je Stufe (Anklingen, Farbe, Kristallharfe → Kristall `b-kristallharfe`, Lichtbrechung,
+  Chronik, Postkarte als PNG, Klangteppich, Sternenhimmel, Vollendung), Einflug-Animation neuer Funde, Stufen-Aufstieg-Fenster.
+  Als Nächstes laut Mael: **Mnemora zusammen** ausbauen → dann letzter Durchgang über die ganze Website (Vollständigkeit, Aufräumen) → **erster Release**.
+
 - 2026-10-09 (Abend, mit Mael – letzte Aufträge des Tages): **Joe-Glücksstreifen, Angeln (Dredge-artig) + Flossie, Mnemora-Geografie, zwei neue
   Landmassen (Norden, Südwesten) als Dreieck, alles im Nebel.** Neue Kristalle: `m-angler`, `m-abart`, `m-leviathan`, `m-fischbuch`.
   Keine Nachtroutine (Mael spart). Nächstes Thema laut Mael: weiter mit **Mnemora** (Schiff, Landreisen, andere Spieler) – erst besprechen.

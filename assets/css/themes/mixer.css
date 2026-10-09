@@ -1,0 +1,115 @@
+/* ==========================================================================
+   Bereichs-Design Mixer-Studio – die Regie (body.theme-mixer)
+   Verwandt mit dem Studio-Design, aber kühler: ein Regieraum mit Holz-Diffusoren
+   (Skyline-Muster) an der Wand, blau-violettes LED-Licht, Karten wie Kanalzüge mit
+   Pegel-LEDs, Knöpfe wie gummierte Pads, oben eine Pegelbrücke mit VU-Metern
+   (baut mixer/js/mixer.js). Immer dunkel. Animationen aus bei „Animationen aus"
+   und prefers-reduced-motion.
+   ========================================================================== */
+body.theme-mixer {
+    --bg: #0b0d14; --bg-2: #0f121b; --surface: #161a26; --surface-2: #1c2130; --surface-3: #252b3d;
+    --border: #2c3348; --border-strong: #434d6b;
+    --text: #edf1ff; --text-muted: #aeb8d6; --text-faint: #7d87a8;
+    --accent: #60a5fa; --accent-2: #c084fc; --accent-ink: #050b18;
+    --success: #4ade80; --warning: #facc15; --danger: #f87171;
+    --rc: #60a5fa; --rc-raw: #60a5fa;
+    --mx-blue: #60a5fa; --mx-violet: #c084fc; --mx-green: #4ade80; --mx-amber: #fbbf24; --mx-red: #f87171;
+    --glow: 0 0 0 1px rgba(96, 165, 250, .45), 0 0 26px -6px rgba(96, 165, 250, .55);
+    color-scheme: dark;
+    background-color: var(--bg);
+    /* LED-Leisten oben, Holz-Diffusor (Skyline: Klötze verschiedener Tiefe) an der Wand */
+    background-image:
+        radial-gradient(900px 380px at 15% -8%, rgba(96, 165, 250, .2), transparent 70%),
+        radial-gradient(800px 380px at 88% -6%, rgba(192, 132, 252, .18), transparent 70%),
+        radial-gradient(1300px 700px at 50% 125%, rgba(0, 0, 0, .7), transparent 70%),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' fill='%23120f0d'/%3E%3Cg stroke='%23070605' stroke-width='2'%3E%3Crect x='0' y='0' width='20' height='20' fill='%233a2a1e'/%3E%3Crect x='20' y='0' width='20' height='20' fill='%23251b14'/%3E%3Crect x='40' y='0' width='20' height='20' fill='%23463325'/%3E%3Crect x='60' y='0' width='20' height='20' fill='%232d2118'/%3E%3Crect x='80' y='0' width='20' height='20' fill='%233a2a1e'/%3E%3Crect x='100' y='0' width='20' height='20' fill='%231e1611'/%3E%3Crect x='0' y='20' width='20' height='20' fill='%232d2118'/%3E%3Crect x='20' y='20' width='20' height='20' fill='%23463325'/%3E%3Crect x='40' y='20' width='20' height='20' fill='%231e1611'/%3E%3Crect x='60' y='20' width='20' height='20' fill='%233a2a1e'/%3E%3Crect x='80' y='20' width='20' height='20' fill='%23251b14'/%3E%3Crect x='100' y='20' width='20' height='20' fill='%23463325'/%3E%3Crect x='0' y='40' width='20' height='20' fill='%23463325'/%3E%3Crect x='20' y='40' width='20' height='20' fill='%231e1611'/%3E%3Crect x='40' y='40' width='20' height='20' fill='%233a2a1e'/%3E%3Crect x='60' y='40' width='20' height='20' fill='%23251b14'/%3E%3Crect x='80' y='40' width='20' height='20' fill='%23463325'/%3E%3Crect x='100' y='40' width='20' height='20' fill='%232d2118'/%3E%3Crect x='0' y='60' width='20' height='20' fill='%231e1611'/%3E%3Crect x='20' y='60' width='20' height='20' fill='%233a2a1e'/%3E%3Crect x='40' y='60' width='20' height='20' fill='%23251b14'/%3E%3Crect x='60' y='60' width='20' height='20' fill='%23463325'/%3E%3Crect x='80' y='60' width='20' height='20' fill='%232d2118'/%3E%3Crect x='100' y='60' width='20' height='20' fill='%233a2a1e'/%3E%3Crect x='0' y='80' width='20' height='20' fill='%23251b14'/%3E%3Crect x='20' y='80' width='20' height='20' fill='%232d2118'/%3E%3Crect x='40' y='80' width='20' height='20' fill='%23463325'/%3E%3Crect x='60' y='80' width='20' height='20' fill='%231e1611'/%3E%3Crect x='80' y='80' width='20' height='20' fill='%233a2a1e'/%3E%3Crect x='100' y='80' width='20' height='20' fill='%23251b14'/%3E%3Crect x='0' y='100' width='20' height='20' fill='%233a2a1e'/%3E%3Crect x='20' y='100' width='20' height='20' fill='%23251b14'/%3E%3Crect x='40' y='100' width='20' height='20' fill='%232d2118'/%3E%3Crect x='60' y='100' width='20' height='20' fill='%233a2a1e'/%3E%3Crect x='80' y='100' width='20' height='20' fill='%231e1611'/%3E%3Crect x='100' y='100' width='20' height='20' fill='%23463325'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: auto, auto, auto, 120px 120px;
+    background-attachment: fixed;
+}
+/* Abdunkelung über dem Holz, damit Text gut lesbar bleibt; dazu ein blauer Lichtschein von unten (Monitore) */
+body.theme-mixer::before {
+    content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    background:
+        linear-gradient(180deg, rgba(11, 13, 20, .55), rgba(11, 13, 20, .78) 40%, rgba(11, 13, 20, .86)),
+        radial-gradient(900px 300px at 50% 100%, rgba(96, 165, 250, .12), transparent 70%);
+}
+
+/* ── Kopf: LED-Leiste in Blau und Violett ─────────────────────────────── */
+.theme-mixer .site-header {
+    background: color-mix(in srgb, #0b0d14 88%, transparent);
+    border-bottom: 1px solid transparent;
+    border-image: linear-gradient(90deg, var(--mx-blue), var(--mx-violet), var(--mx-blue)) 1;
+    box-shadow: 0 8px 26px -16px rgba(96, 165, 250, .9);
+}
+.theme-mixer h1 { color: #f2f5ff; text-shadow: 0 0 24px rgba(96, 165, 250, .4); }
+.theme-mixer h2 { color: #dbe6ff; }
+.theme-mixer .eyebrow { color: var(--mx-blue); }
+.theme-mixer .page-head .eyebrow::after {
+    content: "● REC"; margin-left: .8rem; padding: .1rem .5rem; border-radius: 3px;
+    font-size: .7rem; letter-spacing: .12em; color: #fff; background: #7f1d1d;
+    box-shadow: 0 0 0 1px #dc2626, 0 0 14px rgba(248, 113, 113, .6);
+    animation: mxRec 1.6s steps(2) infinite;
+}
+@keyframes mxRec { 50% { opacity: .55; box-shadow: 0 0 0 1px #dc2626; } }
+
+/* ── Pegelbrücke mit VU-Metern (oberhalb des Seitenkopfs) ─────────────── */
+.mx-bridge {
+    display: flex; gap: 1rem; align-items: stretch; margin: 0 0 1.4rem; padding: .55rem .8rem;
+    border-radius: 8px; border: 1px solid #343c55;
+    background: linear-gradient(180deg, #1a1f2e, #10131c);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06), 0 14px 30px -18px #000, 0 0 0 1px #05060a;
+}
+.mx-bridge__vu { flex: 0 0 auto; display: grid; place-items: center; width: 92px; padding: 4px 6px 2px; border-radius: 5px;
+    background: radial-gradient(120% 90% at 50% 100%, #fff3c4, #f2dc93); box-shadow: inset 0 2px 6px rgba(0, 0, 0, .55), 0 0 0 2px #0a0b10; position: relative; overflow: hidden; }
+.mx-bridge__vu::before { content: "VU"; position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%); font: 800 .55rem var(--mono); color: #6b4e12; letter-spacing: .1em; }
+.mx-bridge__vu::after { content: ""; position: absolute; left: 50%; bottom: 4px; width: 2px; height: 34px; margin-left: -1px; background: #1a1a1a; transform-origin: 50% 100%;
+    animation: mxNeedle var(--t, 1.3s) ease-in-out infinite alternate; }
+.mx-bridge__vu i { position: absolute; left: 8px; right: 8px; top: 8px; height: 26px; border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+    border-top: 2px solid #3a2b0e; }
+.mx-bridge__vu i::after { content: ""; position: absolute; right: -2px; top: -2px; width: 34%; height: 100%; border-radius: 0 100% 0 0 / 0 100% 0 0; border-top: 3px solid #c0262d; }
+@keyframes mxNeedle { from { transform: rotate(-48deg); } 60% { transform: rotate(18deg); } to { transform: rotate(-12deg); } }
+.mx-bridge__meters { flex: 1; min-width: 0; display: flex; gap: 3px; align-items: flex-end; height: 46px; overflow: hidden; }
+.mx-bridge__meters span { flex: 1 0 6px; height: 100%; transform-origin: 50% 100%;
+    background: linear-gradient(0deg, var(--mx-green) 0 55%, var(--mx-amber) 55% 80%, var(--mx-red) 80%);
+    -webkit-mask: repeating-linear-gradient(0deg, #000 0 3px, transparent 3px 5px); mask: repeating-linear-gradient(0deg, #000 0 3px, transparent 3px 5px);
+    animation: mxLevel var(--t, .9s) ease-in-out infinite alternate; opacity: .95; }
+@keyframes mxLevel { from { transform: scaleY(var(--a, .2)); } to { transform: scaleY(var(--b, .85)); } }
+@media (max-width: 640px) { .mx-bridge__vu:nth-child(3) { display: none; } .mx-bridge__vu { width: 72px; } }
+
+/* ── Karten = Kanalzüge mit Pegel-LEDs links ──────────────────────────── */
+.theme-mixer .card, .theme-mixer .tile {
+    border-radius: 8px;
+    border: 1px solid #343c55;
+    background:
+        radial-gradient(circle at 10px 10px, #6c7695 0 2.5px, #151926 3px, transparent 3.5px),
+        radial-gradient(circle at calc(100% - 10px) 10px, #6c7695 0 2.5px, #151926 3px, transparent 3.5px),
+        linear-gradient(180deg, transparent 0 22px, var(--mx-red) 22px 26px, transparent 26px 30px, var(--mx-amber) 30px 34px, transparent 34px 38px, var(--mx-green) 38px 42px, transparent 42px 46px, var(--mx-green) 46px 50px, transparent 50px) 0 0 / 4px 100% no-repeat,
+        repeating-linear-gradient(90deg, rgba(255, 255, 255, .016) 0 1px, transparent 1px 3px),
+        linear-gradient(180deg, #1e2333, #151925);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06), 0 10px 26px -14px #000;
+}
+.theme-mixer .card--flat { background: linear-gradient(180deg, #1b2030, #141823); }
+.theme-mixer .card--accent { border-color: rgba(96, 165, 250, .6); box-shadow: var(--glow); }
+.theme-mixer .tile:hover { border-color: var(--mx-blue); box-shadow: 0 0 0 1px rgba(96, 165, 250, .35), 0 14px 30px -14px rgba(96, 165, 250, .6); }
+
+/* Knöpfe wie gummierte Pads mit Licht */
+.theme-mixer .btn { border-radius: 6px; background: linear-gradient(180deg, #2c3346, #1f2433); border-color: #475170; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 2px 0 #05060a; }
+.theme-mixer .btn:hover { background: linear-gradient(180deg, #353d54, #262c3e); }
+.theme-mixer .btn:active { box-shadow: inset 0 1px 4px #000; transform: translateY(1px); }
+.theme-mixer .btn--primary { background: linear-gradient(180deg, #8fc1ff, #4f8ff0); color: var(--accent-ink); border-color: #b5d6ff;
+    box-shadow: 0 0 18px -4px rgba(96, 165, 250, .9), 0 2px 0 #12335f; }
+.theme-mixer .btn--primary:hover { background: linear-gradient(180deg, #a9d0ff, #64a0f7); color: var(--accent-ink); }
+.theme-mixer .btn--ghost { background: transparent; box-shadow: none; border-color: transparent; }
+.theme-mixer .chip { border-radius: 5px; background: linear-gradient(180deg, #282e40, #1c2130); border-color: #414a66; box-shadow: 0 2px 0 #05060a; }
+.theme-mixer .chip.is-active, .theme-mixer .chip[aria-pressed="true"] {
+    background: linear-gradient(180deg, #d6b4ff, #a86cf5); color: #14072a; border-color: #e7d2ff;
+    box-shadow: 0 0 16px -2px rgba(192, 132, 252, .9), 0 2px 0 #3b1470;
+}
+/* Schieberegler wie Fader */
+.theme-mixer input[type="range"] { accent-color: var(--mx-violet); }
+.theme-mixer .mx-screen { border-color: #343c55; box-shadow: inset 0 0 40px -10px rgba(96, 165, 250, .35), 0 0 0 1px #05060a; }
+.theme-mixer .site-footer { border-top-color: rgba(96, 165, 250, .25); background: rgba(9, 11, 17, .88); }
+
+@media (prefers-reduced-motion: reduce) {
+    .theme-mixer .page-head .eyebrow::after, .mx-bridge__meters span, .mx-bridge__vu::after { animation: none; }
+}

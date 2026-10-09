@@ -249,16 +249,41 @@
     function applySettings() {
         const root = document.documentElement;
         const theme = X.setting('theme');
-        if (theme && X.themeUnlocked(theme)) root.setAttribute('data-theme', theme); else root.removeAttribute('data-theme');
+        const ok = theme && X.themeUnlocked(theme);
+        if (ok) root.setAttribute('data-theme', theme); else root.removeAttribute('data-theme');
         root.classList.toggle('no-anim', X.setting('anim') === false);
+        if (document.body) themeFx(ok ? theme : null); else document.addEventListener('DOMContentLoaded', () => themeFx(ok ? theme : null), { once: true });
     }
+    /* Freischalten: skill (Modul), egg (bestimmter Kristall), level, eggs (Anzahl Kristalle), games (verschiedene Spiele gespielt) */
     X.themeUnlocked = id => {
         const t = (X.themes || []).find(x => x.id === id);
         if (!t) return false;
         if (t.skill) return X.hasSkill(t.skill);
         if (t.egg) return X.hasEgg(t.egg);
+        if (t.level && X.levelInfo().level < t.level) return false;
+        if (t.eggs && X.eggCount() < t.eggs) return false;
+        if (t.games && Object.keys(P.scores).length < t.games) return false;
         return true;
     };
+    /* Effekt-Ebene eines Designs: Blütenblätter, Schnee, Laub, Blasen, Glühwürmchen, Glut, Sterne, Gitter.
+       Ein fester Container #theme-fx mit zufällig verteilten <i>-Teilchen (Stil in main.css). */
+    const THEME_FX = { sakura: ['petal', 16], polarnacht: ['snow', 42], herbstlaub: ['leaf', 14], tiefsee: ['bubble', 22], mooswald: ['firefly', 18], vulkan: ['ember', 26], sternwarte: ['star', 80], synthwave: ['grid', 0] };
+    function themeFx(theme) {
+        let el = document.getElementById('theme-fx');
+        const fx = theme && THEME_FX[theme];
+        if (!fx || document.documentElement.hasAttribute('data-bare')) { if (el) el.remove(); return; }
+        if (el && el.dataset.kind === fx[0]) return;
+        if (el) el.remove();
+        el = document.createElement('div'); el.id = 'theme-fx'; el.className = 'theme-fx theme-fx--' + fx[0]; el.dataset.kind = fx[0]; el.setAttribute('aria-hidden', 'true');
+        const rnd = (a, b) => a + Math.random() * (b - a), slow = fx[0] === 'snow' ? 1.6 : fx[0] === 'star' ? .5 : 1;
+        let h = '';
+        for (let i = 0; i < fx[1]; i++) {
+            h += '<i style="--x:' + rnd(0, 100).toFixed(1) + '%;--y:' + rnd(2, 96).toFixed(1) + '%;--d:-' + rnd(0, 18).toFixed(1) + 's;--t:' + (rnd(9, 18) * slow).toFixed(1) + 's;--s:' + rnd(.6, 1.4).toFixed(2) + ';--r:' + rnd(-90, 90).toFixed(0) + 'px"></i>';
+        }
+        if (fx[0] === 'petal') h += '<b class="theme-fx__branch theme-fx__branch--l"></b><b class="theme-fx__branch theme-fx__branch--r"></b>';
+        el.innerHTML = h;
+        document.body.appendChild(el);
+    }
 
     /* ── Spielstände ────────────────────────────────────────────────────── */
     const saveKey = k => 'xiru:save:' + (X.user ? X.user.toLowerCase() : GUEST) + ':' + k;

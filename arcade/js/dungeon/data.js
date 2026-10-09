@@ -90,7 +90,7 @@
         hexer:      { n: 'Hexer', spr: 'hexer', hp: 17, atk: [2, 4], shot: [4, 7], range: 7, def: 0, spd: 100, xp: 18, d: [8, 99], w: 5, ai: 'caster' },
         flamme:     { n: 'Feuer-Elementar', spr: 'flamme', hp: 22, atk: [4, 7], def: 1, spd: 110, xp: 19, d: [9, 99], w: 5, ai: 'basic', burnTouch: 1, glow: '#ff7a2a', res: { feuer: 0, eis: 2, wasser: 2 }, noBurn: 1, noPoison: 1 },
         troll:      { n: 'Höhlentroll', spr: 'troll', hp: 42, atk: [5, 9], def: 2, spd: 100, xp: 30, d: [11, 99], w: 5, ai: 'basic', regen: 2, res: { feuer: 1.5 } },
-        golem:      { n: 'Lehmgolem', spr: 'golem', hp: 60, atk: [6, 31], def: 5, spd: 55, xp: 46, d: [13, 99], w: 4, ai: 'basic', res: { blitz: .5, wasser: 1.75, erde: .5 }, noPoison: 1, noStun: 1 },
+        golem:      { n: 'Lehmgolem', spr: 'golem', hp: 60, atk: [6, 16], def: 5, spd: 55, xp: 46, d: [13, 99], w: 4, ai: 'basic', res: { blitz: .5, wasser: 1.75, erde: .5 }, noPoison: 1, noStun: 1 },
 
         // Bosse
         goblinkoenig: { n: 'Goblinkönig Grimmzahn', spr: 'goblinkoenig', hp: 80, atk: [3, 17], def: 1, spd: 100, xp: 70, ai: 'boss_goblin', boss: 1, scale: 3 },

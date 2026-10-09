@@ -90,6 +90,139 @@
     --accent: #d4a24c; --accent-2: #b4442e; --accent-ink: #1a1206; --font: Georgia, "Times New Roman", serif; --rc: var(--accent);
 }
 
+/* ── Weitere Designs (2026-10-10) – Farben hier, Effekt-Ebenen (Blüten, Schnee …) baut core.js (#theme-fx) ── */
+/* Kirschblüte – hell, rosa, mit fallenden Blütenblättern und Zweigen in den Ecken */
+:root[data-theme="sakura"] {
+    --bg: #fff6f8; --bg-2: #ffeef3; --surface: #ffffff; --surface-2: #fff1f5; --surface-3: #ffe2eb;
+    --border: #f6cfdc; --border-strong: #eba7bf; --text: #3d2230; --text-muted: #7a5566; --text-faint: #a88594;
+    --accent: #d94c82; --accent-2: #8e5bb5; --accent-ink: #ffffff; --success: #2f9e6a; --warning: #b86e0a; --danger: #d23d55;
+    --shadow: 0 10px 30px -14px rgba(160, 60, 100, .25);
+    --rc: var(--accent);
+    color-scheme: light;
+}
+:root[data-theme="sakura"] body { background-image: radial-gradient(900px 500px at 85% -10%, rgba(255, 183, 206, .45), transparent 65%), radial-gradient(700px 420px at 0% 30%, rgba(222, 196, 240, .35), transparent 70%); }
+/* Tiefsee – dunkles Petrol, Leuchtquallen-Türkis, aufsteigende Blasen */
+:root[data-theme="tiefsee"] {
+    --bg: #03121c; --bg-2: #041a28; --surface: #072535; --surface-2: #0a3044; --surface-3: #0e3c55;
+    --border: #12496a; --border-strong: #1b6690; --text: #d9f6ff; --text-muted: #8cc7dc; --text-faint: #5d93a8;
+    --accent: #2de2c4; --accent-2: #4fa8ff; --accent-ink: #00201b; --rc: var(--accent);
+}
+:root[data-theme="tiefsee"] body { background-image: radial-gradient(1100px 600px at 50% -15%, rgba(45, 226, 196, .14), transparent 65%), linear-gradient(180deg, #052235, #03121c 60%, #010a10); }
+/* Mooswald – Moosgrün, warmes Licht, Glühwürmchen */
+:root[data-theme="mooswald"] {
+    --bg: #0b130d; --bg-2: #0f1a11; --surface: #142318; --surface-2: #1a2d1f; --surface-3: #223a28;
+    --border: #2d4a33; --border-strong: #3f6647; --text: #e6f2df; --text-muted: #a9c3a0; --text-faint: #7a9472;
+    --accent: #a3e635; --accent-2: #e8c56a; --accent-ink: #142004; --rc: var(--accent);
+}
+:root[data-theme="mooswald"] body { background-image: radial-gradient(900px 500px at 20% -10%, rgba(232, 197, 106, .12), transparent 65%), radial-gradient(1000px 600px at 90% 110%, rgba(163, 230, 53, .08), transparent 70%); }
+/* Synthwave – Sonnenuntergang in Pink und Cyan, Gitter am Horizont */
+:root[data-theme="synthwave"] {
+    --bg: #1a0b2e; --bg-2: #22103b; --surface: #2a1446; --surface-2: #341a55; --surface-3: #402066;
+    --border: #5a2d86; --border-strong: #7c3fb6; --text: #ffe9ff; --text-muted: #d9a8e8; --text-faint: #a77bbf;
+    --accent: #ff4fd8; --accent-2: #33e1ff; --accent-ink: #2a0022; --rc: var(--accent);
+}
+:root[data-theme="synthwave"] body { background-image: linear-gradient(180deg, #12061f 0%, #2b0f45 55%, #5a1a5e 100%); }
+:root[data-theme="synthwave"] h1 { background: linear-gradient(180deg, #fff3a8, #ff8bd8 60%, #c056ff); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 12px rgba(255, 79, 216, .45)); }
+/* Polarnacht – Eisblau, Nordlicht oben, leiser Schnee */
+:root[data-theme="polarnacht"] {
+    --bg: #0a1220; --bg-2: #0d1729; --surface: #121f35; --surface-2: #182843; --surface-3: #1f3252;
+    --border: #2a4166; --border-strong: #3b5a88; --text: #eef6ff; --text-muted: #a9c2e0; --text-faint: #7891b3;
+    --accent: #8fd3ff; --accent-2: #9ff5cf; --accent-ink: #04121f; --rc: var(--accent);
+}
+:root[data-theme="polarnacht"] body { background-image: radial-gradient(70% 40% at 30% -5%, rgba(110, 255, 190, .16), transparent 70%), radial-gradient(60% 35% at 75% -5%, rgba(167, 139, 250, .16), transparent 70%); }
+/* Herbstlaub – Kürbisorange, Rostrot, fallende Blätter */
+:root[data-theme="herbstlaub"] {
+    --bg: #1a120c; --bg-2: #21170f; --surface: #2a1d13; --surface-2: #332318; --surface-3: #3e2b1d;
+    --border: #5a3d25; --border-strong: #7a5231; --text: #fbeedd; --text-muted: #d9b795; --text-faint: #a5865f;
+    --accent: #f08a24; --accent-2: #d9483b; --accent-ink: #2a1300; --rc: var(--accent);
+}
+/* Vulkan – Lava unten, aufsteigende Glut */
+:root[data-theme="vulkan"] {
+    --bg: #0d0807; --bg-2: #140b09; --surface: #1c100d; --surface-2: #261512; --surface-3: #321b16;
+    --border: #4d231a; --border-strong: #7a3121; --text: #ffece4; --text-muted: #e0a89a; --text-faint: #a06e62;
+    --accent: #ff5a1f; --accent-2: #ffb000; --accent-ink: #250800; --rc: var(--accent);
+}
+:root[data-theme="vulkan"] body { background-image: radial-gradient(1200px 420px at 50% 115%, rgba(255, 90, 31, .28), transparent 70%), radial-gradient(700px 300px at 15% 110%, rgba(255, 176, 0, .12), transparent 70%); background-attachment: fixed; }
+/* Notizbuch – liniertes Papier, blaue Tinte, roter Rand */
+:root[data-theme="notizbuch"] {
+    --bg: #f7f1e3; --bg-2: #efe7d3; --surface: #fffdf6; --surface-2: #f8f2e2; --surface-3: #efe6cf;
+    --border: #dccfae; --border-strong: #c4b388; --text: #1f2a44; --text-muted: #4b5878; --text-faint: #7b84a0;
+    --accent: #2b5bd7; --accent-2: #d0342c; --accent-ink: #ffffff; --success: #2f7d4f; --warning: #a8620a; --danger: #c22a22;
+    --shadow: 0 8px 20px -12px rgba(60, 50, 20, .3);
+    --rc: var(--accent);
+    color-scheme: light;
+}
+:root[data-theme="notizbuch"] body {
+    background-image: linear-gradient(90deg, transparent 0 56px, rgba(208, 52, 44, .45) 56px 58px, transparent 58px), repeating-linear-gradient(180deg, transparent 0 31px, rgba(43, 91, 215, .16) 31px 32px);
+    background-attachment: local;
+}
+:root[data-theme="notizbuch"] h1, :root[data-theme="notizbuch"] h2, :root[data-theme="notizbuch"] h3 { font-family: "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive; letter-spacing: 0; }
+:root[data-theme="notizbuch"] .card { box-shadow: 2px 3px 0 rgba(31, 42, 68, .12); }
+/* Sternwarte – Mitternachtsblau, funkelnde Sterne, goldene Akzente */
+:root[data-theme="sternwarte"] {
+    --bg: #05060f; --bg-2: #080a18; --surface: #0d1024; --surface-2: #121631; --surface-3: #181d40;
+    --border: #262c58; --border-strong: #3a427d; --text: #eef0ff; --text-muted: #a4aad8; --text-faint: #6f76a8;
+    --accent: #ffd76a; --accent-2: #8b9dff; --accent-ink: #1d1500; --rc: var(--accent);
+}
+:root[data-theme="sternwarte"] body { background-image: radial-gradient(1000px 600px at 70% -10%, rgba(139, 157, 255, .14), transparent 65%); }
+/* Handheld – vier Grüntöne wie ein alter Taschen-Spielecomputer */
+:root[data-theme="handheld"] {
+    --bg: #9bbc0f; --bg-2: #8bac0f; --surface: #a8c62a; --surface-2: #8bac0f; --surface-3: #7a9a0e;
+    --border: #306230; --border-strong: #0f380f; --text: #0f380f; --text-muted: #306230; --text-faint: #306230;
+    --accent: #0f380f; --accent-2: #306230; --accent-ink: #9bbc0f; --success: #0f380f; --warning: #306230; --danger: #0f380f;
+    --font: var(--mono); --radius: 2px; --radius-sm: 0; --shadow: 4px 4px 0 rgba(15, 56, 15, .35);
+    --rc: #0f380f; color-scheme: light;
+}
+:root[data-theme="handheld"] body { background-image: radial-gradient(rgba(15, 56, 15, .12) 1px, transparent 1.2px); background-size: 4px 4px; }
+:root[data-theme="handheld"] img, :root[data-theme="handheld"] canvas { image-rendering: pixelated; }
+
+/* Effekt-Ebene der Designs (#theme-fx, gebaut von core.js). Blüten, Schnee und Laub schweben
+   dezent über allem (ohne Klicks abzufangen), Blasen, Glühwürmchen, Glut und Sterne liegen dahinter. */
+.theme-fx { position: fixed; inset: 0; z-index: 40; pointer-events: none; overflow: hidden; }
+.theme-fx--bubble, .theme-fx--firefly, .theme-fx--ember, .theme-fx--star, .theme-fx--grid { z-index: -1; }
+.theme-fx i { position: absolute; left: var(--x); top: -6vh; display: block; will-change: transform; animation: fxFall var(--t) linear var(--d) infinite; }
+@keyframes fxFall {
+    0% { transform: translate3d(0, 0, 0) rotate(0deg); }
+    25% { transform: translate3d(calc(var(--r) * .5), 28vh, 0) rotate(140deg); }
+    50% { transform: translate3d(calc(var(--r) * -.2), 56vh, 0) rotate(270deg); }
+    75% { transform: translate3d(calc(var(--r) * .8), 84vh, 0) rotate(400deg); }
+    100% { transform: translate3d(var(--r), 112vh, 0) rotate(540deg); }
+}
+.theme-fx--petal i { width: calc(13px * var(--s)); height: calc(9px * var(--s)); border-radius: 100% 0 100% 0 / 80% 0 80% 0; opacity: .85;
+    background: linear-gradient(135deg, #fff0f4, #f7a8c2 70%, #e57aa0); box-shadow: 0 1px 2px rgba(160, 60, 100, .2); }
+.theme-fx--leaf i { width: calc(14px * var(--s)); height: calc(10px * var(--s)); border-radius: 0 100% 0 100%; opacity: .8; background: #d9622b; }
+.theme-fx--leaf i:nth-child(3n) { background: #b8321f; } .theme-fx--leaf i:nth-child(4n) { background: #e8a33a; } .theme-fx--leaf i:nth-child(5n) { background: #8a5a2b; }
+.theme-fx--snow i { width: calc(5px * var(--s)); height: calc(5px * var(--s)); border-radius: 50%; background: #f4f9ff; opacity: .75; box-shadow: 0 0 4px rgba(255, 255, 255, .6); }
+.theme-fx--bubble i, .theme-fx--ember i { top: auto; bottom: -6vh; animation-name: fxRise; }
+@keyframes fxRise { from { transform: translate3d(0, 0, 0); opacity: 0; } 10% { opacity: 1; } 80% { opacity: .8; } to { transform: translate3d(var(--r), -112vh, 0); opacity: 0; } }
+.theme-fx--bubble i { width: calc(9px * var(--s)); height: calc(9px * var(--s)); border-radius: 50%; border: 1px solid rgba(160, 240, 255, .55); background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, .5), transparent 45%); }
+.theme-fx--ember i { width: calc(3px * var(--s)); height: calc(3px * var(--s)); border-radius: 50%; background: #ffb347; box-shadow: 0 0 6px 2px rgba(255, 110, 30, .8); }
+.theme-fx--firefly i { top: var(--y); width: 4px; height: 4px; border-radius: 50%; background: #e9ff8a; box-shadow: 0 0 10px 3px rgba(200, 255, 90, .7); animation: fxFly var(--t) ease-in-out var(--d) infinite alternate; }
+@keyframes fxFly { 0% { transform: translate(0, 0); opacity: .1; } 30% { opacity: 1; } 60% { opacity: .3; } 100% { transform: translate(var(--r), calc(var(--r) * -.6)); opacity: .9; } }
+.theme-fx--star i { top: var(--y); width: calc(2px * var(--s)); height: calc(2px * var(--s)); background: #fff; border-radius: 50%; box-shadow: 0 0 4px rgba(255, 255, 255, .8); animation: fxTwinkle var(--t) ease-in-out var(--d) infinite alternate; }
+@keyframes fxTwinkle { from { opacity: .15; } to { opacity: 1; } }
+/* Zweige in den oberen Ecken (Kirschblüte) */
+.theme-fx__branch { position: absolute; top: calc(var(--header-h, 64px) - 6px); width: min(20vw, 260px); aspect-ratio: 3 / 2; opacity: .7;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 200'%3E%3Cg fill='none' stroke='%235b3a3f' stroke-linecap='round'%3E%3Cpath d='M0 18 C70 30 110 60 170 70 S260 110 290 150' stroke-width='7'/%3E%3Cpath d='M95 48 C110 80 100 110 120 140' stroke-width='4'/%3E%3Cpath d='M180 72 C200 50 225 40 250 42' stroke-width='3.5'/%3E%3Cpath d='M230 112 C235 140 225 165 232 190' stroke-width='3'/%3E%3C/g%3E%3Cg fill='%23f7a8c2' stroke='%23e57aa0' stroke-width='1.2'%3E%3Ccircle cx='60' cy='30' r='9'/%3E%3Ccircle cx='75' cy='22' r='7'/%3E%3Ccircle cx='118' cy='138' r='9'/%3E%3Ccircle cx='108' cy='96' r='8'/%3E%3Ccircle cx='160' cy='64' r='10'/%3E%3Ccircle cx='175' cy='80' r='7'/%3E%3Ccircle cx='248' cy='42' r='9'/%3E%3Ccircle cx='230' cy='34' r='6'/%3E%3Ccircle cx='265' cy='128' r='10'/%3E%3Ccircle cx='286' cy='148' r='8'/%3E%3Ccircle cx='232' cy='188' r='8'/%3E%3Ccircle cx='222' cy='160' r='6'/%3E%3C/g%3E%3Cg fill='%23fff0f4'%3E%3Ccircle cx='60' cy='30' r='3'/%3E%3Ccircle cx='118' cy='138' r='3'/%3E%3Ccircle cx='160' cy='64' r='3.5'/%3E%3Ccircle cx='248' cy='42' r='3'/%3E%3Ccircle cx='265' cy='128' r='3.5'/%3E%3Ccircle cx='232' cy='188' r='3'/%3E%3C/g%3E%3C/svg%3E") center / contain no-repeat; }
+.theme-fx__branch--l { left: 0; }
+.theme-fx__branch--r { right: 0; transform: scaleX(-1); }
+@media (max-width: 760px) { .theme-fx__branch { width: 28vw; opacity: .4; } }
+/* Synthwave: Sonne und laufendes Gitter am unteren Rand */
+.theme-fx--grid::before { content: ""; position: absolute; left: 50%; bottom: 22vh; width: min(46vw, 420px); aspect-ratio: 1; transform: translateX(-50%); border-radius: 50%;
+    background: linear-gradient(180deg, #fff3a8 0%, #ff9e5e 40%, #ff4fd8 75%);
+    -webkit-mask: repeating-linear-gradient(180deg, #000 0 14px, transparent 14px 18px); mask: linear-gradient(#000 45%, transparent 45%), repeating-linear-gradient(180deg, #000 0 10px, transparent 10px 15px);
+    opacity: .55; filter: drop-shadow(0 0 30px rgba(255, 79, 216, .6)); }
+.theme-fx--grid::after { content: ""; position: absolute; left: -50%; right: -50%; bottom: 0; height: 32vh; transform-origin: 50% 100%; transform: perspective(300px) rotateX(62deg);
+    background: linear-gradient(0deg, rgba(26, 11, 46, 0), #1a0b2e 95%), repeating-linear-gradient(90deg, rgba(51, 225, 255, .55) 0 2px, transparent 2px 60px), repeating-linear-gradient(0deg, rgba(255, 79, 216, .55) 0 2px, transparent 2px 60px);
+    animation: fxGrid 2.4s linear infinite; opacity: .7; }
+@keyframes fxGrid { from { background-position: 0 0, 0 0, 0 0; } to { background-position: 0 0, 0 0, 0 60px; } }
+html.no-anim .theme-fx--petal i, html.no-anim .theme-fx--leaf i, html.no-anim .theme-fx--snow i, html.no-anim .theme-fx--bubble i, html.no-anim .theme-fx--ember i, html.no-anim .theme-fx--firefly i { display: none; }
+@media (prefers-reduced-motion: reduce) {
+    .theme-fx--petal i, .theme-fx--leaf i, .theme-fx--snow i, .theme-fx--bubble i, .theme-fx--ember i, .theme-fx--firefly i { display: none; }
+    .theme-fx i, .theme-fx--grid::after { animation: none !important; }
+}
+@media print { .theme-fx { display: none; } }
+
 /* ── 2 · Basis ──────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }

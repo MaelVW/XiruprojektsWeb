@@ -119,12 +119,26 @@ XIRU.ready(function () {
         klassik: ['#2c1475', '#0c0f6c', '#12cfc5', '#3dae20', '#c6fb6d', '#1bab2e'],
         rgb: ['#07070c', '#0f0f18', '#ff3df2', '#3dd8ff', '#9dff3d', '#2b2b44'],
         crt: ['#0a0705', '#15100b', '#ffb347', '#ff6b3d', '#ffcf87', '#4a3520'],
-        pixmag: ['#0c0a09', '#1c1714', '#d4a24c', '#b4442e', '#eadcc6', '#4a3b2e']
+        pixmag: ['#0c0a09', '#1c1714', '#d4a24c', '#b4442e', '#eadcc6', '#4a3b2e'],
+        sakura: ['#fff6f8', '#ffffff', '#d94c82', '#8e5bb5', '#3d2230', '#f6cfdc'],
+        notizbuch: ['#f7f1e3', '#fffdf6', '#2b5bd7', '#d0342c', '#1f2a44', '#dccfae'],
+        herbstlaub: ['#1a120c', '#2a1d13', '#f08a24', '#d9483b', '#fbeedd', '#5a3d25'],
+        tiefsee: ['#03121c', '#072535', '#2de2c4', '#4fa8ff', '#d9f6ff', '#12496a'],
+        mooswald: ['#0b130d', '#142318', '#a3e635', '#e8c56a', '#e6f2df', '#2d4a33'],
+        synthwave: ['#1a0b2e', '#2a1446', '#ff4fd8', '#33e1ff', '#ffe9ff', '#5a2d86'],
+        polarnacht: ['#0a1220', '#121f35', '#8fd3ff', '#9ff5cf', '#eef6ff', '#2a4166'],
+        vulkan: ['#0d0807', '#1c100d', '#ff5a1f', '#ffb000', '#ffece4', '#4d231a'],
+        handheld: ['#9bbc0f', '#a8c62a', '#0f380f', '#306230', '#0f380f', '#306230'],
+        sternwarte: ['#05060f', '#0d1024', '#ffd76a', '#8b9dff', '#eef0ff', '#262c58']
     };
     function req(t) {
         if (t.skill) { const s = XIRU.skillInfo(t.skill); return 'Modul „' + s.n + '"'; }
         if (t.egg) { const e = XIRU.eggInfo(t.egg); return XIRU.hasEgg(t.egg) ? '' : 'Ein Geheimnis: ' + e.h; }
-        return '';
+        const out = [];
+        if (t.level) out.push('Level ' + t.level);
+        if (t.eggs) out.push(t.eggs + ' Realitätskristalle');
+        if (t.games) out.push(t.games + ' verschiedene Spiele gespielt');
+        return out.length ? 'Freischalten: ' + out.join(' · ') : '';
     }
     function renderThemes() {
         const cur = XIRU.setting('theme') || 'auto';

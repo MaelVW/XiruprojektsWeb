@@ -532,7 +532,17 @@ XIRU.themes = [
     { id: 'klassik', n: 'Klassik',          d: 'Die Farben der allerersten Xiru-Website.', skill: 'e5' },
     { id: 'rgb',     n: 'RGB',              d: 'Es leuchtet. Alles.', skill: 't4' },
     { id: 'crt',     n: 'Röhrenmonitor',    d: 'Scanlines und Flimmern.', skill: 's6' },
-    { id: 'pixmag',  n: 'PIXMAG',           d: 'Düster wie ein Dungeon.', skill: 'm6' }
+    { id: 'pixmag',  n: 'PIXMAG',           d: 'Düster wie ein Dungeon.', skill: 'm6' },
+    { id: 'sakura',     n: 'Kirschblüte',  d: 'Zartes Rosa, fallende Blütenblätter und blühende Zweige in den Ecken.' },
+    { id: 'notizbuch',  n: 'Notizbuch',    d: 'Liniertes Papier, blaue Tinte, handgeschriebene Überschriften.' },
+    { id: 'herbstlaub', n: 'Herbstlaub',   d: 'Kürbisorange und Rostrot, dazu tanzendes Laub.' },
+    { id: 'tiefsee',    n: 'Tiefsee',      d: 'Leuchtendes Türkis im dunklen Wasser, aufsteigende Blasen.', level: 3 },
+    { id: 'mooswald',   n: 'Mooswald',     d: 'Moos, warmes Licht und Glühwürmchen.', eggs: 10 },
+    { id: 'synthwave',  n: 'Synthwave',    d: 'Neon-Sonnenuntergang mit Gitter bis zum Horizont.', level: 6 },
+    { id: 'polarnacht', n: 'Polarnacht',   d: 'Eisblau, Nordlicht und leiser Schnee.', eggs: 25 },
+    { id: 'vulkan',     n: 'Vulkan',       d: 'Glühende Lava und aufsteigende Funken.', level: 10 },
+    { id: 'handheld',   n: 'Handheld',     d: 'Vier Grüntöne wie auf einem alten Taschen-Spielecomputer.', games: 10 },
+    { id: 'sternwarte', n: 'Sternwarte',   d: 'Mitternachtsblau mit funkelnden Sternen und Gold.', eggs: 50 }
 ];
 
 /* ── Realitätskristalle (Easter Eggs) ──────────────────────────────────────────────
@@ -835,6 +845,7 @@ XIRU.eggs.push(
     { id: 'm-angler',     pg: 'weltkarte.html',     n: 'Petri Heil',       h: 'Fang deinen ersten Fisch.', x: 20, r: 1, m: 'Er zappelt. Du jubelst. Alle sind glücklich (ausser dem Fisch).' },
     { id: 'm-abart',      pg: 'weltkarte.html',     n: 'Das ist kein Fisch', h: 'Zieh eine Abart aus dem Nebel an Land.', x: 60, r: 3, m: 'Er flimmert. Er blinzelt. Mit zu vielen Augen.' },
     { id: 'm-leviathan',  pg: 'weltkarte.html',     n: 'Ein sehr kleiner Gott', h: 'Fang die Leviathan-Larve.', x: 150, r: 4, m: 'Flossie wird sie nicht kaufen wollen. Oder doch?' },
+    { id: 'b-kristallharfe', pg: 'konto/sammlung.html', n: 'Kristallharfe', h: 'Spiel auf deinem Weltkristall eine kleine Melodie.', x: 30, r: 2, m: 'Die Splitter singen mit.' },
     { id: 'm-fischbuch',  pg: 'welt/markt.html',    n: 'Ichthyologe',      h: 'Füll Flossies Sammelbuch mit allen Fischarten.', x: 120, r: 3, m: 'Flossie schenkt dir ein feuchtes Händeschütteln.' }
     /* EGGS:ENDE */
 );

@@ -90,13 +90,13 @@
         hexer:      { n: 'Hexer', spr: 'hexer', hp: 17, atk: [2, 4], shot: [4, 7], range: 7, def: 0, spd: 100, xp: 18, d: [8, 99], w: 5, ai: 'caster' },
         flamme:     { n: 'Feuer-Elementar', spr: 'flamme', hp: 22, atk: [4, 7], def: 1, spd: 110, xp: 19, d: [9, 99], w: 5, ai: 'basic', burnTouch: 1, glow: '#ff7a2a', res: { feuer: 0, eis: 2, wasser: 2 }, noBurn: 1, noPoison: 1 },
         troll:      { n: 'Höhlentroll', spr: 'troll', hp: 42, atk: [5, 9], def: 2, spd: 100, xp: 30, d: [11, 99], w: 5, ai: 'basic', regen: 2, res: { feuer: 1.5 } },
-        golem:      { n: 'Lehmgolem', spr: 'golem', hp: 60, atk: [6, 11], def: 5, spd: 55, xp: 36, d: [13, 99], w: 4, ai: 'basic', res: { blitz: .5, wasser: 1.75, erde: .5 }, noPoison: 1, noStun: 1 },
+        golem:      { n: 'Lehmgolem', spr: 'golem', hp: 60, atk: [6, 31], def: 5, spd: 55, xp: 46, d: [13, 99], w: 4, ai: 'basic', res: { blitz: .5, wasser: 1.75, erde: .5 }, noPoison: 1, noStun: 1 },
 
         // Bosse
-        goblinkoenig: { n: 'Goblinkönig Grimmzahn', spr: 'goblinkoenig', hp: 64, atk: [3, 7], def: 1, spd: 100, xp: 70, ai: 'boss_goblin', boss: 1, scale: 3 },
-        drache:       { n: 'Ignifax, der Rote Drache', spr: 'drache', hp: 135, atk: [6, 11], def: 3, spd: 100, xp: 170, ai: 'boss_dragon', boss: 1, fly: 1, scale: 3, res: { feuer: 0, eis: 1.5, wasser: 1.25 }, noBurn: 1, glow: '#ff5a2a' },
-        lich:         { n: 'Lich Morgrath', spr: 'lich', hp: 150, atk: [5, 9], def: 2, spd: 100, xp: 230, ai: 'boss_lich', boss: 1, undead: 1, scale: 3, res: { licht: 2, schatten: 0, eis: .5 }, noPoison: 1, glow: '#7bd651' },
-        herz:         { n: 'Das Herz der Dunkelheit', spr: 'herz', hp: 240, atk: [7, 12], def: 3, spd: 100, xp: 420, ai: 'boss_heart', boss: 1, scale: 3, res: { licht: 1.75, schatten: 0 }, noPoison: 1, glow: '#a065e8' },
+        goblinkoenig: { n: 'Goblinkönig Grimmzahn', spr: 'goblinkoenig', hp: 80, atk: [3, 17], def: 1, spd: 100, xp: 70, ai: 'boss_goblin', boss: 1, scale: 3 },
+        drache:       { n: 'Ignifax, der Rote Drache', spr: 'drache', hp: 150, atk: [6, 21], def: 3, spd: 100, xp: 170, ai: 'boss_dragon', boss: 1, fly: 1, scale: 3, res: { feuer: 0, eis: 1.5, wasser: 1.25 }, noBurn: 1, glow: '#ff5a2a' },
+        lich:         { n: 'Lich Morgrath', spr: 'lich', hp: 180, atk: [5, 9], def: 2, spd: 100, xp: 230, ai: 'boss_lich', boss: 1, undead: 1, scale: 3, res: { licht: 2, schatten: 0, eis: .5 }, noPoison: 1, glow: '#7bd651' },
+        herz:         { n: 'Das Herz der Dunkelheit', spr: 'herz', hp: 370, atk: [7, 22], def: 3, spd: 100, xp: 420, ai: 'boss_heart', boss: 1, scale: 3, res: { licht: 1.75, schatten: 0 }, noPoison: 1, glow: '#a065e8' },
 
         // Freundlich
         haendler:     { n: 'Händler Krummfinger', spr: 'haendler', hp: 999, atk: [0, 0], def: 99, spd: 100, xp: 0, ai: 'merchant', friendly: 1 }
@@ -107,7 +107,7 @@
         goblinkoenig: 'Ein schriller Kriegsschrei hallt durch die Gänge. Grimmzahn, der Goblinkönig, erwartet dich!',
         drache: 'Hitze schlägt dir entgegen. Auf einem Berg aus Gold erhebt sich Ignifax, der Rote Drache.',
         lich: 'Die Luft wird eisig. Lich Morgrath erhebt sich aus seinem Sarkophag.',
-        herz: 'Ein dumpfes Pochen. Vor dir schlägt das Herz der Dunkelheit – die Quelle allen Übels.'
+        herz: 'Ein dumpfes Pochen. Vor dir schlägt das Herz des Dungeons – die Quelle allen Übels.'
     };
 
     /* ── Gegenstände ──────────────────────────────────────────────────── */
@@ -193,7 +193,7 @@
         { to: 19,  n: 'Die tiefen Gewölbe',    floor: [40, 30, 42], wall: [86, 62, 92], moss: null },
         { to: 999, n: 'Das Herz der Dunkelheit', floor: [44, 26, 28], wall: [96, 52, 52], moss: null }
     ];
-    const BOSS_FLOOR_NAMES = { goblinkoenig: 'Grimmzahns Hort', drache: 'Ignifax\' Glutkammer', lich: 'Morgraths Gruft', herz: 'Das Herz der Dunkelheit' };
+    const BOSS_FLOOR_NAMES = { goblinkoenig: 'Grimmzahns Hort', drache: 'Ignifax\' Glutkammer', lich: 'Morgraths Gruft', herz: 'Das Herz des Dungeons' };
 
     /* ── Stufenaufstieg ──────────────────────────────────────────────── */
     const xpNext = lvl => 15 + lvl * lvl * 8;

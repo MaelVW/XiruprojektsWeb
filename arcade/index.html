@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="../assets/css/themes/arcade.css">
     <script src="../assets/js/site.js"></script>
     <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/arcade.js"></script>
     <style>
         .marquee { position: relative; border-radius: var(--radius); overflow: hidden; padding: 2.5rem 2rem; margin-bottom: 2rem;
             background: radial-gradient(circle at 20% 0%, color-mix(in srgb, var(--rc) 30%, transparent), transparent 55%), radial-gradient(circle at 90% 100%, color-mix(in srgb, var(--accent-2) 30%, transparent), transparent 55%), var(--surface);
@@ -42,10 +43,11 @@
         <div class="coin"><div class="coin__label">INSERT COIN</div><div class="coin__n" id="plays">0</div><div class="small muted">Runden gespielt</div></div>
     </section>
 
-    <section class="card card--accent featured" data-reveal>
+    <section class="card card--accent featured" data-reveal data-promo-featured>
         <div class="featured__icon">🧙</div>
-        <div><h2 class="mb-0">PIXMAG Mini</h2><p class="muted mb-0">Unser Vorzeigespiel: ein Roguelike-Dungeon mit Zauber-Kombinationen. Feuer + Eis = ?</p></div>
-        <a class="btn btn--primary btn--lg" href="dungeon.html">Spielen</a>
+        <div><span class="featured__label">Eigenwerbung · Xiru-Spiel</span><h2 class="mb-0">PIXMAG Mini</h2><p class="muted mb-0">Ein Roguelike-Dungeon mit Zauber-Kombinationen. Feuer + Eis = ?</p></div>
+        <a class="btn btn--primary btn--lg" href="dungeon.html" data-promo-link>Spielen</a>
+        <button class="btn btn--ghost btn--sm featured__dismiss" type="button" data-promo-dismiss aria-label="Eigenwerbung schliessen">×</button>
     </section>
 
     <div class="toolbar">
@@ -62,6 +64,7 @@
 <script>
 XIRU.ready(function () {
     const P = XIRU.profile();
+    XIRU.promo.initFeatured('[data-promo-featured]');
     const ICONS = {
         dungeon: '🧙', snake: '🐍', bloecke: '🧱', ziegel: '🏓', 'floppy-flug': '💾', pong: '🏸', stapel: '🗼', 2048: '🔢', minen: '💣', sudoku: '9️⃣',
         nonogramm: '🖼', lichter: '💡', schiebepuzzle: '🧩', kisten: '📦', labyrinth: '🌀', rohre: '🚰', tictactoe: '❌', 'vier-gewinnt': '🔴', codeknacker: '🔐',

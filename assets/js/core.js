@@ -240,7 +240,7 @@
     };
 
     /* ── Einstellungen ──────────────────────────────────────────────────── */
-    const DEFAULTS = { theme: null, anim: true, sound: true, visitToasts: true, modus: 'abenteuer' };
+    const DEFAULTS = { theme: null, anim: true, sound: true, visitToasts: true, promos: true, modus: 'abenteuer' };
     X.setting = function (key, val) {
         if (arguments.length === 1) return key in P.settings ? P.settings[key] : DEFAULTS[key];
         P.settings[key] = val; persist(); applySettings(); emit('setting', { key, val });
@@ -264,6 +264,14 @@
     const saveKey = k => 'xiru:save:' + (X.user ? X.user.toLowerCase() : GUEST) + ':' + k;
     X.load = (k, def) => X.store.get(saveKey(k), def === undefined ? null : def);
     X.save = (k, v) => X.store.set(saveKey(k), v);
+    X.promoAllowed = () => !X.user || X.setting('promos') !== false;
+    X.activity = {
+        arcadeSeconds() {
+            const usage = X.load('local-usage', {});
+            const seconds = Number(usage && usage.arcadeSeconds);
+            return Number.isFinite(seconds) ? Math.max(0, seconds) : 0;
+        }
+    };
 
 
     /* ── Cookies (nur mit „Alles erlauben" und nur über http/https) ─────────
@@ -949,6 +957,27 @@
         if (X.regions.filter(r => r.id !== 'geheim' && r.id !== 'meer').every(r => regionsSeen.has(r.id))) X.egg('b-regionen');
     }
 
+    function trackArcadeTime() {
+        if (!X.page || X.page.r !== 'arcade' || !X.page.game || X.locked) return;
+        let last = document.visibilityState === 'visible' ? Date.now() : 0;
+        const tick = () => {
+            const now = Date.now();
+            if (last && document.visibilityState === 'visible') {
+                const seconds = Math.max(0, Math.min(15, Math.floor((now - last) / 1000)));
+                if (seconds) {
+                    const saved = X.load('local-usage', {});
+                    const usage = saved && typeof saved === 'object' && !Array.isArray(saved) ? saved : {};
+                    usage.arcadeSeconds = Math.max(0, Number(usage.arcadeSeconds) || 0) + seconds;
+                    X.save('local-usage', usage);
+                }
+            }
+            last = document.visibilityState === 'visible' ? now : 0;
+        };
+        setInterval(tick, 10000);
+        document.addEventListener('visibilitychange', () => { last = document.visibilityState === 'visible' ? Date.now() : 0; });
+        addEventListener('pagehide', tick);
+    }
+
     /* ── Töne ───────────────────────────────────────────────────────────── */
     let actx = null;
     X.audio = function () {
@@ -1511,7 +1540,7 @@
         box.className = 'consent'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-label', 'Speicher-Einwilligung');
         box.innerHTML = '<div class="consent__icon">🍪</div><div class="consent__body"><h2>Krümel im Browser?</h2>' +
             '<p>Diese Website merkt sich deinen Fortschritt, dein lokales Konto und deine Einstellungen in deinem Browser (localStorage und zwei kleine technische Cookies als Sicherung). ' +
-            'Keine Tracker, keine Werbung – nichts verlässt dein Gerät.</p>' +
+            'Eine lokale Übersicht zählt Spielrunden und ungefähre aktive Zeit auf Spielseiten. Keine Drittanbieter-Tracker; in der Spielhalle gibt es gelegentlich schliessbare Eigenwerbung für Xiru-Spiele.</p>' +
             '<p class="small"><strong>Alles erlauben:</strong> dein Fortschritt bleibt dauerhaft gespeichert. <strong>Nur notwendige:</strong> alles funktioniert, wird aber beim Schliessen des Browsers vergessen.</p>' +
             (legacy ? '<p class="small text-warning">Du hast bereits gespeicherten Fortschritt. Mit „Nur notwendige" wird er nur noch bis zum Schliessen des Browsers behalten.</p>' : '') +
             '<div class="consent__actions"><button class="btn" type="button" data-consent="all">Alles erlauben</button>' +
@@ -1592,6 +1621,7 @@
         safe(initBehaviourEggs);
         safe(initConsole);
         safe(trackVisit);
+        safe(trackArcadeTime);
         booted = true;
         readyQueue.splice(0).forEach(fn => { if (!X.locked) safe(fn); });
         safe(initReveal);

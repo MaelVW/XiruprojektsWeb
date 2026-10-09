@@ -93,6 +93,45 @@ body.theme-arcade {
 .theme-arcade kbd { background: #1d1230; border-color: #4a2c78; color: #fff; }
 .theme-arcade .stat__value { color: var(--neon-yellow); text-shadow: 0 0 10px rgba(255, 225, 77, .55); }
 
+.theme-arcade .featured { position: relative; padding-right: 3.5rem; }
+.theme-arcade .featured[hidden] { display: none; }
+.theme-arcade .featured__dismiss { position: absolute; top: .65rem; right: .65rem; min-width: 2rem; padding: .2rem .55rem; }
+.theme-arcade .featured__label { display: inline-block; margin-bottom: .35rem; color: var(--neon-cyan); font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.arcade-promo-pop {
+    position: fixed; z-index: 1200; right: 1rem; bottom: 1rem; width: min(24rem, calc(100vw - 2rem));
+    padding: 1.2rem; border: 1px solid var(--neon-cyan); border-radius: var(--radius);
+    background: linear-gradient(145deg, #181026, #0b0711); box-shadow: 0 12px 38px #000b, var(--glow);
+}
+.arcade-promo-pop strong { display: block; margin-top: .4rem; color: var(--text); font-size: 1.1rem; }
+.arcade-promo-pop p { margin: .45rem 0 .8rem; color: var(--text-muted); font-size: .9rem; }
+.arcade-promo-pop__close {
+    position: absolute; top: .4rem; right: .55rem; border: 0; background: transparent; color: var(--text-muted);
+    font: inherit; font-size: 1.4rem; cursor: pointer;
+}
+.arcade-promo-pop__close:focus-visible { outline: 2px solid var(--neon-cyan); outline-offset: 2px; }
+.arcade-guest-backdrop {
+    z-index: 10000; padding: clamp(1rem, 5vw, 4rem);
+    background: radial-gradient(ellipse at 50% 45%, rgba(34, 22, 54, .84), rgba(3, 2, 7, .97) 75%);
+    backdrop-filter: blur(10px);
+}
+.arcade-guest-backdrop .modal {
+    width: min(100%, 680px); max-width: 680px; max-height: min(90dvh, 720px);
+    padding: clamp(1.4rem, 5vw, 3rem);
+    border-color: rgba(51, 240, 255, .7);
+    background: linear-gradient(145deg, rgba(24, 16, 38, .98), rgba(7, 4, 12, .99));
+    box-shadow: 0 0 0 1px rgba(51, 240, 255, .12), 0 0 60px rgba(51, 240, 255, .17), 0 30px 100px #000;
+}
+.arcade-guest-backdrop .modal h2 {
+    margin-top: .65rem; color: #fff7c7; font-size: clamp(1.8rem, 5vw, 3rem);
+    line-height: 1.05; text-shadow: 0 0 18px rgba(255, 225, 77, .3);
+}
+.arcade-guest-backdrop .modal p { max-width: 58ch; line-height: 1.65; }
+.arcade-guest-backdrop .modal .row { flex-wrap: wrap; }
+@media (max-width: 520px) {
+    .arcade-guest-backdrop .modal .row > * { width: 100%; justify-content: center; }
+}
+@media (max-width: 640px) { .theme-arcade .featured { grid-template-columns: 1fr; text-align: left; } }
+
 /* ── Arcade-Automat um Spielfeld, HUD und Steuerung (Aufbau: arcade.js) ───
    .cabinet            Gehäuse mit Seitenwangen (Seiten-Art) und T-Leiste
      .cab__marquee     beleuchtetes Titelschild mit Glühbirnen

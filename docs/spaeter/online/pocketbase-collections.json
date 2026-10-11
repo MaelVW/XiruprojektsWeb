@@ -1,0 +1,184 @@
+[
+  {
+    "id": "xirukeys0000001",
+    "name": "keys",
+    "type": "base",
+    "listRule": null,
+    "viewRule": null,
+    "createRule": "",
+    "updateRule": null,
+    "deleteRule": null,
+    "fields": [
+      {
+        "name": "secret",
+        "type": "text",
+        "required": true,
+        "min": 32,
+        "max": 64
+      },
+      {
+        "name": "created",
+        "type": "autodate",
+        "onCreate": true,
+        "onUpdate": false
+      }
+    ]
+  },
+  {
+    "name": "players",
+    "type": "base",
+    "listRule": "",
+    "viewRule": "",
+    "createRule": "@request.body.key != ''",
+    "updateRule": "key.secret = @request.body.secret && @request.body.key:isset = false",
+    "deleteRule": null,
+    "fields": [
+      {
+        "name": "nick",
+        "type": "text",
+        "required": true,
+        "min": 2,
+        "max": 20
+      },
+      {
+        "name": "key",
+        "type": "relation",
+        "collectionId": "xirukeys0000001",
+        "maxSelect": 1,
+        "minSelect": 0,
+        "cascadeDelete": false,
+        "required": true
+      },
+      {
+        "name": "place",
+        "type": "text",
+        "max": 40
+      },
+      {
+        "name": "area",
+        "type": "text",
+        "max": 80
+      },
+      {
+        "name": "level",
+        "type": "number",
+        "min": 0,
+        "max": 999,
+        "onlyInt": true
+      },
+      {
+        "name": "mech",
+        "type": "text",
+        "max": 30
+      },
+      {
+        "name": "created",
+        "type": "autodate",
+        "onCreate": true,
+        "onUpdate": false
+      },
+      {
+        "name": "updated",
+        "type": "autodate",
+        "onCreate": true,
+        "onUpdate": true
+      }
+    ]
+  },
+  {
+    "name": "scores",
+    "type": "base",
+    "listRule": "",
+    "viewRule": "",
+    "createRule": "@request.body.value >= 0 && @request.body.value <= 100000000",
+    "updateRule": null,
+    "deleteRule": null,
+    "fields": [
+      {
+        "name": "game",
+        "type": "text",
+        "required": true,
+        "min": 1,
+        "max": 40
+      },
+      {
+        "name": "nick",
+        "type": "text",
+        "max": 20
+      },
+      {
+        "name": "player",
+        "type": "text",
+        "max": 20
+      },
+      {
+        "name": "value",
+        "type": "number",
+        "required": false
+      },
+      {
+        "name": "lower",
+        "type": "bool"
+      },
+      {
+        "name": "created",
+        "type": "autodate",
+        "onCreate": true,
+        "onUpdate": false
+      }
+    ]
+  },
+  {
+    "name": "greets",
+    "type": "base",
+    "listRule": "",
+    "viewRule": "",
+    "createRule": "",
+    "updateRule": null,
+    "deleteRule": null,
+    "fields": [
+      {
+        "name": "from",
+        "type": "text",
+        "max": 20
+      },
+      {
+        "name": "nick",
+        "type": "text",
+        "max": 20
+      },
+      {
+        "name": "to",
+        "type": "text",
+        "max": 20
+      },
+      {
+        "name": "place",
+        "type": "text",
+        "max": 40
+      },
+      {
+        "name": "kind",
+        "type": "select",
+        "required": true,
+        "maxSelect": 1,
+        "values": [
+          "hallo",
+          "reise",
+          "insel",
+          "gg",
+          "petri",
+          "kristall",
+          "mech",
+          "bis"
+        ]
+      },
+      {
+        "name": "created",
+        "type": "autodate",
+        "onCreate": true,
+        "onUpdate": false
+      }
+    ]
+  }
+]

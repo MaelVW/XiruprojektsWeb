@@ -362,7 +362,10 @@ main, .content {
 @media (max-width: 1180px) {
     .hud__burger { display: inline-flex; }
     .nav {
-        position: fixed; inset: var(--header-h) 0 0 0; margin: 0;
+        /* feste Höhe statt inset-Unterkante: Der Weichzeichner (backdrop-filter) des Kopfes macht den Kopf zum Bezugsrahmen
+           für position: fixed – mit „bottom: 0“ schrumpfte das Menü sonst auf einen schmalen Streifen */
+        position: fixed; top: var(--header-h); left: 0; right: 0; margin: 0;
+        height: calc(100vh - var(--header-h)); height: calc(100dvh - var(--header-h));
         flex-direction: column; align-items: stretch; gap: .25rem;
         background: var(--bg); padding: 1rem; overflow-y: auto;
         /* geschlossen: ausgeblendet statt seitlich ausserhalb – so ragt nichts über den Rand (kein Querscrollen am Handy) */
@@ -373,6 +376,7 @@ main, .content {
     .nav__link { font-size: 1.05rem; padding: .8rem 1rem; }
     .nav__menu { position: static; opacity: 1; visibility: visible; transform: none; box-shadow: none; display: none; max-height: none; margin: .25rem 0 .5rem; }
     .nav__item.is-open > .nav__menu { display: block; }
+    .nav__menu a { padding: .65rem .8rem; font-size: 1rem; }
     .hud__level { display: none; }
     .site-footer__inner { grid-template-columns: 1fr 1fr; }
 }

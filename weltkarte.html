@@ -144,7 +144,7 @@ XIRU.ready(function () {
         });
         // Das Festland hinter der Nebelwand
         X.$$('.wk-festland', ctl.ov).forEach(f => {
-            hover(f, () => '<b>' + X.esc(X.mapArt.FESTLAND.n) + ' – das Festland</b><small>Hinter der Nebelwand. Noch kein Weg hinüber.</small>');
+            hover(f, () => '<b>' + X.esc(X.mapArt.FESTLAND.n) + ' – das Festland</b><small>Hinter der Nebelwand. ' + (arche().arrived ? 'Die Arche pendelt hinüber.' : 'Hinüber kommt nur eine Arche.') + '</small>');
             f.addEventListener('click', () => { if (!moved) festland(); });
             f.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); festland(); } });
         });
@@ -259,13 +259,18 @@ XIRU.ready(function () {
         h += '<p class="small muted mt-2 mb-0">Fische kauft und tauscht Flossie in der <a href="' + X.url('welt/markt.html') + '#fisch">Händlerbucht</a>. Dort gibt es auch bessere Angeln.</p>';
         panel.innerHTML = h; panel.hidden = false; wirePanel();
     }
+    const arche = () => (X.mech.state().mnemora || {});
     function festland() {
+        const ar = arche(), built = Object.keys(ar.ark || {}).length;
+        const status = X.easy() ? '<p class="small">' + PX('z-kompass') + ' Im Entdecker-Modus kannst du dir ganz Mnemora ansehen.</p><a class="btn btn--primary btn--sm" href="' + X.url('mnemora.html') + '">Mnemora ansehen</a>'
+            : ar.arrived ? '<p class="small">' + PX('ic-arche') + ' <b>Die Arche pendelt</b> zwischen Sektaria und Mnemora.</p><div class="row"><a class="btn btn--primary btn--sm" href="' + X.url('mnemora.html') + '">Nach Mnemora übersetzen</a><a class="btn btn--sm" href="' + X.url('welt/arche.html') + '">Arche-Dock</a></div>'
+            : '<p class="small">' + PX('ev-nebel') + ' <b>Noch unerreichbar.</b> Kein Mech kommt durch die Nebelwand – dafür braucht es eine <b>Arche</b>. ' + (built ? 'Im Heimathafen sind schon ' + built + ' von 6 Bauabschnitten fertig.' : 'Gebaut wird sie im Arche-Dock im Heimathafen.') + '</p><a class="btn btn--sm" href="' + X.url('welt/arche.html') + '">' + PX('ic-arche') + ' Zum Arche-Dock</a>';
         sel = null; drawOverlay();
         panel.innerHTML = '<div class="row"><h2>' + X.esc(X.mapArt.FESTLAND.n) + '</h2><span class="spacer"></span><button class="px-x" type="button" data-x aria-label="Schliessen">×</button></div>' +
             '<p class="small muted mt-1">Das Festland hinter der Nebelwand. Seefahrer erzählen von endlosen Wäldern, Bergen mit Schnee und Städten, in denen Reisende aus aller Welt zusammenkommen.</p>' +
-            '<p class="small">' + PX('ev-nebel') + ' <b>Noch unerreichbar.</b> Kein Mech kommt durch die Nebelwand – für die grosse Überfahrt braucht es eines Tages ein richtiges Schiff. Drüben geht es dann zu Fuss und über Land weiter.</p>' +
+            status +
             '<p class="small mb-1"><b>Was man sich erzählt:</b></p><ul class="plist" style="columns:1">' + X.mapArt.FESTLAND.PLACES.map(pl => '<li><span class="dot"></span><b>' + X.esc(pl.n) + '</b> – <span class="muted">' + X.esc(pl.d) + '</span></li>').join('') + '</ul>' +
-            '<p class="small mt-2 mb-0">' + PX('st-R') + ' Bis dahin: Erkunde Sektaria, sammle Baupläne und mach deinen Mech bereit.</p>';
+            (ar.arrived ? '' : '<p class="small mt-2 mb-0">' + PX('st-R') + ' Bis dahin: Erkunde Sektaria, sammle Material und hol die Händler auf deine Seite.</p>');
         panel.hidden = false; wirePanel();
     }
     function wirePanel() {

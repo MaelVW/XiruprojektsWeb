@@ -17,7 +17,7 @@
      XIRU.beep(freq, dauer, typ)            kurzer Ton (respektiert Einstellungen)
      XIRU.confetti()  XIRU.modal(html)  XIRU.esc(text)  XIRU.fmt(zahl)
 
-   Alles bleibt im localStorage dieses Browsers. Es gibt keinen Server.
+   Alles bleibt im localStorage dieses Browsers – ausser „Online“ ist eingeschaltet (online.js, Xiru-Server).
    ========================================================================== */
 (function () {
     'use strict';
@@ -321,8 +321,9 @@
     /* ── Spielstände ────────────────────────────────────────────────────── */
     const saveKey = k => 'xiru:save:' + (X.user ? X.user.toLowerCase() : GUEST) + ':' + k;
     X.load = (k, def) => X.store.get(saveKey(k), def === undefined ? null : def);
-    /* Bleiben immer nur in diesem Browser: Liminal-Teil und lokaler Spielzeit-Zähler */
-    const LOCAL_ONLY = /^(why-|liminal-|local-usage$)/;
+    /* Bleiben immer nur in diesem Browser (auch mit Geräte-Sync): Liminal-Teil, lokaler Spielzeit-Zähler und alles, was
+       Werkzeuge, KI-Labor und Mixer speichern – deren Seiten versprechen „bleibt in deinem Browser“. Synchronisiert wird nur der Spielfortschritt. */
+    const LOCAL_ONLY = /^(why-|liminal-|local-usage$|notizen$|timer-tag$|einheiten-|bildwerk|orakel|mixer-)/;
     X.save = (k, v) => { X.store.set(saveKey(k), v); if (!LOCAL_ONLY.test(k)) touch(); };
 
     /* ── Spielstand als Ganzes: Export/Import (Profil) und Geräte-Sync (online.js) ──

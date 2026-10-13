@@ -27,7 +27,8 @@ Ablauf in `online.js` (`XIRU.online.cloud`): Mit Online und angemeldetem Konto f
 Server-Konto an (oder meldet dort an). Neues Gerät: Auf der Anmeldeseite einen Namen eingeben, den es im Browser nicht gibt → „Vom Server holen“.
 Abgleich beim Laden jeder Seite, danach jede Minute und beim Verlassen, wenn sich etwas geändert hat (`xiru:mod:<konto>`, core.js).
 Wer zuletzt gespeichert hat, gewinnt; haben beide Seiten Neues, wird gefragt, und der verworfene Stand bleibt als Sicherung (`xiru:cloudbak:<konto>`, Profil).
-Nie übertragen: API-Schlüssel, Liminal-Teil (`why-*`, `liminal-*`, Besuche dort), lokaler Spielzeit-Zähler (`local-usage`).
+Nie übertragen (`LOCAL_ONLY` in core.js): API-Schlüssel, Liminal-Teil (`why-*`, `liminal-*`, Besuche dort), lokaler Spielzeit-Zähler (`local-usage`),
+Werkzeug-, KI- und Mixer-Daten (`notizen`, `timer-tag`, `einheiten-*`, `bildwerk*`, `orakel*`, `mixer-*`) – deren Seiten versprechen „bleibt in deinem Browser“.
 Prüfung beim Einlesen: `XIRU.savegame` in core.js (gleiche Prüfung wie beim Datei-Import).
 
 Code: `assets/js/online.js` (wird von core.js nur bei eingeschaltetem Online geladen, `XIRU.online`),

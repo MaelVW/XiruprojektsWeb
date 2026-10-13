@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mnemora · Xiruprojekts</title>
+    <meta name="description" content="Mnemora, das Festland hinter der Nebelwand: Strasse für Strasse freikämpfen, Gehäuse bauen und Steckkarten stecken.">
+    <link rel="stylesheet" href="assets/css/main.css">
+    <link rel="stylesheet" href="assets/css/welt.css">
+    <script src="assets/js/site.js"></script>
+    <script src="assets/js/core.js"></script>
+    <script src="assets/js/mech-art.js"></script>
+    <script src="assets/js/weltkarte-art.js"></script>
+    <script src="assets/js/weltkarte-pixel.js"></script>
+    <script src="assets/js/pixel-icons.js"></script>
+    <script src="assets/js/werft.js"></script>
+    <script src="assets/js/kampf.js"></script>
+    <script src="assets/js/mnemora.js"></script>
+    <script src="assets/js/mnemora-karte.js"></script>
+</head>
+<body class="theme-pixel">
+<div class="mn-load" id="load" role="status" aria-live="polite">
+    <div class="mn-load__box">
+        <div class="mn-load__ark"><i data-px="ic-arche" data-size="96"></i></div>
+        <h1 class="mn-load__title">Mnemora</h1>
+        <p class="mn-load__sub" id="load-sub">Das Land, das sich erinnert</p>
+        <div class="voyage__progress"><i id="load-bar"></i></div>
+        <p class="mn-load__tip" id="load-tip"></p>
+    </div>
+</div>
+<main class="content content--wide">
+    <header class="page-head">
+        <span class="eyebrow">Das Festland hinter der Nebelwand</span>
+        <h1>Mnemora</h1>
+        <p class="lead" id="lead">Mit Seemechs kommt man hier keinen Meter weit. Bau Gehäuse für das Gelände, steck Karten hinein und kämpf dir Strasse für Strasse den Weg frei.</p>
+    </header>
+    <div id="nope" hidden></div>
+    <div id="game" hidden>
+        <div class="wallet" id="wallet"></div>
+        <div class="mn-layout">
+            <div class="mn-mapbox" id="mapbox">
+                <canvas id="mn-canvas" aria-hidden="true"></canvas>
+                <svg id="mn-ov" class="mn-ov" role="img" aria-label="Karte von Mnemora"></svg>
+            </div>
+            <aside class="mn-side" id="side"></aside>
+        </div>
+        <div id="play">
+            <div class="tabs mt-3" role="tablist">
+                <button role="tab" aria-selected="true" data-tab="fuhrpark">Fuhrpark</button>
+                <button role="tab" aria-selected="false" data-tab="werkstatt">Feldwerkstatt</button>
+                <button role="tab" aria-selected="false" data-tab="lager">Lager &amp; Besatzung</button>
+            </div>
+            <section id="tab-fuhrpark" class="mn-tab"></section>
+            <section id="tab-werkstatt" class="mn-tab" hidden></section>
+            <section id="tab-lager" class="mn-tab" hidden></section>
+        </div>
+    </div>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU, M = X.mech, W = X.werft, MN = X.mnemora, K = X.mnemoraKarte, A = X.mechArt, esc = X.esc, $ = X.$;
+    const arrival = new URLSearchParams(location.search).has('ankunft'), easy = X.easy();
+    const PX = W.px;
+    W.pxify();
+
+    /* ── Ladebildschirm ── */
+    const TIPS = ['Mnemora vergisst nichts. Jede Strasse erinnert sich an jeden Schritt.', 'In Registra sollen Händler aus allen Ecken der Welt Stände haben.',
+        'Die Speicherberge teilen das Land von Nord nach Süd.', 'Im Fragmentmoor vergessen Reisende, wohin sie wollten.', 'In den Ruinen von Alt-ROM räumt etwas auf. Gründlich.',
+        'Tipp: Jedes Gehäuse kommt nur über bestimmtes Gelände.', 'Tipp: Steckkarten wie das Kletterhaken-BIOS schalten neues Gelände frei.',
+        'Tipp: Dein Seemech aus Sektaria gibt deinen Gehäusen einen Pilotenbonus.', 'Tipp: Jeder neue Ort bringt Baupläne für Gehäuse oder Steckkarten.'];
+    let tipI = Math.floor(Math.random() * TIPS.length);
+    const tipT = setInterval(() => { tipI = (tipI + 1) % TIPS.length; $('#load-tip').textContent = TIPS[tipI]; }, 2600);
+    $('#load-tip').textContent = TIPS[tipI];
+    if (arrival) $('#load-sub').textContent = 'Die Arche legt an … das Land, das sich erinnert';
+    const minT = arrival ? 4200 : 1100, t0 = performance.now();
+    function hideLoad() {
+        clearInterval(tipT);
+        const l = $('#load'); l.classList.add('is-done'); setTimeout(() => l.remove(), 600);
+    }
+
+    /* ── Noch nicht angekommen ── */
+    if (!easy && !MN.arrived()) {
+        hideLoad();
+        const n = MN.stagesDone();
+        $('#nope').hidden = false;
+        $('#nope').innerHTML = '<div class="card easy-note"><div>' + PX('ic-arche', 64) + '</div><h2>Noch hat niemand aus Sektaria Mnemora betreten</h2>' +
+            '<p class="muted">Durch die Nebelwand kommt nur eine Arche. Bau sie im Heimathafen, hol die Händler an Bord und lade Proviant ein. Bisher fertig: <b>' + n + ' von ' + MN.STAGES.length + '</b> Bauabschnitten.</p>' +
+            '<div class="row" style="justify-content:center"><a class="btn btn--primary" href="' + X.url('welt/arche.html') + '">Zum Arche-Dock</a><a class="btn" href="' + X.url('weltkarte.html') + '">Weltkarte</a></div></div>';
+        return;
+    }
+    $('#game').hidden = false;
+    if (easy) { $('#play').hidden = true; $('#lead').textContent = 'Im Entdecker-Modus siehst du ganz Mnemora – ohne Gehäuse und ohne Kämpfe. Klick auf einen Ort, um mehr zu erfahren.'; }
+    else { X.egg('m-mnemora'); W.wallet('#wallet', () => '<span title="Speichererz">' + PX('mat-erz', 18) + ' ' + X.fmt(M.mats().erz || 0) + ' <small>Erz</small></span>'); }
+
+    /* ── Karte ── */
+    const V = K.VIEW, ov = $('#mn-ov'), NS = 'http://www.w3.org/2000/svg';
+    ov.setAttribute('viewBox', V.x + ' ' + V.y + ' ' + V.w + ' ' + V.h);
+    $('#mapbox').style.aspectRatio = V.w + ' / ' + V.h;
+    $('#mapbox').style.width = 'min(100%, calc(84vh * ' + (V.w / V.h).toFixed(3) + '))';
+    const pxAt = (name, x, y, s) => PX(name, s).replace('<svg class="px"', '<svg x="' + (x - s / 2) + '" y="' + (y - s / 2) + '"').replace(/width="\d+" height="\d+"/, 'width="' + s + '" height="' + s + '"');
+    const hashN = s => X.mapArt.hash(s);
+    function roadGeo(r) {
+        const a = MN.place(r.a), b = MN.place(r.b), dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy), bend = (hashN(r.id) % 2 ? 1 : -1) * len * .13;
+        const cx = (a.x + b.x) / 2 - dy / len * bend, cy = (a.y + b.y) / 2 + dx / len * bend;
+        return { d: 'M' + a.x + ' ' + a.y + ' Q' + Math.round(cx) + ' ' + Math.round(cy) + ' ' + b.x + ' ' + b.y, mx: .25 * a.x + .5 * cx + .25 * b.x, my: .25 * a.y + .5 * cy + .25 * b.y };
+    }
+    let sel = null;   // ausgewählter Ort oder Strasse: { place } | { road }
+    function drawOverlay() {
+        const at = MN.at(), h = [];
+        const holes = [];
+        MN.PLACES.forEach(p => { if (MN.seen(p.id)) holes.push('<circle cx="' + p.x + '" cy="' + p.y + '" r="380" fill="url(#mnHole)"/>'); });
+        MN.ROADS.forEach(r => { if (MN.free(r.id)) { const g = roadGeo(r); holes.push('<circle cx="' + Math.round(g.mx) + '" cy="' + Math.round(g.my) + '" r="260" fill="url(#mnHole)"/>'); } });
+        h.push('<defs><radialGradient id="mnHole"><stop offset="0" stop-color="#000"/><stop offset=".55" stop-color="#000"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>' +
+            '<mask id="mnFog" maskUnits="userSpaceOnUse" x="' + V.x + '" y="' + V.y + '" width="' + V.w + '" height="' + V.h + '"><rect x="' + V.x + '" y="' + V.y + '" width="' + V.w + '" height="' + V.h + '" fill="#fff"/>' + holes.join('') + '</mask>' +
+            '<pattern id="mnFogPat" width="24" height="24" patternUnits="userSpaceOnUse"><rect width="24" height="24" fill="#0d1526"/><rect x="4" y="6" width="4" height="4" fill="#1a2440"/><rect x="16" y="15" width="4" height="4" fill="#141d33"/></pattern></defs>');
+        // Strassen
+        MN.ROADS.forEach(r => {
+            if (!MN.roadVisible(r)) return;
+            const g = roadGeo(r), free = MN.free(r.id), cls = free ? 'is-free' : 'is-open', isSel = sel && sel.road === r.id;
+            h.push('<g class="mn-road ' + cls + (isSel ? ' is-sel' : '') + '" data-road="' + r.id + '"><path class="mn-road__hit" d="' + g.d + '"/><path class="mn-road__bed" d="' + g.d + '"/><path class="mn-road__line" d="' + g.d + '"/></g>');
+        });
+        // Nebel (nicht im Entdecker-Modus)
+        if (!easy) h.push('<rect class="mn-fog" x="' + V.x + '" y="' + V.y + '" width="' + V.w + '" height="' + V.h + '" fill="url(#mnFogPat)" opacity=".8" mask="url(#mnFog)"/>');
+        // Kampf-Markierungen auf offenen Strassen
+        MN.ROADS.forEach(r => {
+            if (!MN.roadVisible(r) || MN.free(r.id)) return;
+            const g = roadGeo(r);
+            h.push('<g class="mn-mark" data-road="' + r.id + '">' + pxAt('st-atk', g.mx - 30, g.my, 64) + pxAt(MN.TERRAIN[r.terr].i, g.mx + 36, g.my, 56) +
+                '<text x="' + Math.round(g.mx) + '" y="' + Math.round(g.my + 70) + '" class="mn-label mn-label--sm">' + MN.cleared(r.id) + '/' + r.foes + '</text></g>');
+        });
+        // Orte
+        MN.PLACES.forEach(p => {
+            const seen = MN.seen(p.id), near = !seen && MN.roadsAt(p.id).some(r => MN.seen(MN.other(r, p.id)));
+            if (!seen && !near) return;
+            const isSel = sel && sel.place === p.id;
+            h.push('<g class="mn-place' + (seen ? '' : ' is-unknown') + (p.id === at ? ' is-here' : '') + (isSel ? ' is-sel' : '') + '" data-place="' + p.id + '">' +
+                '<rect x="' + (p.x - 46) + '" y="' + (p.y - 46) + '" width="92" height="92" class="mn-place__bg"/>' + pxAt(seen ? MN.KIND_ICON[p.kind] : '_', p.x, p.y, 72) +
+                '<text x="' + p.x + '" y="' + (p.y + 104) + '" class="mn-label">' + esc(seen ? p.n : '???') + '</text></g>');
+        });
+        // Dein Gehäuse
+        if (!easy) {
+            const P0 = MN.place(at), cas = MN.active();
+            h.push('<g class="mn-token" transform="translate(' + P0.x + ' ' + (P0.y - 120) + ')"><g class="mn-token__bob">' + pxAt(cas ? cas.id : 'ic-arche', 0, 0, 120) + '</g></g>');
+        }
+        ov.innerHTML = h.join('');
+    }
+    ov.addEventListener('click', e => {
+        const p = e.target.closest('[data-place]'), r = e.target.closest('[data-road]');
+        if (p) sel = { place: p.dataset.place }; else if (r) sel = { road: r.dataset.road }; else return;
+        drawOverlay(); renderSide();
+    });
+
+    /* Reisen über freie Strassen: die Figur läuft die Wege entlang */
+    function walk(roads, dest) {
+        return new Promise(resolve => {
+            const tok = ov.querySelector('.mn-token'); if (!tok || !roads.length) { resolve(); return; }
+            let i = 0, from = MN.at();
+            const step = () => {
+                if (i >= roads.length) { resolve(); return; }
+                const r = roads[i], g = roadGeo(r), path = document.createElementNS(NS, 'path');
+                path.setAttribute('d', g.d); path.setAttribute('fill', 'none'); ov.appendChild(path);
+                const len = path.getTotalLength(), rev = r.a !== from, dur = X.setting('anim') === false ? 1 : 900, t0 = performance.now();
+                const frame = now => {
+                    const k = Math.min(1, (now - t0) / dur), pt = path.getPointAtLength((rev ? 1 - k : k) * len);
+                    tok.setAttribute('transform', 'translate(' + pt.x.toFixed(1) + ' ' + (pt.y - 120).toFixed(1) + ')');
+                    if (k < 1) return requestAnimationFrame(frame);
+                    path.remove(); from = MN.other(r, from); i++; X.beep(330 + i * 40, .05, 'square', .03); step();
+                };
+                requestAnimationFrame(frame);
+            };
+            step();
+        });
+    }
+    function travelTo(id) {
+        const roads = MN.path(id); if (!roads) return;
+        const miss = MN.pathBlocked(roads);
+        if (miss.length) { X.toast('Da kommst du nicht hin', 'Gelände ' + miss.map(t => MN.terrName(t)).join(', ') + ': Kein Gehäuse in deinem Fuhrpark kommt da durch.', { iconHtml: MN.terrIcon(miss[0], 26), type: 'error' }); return; }
+        walk(roads, id).then(() => { MN.arrive(id); sel = null; drawOverlay(); renderSide(); renderTabs(); });
+    }
+
+    /* ── Kämpfe ── */
+    const svgOf = (lo, f, run) => A.draw(f || 0, run, lo).replace('width="240" height="240"', '');
+    function fightRoad(roadId) {
+        const r = MN.road(roadId), chk = MN.fightCheck(roadId);
+        if (!chk.ok) { X.toast('Noch nicht', chk.why, { iconHtml: MN.terrIcon(r.terr, 26), type: 'error' }); return; }
+        const cas = chk.cas, def = MN.casing(cas.id);
+        if (MN.active() !== cas) { MN.setActive(cas.u); X.toast('Gehäuse gewechselt', 'Für ' + MN.terrName(r.terr) + ' nimmst du den ' + def.n + '.', { iconHtml: PX(cas.id, 26) }); }
+        const k = MN.cleared(roadId), foe = MN.foe(roadId, k), meC = MN.combat(cas), meLo = MN.loadout(cas);
+        X.kampf.fight({
+            label: 'Kampf auf dem ' + r.n, scene: r.terr,
+            me: { name: def.n, icon: cas.id, c: meC, art: f => svgOf(meLo, f) },
+            foe: { name: foe.n, icon: MN.TERRAIN[r.terr].i, c: foe.c, art: f => svgOf(foe.lo, f + 1.3) },
+            intro: PX(MN.TERRAIN[r.terr].i) + ' <b>' + esc(r.n) + '</b>, Gegner ' + (k + 1) + ' von ' + r.foes + ': <b>' + esc(foe.n) + '</b> – ' + esc(foe.d) + ' ' + (meC.spd >= foe.c.spd ? 'Du bist schneller.' : 'Der Gegner ist schneller.'),
+            finish(win) {
+                const dmg = MN.wear(cas, win, foe.lvl);
+                let html = '', title = win ? 'Sieg!' : 'Rückzug';
+                if (win) {
+                    const lines = MN.loot(foe.lvl, false), res = MN.winRoad(roadId) || {};
+                    X.addXP(Math.round(8 + foe.lvl * 3), 'Kampf auf Mnemora');
+                    html += '<p class="mb-1">Beute: ' + lines.join(' · ') + '</p>';
+                    if (res.done) {
+                        title = 'Strasse frei!';
+                        const p = MN.place(res.to);
+                        html += '<p class="mb-1">' + PX(MN.KIND_ICON[p.kind]) + ' Der <b>' + esc(r.n) + '</b> ist frei. Du ziehst weiter nach <b>' + esc(p.n) + '</b>.</p>' +
+                            (res.lines && res.lines.length ? '<p class="mb-1">Neu entdeckt: ' + res.lines.join(' · ') + '</p>' : '');
+                        X.confetti(80);
+                    } else html += '<p class="small muted mb-1">Noch ' + (r.foes - MN.cleared(roadId)) + ' Gegner auf dieser Strasse.</p>';
+                    if (MN.intro() < 3) MN.setIntro(3);
+                } else html += '<p class="mb-1">Dein ' + esc(def.n) + ' zieht sich zurück. Versuch es mit besseren Karten, einem anderen Gehäuse – oder repariere erst.</p>';
+                html += '<p class="small muted mb-1">Zustand ' + esc(def.n) + ': −' + dmg + ' % → ' + cas.c + ' %' + (win && MN.aboard('flossie') ? ' (inkl. Flossies Fischsuppe)' : '') + '</p>';
+                return { title, html, cheer: 'Der Weg wird freier!', leave: 'Zurück zur Karte' };
+            }
+        }).then(() => { drawOverlay(); renderSide(); renderTabs(); });
+    }
+    function fightBoss() {
+        const cas = MN.active(); if (!cas || cas.c <= 0) { X.toast('Kein einsatzbereites Gehäuse', 'Repariere dein Gehäuse in der Feldwerkstatt.', { iconHtml: PX('w-schluessel', 26), type: 'error' }); return; }
+        const def = MN.casing(cas.id), foe = MN.makeFoe(MN.BOSS, MN.BOSS.lvl, 'asche'), meC = MN.combat(cas), meLo = MN.loadout(cas);
+        X.kampf.fight({
+            label: 'Kampf gegen den Garbage Collector', scene: 'festung',
+            me: { name: def.n, icon: cas.id, c: meC, art: f => svgOf(meLo, f) },
+            foe: { name: foe.n, icon: 'ic-gc', c: foe.c, art: f => svgOf(foe.lo, f + 1.3, true) },
+            intro: PX('ic-gc') + ' Aus den Ruinen von Alt-ROM schiebt sich etwas Riesiges. <b>' + esc(foe.n) + '</b>: „Nicht referenziert. Wird entfernt.“',
+            finish(win) {
+                const dmg = MN.wear(cas, win, foe.lvl);
+                if (!win) return { title: 'Aufgeräumt …', html: '<p class="mb-1">Der Garbage Collector schiebt dich aus den Ruinen. Er hat dich nicht gelöscht – noch nicht. (Zustand −' + dmg + ' %)</p>', leave: 'Zurück zur Karte' };
+                const first = MN.winBoss(), lines = MN.loot(foe.lvl, true);
+                if (first) { const p = W.rollPart({ maxT: 5, minT: 4, minQ: 5, maxQ: 5 }); lines.push.apply(lines, W.grant([{ type: 'item', id: p.id, q: 5 }])); X.confetti(160); }
+                return { title: first ? 'Speicher freigegeben!' : 'Wieder gewonnen', cheer: 'Alt-ROM ist frei!', leave: 'Zurück zur Karte',
+                    html: '<p class="mb-1">' + (first ? 'Der Garbage Collector zerfällt in tausend Bytes. Zum ersten Mal seit Jahrhunderten bleibt in Mnemora alles, wie es ist. ' : '') + 'Beute: ' + lines.join(' · ') + '</p>' };
+            }
+        }).then(() => { drawOverlay(); renderSide(); renderTabs(); });
+    }
+
+    /* ── Seitenleiste ── */
+    const STI = { hp: 'st-hp', atk: 'st-atk', def: 'st-def', spd: 'st-spd', en: 'st-E', crit: 'st-crit' }, STN = { hp: 'Struktur', atk: 'Angriff', def: 'Abwehr', spd: 'Tempo', en: 'Energie', crit: 'Volltreffer %' };
+    const statRow = c => '<div class="mn-stats">' + Object.keys(STI).map(k => '<span class="stat-chip" title="' + STN[k] + '">' + PX(STI[k]) + ' ' + c[k] + '</span>').join('') + '</div>';
+    const terrRow = set => '<div class="mn-terr">' + Array.from(set).map(t => '<span title="' + esc(MN.terrName(t)) + '">' + MN.terrIcon(t, 20) + '</span>').join('') + '</div>';
+    function hint() {
+        const s = MN.state(), cas = MN.active();
+        if (cas && !cas.k.length && MN.cards().some(c => !MN.cardHost(c.u))) return 'Steck eine Karte in deinen ' + MN.casing(cas.id).n + ' – im Reiter <b>Fuhrpark</b> unten.';
+        if (!Object.keys(s.roads).length) return 'Kämpf den <b>Küstenpfad</b> frei – er führt zur Dünenwacht. Klick auf die Kampf-Markierung auf der Karte.';
+        const blocked = MN.ROADS.filter(r => MN.roadVisible(r) && !MN.free(r.id) && !MN.bestFor(r.terr));
+        if (blocked.length) { const t = blocked[0].terr; return 'Für <b>' + MN.terrName(t) + '</b> fehlt dir ein passendes Gehäuse oder eine Steckkarte. Neue Baupläne gibt es an jedem neuen Ort – schau in die <b>Feldwerkstatt</b>.'; }
+        if (MN.place('altrom') && MN.seen('altrom') && !MN.bossDone()) return 'In den <b>Ruinen von Alt-ROM</b> wartet etwas Grosses. Rüste dich gut aus.';
+        if (MN.bossDone()) return 'Mnemora ist frei. Aber hinter dem Nebel im Norden und Südwesten liegen noch zwei Länder …';
+        return 'Jeder neue Ort bringt Baupläne. Stärkere Strassen brauchen bessere Karten – die Feldwerkstatt baut sie aus Erz.';
+    }
+    function renderSide() {
+        const side = $('#side'), at = MN.at(), here = MN.place(at);
+        let h = '';
+        if (easy) {
+            const p = MN.place(sel && sel.place) || here;
+            side.innerHTML = '<div class="card"><h2 class="mb-1">' + PX(MN.KIND_ICON[p.kind], 24) + ' ' + esc(p.n) + '</h2><p class="small mb-0">' + esc(p.d || '') + '</p></div>';
+            return;
+        }
+        // Ausgewählt
+        if (sel && sel.place && sel.place !== at) {
+            const p = MN.place(sel.place), seen = MN.seen(p.id), path = seen ? MN.path(p.id) : null, any = seen && !path ? MN.path(p.id, null, true) : null;
+            h += '<div class="card mn-card"><span class="eyebrow">Ausgewählt</span><h3 class="mb-1">' + (seen ? PX(MN.KIND_ICON[p.kind], 20) + ' ' + esc(p.n) : '???') + '</h3>' +
+                '<p class="small mb-1">' + (seen ? esc(p.d || '') : 'Diesen Ort kennst du noch nicht. Kämpf die Strasse dorthin frei.') + '</p>' +
+                (path ? '<button class="btn btn--primary btn--sm" type="button" data-go="' + p.id + '">' + PX('st-spd') + ' Hinreisen (' + path.length + ' Strasse' + (path.length > 1 ? 'n' : '') + ')</button>'
+                    : any ? '<p class="small text-danger mb-0">Der freie Weg führt durch ' + esc(MN.pathBlocked(any).map(t => MN.terrName(t)).join(', ')) + ' – dafür fehlt dir ein passendes Gehäuse.</p>'
+                    : seen ? '<p class="small muted mb-0">Kein freier Weg von hier.</p>' : '') + '</div>';
+        }
+        if (sel && sel.road) {
+            const r = MN.road(sel.road), free = MN.free(r.id), A2 = MN.place(r.a), B2 = MN.place(r.b);
+            h += '<div class="card mn-card"><span class="eyebrow">Strasse</span><h3 class="mb-1">' + MN.terrIcon(r.terr, 20) + ' ' + esc(r.n) + '</h3>' +
+                '<p class="small mb-1">' + esc(MN.seen(r.a) ? A2.n : '???') + ' ↔ ' + esc(MN.seen(r.b) ? B2.n : '???') + ' · ' + esc(MN.terrName(r.terr)) + ' · Gefahrenstufe ' + Math.round(r.lvl) + '</p>' +
+                '<p class="small mb-0">' + (free ? 'Frei.' : 'Noch ' + (r.foes - MN.cleared(r.id)) + ' von ' + r.foes + ' Gegnern.') + '</p></div>';
+        }
+        // Hier
+        h += '<div class="card mn-card"><span class="eyebrow">Du bist in</span><h2 class="mb-1">' + PX(MN.KIND_ICON[here.kind], 24) + ' ' + esc(here.n) + '</h2><p class="small">' + esc(here.d || '') + '</p>';
+        h += '<h3 class="mn-sub">Wege von hier</h3><ul class="mn-roads">' + MN.roadsAt(at).map(r => {
+            const to = MN.other(r, at), tp = MN.place(to), free = MN.free(r.id), chk = free ? null : MN.fightCheck(r.id), can = free ? !!MN.bestFor(r.terr) : chk.ok;
+            return '<li><span title="' + esc(MN.terrName(r.terr)) + '">' + MN.terrIcon(r.terr, 22) + '</span><div><b>' + esc(r.n) + '</b> → ' + esc(MN.seen(to) ? tp.n : '???') +
+                '<div class="small muted">' + (free ? 'frei' : 'Gegner ' + MN.cleared(r.id) + '/' + r.foes + ' · Stufe ' + Math.round(r.lvl)) + (can ? '' : ' · <span class="text-danger">' + esc(free ? 'kein Gehäuse für ' + MN.terrName(r.terr) : chk.why) + '</span>') + '</div></div>' +
+                (free ? '<button class="btn btn--sm" type="button" data-go="' + to + '"' + (can ? '' : ' disabled') + '>Reisen</button>' : '<button class="btn btn--sm' + (can ? ' btn--primary' : '') + '" type="button" data-fight="' + r.id + '"' + (can ? '' : ' disabled') + '>Kämpfen</button>') + '</li>';
+        }).join('') + '</ul>';
+        if (at === 'port') h += '<div class="row mt-1"><button class="btn btn--sm" type="button" data-tab-go="lager">' + PX('ic-arche') + ' Lager der Arche</button><button class="btn btn--sm btn--ghost" type="button" data-home>Zurück nach Sektaria</button></div>';
+        if (at === 'altrom') h += MN.bossDone() ? '<p class="small text-success mt-1 mb-0">Alt-ROM ist befreit. Der Garbage Collector ist Geschichte.</p>'
+            : '<div class="mn-boss mt-1">' + PX('ic-gc', 40) + '<div><b>Der Garbage Collector</b><p class="small mb-1">Räumt alles weg, was niemand mehr braucht.</p><button class="btn btn--primary btn--sm" type="button" data-boss>Herausfordern</button></div></div>';
+        h += '</div>';
+        // Aktives Gehäuse
+        const cas = MN.active();
+        if (cas) { const d = MN.casing(cas.id); h += '<div class="card mn-card"><span class="eyebrow">Aktives Gehäuse</span><h3 class="mb-1">' + PX(cas.id, 24) + ' ' + esc(d.n) + '</h3>' +
+            '<div class="bar bar--sm"><div class="bar__fill" style="--v:' + cas.c + '%"></div></div><span class="small muted">Zustand ' + cas.c + ' %</span>' + terrRow(MN.terrains(cas)) + statRow(MN.combat(cas)) + '</div>'; }
+        h += '<div class="npc mn-ada"><div class="npc__face">' + PX('npc-ada', 40) + '</div><div><b>Händlerin Ada</b><p class="npc__say small mb-0">' + hint() + '</p></div></div>';
+        side.innerHTML = h;
+    }
+    $('#side').addEventListener('click', e => {
+        const go = e.target.closest('[data-go]'), f = e.target.closest('[data-fight]'), t = e.target.closest('[data-tab-go]');
+        if (go) travelTo(go.dataset.go);
+        else if (f) fightRoad(f.dataset.fight);
+        else if (e.target.closest('[data-boss]')) fightBoss();
+        else if (t) { showTab(t.dataset.tabGo); $('#play').scrollIntoView({ behavior: 'smooth' }); }
+        else if (e.target.closest('[data-home]')) goHome();
+    });
+    function goHome() {
+        const l = document.createElement('div'); l.className = 'mn-load'; l.innerHTML = '<div class="mn-load__box"><div class="mn-load__ark">' + PX('ic-arche', 96) + '</div><h1 class="mn-load__title">Sektaria</h1><p class="mn-load__sub">Die Arche legt ab …</p></div>';
+        document.body.appendChild(l); setTimeout(() => { location.href = X.url('weltkarte.html'); }, 1200);
+    }
+
+    /* ── Reiter ── */
+    function showTab(t) {
+        X.$$('[data-tab]').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === t));
+        ['fuhrpark', 'werkstatt', 'lager'].forEach(k => { $('#tab-' + k).hidden = k !== t; });
+    }
+    X.$$('[data-tab]').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
+    const talerChip = n => n ? '<span class="cost-chip' + (M.taler() < n ? ' is-short' : '') + '">' + PX('taler') + ' ' + n + '</span>' : '';
+    const costHtml = c => W.costChips({ scrap: c.scrap, mats: c.mats }) + talerChip(c.taler);
+    function renderFuhrpark() {
+        const box = $('#tab-fuhrpark'), list = MN.casings(), p = MN.pilot();
+        if (!list.length) { box.innerHTML = '<p class="muted">Noch kein Gehäuse. Händlerin Ada hilft dir am Anfang.</p>'; return; }
+        box.innerHTML = '<p class="small muted">Pilotenbonus aus deinem Seemech: ' + PX('st-atk') + ' +' + p.atk + ' · ' + PX('st-hp') + ' +' + p.hp + ' · ' + PX('st-E') + ' +' + p.en + ' · ' + PX('st-crit') + ' +' + p.crit + ' % · ' + PX('st-spd') + ' +' + p.spd + (MN.aboard('bolzen') ? ' (inkl. Bolzens Training)' : '') + '</p>' +
+            '<div class="mn-garage">' + list.map(cas => {
+                const d = MN.casing(cas.id), act = MN.active() === cas, used = MN.used(cas);
+                let slots = '';
+                cas.k.forEach(u => { const it = MN.cardItem(u), cd = MN.card(it.id); slots += '<button type="button" class="mn-slot is-full" style="--w:' + cd.w + '" data-eject="' + u + '" title="' + esc(cd.n) + ' – klicken zum Herausziehen">' + PX(cd.id, 26) + '<span>' + esc(cd.n) + '</span></button>'; });
+                for (let i = used; i < d.slots; i++) slots += '<button type="button" class="mn-slot" style="--w:1" data-slot="' + cas.u + '" title="Freier Steckplatz">+</button>';
+                return '<div class="mn-casing' + (act ? ' is-active' : '') + '"><div class="mn-casing__head">' + PX(cas.id, 40) + '<div><b>' + esc(d.n) + '</b><div class="small muted">Stufe ' + d.t + ' · ' + d.slots + ' Steckplätze</div></div>' +
+                    (act ? '<span class="chip--ok">aktiv</span>' : '<button class="btn btn--sm" type="button" data-act="' + cas.u + '">Aktiv setzen</button>') + '</div>' +
+                    '<div class="mn-casing__pic">' + svgOf(MN.loadout(cas), 0) + '</div><p class="small mb-1">' + esc(d.d) + '</p>' +
+                    '<div class="bar bar--sm"><div class="bar__fill" style="--v:' + cas.c + '%"></div></div><span class="small muted">Zustand ' + cas.c + ' %</span>' +
+                    terrRow(MN.terrains(cas)) + statRow(MN.combat(cas)) + '<div class="mn-slots">' + slots + '</div></div>';
+            }).join('') + '</div>' +
+            '<h3 class="mt-2">Steckkarten</h3><div class="mn-cards">' + (MN.cards().length ? MN.cards().map(it => {
+                const cd = MN.card(it.id), host = MN.cardHost(it.u);
+                return '<div class="mn-cardi">' + PX(cd.id, 32) + '<div><b>' + esc(cd.n) + '</b> <span class="small muted">· ' + cd.w + ' Platz' + (cd.w > 1 ? 'e' : '') + '</span><div class="small">' + fxText(cd) + '</div>' +
+                    '<div class="small muted">' + (host ? 'steckt im ' + esc(MN.casing(host.id).n) : 'frei') + '</div></div>' + (host ? '' : '<button class="btn btn--sm btn--ghost" type="button" data-scrap="' + it.u + '" title="Verschrotten: gibt 40 % des Schrotts zurück">Verschrotten</button>') + '</div>';
+            }).join('') : '<p class="muted small">Noch keine Karten. Baue welche in der Feldwerkstatt.</p>') + '</div>';
+    }
+    function fxText(cd) {
+        const parts = [], N = { hp: 'Struktur', atk: 'Angriff', def: 'Abwehr', spd: 'Tempo', en: 'Energie', crit: 'Volltreffer', rep: 'besseres Flicken', regen: 'Selbstreparatur' };
+        Object.keys(cd.fx || {}).forEach(k => parts.push(k === 'crit' ? '+' + cd.fx[k] + ' % ' + N[k] : k === 'rep' || k === 'regen' ? N[k] + ' ' + Math.round(cd.fx[k] * 100) + ' %' : '+' + cd.fx[k] + ' ' + N[k]));
+        (cd.terr || []).forEach(t => parts.push(MN.terrIcon(t) + ' ' + esc(MN.terrName(t))));
+        return parts.join(' · ');
+    }
+    $('#tab-fuhrpark').addEventListener('click', e => {
+        const a = e.target.closest('[data-act]'), ej = e.target.closest('[data-eject]'), sl = e.target.closest('[data-slot]'), sc = e.target.closest('[data-scrap]');
+        if (a) { MN.setActive(a.dataset.act); renderAll(); }
+        else if (ej) { MN.eject(ej.dataset.eject); renderAll(); }
+        else if (sc) { const cd = MN.scrapCard(sc.dataset.scrap); if (cd) X.toast('Verschrottet', cd.n, { iconHtml: PX('schrott', 26) }); renderAll(); }
+        else if (sl) pickCard(sl.dataset.slot);
+    });
+    function pickCard(casU) {
+        const free = MN.cards().filter(c => !MN.cardHost(c.u));
+        if (!free.length) { X.toast('Keine freie Karte', 'Baue Steckkarten in der Feldwerkstatt.', { iconHtml: PX('kt-gpu', 26) }); return; }
+        const m = X.modal('<h2>Steckkarte einstecken</h2><div class="mn-cards">' + free.map(c => { const cd = MN.card(c.id), fits = MN.fits(casU, c.u);
+            return '<button type="button" class="mn-cardi mn-cardi--pick" data-put="' + c.u + '"' + (fits ? '' : ' disabled') + '>' + PX(cd.id, 32) + '<div><b>' + esc(cd.n) + '</b> <span class="small muted">· ' + cd.w + ' Platz' + (cd.w > 1 ? 'e' : '') + '</span><div class="small">' + fxText(cd) + '</div>' + (fits ? '' : '<div class="small text-danger">Passt nicht mehr hinein</div>') + '</div></button>'; }).join('') +
+            '</div><div class="row mt-2"><button class="btn" type="button" data-close>Abbrechen</button></div>');
+        m.el.addEventListener('click', e => { const b = e.target.closest('[data-put]'); if (b && MN.insert(casU, b.dataset.put)) { m.close(); X.beep(880, .05, 'square', .04); if (MN.intro() < 2) MN.setIntro(2); renderAll(); } });
+    }
+    function renderWerkstatt() {
+        const box = $('#tab-werkstatt');
+        let h = '<p class="small muted">Die Feldwerkstatt reist im Laderaum mit – bauen und reparieren kannst du überall. Gebaut wird aus Schrott, Material und <b>Speichererz</b>.</p>';
+        h += '<h3>Gehäuse</h3><div class="ark-grid">' + MN.CASINGS.map(d => {
+            const know = MN.knowsCasing(d.id), own = MN.owns(d.id), ok = MN.canBuildCasing(d.id);
+            return '<div class="ark-card' + (own ? ' is-done' : know ? '' : ' is-locked') + '"><div class="ark-card__head">' + (know ? PX(d.id, 36) : PX('bp', 36)) + '<div><b>' + (know ? esc(d.n) : '??? (Gehäuse, Stufe ' + d.t + ')') + '</b>' +
+                '<p class="small mb-0">' + (know ? esc(d.d) : 'Bauplan verschollen – irgendwo auf Mnemora.') + '</p></div></div>' +
+                (know ? terrRow(new Set(d.terr)) + '<div class="small muted">' + d.slots + ' Steckplätze · ' + PX('st-hp') + ' ' + d.base.hp + ' · ' + PX('st-atk') + ' ' + d.base.atk + ' · ' + PX('st-def') + ' ' + d.base.def + ' · ' + PX('st-spd') + ' ' + d.base.spd + '</div>' : '') +
+                (own ? '<span class="chip--ok">Im Fuhrpark</span>' : know ? '<div class="cost-row">' + costHtml(d.cost) + '</div><button class="btn btn--sm' + (ok ? ' btn--primary' : '') + '" type="button" data-bc="' + d.id + '"' + (ok ? '' : ' disabled') + '>Bauen</button>' : '') + '</div>';
+        }).join('') + '</div>';
+        h += '<h3 class="mt-2">Steckkarten</h3><div class="ark-grid">' + MN.CARDS.map(d => {
+            const know = MN.knowsCard(d.id), ok = MN.canBuildCard(d.id), n = MN.cards().filter(c => c.id === d.id).length;
+            return '<div class="ark-card' + (know ? '' : ' is-locked') + '"><div class="ark-card__head">' + (know ? PX(d.id, 36) : PX('bp', 36)) + '<div><b>' + (know ? esc(d.n) : '??? (Steckkarte, Stufe ' + d.t + ')') + '</b>' + (n ? ' <span class="small muted">· ' + n + '× vorhanden</span>' : '') +
+                '<p class="small mb-0">' + (know ? esc(d.d) : 'Bauplan verschollen.') + '</p>' + (know ? '<div class="small">' + d.w + ' Platz' + (d.w > 1 ? 'e' : '') + ' · ' + fxText(d) + '</div>' : '') + '</div></div>' +
+                (know ? '<div class="cost-row">' + costHtml(d.cost) + '</div><button class="btn btn--sm' + (ok ? ' btn--primary' : '') + '" type="button" data-bk="' + d.id + '"' + (ok ? '' : ' disabled') + '>Bauen</button>' : '') + '</div>';
+        }).join('') + '</div>';
+        const broken = MN.casings().filter(c => c.c < 100);
+        h += '<h3 class="mt-2">Reparieren</h3>' + (broken.length ? '<div class="mn-cards">' + broken.map(c => { const n = MN.repairCost(c);
+            return '<div class="mn-cardi">' + PX(c.id, 32) + '<div><b>' + esc(MN.casing(c.id).n) + '</b><div class="small muted">Zustand ' + c.c + ' %</div></div><button class="btn btn--sm" type="button" data-rep="' + c.u + '"' + (M.scrap() < n ? ' disabled' : '') + '>' + PX('schrott') + ' ' + n + ' Schrott' + (MN.aboard('esse') ? ' (Esse: −30 %)' : '') + '</button></div>'; }).join('') + '</div>' : '<p class="small muted">Alles heil.</p>');
+        box.innerHTML = h;
+    }
+    $('#tab-werkstatt').addEventListener('click', e => {
+        const bc = e.target.closest('[data-bc]'), bk = e.target.closest('[data-bk]'), rep = e.target.closest('[data-rep]');
+        if (bc) { const it = MN.buildCasing(bc.dataset.bc); if (it) { X.toast('Gehäuse gebaut', MN.casing(it.id).n, { iconHtml: PX(it.id, 26) }); X.confetti(50); } }
+        else if (bk) { const it = MN.buildCard(bk.dataset.bk); if (it) X.toast('Steckkarte gebaut', MN.card(it.id).n, { iconHtml: PX(it.id, 26) }); }
+        else if (rep) { if (MN.repair(rep.dataset.rep)) X.toast('Repariert', 'Wie neu.', { iconHtml: PX('w-schluessel', 26) }); }
+        else return;
+        renderAll();
+    });
+    function renderLager() {
+        const box = $('#tab-lager'), atPort = MN.at() === 'port';
+        let h = '<p class="small muted">' + (atPort ? 'Die Arche liegt in Port Puffer vor Anker. Deine Besatzung hat am Kai ihre Stände aufgebaut.' : 'Das Lager liegt in <b>Port Puffer</b>. Reise dorthin, um zu handeln – die Fähigkeiten der Besatzung wirken aber überall.') + '</p>';
+        h += '<div class="ark-grid ark-grid--crew">' + MN.CREW.map(c => '<div class="ark-card' + (MN.aboard(c.id) ? ' is-done' : ' is-locked') + '"><div class="ark-card__head">' + PX(c.i, 32) + '<div><b>' + esc(c.n) + '</b><p class="small mb-0">' + esc(MN.aboard(c.id) ? c.perk : 'Blieb in Sektaria. Im Arche-Dock kannst du sie oder ihn noch an Bord holen.') + '</p></div></div></div>').join('') + '</div>';
+        if (atPort && MN.aboard('basar')) h += '<h3 class="mt-2">' + PX('taler') + ' Rubinas Basar</h3><div class="mn-cards">' + MN.SHOP.map(([id, p]) => { const m = M.mat(id);
+            return '<div class="mn-cardi">' + PX('mat-' + id, 28) + '<div><b>' + esc(m.n) + '</b><div class="small muted">' + (M.mats()[id] || 0) + ' vorhanden</div></div><div class="row"><button class="btn btn--sm" type="button" data-buy="' + id + '" data-n="1"' + (M.taler() < p ? ' disabled' : '') + '>+1 · ' + p + ' ' + PX('taler') + '</button><button class="btn btn--sm btn--ghost" type="button" data-buy="' + id + '" data-n="5"' + (M.taler() < p * 5 ? ' disabled' : '') + '>+5</button></div></div>'; }).join('') + '</div>';
+        if (atPort && MN.aboard('joe')) h += '<h3 class="mt-2">' + PX('npc-joe') + ' Joes Fundkiste</h3><p class="small">„Mnemora-Kisten! Meistens eine Steckkarte, manchmal Erz. Immer Spannung.“</p><button class="btn" type="button" data-joe' + (M.taler() < MN.JOE_BOX ? ' disabled' : '') + '>' + PX('box-eisen') + ' Kiste öffnen · ' + MN.JOE_BOX + ' ' + PX('taler') + '</button>';
+        if (atPort && MN.aboard('kiesel')) h += '<h3 class="mt-2">' + PX('npc-kiesel') + ' Kiesels Erzschmelze</h3><p class="small">Aus ' + MN.SMELT + ' Schrott schmilzt Kiesel 1 Speichererz.</p><div class="row"><button class="btn btn--sm" type="button" data-smelt="1"' + (M.scrap() < MN.SMELT ? ' disabled' : '') + '>1 Erz · ' + MN.SMELT + ' ' + PX('schrott') + '</button><button class="btn btn--sm btn--ghost" type="button" data-smelt="5"' + (M.scrap() < MN.SMELT * 5 ? ' disabled' : '') + '>5 Erz</button></div>';
+        if (atPort) h += '<div class="row mt-3"><button class="btn" type="button" data-home>' + PX('ic-arche') + ' Mit der Arche zurück nach Sektaria</button></div>';
+        box.innerHTML = h;
+    }
+    $('#tab-lager').addEventListener('click', e => {
+        const b = e.target.closest('[data-buy]'), j = e.target.closest('[data-joe]'), s = e.target.closest('[data-smelt]');
+        if (b) { if (MN.buy(b.dataset.buy, +b.dataset.n)) X.beep(660, .05, 'square', .03); }
+        else if (j) { const r = MN.joeBox(); if (r) X.toast('Fundkiste', r.card ? 'Steckkarte: ' + r.card.n : r.erz + '× Speichererz', { iconHtml: PX(r.card ? r.card.id : 'mat-erz', 26) }); }
+        else if (s) { if (MN.smelt(+s.dataset.smelt)) X.toast('Erzschmelze', s.dataset.smelt + '× Speichererz', { iconHtml: PX('mat-erz', 26) }); }
+        else if (e.target.closest('[data-home]')) { goHome(); return; }
+        else return;
+        renderAll();
+    });
+    function renderTabs() { if (easy) return; renderFuhrpark(); renderWerkstatt(); renderLager(); }
+    function renderAll() { drawOverlay(); renderSide(); renderTabs(); }
+
+    /* ── Händlerin Ada: Einführung bei der ersten Ankunft ── */
+    function intro() {
+        if (MN.intro() >= 1) return;
+        const step2 = () => {
+            MN.adaGift();
+            const m = X.modal('<div class="npc"><div class="npc__face">' + PX('npc-ada', 48) + '</div><div><h2 class="mb-1">Händlerin Ada</h2><p class="npc__say">„Hier auf Mnemora baut man <b>Gehäuse</b> – jede Bauart kommt über anderes Gelände: Dünen, Wald, Moor, Gebirge, Frost … ' +
+                'Und in die Gehäuse steckt man <b>Steckkarten</b>: Grafikkarte für mehr Wumms, RAID-Controller für dickes Blech, und manche Karten bringen dich sogar über Gelände, das dein Gehäuse sonst nicht schafft.“</p>' +
+                '<p class="npc__say">„Hier, nimm meinen alten <b>Mini-ITX-Läufer</b> und ein <b>Zusatznetzteil</b>. Die Baupläne für Grafikkarte und Netzteil schenk ich dir obendrauf. Steck die Karte ein – und dann ab auf den Küstenpfad!“</p></div></div>' +
+                '<div class="row mt-2"><button class="btn btn--primary" type="button" data-close>Danke, Ada!</button></div>', { onClose: () => { X.toast('Geschenk von Ada', 'Mini-ITX-Läufer, Zusatznetzteil und zwei Baupläne', { iconHtml: PX('gh-itx', 26) }); renderAll(); showTab('fuhrpark'); } });
+        };
+        const m = X.modal('<div class="npc"><div class="npc__face">' + PX('npc-ada', 48) + '</div><div><h2 class="mb-1">Händlerin Ada</h2><p class="npc__say">„Willkommen in Port Puffer! Eine Arche aus Sektaria – dass ich das noch erlebe. ' +
+            'Aber mit diesem Seemech? Der säuft in der ersten Düne ab. Mit diesen Mechs kommt ihr in Mnemora nicht weit, glaubt mir.“</p><p class="npc__say">„Ihr braucht <b>andere Mechs</b>. Landgänger.“</p></div></div>' +
+            '<div class="row mt-2"><button class="btn btn--primary" type="button" data-next>Was für Mechs?</button></div>');
+        m.el.querySelector('[data-next]').addEventListener('click', () => { m.close(); step2(); });
+    }
+
+    /* ── Los: Karte zeichnen, dann Ladebildschirm weg ── */
+    K.render($('#mn-canvas'), p => { $('#load-bar').style.width = (p * 100).toFixed(0) + '%'; }).then(() => {
+        drawOverlay(); renderSide(); renderTabs();
+        const wait = Math.max(0, minT - (performance.now() - t0));
+        setTimeout(() => { hideLoad(); if (!easy) setTimeout(intro, 500); }, wait);
+    });
+    X.on('mech', () => { if (!easy) { renderSide(); } });
+});
+</script>
+</body>
+</html>

@@ -41,7 +41,7 @@ XIRU.pages = [
     { p: '404.html',                 t: 'Verirrt',             r: 'zentrum', d: 'Diese Seite gibt es nicht. Oder doch?', hidden: true },
 
     // Konto
-    { p: 'konto/login.html',         t: 'Anmelden',            r: 'konto', d: 'Lokales Konto erstellen oder anmelden.', nav: true },
+    { p: 'konto/login.html',         t: 'Anmelden',            r: 'konto', d: 'Konto erstellen oder anmelden – mit Online auf all deinen Geräten.', nav: true },
     { p: 'konto/profil.html',        t: 'Profil',              r: 'konto', d: 'Level, XP und Fortschritt.', nav: true },
     { p: 'konto/skilltree.html',     t: 'Werft',               r: 'konto', d: 'Mech bauen, reparieren und zu neuen Inseln aufbrechen.', nav: true },
     { p: 'konto/sammlung.html',      t: 'Kristallsammlung',    r: 'konto', d: 'Alle gefundenen Realitätskristalle.', nav: true },
@@ -53,6 +53,8 @@ XIRU.pages = [
     { p: 'welt/arena.html',          t: 'Schrott-Arena',       r: 'meer', isle: 'arena',    d: 'Mech gegen Mech – steig in der Rangliste auf.' },
     { p: 'welt/wrack.html',          t: 'Wrackriff',           r: 'meer', isle: 'wrack',    d: 'Mit dem Sonar nach versunkenen Schätzen tauchen.' },
     { p: 'welt/mine.html',           t: 'Nebelmine',           r: 'meer', isle: 'mine',     d: 'Kristallsplitter und Nebelkerne abbauen.' },
+    { p: 'welt/arche.html',          t: 'Arche-Dock',          r: 'meer', isle: 'konto',    d: 'Die Arche für die Überfahrt nach Mnemora bauen – mit Händlern an Bord.' },
+    { p: 'mnemora.html',             t: 'Mnemora',             r: 'meer', d: 'Das Festland hinter der Nebelwand: Strassen freikämpfen, Gehäuse bauen, Steckkarten stecken.', hidden: true },
 
     // Hardware
     { p: 'hardware/index.html',            t: 'Hardware-Archiv',     r: 'hardware', d: 'Übersicht über alle Datenblätter.', nav: true },
@@ -417,7 +419,8 @@ XIRU.materials = [
     { id: 'platine',   n: 'Platine',          i: '🟩', v: 8,  d: 'Grün, mit vielen Lötpunkten.' },
     { id: 'chip',      n: 'Mikrochip',        i: '🔲', v: 14, d: 'Winzig. Wertvoll. Leicht zu verlieren.' },
     { id: 'splitter',  n: 'Kristallsplitter', i: '💠', v: 25, d: 'Ein Bruchstück eines Realitätskristalls.' },
-    { id: 'nebelkern', n: 'Nebelkern',        i: '🌀', v: 80, d: 'Verdichteter Nebel. Kalt und schwer.' }
+    { id: 'nebelkern', n: 'Nebelkern',        i: '🌀', v: 80, d: 'Verdichteter Nebel. Kalt und schwer.' },
+    { id: 'erz',       n: 'Speichererz',      i: '🪨', v: 18, d: 'Gestein aus Mnemora mit blauen Adern. Daraus baut man Gehäuse und Steckkarten.' }
 ];
 /* Schrottpresse in der Werft: Schrott (und einfache Materialien) zu Bauteil-Materialien verarbeiten.
    Kristallsplitter und Nebelkerne lassen sich nicht pressen – die gibt es nur draussen in der Welt. */
@@ -440,7 +443,7 @@ XIRU.pressRecipes = [
    ------------------------------------------------------------------------- */
 XIRU.islands = [
     { id: 'konto',     r: 'konto',     n: 'Heimathafen',     x: 1010, y: 1030, s: 118, art: 'hafen',    req: null,
-      b: [['Werft', 'konto/skilltree.html', 'z-anker'], ['Kapitänshaus', 'konto/profil.html', 'npc-otto'], ['Kristallsammlung', 'konto/sammlung.html', 'k-kristall'], ['Hafenamt', 'konto/einstellungen.html', 'mat-zahnrad']] },
+      b: [['Werft', 'konto/skilltree.html', 'z-anker'], ['Kapitänshaus', 'konto/profil.html', 'npc-otto'], ['Kristallsammlung', 'konto/sammlung.html', 'k-kristall'], ['Hafenamt', 'konto/einstellungen.html', 'mat-zahnrad'], ['Arche-Dock', 'welt/arche.html', 'ic-arche']] },
     { id: 'zentrum',   r: 'zentrum',   n: 'Zentrum',         x: 1190, y: 720,  s: 122, art: 'zentrum',  req: null,
       b: [['Marktplatz', 'index.html', 'z-kompass'], ['Kartenturm', 'weltkarte.html', 'st-R'], ['Bibliothek', 'suche.html', 's-hdd'], ['Rathaus', 'hilfe.html', 'npc-frieda']] },
     { id: 'werkzeuge', r: 'werkzeuge', n: 'Werkzeugkasten',  x: 640,  y: 1110, s: 104, art: 'werkstatt', req: {},
@@ -848,6 +851,15 @@ XIRU.eggs.push(
     { id: 'm-abart',      pg: 'weltkarte.html',     n: 'Das ist kein Fisch', h: 'Zieh eine Abart aus dem Nebel an Land.', x: 60, r: 3, m: 'Er flimmert. Er blinzelt. Mit zu vielen Augen.' },
     { id: 'm-leviathan',  pg: 'weltkarte.html',     n: 'Ein sehr kleiner Gott', h: 'Fang die Leviathan-Larve.', x: 150, r: 4, m: 'Flossie wird sie nicht kaufen wollen. Oder doch?' },
     { id: 'b-kristallharfe', pg: 'konto/sammlung.html', n: 'Kristallharfe', h: 'Spiel auf deinem Weltkristall eine kleine Melodie.', x: 30, r: 2, m: 'Die Splitter singen mit.' },
-    { id: 'm-fischbuch',  pg: 'welt/markt.html',    n: 'Ichthyologe',      h: 'Füll Flossies Sammelbuch mit allen Fischarten.', x: 120, r: 3, m: 'Flossie schenkt dir ein feuchtes Händeschütteln.' }
+    { id: 'm-fischbuch',  pg: 'welt/markt.html',    n: 'Ichthyologe',      h: 'Füll Flossies Sammelbuch mit allen Fischarten.', x: 120, r: 3, m: 'Flossie schenkt dir ein feuchtes Händeschütteln.' },
+    // ── Mnemora: Arche, Gehäuse, Strassen ──
+    { id: 'm-arche',         pg: 'welt/arche.html', n: 'Kiel gelegt',      h: 'Bau den ersten Abschnitt der Arche.', x: 40, r: 2, m: 'Zwei Serverschränke, ein Plan und sehr viele Schweissnähte.' },
+    { id: 'm-arche-crew',    pg: 'welt/arche.html', n: 'Alle an Bord',     h: 'Hol die ganze Besatzung auf die Arche.', x: 80, r: 3, m: 'Von jedem Händler einer. Noah wäre stolz.' },
+    { id: 'm-mnemora',       pg: 'mnemora.html',    n: 'Land in Sicht',    h: 'Setz mit der Arche nach Mnemora über.', x: 150, r: 3, m: 'Hinter der Nebelwand gibt es also doch noch etwas.' },
+    { id: 'm-gehaeuse',      pg: 'mnemora.html',    n: 'Neues Gehäuse',    h: 'Bau in der Feldwerkstatt ein eigenes Gehäuse.', x: 40, r: 2, m: 'Passt nicht rein? Dann eben ein grösseres Gehäuse.' },
+    { id: 'm-steckkarte',    pg: 'mnemora.html',    n: 'Plug & Play',      h: 'Steck eine Karte in ein Gehäuse.', x: 20, r: 1, m: 'Klick. Neue Hardware gefunden.' },
+    { id: 'm-strasse',       pg: 'mnemora.html',    n: 'Freie Fahrt',      h: 'Kämpfe auf Mnemora eine Strasse frei.', x: 50, r: 2, m: 'Die Strasse ist frei. Die Gegner sind es nicht mehr.' },
+    { id: 'm-alle-strassen', pg: 'mnemora.html',    n: 'Alle Wege führen nach Registra', h: 'Mach jede Strasse auf Mnemora frei.', x: 150, r: 3, m: 'Jetzt kennst du jeden Schleichweg.' },
+    { id: 'm-gc',            pg: 'mnemora.html',    n: 'Speicher freigegeben', h: 'Besiege den Endgegner in den Ruinen von Alt-ROM.', x: 300, r: 4, m: 'Was niemand mehr braucht, darf jetzt trotzdem bleiben.' }
     /* EGGS:ENDE */
 );

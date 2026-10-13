@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arche-Dock · Xiruprojekts</title>
+    <meta name="description" content="Das Arche-Dock im Heimathafen: Baue eine Arche, hol die Händler an Bord und setz durch die Nebelwand nach Mnemora über.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="../assets/css/welt.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/mech-art.js"></script>
+    <script src="../assets/js/weltkarte-art.js"></script>
+    <script src="../assets/js/weltkarte-pixel.js"></script>
+    <script src="../assets/js/pixel-icons.js"></script>
+    <script src="../assets/js/werft.js"></script>
+    <script src="../assets/js/kampf.js"></script>
+    <script src="../assets/js/mnemora.js"></script>
+</head>
+<body class="theme-pixel">
+<main class="content content--wide">
+    <div class="isle-head" id="isle-head"><div class="isle-head__text"><span class="eyebrow">Heimathafen · Trockendock</span><h1>Arche-Dock</h1>
+        <p>Hinter der Nebelwand liegt Mnemora. Kein Mech kommt allein dorthin – aber eine Arche schon: gross genug für Material, Werkzeug und die Händler aus der Bucht.</p></div></div>
+    <div id="easy" hidden></div>
+    <div id="game" class="shop">
+        <div class="here mt-2" id="here"></div>
+        <div class="wallet" id="wallet"></div>
+        <div class="npc"><div class="npc__face"><i data-px="npc-otto"></i></div><div><h2 class="mb-1">Kapitän Otto</h2><p class="npc__say" id="say"></p></div></div>
+
+        <section class="ark-yard" aria-label="Die Arche im Trockendock">
+            <div class="ark-pic" id="ark"></div>
+            <div class="ark-progress"><div class="bar"><div class="bar__fill" id="ark-bar"></div></div><span class="small muted" id="ark-txt"></span></div>
+        </section>
+
+        <section data-here>
+            <h2>Bauabschnitte</h2>
+            <p class="small muted">Einer nach dem anderen – vom Kiel bis zum Nebelbrecher. Das wird teuer: Schrott, viel Material und Taler.</p>
+            <div class="ark-grid" id="stages"></div>
+        </section>
+
+        <section data-here class="mt-3">
+            <h2>Besatzung</h2>
+            <p class="small muted" id="crew-info"></p>
+            <div class="ark-grid ark-grid--crew" id="crew"></div>
+        </section>
+
+        <section class="mt-3">
+            <h2>Ablegen</h2>
+            <div class="card" id="depart"></div>
+        </section>
+    </div>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU, M = X.mech, W = X.werft, MN = X.mnemora, esc = X.esc, $ = X.$;
+    const page = W.islePage('konto', render);
+    if (page.easy) return;
+    const SAY = MN.arrived() ? ['„Die Arche pendelt jetzt zwischen den Welten. Sag Bescheid, wenn du rüber willst.“', '„Mnemora wartet. Die Händler auch – die haben drüben schon Stände aufgebaut.“']
+        : ['„Eine Arche, sagst du? Durch die Nebelwand? Dafür brauchen wir mehr Schrott, als die ganze Bucht je gesehen hat.“', '„Von jedem Händler einer an Bord – dann kann uns drüben nichts passieren.“', '„Ohne Nebelbrecher am Bug fahren wir im Kreis. Glaub mir, ich hab es probiert.“'];
+    $('#say').textContent = X.pick(SAY);
+    const STAGE_ICON = { kiel: 'r-titan', rumpf: 'p-tower', laderaum: 'inventar', deck: 'taler', schraube: 'a-schraube', bug: 'mat-splitter' };
+    const talerChip = n => n ? '<span class="cost-chip' + (M.taler() < n ? ' is-short' : '') + '" title="Taler: ' + M.taler() + ' vorhanden">' + W.px('taler') + ' ' + X.fmt(n) + '</span>' : '';
+
+    /* ── Die Arche als Pixelbild: jeder Abschnitt kommt dazu, was fehlt, ist nur ein Umriss ── */
+    const pxAt = (name, x, y, s) => W.px(name, s).replace('<svg class="px"', '<svg x="' + x + '" y="' + y + '"').replace(/width="\d+" height="\d+"/, 'width="' + s + '" height="' + s + '"');
+    function arkSVG(scale) {
+        const has = id => MN.stageDone(id), g = [];
+        const R = (x, y, w, h, c, id) => g.push('<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" fill="' + c + '"' + (id && !has(id) ? ' class="ghost"' : '') + '/>');
+        const part = (id, fn) => { g.push('<g class="' + (has(id) ? 'built' : 'ghost') + '">'); fn(); g.push('</g>'); };
+        // Wasser
+        for (let x = 0; x < 96; x += 6) { R(x, 35, 6, 5, (x / 6) % 2 ? '#16598a' : '#114a72'); R(x + 1, 34, 3, 1, '#c9f2ef'); }
+        part('schraube', () => { R(2, 26, 2, 7, '#4b5563'); R(0, 27, 6, 1, '#9ca3af'); R(0, 31, 6, 1, '#9ca3af'); R(1, 29, 4, 1, '#d1d5db'); R(6, 28, 3, 3, '#374151'); });
+        part('rumpf', () => {
+            for (let y = 24; y <= 32; y++) { const inset = Math.max(0, y - 26) * 2; R(8 + inset, y, 80 - inset * 2, 1, (y % 2) ? '#6b7280' : '#9ca3af'); }
+            for (let x = 14; x < 82; x += 8) R(x, 27, 1, 1, '#1f2937');
+            R(8, 24, 80, 1, '#e5e7eb');
+        });
+        part('kiel', () => { R(16, 33, 64, 2, '#1f2937'); for (let x = 18; x < 78; x += 6) R(x, 33, 2, 1, '#22c55e'); });
+        part('laderaum', () => { [18, 30].forEach(x => { R(x, 21, 10, 3, '#7a5a32'); R(x + 1, 22, 8, 1, '#5a3818'); }); });
+        part('deck', () => {
+            R(42, 13, 34, 11, '#e7d7b0'); R(42, 13, 34, 1, '#7a5a32');
+            for (let x = 42; x < 76; x += 4) R(x, 11, 2, 2, '#c0392b'), R(x + 2, 11, 2, 2, '#f8fafc');
+            for (let x = 45; x < 74; x += 7) { R(x, 16, 4, 3, '#38bdf8'); R(x, 16, 4, 1, '#0e7490'); }
+            R(58, 0, 1, 11, '#5a3818'); R(59, 1, 9, 7, '#f1f5f9'); for (let y = 2; y < 8; y += 2) R(61, y, 1, 1, '#0b0d14'), R(64, y, 1, 1, '#0b0d14');
+        });
+        part('bug', () => { for (let i = 0; i < 9; i++) R(88 + i, 22 + Math.floor(i / 2), 1, 10 - i, i % 2 ? '#67e8f9' : '#22d3ee'); R(86, 21, 2, 11, '#0e7490'); });
+        // Besatzung an Deck
+        let cx = 12;
+        MN.CREW.forEach(c => { if (MN.aboard(c.id)) { g.push(pxAt(c.i, cx, 17, 6)); cx += 5; } });
+        return '<svg viewBox="0 0 96 40" shape-rendering="crispEdges" role="img" aria-label="Die Arche, ' + MN.stagesDone() + ' von ' + MN.STAGES.length + ' Abschnitten gebaut"' + (scale ? ' width="' + 96 * scale + '" height="' + 40 * scale + '"' : '') + '>' + g.join('') + '</svg>';
+    }
+    function renderArk() {
+        $('#ark').innerHTML = arkSVG();
+        const n = MN.stagesDone(), total = MN.STAGES.length;
+        $('#ark-bar').style.setProperty('--v', (n / total * 100) + '%');
+        $('#ark-txt').textContent = MN.arrived() ? 'Die Arche ist fertig und pendelt zwischen Sektaria und Mnemora.' : n + ' von ' + total + ' Bauabschnitten fertig · ' + (1 + MN.crewCount() + 0) + ' Leute an Bord';
+    }
+    function renderStages() {
+        const prevDone = i => i === 0 || MN.stageDone(MN.STAGES[i - 1].id);
+        $('#stages').innerHTML = MN.STAGES.map((s, i) => {
+            const done = MN.stageDone(s.id), ok = MN.canBuildStage(s.id), next = !done && prevDone(i);
+            return '<div class="ark-card' + (done ? ' is-done' : next ? ' is-next' : ' is-locked') + '"><div class="ark-card__head">' + W.px(STAGE_ICON[s.id], 28) + '<div><b>' + (i + 1) + '. ' + esc(s.n) + '</b>' +
+                '<p class="small muted mb-0">' + esc(s.d) + '</p></div></div>' +
+                (done ? '<span class="chip chip--ok">Gebaut</span>' : '<div class="cost-row">' + W.costChips({ scrap: s.cost.scrap, mats: s.cost.mats }) + talerChip(s.cost.taler) + '</div>' +
+                    '<button class="btn btn--sm' + (ok ? ' btn--primary' : '') + '" type="button" data-stage="' + s.id + '"' + (ok ? '' : ' disabled') + '>' + (next ? 'Bauen' : 'Erst der Abschnitt davor') + '</button>') + '</div>';
+        }).join('');
+    }
+    function renderCrew() {
+        $('#crew-info').innerHTML = 'Kapitän Otto muss mit, dazu mindestens <b>' + MN.CREW_MIN + '</b> weitere Leute. Jede Person bringt auf Mnemora etwas mit. An Bord: <b>' + MN.crewCount() + '</b> von ' + (MN.CREW.length - 1) + ' (ohne Otto).';
+        $('#crew').innerHTML = MN.CREW.map(c => {
+            const on = MN.aboard(c.id), miss = on ? [] : MN.crewMissing(c.id);
+            return '<div class="ark-card' + (on ? ' is-done' : '') + '"><div class="ark-card__head">' + W.px(c.i, 32) + '<div><b>' + esc(c.n) + '</b><p class="small mb-0">' + esc(c.perk) + '</p></div></div>' +
+                (on ? '<span class="chip chip--ok">An Bord</span>' : '<p class="small muted mb-1"><i>' + esc(c.say) + '</i></p><p class="small mb-1">Braucht: <b>' + esc(MN.needText(c.id)) + '</b></p>' +
+                    (miss.length ? '<p class="small text-danger mb-1">Fehlt: ' + esc(miss.join(' · ')) + '</p>' : '') +
+                    '<button class="btn btn--sm' + (miss.length ? '' : ' btn--primary') + '" type="button" data-crew="' + c.id + '"' + (miss.length ? ' disabled' : '') + '>An Bord holen</button>') + '</div>';
+        }).join('');
+    }
+    function renderDepart() {
+        const box = $('#depart');
+        if (MN.arrived()) {
+            box.innerHTML = '<p class="mb-1">' + W.px('ic-arche', 20) + ' Die Arche liegt bereit. Die Überfahrt nach Mnemora dauert jetzt nur noch einen Moment.</p>' +
+                '<button class="btn btn--primary" type="button" id="go">' + W.px('ev-schiff') + ' Nach Mnemora übersetzen</button>';
+            $('#go').addEventListener('click', () => crossing(false));
+            return;
+        }
+        const miss = MN.departMissing();
+        box.innerHTML = '<p class="small mb-1">Für die erste Überfahrt lädt die Besatzung <b>Proviant</b> ein: ' + MN.PROVIANT.fish + ' Fische (du hast ' + MN.fishTotal() + ') und ' + MN.PROVIANT.oel + '× Altöl (du hast ' + (M.mats().oel || 0) + '). Material, Schrott und Taler reisen im Laderaum mit – du kannst sie auf beiden Seiten verwenden.</p>' +
+            (miss.length ? '<ul class="small ark-miss">' + miss.map(m => '<li>' + esc(m) + '</li>').join('') + '</ul>' : '<p class="text-success mb-1"><b>Alles bereit.</b> Die Nebelwand wartet.</p>') +
+            '<button class="btn btn--lg' + (miss.length ? '' : ' btn--primary') + '" type="button" id="go"' + (miss.length ? ' disabled' : '') + '>' + W.px('ev-schiff', 20) + ' Leinen los nach Mnemora</button>';
+        if (!miss.length) $('#go').addEventListener('click', () => {
+            if (!page.at()) return;
+            const m = X.modal('<h2>Ablegen?</h2><p>Die Besatzung lädt ' + MN.PROVIANT.fish + ' Fische und ' + MN.PROVIANT.oel + '× Altöl als Proviant ein. Dann geht es durch die Nebelwand – ein Zurück gibt es erst drüben.</p>' +
+                '<div class="row mt-2"><button class="btn btn--primary" type="button" data-yes>Leinen los!</button><button class="btn" type="button" data-close>Noch nicht</button></div>');
+            m.el.querySelector('[data-yes]').addEventListener('click', () => { m.close(); if (MN.depart()) crossing(true); });
+        });
+    }
+
+    $('#stages').addEventListener('click', e => {
+        const b = e.target.closest('[data-stage]'); if (!b || !page.at()) return;
+        const s = MN.STAGES.find(x => x.id === b.dataset.stage);
+        if (MN.buildStage(s.id)) { X.toast('Arche: ' + s.n, 'Fertig! Die Arche wächst.', { iconHtml: W.px('ic-arche', 26) }); [392, 523, 659].forEach((f, i) => setTimeout(() => X.beep(f, .1, 'square', .04), i * 110)); render(); }
+    });
+    $('#crew').addEventListener('click', e => {
+        const b = e.target.closest('[data-crew]'); if (!b || !page.at()) return;
+        const c = MN.CREW.find(x => x.id === b.dataset.crew);
+        if (MN.invite(c.id)) { X.toast(c.n + ' ist an Bord', c.perk, { iconHtml: W.px(c.i, 26) }); render(); }
+    });
+
+    /* ── Überfahrt: durch die Nebelwand nach Mnemora ── */
+    function crossing(first) {
+        const crew = MN.CREW.filter(c => MN.aboard(c.id));
+        const EVENTS = [
+            W.px('z-anker') + ' <b>Leinen los</b> im Heimathafen. Die halbe Bucht winkt vom Kai.',
+            W.px('ev-moewe') + ' Möwen begleiten die Arche bis zum letzten Riff von Sektaria.',
+            W.px('ev-nebel') + ' <b>Die Nebelwand</b> ragt vor dem Bug auf. Kalt. Grau. Endlos.',
+            W.px('mat-splitter') + ' Der <b>Nebelbrecher</b> beginnt zu leuchten – und der Nebel weicht zur Seite.'
+        ];
+        if (crew.some(c => c.id === 'joe')) EVENTS.push(W.px('npc-joe') + ' Lucky Joe verliert beim Kartenspiel gegen ' + (crew.some(c => c.id === 'flossie') ? 'Flossie' : 'Kapitän Otto') + '. Er behauptet, die Karten seien nass.');
+        if (crew.some(c => c.id === 'kiesel')) EVENTS.push(W.px('npc-kiesel') + ' Bergfrau Kiesel klopft die Planken ab. „Gutes Blech“, murmelt sie.');
+        EVENTS.push(W.px('ev-drache') + ' Ein grüner Schatten zieht unter der Arche hindurch … und verschwindet im Nebel.');
+        EVENTS.push(W.px('ev-sonne') + ' <b>Land in Sicht!</b> Dünen, ein Hafen, dahinter Berge mit weissen Gipfeln: <b>Mnemora</b>.');
+        const evs = first ? EVENTS : [EVENTS[0], EVENTS[3], EVENTS[EVENTS.length - 1]];
+        const T = first ? 16 : 5.5;
+        const root = document.createElement('div');
+        root.className = 'crossing'; root.setAttribute('role', 'dialog'); root.setAttribute('aria-label', 'Überfahrt nach Mnemora');
+        root.innerHTML = '<div class="crossing__sky"></div><div class="crossing__land"></div><div class="crossing__fog"></div><div class="crossing__fog crossing__fog--2"></div>' +
+            '<div class="crossing__sea"></div><div class="crossing__ark">' + arkSVG() + '</div>' +
+            '<div class="crossing__bar"><div class="row"><h2 class="mb-0">' + (first ? 'Die grosse Überfahrt' : 'Überfahrt nach Mnemora') + '</h2><span class="spacer"></span>' +
+            '<button class="btn btn--sm" type="button" data-fast aria-pressed="false">' + W.px('st-spd') + ' ×3</button></div>' +
+            '<div class="voyage__progress"><i></i></div><ul class="voyage__log" aria-live="polite"></ul><div class="row" data-end hidden></div></div>';
+        document.body.appendChild(root); document.body.style.overflow = 'hidden';
+        const log = root.querySelector('.voyage__log'), bar = root.querySelector('.voyage__progress i');
+        let t = 0, speed = 1, last = performance.now(), shown = 0;
+        root.querySelector('[data-fast]').addEventListener('click', e => { speed = speed === 1 ? 3 : 1; e.currentTarget.setAttribute('aria-pressed', speed === 3); e.currentTarget.classList.toggle('btn--primary', speed === 3); });
+        [196, 247, 294].forEach((f, i) => setTimeout(() => X.beep(f, .15, 'triangle', .04), 200 + i * 300));
+        function frame(now) {
+            const dt = Math.min(.1, (now - last) / 1000); last = now; t = Math.min(T, t + dt * speed);
+            const p = t / T;
+            root.style.setProperty('--p', p.toFixed(4));
+            root.style.setProperty('--fog', (p < .22 ? p / .22 : p < .66 ? 1 : Math.max(0, (.86 - p) / .2)).toFixed(3));
+            root.style.setProperty('--land', X.clamp((p - .7) / .22, 0, 1).toFixed(3));
+            bar.style.width = (p * 100).toFixed(1) + '%';
+            while (shown < evs.length && p >= shown / evs.length) { const li = document.createElement('li'); li.innerHTML = evs[shown]; log.appendChild(li); log.scrollTop = log.scrollHeight; shown++; X.beep(523, .06, 'sine', .04); }
+            if (t < T) return requestAnimationFrame(frame);
+            [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => X.beep(f, .09, 'square', .035), i * 90));
+            const end = root.querySelector('[data-end]'); end.hidden = false;
+            end.innerHTML = '<button class="btn btn--primary btn--lg" type="button">' + W.px('tr-strand', 20) + ' Mnemora betreten →</button>';
+            const go = end.querySelector('button'); go.focus();
+            go.addEventListener('click', () => { location.href = X.url('mnemora.html') + (first ? '?ankunft=1' : ''); });
+        }
+        requestAnimationFrame(frame);
+    }
+
+    function render() { page.redraw && page.redraw(); renderArk(); renderStages(); renderCrew(); renderDepart(); }
+    X.on('mech', () => { renderStages(); renderCrew(); renderDepart(); });
+    render();
+});
+</script>
+</body>
+</html>

@@ -55,10 +55,11 @@
 
     /* Wo bin ich gerade? Im Abenteuer-Modus die Insel des Mechs, sonst die Region der Seite */
     function place() {
+        if (X.page && X.page.p === 'mnemora.html') return 'mnemora';
         if (!X.easy() && X.mech && X.mech.pos) return X.mech.pos();
         return (X.page && X.page.r) || 'zentrum';
     }
-    O.placeName = id => { const i = X.mech && X.mech.isle(id); if (i && !i.secret) return i.n; const r = X.region(id); return r ? r.name : 'irgendwo im Nebel'; };
+    O.placeName = id => { if (id === 'mnemora') return 'Mnemora'; const i = X.mech && X.mech.isle(id); if (i && !i.secret) return i.n; const r = X.region(id); return r ? r.name : 'irgendwo im Nebel'; };
     function myMech() { try { const k = X.mech.installed('kern'); return k ? k.id : ''; } catch (e) { return ''; } }
     function defaultNick() { return clean(X.user || 'Reisende:r ' + Math.floor(Math.random() * 900 + 100)).slice(0, 20); }
 

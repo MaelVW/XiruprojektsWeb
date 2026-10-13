@@ -124,7 +124,7 @@ XIRU.ready(function () {
     const buyP = m => Math.ceil(m.v * 1.6), sellP = m => Math.max(1, Math.floor(m.v * .6));
     function renderMats() {
         const have = M.mats();
-        $('#mats tbody').innerHTML = X.materials.map(m => '<tr><td>' + W.px('mat-' + m.id, 20) + ' <b>' + esc(m.n) + '</b><br><span class="small muted">' + esc(m.d) + '</span></td><td>' + X.fmt(have[m.id] || 0) + '</td>' +
+        $('#mats tbody').innerHTML = X.materials.filter(m => m.id !== 'erz' || (M.state().mnemora || {}).arrived).map(m => '<tr><td>' + W.px('mat-' + m.id, 20) + ' <b>' + esc(m.n) + '</b><br><span class="small muted">' + esc(m.d) + '</span></td><td>' + X.fmt(have[m.id] || 0) + '</td>' +
             '<td><button class="btn btn--sm" type="button" data-buy="' + m.id + '"' + (M.taler() < buyP(m) ? ' disabled' : '') + '>+1 · ' + buyP(m) + ' ' + W.px('taler') + '</button></td>' +
             '<td><button class="btn btn--sm btn--ghost" type="button" data-sell="' + m.id + '"' + (!have[m.id] ? ' disabled' : '') + '>−1 · ' + sellP(m) + ' ' + W.px('taler') + '</button> <button class="btn btn--sm btn--ghost" type="button" data-sellall="' + m.id + '"' + (!have[m.id] ? ' disabled' : '') + '>alle</button></td></tr>').join('');
     }

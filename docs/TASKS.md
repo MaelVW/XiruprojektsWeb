@@ -236,6 +236,20 @@ Der Liminal-Teil (`Why.html`, `why/*`, `liminal*.js`) wird mitgeprüft, aber **n
 
 ## Notizen der letzten Sitzung
 
+- 2026-10-13 (mit Mael): **MNEMORA gebaut** (Wunsch von Mael: Arche, Ladebildschirm, eigene Karte, Strasse für Strasse, neue Mech-Bauarten).
+  - `welt/arche.html` (Arche-Dock, Heimathafen): 6 teure Bauabschnitte (Kiel … Nebelbrecher, zusammen ~3350 Schrott, viel Material, ~5200 Taler),
+    Besatzung wie Noahs Arche (Otto Pflicht + mind. 4 von Rubina/Flossie/Joe/Kiesel/Bolzen/Esse, jede:r mit Vorteil auf Mnemora), Proviant
+    (15 Fische + 25 Altöl), Überfahrt-Szene durch die Nebelwand → `mnemora.html?ankunft=1`. Danach pendelt die Arche (kurze Überfahrt).
+  - `mnemora.html`: Ladebildschirm, Pixel-Karte (`assets/js/mnemora-karte.js`, gleiche Form wie auf der Weltkarte), Nebel, 11 Orte, 12 Strassen
+    mit 2–3 Gegnern (Gelände-Szenen), Endgegner Garbage Collector in Alt-ROM, Reiter Fuhrpark/Feldwerkstatt/Lager, Händlerin Ada (Intro + Tipps).
+    Entdecker-Modus: ganze Karte ansehen, ohne Kämpfe.
+  - `assets/js/mnemora.js`: Daten + Logik (Zustand mech.mnemora). Gehäuse (gh-itx/-tower/-laptop/-rack/-konsole/-beige) mit Gelände + Steckplätzen,
+    13 Steckkarten (kt-*), Pilotenbonus aus dem Seemech, Baupläne pro neuem Ort, Material Speichererz (erz, in der Händlerbucht erst nach Ankunft).
+  - `assets/js/kampf.js`: Kampf aus arena.html ausgelagert (Arena nutzt ihn jetzt auch; CSS in welt.css, Fix: Icons in den Lebensbalken waren riesig).
+  - 32 neue Pixel-Icons, 8 Kristalle (m-arche, m-arche-crew, m-mnemora, m-gehaeuse, m-steckkarte, m-strasse, m-alle-strassen, m-gc),
+    Weltkarte-Panel verlinkt Arche/Mnemora, Hilfe-FAQ, Online zeigt „Mnemora“ als Gegend. Getestet mit Testkonto (danach zurückgesetzt).
+  - Ideen für später: Gehäuse-Seltenheiten/Aufwertung, Online-Begegnungen auf Mnemora, die zwei Länder im Norden und Südwesten.
+
 - 2026-10-13 (mit Mael, später): **Geräte-Sync** – auf jedem Gerät mit Name + Passwort anmelden, Spielstand überall gleich (nur mit Online).
   Server: `users` angepasst (username statt E-Mail, eindeutig ohne Gross/Klein, PW ≥ 6, keine Login-Mails, Token 30 Tage), neue Tabelle `saves`
   (nur Besitzer). Website: `XIRU.savegame` in core.js (Prüfung aus profil.html hierher verschoben, kennt jetzt auch job/flossie/mine/wrack und

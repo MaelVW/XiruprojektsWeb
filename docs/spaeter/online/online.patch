@@ -1,0 +1,231 @@
+diff --git a/assets/css/main.css b/assets/css/main.css
+index 5eea1fc..e7ad795 100644
+--- a/assets/css/main.css
++++ b/assets/css/main.css
+@@ -777,3 +777,26 @@ html.no-anim [data-reveal] { opacity: 1; transform: none; }
+ .consent__actions { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-top: .4rem; }
+ .consent__actions .btn { flex: 1 1 140px; }
+ @media (max-width: 560px) { .consent { grid-template-columns: 1fr; } .consent__icon { display: none; } }
++
++/* ── Online (assets/js/online.js, nur wenn eingeschaltet) ─────────────── */
++.online-pill { position: fixed; left: 1rem; bottom: 1rem; z-index: 60; display: inline-flex; align-items: center; gap: .4rem; padding: .35rem .75rem; border-radius: 99px;
++    border: 1px solid var(--border-strong); background: color-mix(in srgb, var(--surface) 92%, transparent); color: var(--text); font: 600 .8rem var(--font); cursor: pointer; box-shadow: var(--shadow); backdrop-filter: blur(6px); }
++.online-pill b { font-variant-numeric: tabular-nums; }
++.online-pill span:last-child { color: var(--text-muted); font-weight: 500; }
++.online-pill__dot { width: 9px; height: 9px; border-radius: 50%; background: var(--warning); }
++.online-pill[data-s="online"] .online-pill__dot { background: var(--success); box-shadow: 0 0 8px var(--success); }
++.online-pill[data-s="error"] .online-pill__dot { background: var(--danger); }
++.online-panel { position: fixed; left: 1rem; bottom: 3.6rem; z-index: 61; width: min(360px, calc(100vw - 2rem)); max-height: min(60vh, 520px); overflow: auto; padding: 1rem;
++    border-radius: var(--radius); border: 1px solid var(--border-strong); background: var(--surface); box-shadow: var(--shadow); display: grid; gap: .7rem; animation: fadeIn .2s both; }
++.online-panel__list { display: grid; gap: .45rem; }
++.online-row { display: grid; grid-template-columns: 2rem 1fr auto; gap: .6rem; align-items: center; padding: .45rem .55rem; border-radius: var(--radius-sm); background: var(--surface-2); }
++.online-row.is-me { outline: 1px solid color-mix(in srgb, var(--accent) 50%, transparent); }
++.online-row small { display: block; color: var(--text-faint); font-size: .74rem; }
++.online-row__lvl { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 50%; background: var(--surface-3); font-weight: 800; font-size: .8rem; }
++.online-row--all { background: transparent; border: 1px dashed var(--border); }
++.online-greet { max-width: 9.5rem; font-size: .78rem; padding: .25rem .4rem; }
++.online-board__list { list-style: none; margin: 0; padding: 0; display: grid; gap: .25rem; font-size: .86rem; }
++.online-board__list li { display: grid; grid-template-columns: 1.6rem 1fr auto; gap: .4rem; }
++.online-board__list li.is-me b { color: var(--accent); }
++.online-board__list li span:last-child { font-variant-numeric: tabular-nums; color: var(--text-muted); }
++@media print { .online-pill, .online-panel { display: none; } }
+diff --git a/assets/js/core.js b/assets/js/core.js
+index 17d2561..3bcf50a 100644
+--- a/assets/js/core.js
++++ b/assets/js/core.js
+@@ -240,7 +240,7 @@
+     };
+ 
+     /* ── Einstellungen ──────────────────────────────────────────────────── */
+-    const DEFAULTS = { theme: null, anim: true, sound: true, visitToasts: true, promos: true, modus: 'abenteuer' };
++    const DEFAULTS = { theme: null, anim: true, sound: true, visitToasts: true, promos: true, modus: 'abenteuer', online: false, onlineAsked: false, onlineUrl: '' };
+     X.setting = function (key, val) {
+         if (arguments.length === 1) return key in P.settings ? P.settings[key] : DEFAULTS[key];
+         P.settings[key] = val; persist(); applySettings(); emit('setting', { key, val });
+@@ -897,7 +897,7 @@
+         persist();
+         if (s.plays === 1) X.addXP(15, 'Erstes Spiel: ' + game);
+         else if (better) X.addXP(5, 'Neuer Rekord');
+-        emit('score', { game, value, best: s.best, isNew: better });
++        emit('score', { game, value, best: s.best, isNew: better, lower: !!opts.lower });
+         return { best: s.best, isNew: better, plays: s.plays };
+     };
+     X.best = game => (P.scores[game] && P.scores[game].best != null) ? P.scores[game].best : null;
+@@ -1595,6 +1595,39 @@
+         else readyQueue.push(fn);
+     };
+ 
++    /* ── Online (freiwillig) ────────────────────────────────────────────────
++       Standardmässig aus. Erst wenn man es einschaltet, lädt core.js assets/js/online.js
++       (Bestenlisten, wer ist unterwegs, Grüsse) und spricht mit dem Xiru-Server.
++       Nach dem Anmelden wird einmal gefragt, ob man online spielen möchte.               */
++    X.ONLINE_DEFAULT = 'http://mael.local:8090';
++    let onlineLoad = null;
++    X.online = {
++        on: () => X.setting('online') === true,
++        url: () => (X.setting('onlineUrl') || X.ONLINE_DEFAULT).replace(/\/+$/, ''),
++        /* lädt online.js (einmal) und gibt XIRU.online zurück */
++        load() {
++            if (onlineLoad) return onlineLoad;
++            onlineLoad = new Promise((res, rej) => {
++                const sc = document.createElement('script'); sc.src = X.url('assets/js/online.js');
++                sc.onload = () => res(X.online); sc.onerror = () => { onlineLoad = null; rej(new Error('online.js fehlt')); };
++                document.head.appendChild(sc);
++            });
++            return onlineLoad;
++        },
++        enable(on) { X.setting('onlineAsked', true); X.setting('online', !!on); if (on) X.online.load().then(o => o.start && o.start()).catch(() => { }); else if (X.online.stop) X.online.stop(); },
++        /* Einmalige Frage nach dem Anmelden */
++        ask() {
++            if (!X.user || X.setting('onlineAsked') || document.documentElement.hasAttribute('data-bare')) return;
++            X.setting('onlineAsked', true);
++            const m = X.modal('<span class="eyebrow">Neu · freiwillig</span><h2>Online mitspielen?</h2>' +
++                '<p>Mit Online siehst du, wer gerade sonst in der Xiru-Welt unterwegs ist, landest mit deinen Rekorden in den <b>weltweiten Bestenlisten</b> und kannst anderen Reisenden Grüsse schicken.</p>' +
++                '<p class="small muted">Dafür gehen dein Spitzname, deine Rekorde und die Gegend, in der du gerade bist, an den Xiru-Server. Keine E-Mail, kein Passwort, keine Werbung. ' +
++                'Du kannst es jederzeit in den <a href="' + X.url('konto/einstellungen.html') + '#online">Einstellungen</a> wieder ausschalten.</p>' +
++                '<div class="row mt-2"><button class="btn btn--primary" type="button" data-on>Online einschalten</button><button class="btn" type="button" data-close>Lieber offline</button></div>');
++            m.el.querySelector('[data-on]').addEventListener('click', () => { m.close(); X.online.enable(true); X.toast('Online eingeschaltet', 'Willkommen in der grossen Xiru-Welt!', { icon: '🌐' }); });
++        }
++    };
++
+     function boot() {
+         const body = document.body;
+         if (document.documentElement.hasAttribute('data-bare')) {   // Liminal-Teil (Why): eigene Welt – keine XP, Kristalle, Besuche
+@@ -1647,6 +1680,7 @@
+         safe(initConsole);
+         safe(trackVisit);
+         safe(trackArcadeTime);
++        safe(() => { if (X.online.on()) X.online.load().then(o => o.start && o.start()).catch(() => { }); else setTimeout(X.online.ask, 1200); });
+         booted = true;
+         readyQueue.splice(0).forEach(fn => { if (!X.locked) safe(fn); });
+         safe(initReveal);
+diff --git a/datenschutz.html b/datenschutz.html
+index 00427d7..ee7c7ae 100644
+--- a/datenschutz.html
++++ b/datenschutz.html
+@@ -32,8 +32,8 @@
+         <div class="card card--flat"><b>0</b><span class="small muted">Drittanbieter-Tracker</span></div>
+         <div class="card card--flat"><b>0</b><span class="small muted">Werbe- oder Tracking-Cookies</span></div>
+         <div class="card card--flat"><b>2</b><span class="small muted">technische Cookies (nur mit Einwilligung)</span></div>
+-        <div class="card card--flat"><b>0</b><span class="small muted">Server-Datenbanken</span></div>
+-        <div class="card card--flat"><b>100 %</b><span class="small muted">in deinem Browser</span></div>
++        <div class="card card--flat"><b>1</b><span class="small muted">eigener Xiru-Server – nur wenn du „Online“ einschaltest</span></div>
++        <div class="card card--flat"><b>100 %</b><span class="small muted">in deinem Browser, solange Online aus ist</span></div>
+     </div>
+ 
+     <h2>1. Wer ist verantwortlich?</h2>
+@@ -80,16 +80,31 @@
+         <li>API-Schlüssel liegen unverschlüsselt im localStorage – verwende sie nur auf deinen eigenen Geräten. Sie sind nicht im Spielstand-Export enthalten.</li>
+     </ul>
+ 
+-    <h2>5. Hosting</h2>
++    <h2>5. Online-Funktionen (freiwillig)</h2>
++    <p>„Online“ ist standardmässig <strong>aus</strong>. Nach dem Anmelden fragen wir einmal, ob du es einschalten möchtest; ändern kannst du es jederzeit in den
++        <a href="konto/einstellungen.html#online">Einstellungen</a>. Erst wenn es eingeschaltet ist, spricht deine Website mit unserem eigenen <strong>Xiru-Server</strong>
++        (selbst betrieben, kein fremder Analyse- oder Cloud-Dienst). Übertragen werden dann:</p>
++    <ul>
++        <li><strong>Dein Spitzname</strong> (frei wählbar, voreingestellt ist dein Kontoname), dein Level und das Kern-Bauteil deines Mechs,</li>
++        <li><strong>die Gegend, in der du gerade bist</strong> (Insel bzw. Bereich und Seitentitel) – etwa alle 45 Sekunden, solange die Seite offen ist,</li>
++        <li><strong>deine Spielrekorde</strong> für die weltweiten Bestenlisten,</li>
++        <li><strong>Grüsse</strong>, die du verschickst (nur vorgefertigte Sätze, kein Freitext).</li>
++    </ul>
++    <p>Andere, die ebenfalls online sind, sehen deinen Spitznamen, dein Level, deine Gegend und deine Rekorde. Es gibt <strong>keine E-Mail-Adresse, kein Passwort und keine Cookies</strong>
++        für Online: Dein Browser erzeugt einen zufälligen Schlüssel, mit dem nur er deinen Eintrag ändern darf. Der Server kann – wie jeder Webserver – technisch deine IP-Adresse sehen;
++        sie wird nicht gespeichert oder ausgewertet, nur kurzzeitig zum Schutz vor zu vielen Anfragen genutzt. Einträge löschen wir auf Wunsch; schalte Online aus, und dein Eintrag
++        verschwindet nach wenigen Minuten aus der Liste „Gerade unterwegs“.</p>
++
++    <h2>6. Hosting</h2>
+     <p>Wenn diese Website auf einem Webserver bereitgestellt wird, kann der Hosting-Anbieter technisch notwendige Zugriffsprotokolle führen
+         (z. B. IP-Adresse, Zeitpunkt, aufgerufene Seite). Wir werten solche Protokolle nicht aus.</p>
+ 
+-    <h2>6. Links zu anderen Websites</h2>
++    <h2>7. Links zu anderen Websites</h2>
+     <p>Einige Seiten verlinken auf externe Websites (z. B. GitHub oder Anbieter von KI-Diensten). Erst wenn du auf so einen Link klickst,
+         gelten dort die Regeln des jeweiligen Betreibers.</p>
+ 
+-    <h2>7. Deine Rechte</h2>
+-    <p>Wir erhalten keine Nutzungsdaten auf einem Server. In den <a href="konto/einstellungen.html">Einstellungen</a> kannst du deinen Fortschritt zurücksetzen oder alle Daten dieser Website aus deinem Browser löschen.</p>
++    <h2>8. Deine Rechte</h2>
++    <p>Solange „Online“ aus ist, erhalten wir keine Daten von dir auf einem Server; mit Online nur die oben genannten. Auf Wunsch löschen wir deinen Online-Eintrag. In den <a href="konto/einstellungen.html">Einstellungen</a> kannst du deinen Fortschritt zurücksetzen oder alle Daten dieser Website aus deinem Browser löschen.</p>
+ </main>
+ <script>XIRU.ready(function () { XIRU.$('#consent-open').addEventListener('click', () => XIRU.consent.open()); });</script>
+ </body>
+diff --git a/hilfe.html b/hilfe.html
+index 0155d4f..e6fcb14 100644
+--- a/hilfe.html
++++ b/hilfe.html
+@@ -78,7 +78,8 @@
+         <details><summary>Was passiert mit meinen Eingaben?</summary><div class="a"><p>Nur wenn du einen KI-Dienst aktiv nutzt, wird der Text an diesen Anbieter geschickt – sonst verlässt nichts deinen Browser. Gib keine persönlichen Daten in KI-Felder ein.</p></div></details>
+ 
+         <h2 id="daten">Daten & Technik</h2>
+-        <details><summary>Wo werden meine Daten gespeichert?</summary><div class="a"><p>Ausschliesslich im localStorage deines Browsers. Es gibt keinen Server. Mehr dazu in der <a href="datenschutz.html">Datenschutzerklärung</a>.</p></div></details>
++        <details><summary>Wo werden meine Daten gespeichert?</summary><div class="a"><p>Im localStorage deines Browsers. Nur wenn du <strong>Online</strong> einschaltest, gehen Spitzname, Level, deine Gegend, Rekorde und Grüsse an unseren eigenen Xiru-Server. Mehr dazu in der <a href="datenschutz.html">Datenschutzerklärung</a>.</p></div></details>
++        <details><summary>Was bringt „Online“?</summary><div class="a"><p>Unten links siehst du, wer gerade sonst unterwegs ist – mit Level und Gegend – und kannst ihnen vorgefertigte Grüsse schicken (an eine Person oder alle in deiner Nähe). In der Spielhalle hat jedes Spiel eine <strong>Weltrangliste</strong>. Online ist freiwillig: einschalten und Spitzname ändern unter <a href="konto/einstellungen.html#online">Einstellungen → Online</a>.</p></div></details>
+         <details><summary>Ich habe einen neuen Computer – ist alles weg?</summary><div class="a"><p>Exportiere vorher im <a href="konto/profil.html">Profil</a> deinen Spielstand und importiere ihn auf dem neuen Gerät.</p></div></details>
+         <details><summary>Die Website sieht komisch aus oder ruckelt.</summary><div class="a"><p>In den <a href="konto/einstellungen.html">Einstellungen</a> kannst du Animationen abschalten. Am besten öffnest du die Website über einen lokalen Server (z. B. VS Code „Live Server") statt direkt als Datei.</p></div></details>
+     </div>
+diff --git a/konto/einstellungen.html b/konto/einstellungen.html
+index b07fd87..509b82a 100644
+--- a/konto/einstellungen.html
++++ b/konto/einstellungen.html
+@@ -78,6 +78,20 @@
+             </div>
+             <p class="form-msg" id="data-msg"></p>
+         </section>
++        <section class="card" id="online">
++            <h2>🌐 Online</h2>
++            <p class="muted small">Freiwillig. Eingeschaltet siehst du, wer sonst unterwegs ist, landest in den weltweiten Bestenlisten der Spielhalle und kannst Grüsse verschicken.
++                Dafür gehen dein <b>Spitzname</b>, deine <b>Rekorde</b> und die <b>Gegend</b>, in der du gerade bist, an den Xiru-Server – keine E-Mail, kein Passwort.</p>
++            <div class="toggle-row"><div><strong>Online spielen</strong><div class="small muted" id="on-state">aus</div></div>
++                <label class="switch"><input type="checkbox" id="on-toggle" aria-label="Online spielen"><span></span></label></div>
++            <div class="field mt-2"><label for="on-nick">Spitzname</label>
++                <div class="row"><input class="input" id="on-nick" maxlength="20" style="flex:1" placeholder="So sehen dich die anderen"><button class="btn btn--sm" type="button" id="on-nick-save">Speichern</button></div></div>
++            <details class="small"><summary>Server</summary>
++                <div class="field mt-1"><label for="on-url">Adresse des Xiru-Servers</label>
++                    <div class="row"><input class="input" id="on-url" style="flex:1" spellcheck="false"><button class="btn btn--sm" type="button" id="on-test">Testen</button></div>
++                    <small id="on-test-msg">Standard: <code id="on-default"></code></small></div>
++            </details>
++        </section>
+         <section class="card">
+             <h2>Deine Xiru-Spiele</h2>
+             <p class="small muted">Wir empfehlen gelegentlich eigene Spiele wie PIXMAG Mini. Empfehlungen sind als Eigenwerbung markiert und werden nicht an Dritte übertragen.</p>
+@@ -112,6 +126,26 @@ XIRU.ready(function () {
+         $('#promo-control').innerHTML = '<p class="small muted">Als Gastkonto bleibt Eigenwerbung eingeschaltet. Mit einem angemeldeten Konto kannst du sie kostenlos ausschalten.</p>';
+         $('#promo-account-note').textContent = 'Als Gast kannst du Hinweise schliessen; eine dauerhafte Abschaltung gibt es für angemeldete Konten.';
+     }
++    /* Online */
++    const onT = $('#on-toggle'), onState = () => { $('#on-state').textContent = XIRU.online.on() ? 'an – ' + (XIRU.online.status === 'online' ? 'verbunden' : XIRU.online.status === 'error' ? 'Server nicht erreichbar' : 'verbinde …') : 'aus'; };
++    $('#on-default').textContent = XIRU.ONLINE_DEFAULT;
++    $('#on-url').value = XIRU.setting('onlineUrl') || XIRU.ONLINE_DEFAULT;
++    onT.checked = XIRU.online.on(); onState();
++    const nickOf = () => { try { const m = XIRU.store.get('xiru:online:' + (XIRU.user ? XIRU.user.toLowerCase() : 'gast'), null); return (m && m.nick) || XIRU.user || ''; } catch (e) { return ''; } };
++    $('#on-nick').value = nickOf();
++    onT.addEventListener('change', () => { XIRU.online.enable(onT.checked); onState(); setTimeout(onState, 2500); });
++    $('#on-nick-save').addEventListener('click', () => {
++        const v = $('#on-nick').value;
++        XIRU.online.load().then(o => o.setNick(v)).then(n => XIRU.toast('Spitzname gespeichert', n, { icon: '🌐' })).catch(e => XIRU.toast('Spitzname nicht gespeichert', e.message, { icon: '⚠', type: 'error' }));
++    });
++    $('#on-test').addEventListener('click', () => {
++        const u = $('#on-url').value.trim(), msg = $('#on-test-msg');
++        if (u && !/^https?:\/\/[\w.\-:\[\]]+\/?$/.test(u)) { msg.textContent = 'Bitte nur eine Adresse wie http://name:8090 eingeben.'; return; }
++        XIRU.setting('onlineUrl', u && u !== XIRU.ONLINE_DEFAULT ? u.replace(/\/+$/, '') : '');
++        msg.textContent = 'Teste …';
++        XIRU.online.load().then(o => o.ping()).then(() => { msg.textContent = '✓ Der Xiru-Server antwortet.'; }).catch(() => { msg.textContent = '✗ Keine Antwort von ' + XIRU.online.url() + '.'; });
++    });
++    if (location.hash === '#online') setTimeout(() => $('#online').scrollIntoView({ block: 'start' }), 200);
+     const PREVIEW = {
+         nacht: ['#0b0e1a', '#141a2e', '#5eead4', '#a78bfa', '#e8ebf7', '#2a3358'],
+         hell: ['#f5f6fb', '#ffffff', '#0d9488', '#7c3aed', '#151a30', '#d8dcec'],
+diff --git a/konto/profil.html b/konto/profil.html
+index 1a74adb..59236b0 100644
+--- a/konto/profil.html
++++ b/konto/profil.html
+@@ -202,7 +202,7 @@ XIRU.ready(function () {
+             days: keep(p.days, k => /^\d{4}-\d{2}-\d{2}$/.test(k), () => 1),
+             scores: keep(p.scores, () => true, s => s && typeof s === 'object' ? { best: s.best == null ? null : num(s.best), plays: num(s.plays), last: num(s.last), at: num(s.at) } : undefined),
+             rewards: keep(p.rewards, () => true, num),
+-            settings: keep(p.settings, k => ['theme', 'anim', 'sound', 'visitToasts', 'promos', 'modus'].includes(k),
++            settings: keep(p.settings, k => ['theme', 'anim', 'sound', 'visitToasts', 'promos', 'modus', 'online', 'onlineAsked'].includes(k),
+                 (v, k) => k === 'theme' ? (themes.has(v) ? v : null) : k === 'modus' ? (v === 'entdecker' ? 'entdecker' : 'abenteuer') : typeof v === 'boolean' ? v : undefined),
+             data: {}
+         };

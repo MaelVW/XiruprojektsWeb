@@ -236,6 +236,14 @@ Der Liminal-Teil (`Why.html`, `why/*`, `liminal*.js`) wird mitgeprüft, aber **n
 
 ## Notizen der letzten Sitzung
 
+- 2026-10-11 (mit Mael): **Erster Release – Online ausgebaut und geparkt.** Mael will Online erst viel später. Alles liegt in
+  `docs/spaeter/online/` (`online.js`, `online.patch` für core.js/main.css/einstellungen/profil/datenschutz/hilfe, `ONLINE.md` mit
+  Anleitung zum Wiedereinbauen, `pocketbase-collections.json`). Die Website ist wieder rein lokal (Datenschutz: „0 Server-Datenbanken“).
+  Der PocketBase-Container auf Maels Unraid (`http://mael.local:8090`, Tabellen keys/players/scores/greets, Rate-Limits) läuft unverändert weiter.
+  Release-Durchgang: check_site 0 Fehler, keine Testreste/Debug-Hooks gefunden. Nicht auf den Webserver gehören: `dev/`, `docs/`, `tools/`,
+  `.claude/`, `.vscode/`, `studio/apps/` (Quellcode; die ZIPs liegen in `downloads/`).
+  Danach (später, mit Mael): Mnemora zusammen ausbauen, Download-/Studio-Änderungen (Mael erklärt), Online wieder einbauen (HTTPS-Adresse nötig).
+
 - 2026-10-10 (mit Mael): Golem-Tippfehler (6–16). **Mixer-Design** `themes/mixer.css` (Regie, Pegelbrücke). **10 neue Website-Designs** inkl. Kirschblüte
   mit Blütenblättern/Zweigen (Effekt-Ebene `#theme-fx`). **Kristallhalle** in `konto/sammlung.html`: Kristall-Cluster auf einem Fels – 5 Hauptkristalle (einzeln färbbar, `kristall-farben`), je Fund ein kleiner Kristall (Fundreihenfolge, Mitte → aussen),
   10 Stufen nach Anteil (Keim … Weltkristall), Freischaltungen je Stufe (Anklingen, Farbe, Kristallharfe → Kristall `b-kristallharfe`, Lichtbrechung,

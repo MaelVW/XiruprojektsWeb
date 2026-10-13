@@ -180,5 +180,50 @@
         "onUpdate": false
       }
     ]
+  },
+  {
+    "name": "saves",
+    "type": "base",
+    "listRule": "owner = @request.auth.id",
+    "viewRule": "owner = @request.auth.id",
+    "createRule": "@request.auth.id != \"\" && owner = @request.auth.id",
+    "updateRule": "owner = @request.auth.id && (@request.body.owner:isset = false || @request.body.owner = @request.auth.id)",
+    "deleteRule": "owner = @request.auth.id",
+    "fields": [
+      {
+        "name": "owner",
+        "type": "relation",
+        "collectionId": "_pb_users_auth_",
+        "maxSelect": 1,
+        "minSelect": 0,
+        "required": true,
+        "cascadeDelete": true
+      },
+      {
+        "name": "data",
+        "type": "json",
+        "maxSize": 5242880
+      },
+      {
+        "name": "device",
+        "type": "text",
+        "max": 60
+      },
+      {
+        "name": "created",
+        "type": "autodate",
+        "onCreate": true,
+        "onUpdate": false
+      },
+      {
+        "name": "updated",
+        "type": "autodate",
+        "onCreate": true,
+        "onUpdate": true
+      }
+    ],
+    "indexes": [
+      "CREATE UNIQUE INDEX `idx_saves_owner` ON `saves` (`owner`)"
+    ]
   }
 ]

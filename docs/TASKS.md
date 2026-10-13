@@ -236,6 +236,25 @@ Der Liminal-Teil (`Why.html`, `why/*`, `liminal*.js`) wird mitgeprüft, aber **n
 
 ## Notizen der letzten Sitzung
 
+- 2026-10-13 (mit Mael, später): **Geräte-Sync** – auf jedem Gerät mit Name + Passwort anmelden, Spielstand überall gleich (nur mit Online).
+  Server: `users` angepasst (username statt E-Mail, eindeutig ohne Gross/Klein, PW ≥ 6, keine Login-Mails, Token 30 Tage), neue Tabelle `saves`
+  (nur Besitzer). Website: `XIRU.savegame` in core.js (Prüfung aus profil.html hierher verschoben, kennt jetzt auch job/flossie/mine/wrack und
+  übernimmt unbekannte Mech-Felder entschärft), `xiru:mod:<konto>` = letzte Änderung, `XIRU.auth.verify/adopt/syncPassword`, `XIRU.online.cloud`
+  (connect/fetch/adopt/sync/password/remove/forget), Anmeldeseite holt unbekannte Konten vom Server, Einstellungen → Online → Geräte-Sync,
+  Profil: Passwort/Löschen auch online, „Sicherung vom Geräte-Sync“ zurückholen. Konflikt: neuester gewinnt, bei beidseitigen Änderungen Frage,
+  Verlierer als Sicherung. Getestet: Rundlauf, Ausschlüsse (why-/liminal-/local-usage, API-Schlüssel), Konflikt-Fälle mit nachgebautem Server,
+  abgelaufene Anmeldung, Oberfläche, Server-Regeln von aussen. **Nicht von mir getestet:** echtes Anlegen/Anmelden am Server (Passwort) – macht Mael.
+  Offen (Mael, optional): Rate-Limit `users:create` (z. B. 3 / 60 s) in PocketBase → Settings → Rate limiting ergänzen.
+
+- 2026-10-13 (mit Mael): **Online wieder eingebaut und öffentlich.** Patch aus `docs/spaeter/online/` angewendet (Ordner danach entfernt,
+  Doku wieder `docs/ONLINE.md` + `docs/pocketbase-collections.json`). Server öffentlich über **Tailscale Funnel** (keine Portweiterleitung;
+  neuer Router D-Link Eagle Pro AI, Unraid jetzt 192.168.0.199): `https://xiru.tail9e3f56.ts.net` = API-Wurzel (nur `/api` freigegeben, Admin `/_/` nur im Heimnetz).
+  `online.js` ruft deshalb Pfade ohne `/api` auf. Behoben: doppelte Spieler beim ersten Verbinden (gleichzeitige `ensure()`-Aufrufe → ein gemeinsamer Vorgang).
+  Datenschutz: Satz zu Tailscale Funnel. Getestet von aussen: Health, CORS, Regeln (keys 403), Spieler anlegen, Liste, Live-Grüsse (SSE), Weltrangliste.
+  Danach erledigt: Key-Expiry für `xiru` aus (Mael); PocketBase „User IP proxy headers“ = `X-Forwarded-For`, rightmost (vorher sahen alle
+  Funnel-Anfragen wie `::1` aus → gemeinsame Rate-Limits; gefälschte Header werden von Tailscale überschrieben, geprüft). Testdaten gelöscht.
+  Auf dem Server liegen noch je 2× „Mael“ und „moi“ vom 9.10. (gleiche Sekunde → derselbe Doppel-Anlege-Fehler); je einer davon ist verwaist.
+
 - 2026-10-11 (mit Mael): **Erster Release – Online ausgebaut und geparkt.** Mael will Online erst viel später. Alles liegt in
   `docs/spaeter/online/` (`online.js`, `online.patch` für core.js/main.css/einstellungen/profil/datenschutz/hilfe, `ONLINE.md` mit
   Anleitung zum Wiedereinbauen, `pocketbase-collections.json`). Die Website ist wieder rein lokal (Datenschutz: „0 Server-Datenbanken“).

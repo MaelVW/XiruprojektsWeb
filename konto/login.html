@@ -94,6 +94,7 @@
                         <label class="check mb-2"><input type="checkbox" id="l-remember" checked> Angemeldet bleiben (auf diesem Gerät)</label>
                         <button class="btn btn--primary btn--block btn--lg" type="submit">Spiel laden</button>
                         <p class="form-msg" id="l-msg" role="alert"></p>
+                        <p class="small muted mb-0">Konto von einem anderen Gerät? Gib einfach Name und Passwort ein – mit Online holen wir es vom Xiru-Server.</p>
                     </form>
                     <form id="f-register" hidden autocomplete="on">
                         <div class="field"><label for="r-name">Name</label><input id="r-name" name="username" autocomplete="username" required minlength="3" maxlength="20">
@@ -107,7 +108,7 @@
                             <button type="button" data-m="entdecker" aria-pressed="false"><b><i data-px="z-kompass"></i> Entdecker</b><span>Ohne Werft, alles sofort offen. Nur erkunden.</span></button>
                         </div>
                         <label class="check mb-2"><input type="checkbox" id="r-remember" checked> Angemeldet bleiben (auf diesem Gerät)</label>
-                        <div class="callout callout--warning small">Es gibt kein „Passwort vergessen“. Ohne Server kann niemand dein Passwort zurücksetzen – merk es dir gut.</div>
+                        <div class="callout callout--warning small">Es gibt kein „Passwort vergessen“. Niemand kann dein Passwort zurücksetzen – merk es dir gut.</div>
                         <button class="btn btn--primary btn--block btn--lg mt-2" type="submit">Spiel beginnen</button>
                         <p class="form-msg" id="r-msg" role="alert"></p>
                     </form>
@@ -194,14 +195,51 @@ XIRU.ready(function () {
     if (X.easy()) X.$$('[data-modes="g"] [data-m]').forEach(x => x.setAttribute('aria-pressed', x.dataset.m === 'entdecker'));
 
     function busy(form, on, label) { const b = form.querySelector('button[type=submit]'); b.disabled = on; b.textContent = on ? 'Einen Moment …' : label; }
+    /* Geräte-Sync: Konto, das es nur auf dem Xiru-Server gibt, in diesem Browser anlegen */
+    const askServer = name => new Promise(res => {
+        let done = false; const fin = v => { if (!done) { done = true; res(v); } };
+        const m = X.modal('<span class="eyebrow">Geräte-Sync</span><h2>Konto von einem anderen Gerät?</h2><p>„' + esc(name) + '“ gibt es in diesem Browser noch nicht. Wenn du mit dem Konto schon auf einem anderen Gerät online spielst, holen wir es samt Spielstand vom Xiru-Server.</p>' +
+            '<p class="small muted">Dafür gehen Name und Passwort verschlüsselt an den Xiru-Server, und „Online“ wird für dieses Konto eingeschaltet.</p>' +
+            '<div class="row mt-2"><button class="btn btn--primary" type="button" data-yes>Vom Server holen</button><button class="btn" type="button" data-close>Abbrechen</button></div>', { onClose: () => fin(false) });
+        m.el.querySelector('[data-yes]').addEventListener('click', () => { fin(true); m.close(); });
+    });
+    async function fromServer(name, pw, remember, msg) {
+        if (!(await askServer(name))) return false;
+        msg.textContent = 'Frage den Xiru-Server …';
+        const o = await X.online.load();
+        const s = await o.cloud.fetch(name, pw);
+        await X.auth.adopt(s.name, pw, remember);
+        o.cloud.adopt(s);
+        return s.save ? 'Spielstand geladen – willkommen zurück!' : 'Konto geladen – willkommen!';
+    }
     $('#f-login').addEventListener('submit', async e => {
         e.preventDefault();
         const msg = $('#l-msg'); msg.className = 'form-msg'; msg.textContent = '';
+        const name = $('#l-name').value.trim(), pw = $('#l-pw').value, remember = $('#l-remember').checked;
         busy(e.target, true);
         try {
-            await X.auth.login($('#l-name').value, $('#l-pw').value, $('#l-remember').checked);
-            msg.className = 'form-msg is-ok'; msg.textContent = 'Willkommen zurück!';
-            setTimeout(() => { location.href = X.url(next || 'index.html'); }, 400);
+            let hello = 'Willkommen zurück!';
+            if (!X.auth.accounts()[name.toLowerCase()]) {
+                const r = await fromServer(name, pw, remember, msg);
+                if (!r) { busy(e.target, false, 'Spiel laden'); return; }
+                hello = r;
+            } else {
+                try { await X.auth.login(name, pw, remember); }
+                catch (err) {   // Passwort auf einem anderen Gerät geändert? Dann kennt es der Xiru-Server schon
+                    if (!err.wrongPw || !X.store.get('xiru:cloud:' + name.toLowerCase(), null)) throw err;
+                    const o = await X.online.load();
+                    await o.cloud.fetch(name, pw).catch(() => { throw err; });
+                    await X.auth.syncPassword(name, pw);
+                    await X.auth.login(name, pw, remember);
+                }
+                if (X.online.on()) {
+                    msg.textContent = 'Gleiche deinen Spielstand ab …';
+                    try { const o = await X.online.load(); if (await o.cloud.connect(pw, { quiet: true }) === 'runter') hello = 'Neuester Spielstand geladen – willkommen zurück!'; }
+                    catch (err) { X.toast('Geräte-Sync', err.message, { icon: '⚠', type: 'error' }); }
+                }
+            }
+            msg.className = 'form-msg is-ok'; msg.textContent = hello;
+            setTimeout(() => { location.href = X.url(next || 'index.html'); }, 600);
         } catch (err) {
             msg.className = 'form-msg is-error'; msg.textContent = err.message; busy(e.target, false, 'Spiel laden');
             $('#panel').animate([{ transform: 'translateX(-6px)' }, { transform: 'translateX(6px)' }, { transform: 'none' }], { duration: 250, iterations: 2 });

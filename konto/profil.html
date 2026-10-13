@@ -56,13 +56,15 @@
 
     <section class="card mt-3">
         <h2>Spielstand sichern</h2>
-        <p class="muted">Dein Fortschritt liegt nur in diesem Browser. Exportiere ihn als Datei, um ihn zu sichern oder auf einem anderen Gerät zu importieren.
-            API-Schlüssel aus <a href="dienste.html">Dienste & Schlüssel</a> sind aus Sicherheitsgründen <strong>nicht</strong> enthalten.</p>
+        <p class="muted">Dein Fortschritt liegt in diesem Browser – mit <a href="einstellungen.html#online">Online und Geräte-Sync</a> zusätzlich auf dem Xiru-Server, dann meldest du dich
+            auf jedem Gerät einfach mit Name und Passwort an. Ohne Online: als Datei exportieren und auf dem anderen Gerät importieren.
+            API-Schlüssel aus <a href="dienste.html">Dienste & Schlüssel</a> sind aus Sicherheitsgründen <strong>nie</strong> enthalten.</p>
         <div class="row">
             <button class="btn btn--primary" id="export" type="button">⬇ Exportieren</button>
             <label class="btn" for="import">⬆ Importieren</label><input type="file" id="import" accept=".json,application/json" hidden>
         </div>
         <p class="form-msg" id="io-msg"></p>
+        <div class="callout small mt-2" id="cloudbak" hidden></div>
     </section>
 
     <section class="card mt-3" id="account-box" hidden>
@@ -77,7 +79,7 @@
             </form>
             <form id="del-form">
                 <h3>Konto löschen</h3>
-                <p class="small muted">Löscht Konto, Fortschritt, Spielstände und Schlüssel aus diesem Browser. Das kann man nicht rückgängig machen – exportiere vorher.</p>
+                <p class="small muted">Löscht Konto, Fortschritt, Spielstände und Schlüssel aus diesem Browser – und mit Geräte-Sync auch dein Online-Konto samt Spielstand auf dem Xiru-Server. Das kann man nicht rückgängig machen – exportiere vorher.</p>
                 <div class="field"><label for="del-pw">Passwort zur Bestätigung</label><input type="password" id="del-pw" autocomplete="current-password" required></div>
                 <button class="btn btn--danger" type="submit">Endgültig löschen</button>
                 <p class="form-msg" id="del-msg"></p>
@@ -150,14 +152,9 @@ XIRU.ready(function () {
         .sort((a, b) => b.t - a.t).slice(0, 10);
     $('#feed').innerHTML = events.map(e => '<li>' + e.html + '<time>' + new Date(e.t).toLocaleString('de-CH', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + '</time></li>').join('') || '<li class="muted">Noch nichts – leg los!</li>';
 
-    // Export / Import
-    function saveKeys() {
-        const prefix = 'xiru:save:' + (XIRU.user ? XIRU.user.toLowerCase() : '~gast') + ':', out = {};
-        XIRU.store.keys(prefix).forEach(k => { out[k.slice(prefix.length)] = XIRU.store.get(k); });
-        return out;
-    }
+    // Export / Import (Prüfung und Übernahme stecken in XIRU.savegame, core.js)
     $('#export').addEventListener('click', () => {
-        const data = { format: 'xiru-export', v: 1, name: name, exported: new Date().toISOString(), profile: P, saves: saveKeys() };
+        const data = XIRU.savegame.collect(false);
         const blob = new Blob([JSON.stringify(data, null, 1)], { type: 'application/json' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob); a.download = 'xiru-spielstand-' + name.toLowerCase() + '-' + XIRU.today() + '.json';
@@ -165,85 +162,7 @@ XIRU.ready(function () {
         XIRU.egg('b-export');
         $('#io-msg').className = 'form-msg is-ok'; $('#io-msg').textContent = 'Export erstellt.';
     });
-    // Import nur nach strenger Prüfung – Dateien können von anderen stammen und manipuliert sein.
-    // Bekanntes nur mit Registereinträgen, Zahlen bleiben Zahlen, Texte in Spielständen werden entschärft.
     const IMPORT_MAX = 3 * 1024 * 1024;
-    const num = v => { v = +v; return isFinite(v) ? v : 0; };
-    const safeKey = k => /^[\w\-.:\/]{1,80}$/.test(k) && !['__proto__', 'constructor', 'prototype'].includes(k);
-    const idSet = list => new Set((list || []).map(x => x.id));
-    function keep(obj, ok, val) {
-        const out = {};
-        if (obj && typeof obj === 'object' && !Array.isArray(obj)) Object.keys(obj).slice(0, 5000).forEach(k => {
-            if (!safeKey(k) || !ok(k)) return;
-            const v = val(obj[k], k);
-            if (v !== undefined) out[k] = v;
-        });
-        return out;
-    }
-    const SAFE_CH = { '<': '‹', '>': '›', '"': '”', "'": '’', '`': 'ˋ' };   // HTML/Attribut-Zeichen → harmlose Typografie
-    function clean(v, depth) {
-        if (depth > 12) return null;
-        if (typeof v === 'string') return v.slice(0, 20000).replace(/[<>"'`]/g, c => SAFE_CH[c]);
-        if (typeof v === 'number') return isFinite(v) ? v : 0;
-        if (typeof v === 'boolean' || v === null) return v;
-        if (Array.isArray(v)) return v.slice(0, 5000).map(x => clean(x, depth + 1));
-        if (typeof v === 'object') return keep(v, () => true, x => clean(x, depth + 1));
-        return null;
-    }
-    function cleanProfile(p) {
-        const eggs = idSet(XIRU.eggs), skills = idSet(XIRU.skills), pages = new Set(XIRU.pages.map(x => x.p));
-        const parts = idSet(XIRU.mechParts), slots = idSet(XIRU.mechSlots), isles = new Set(Object.keys(XIRU.islandReq || {}).concat(XIRU.regions.map(r => r.id)));
-        const themes = idSet(XIRU.themes);
-        const out = {
-            xp: Math.max(0, num(p.xp)), bonus: Math.max(0, Math.min(XIRU.eggs.filter(e => e.r === 4).length, num(p.bonus))), created: num(p.created) || Date.now(),
-            skills: keep(p.skills, k => skills.has(k), num),
-            eggs: keep(p.eggs, k => eggs.has(k), num),
-            visited: keep(p.visited, k => pages.has(k), num),
-            days: keep(p.days, k => /^\d{4}-\d{2}-\d{2}$/.test(k), () => 1),
-            scores: keep(p.scores, () => true, s => s && typeof s === 'object' ? { best: s.best == null ? null : num(s.best), plays: num(s.plays), last: num(s.last), at: num(s.at) } : undefined),
-            rewards: keep(p.rewards, () => true, num),
-            settings: keep(p.settings, k => ['theme', 'anim', 'sound', 'visitToasts', 'promos', 'modus'].includes(k),
-                (v, k) => k === 'theme' ? (themes.has(v) ? v : null) : k === 'modus' ? (v === 'entdecker' ? 'entdecker' : 'abenteuer') : typeof v === 'boolean' ? v : undefined),
-            data: {}
-        };
-        const d = p.data && typeof p.data === 'object' ? p.data : {};
-        if (d.mech && typeof d.mech === 'object') {
-            const m = d.mech, int = (v, a, b) => Math.max(a, Math.min(b, Math.floor(num(v))));
-            const base = { islands: keep(m.islands, k => isles.has(k), num), spent: Math.max(0, num(m.spent)), tutorial: int(m.tutorial, 0, 2), testrun: int(m.testrun, 0, 1), trep: int(m.trep, 0, 1) };
-            if (Array.isArray(m.inv)) {   // Mech-Daten Version 2: Inventar mit Seltenheiten
-                const seen = new Set();
-                const inv = m.inv.slice(0, XIRU.mech.INV_MAX).filter(it => it && typeof it === 'object' && parts.has(it.id)).map(it => {
-                    let u = String(it.u || '').replace(/[^a-z0-9]/gi, '').slice(0, 24) || 'i' + Math.random().toString(36).slice(2, 10);
-                    while (seen.has(u)) u += 'x'; seen.add(u);
-                    return { u, id: it.id, q: int(it.q, 1, 6), c: int(it.c, 0, 100), up: int(it.up, 0, 5), at: num(it.at) };
-                });
-                out.data.mech = Object.assign(base, {
-                    v: 2, inv,
-                    eq: keep(m.eq, k => slots.has(k), (v, k) => { const it = inv.find(x => x.u === v); return it && XIRU.mech.part(it.id).slot === k ? it.u : undefined; }),
-                    mat: keep(m.mat, k => !!XIRU.mech.mat(k), v => int(v, 0, 99999)),
-                    taler: int(m.taler, 0, 10000000),
-                    pos: isles.has(m.pos) && XIRU.mech.isle(m.pos) ? m.pos : 'konto',
-                    bp: keep(m.bp, k => parts.has(k), num), bpv: int(m.bpv, 0, 1),
-                    scan: keep(m.scan, k => isles.has(k), num),
-                    rod: int(m.rod, 1, Math.max(1, (XIRU.rods || []).length - 1)),
-                    fish: keep(m.fish, k => !!XIRU.mech.fishInfo(k), v => int(v, 0, 99999)),
-                    fishbook: keep(m.fishbook, k => !!XIRU.mech.fishInfo(k), num),
-                    fishing: keep(m.fishing, k => !!XIRU.mech.spot(k), v => v && typeof v === 'object' ? { n: int(v.n, 0, 9), t: num(v.t) } : undefined),
-                    joe: { n: int(m.joe && m.joe.n, 0, 1e7), best: int(m.joe && m.joe.best, 0, 1e7), dry: int(m.joe && m.joe.dry, 0, 99), pot: int(m.joe && m.joe.pot, 250, 1e7) },
-                    arena: { rank: int(m.arena && m.arena.rank, 0, 12), wins: int(m.arena && m.arena.wins, 0, 1e6), losses: int(m.arena && m.arena.losses, 0, 1e6) },
-                    stats: { trips: int(m.stats && m.stats.trips, 0, 1e7), km: int(m.stats && m.stats.km, 0, 1e9) }
-                });
-            } else {   // Version 1 (wird beim Laden automatisch umgewandelt)
-                out.data.mech = Object.assign(base, {
-                    parts: keep(m.parts, k => slots.has(k), (v, k) => parts.has(v) && XIRU.mech.part(v).slot === k ? v : undefined),
-                    built: keep(m.built, k => parts.has(k), num),
-                    cond: keep(m.cond, k => parts.has(k), v => Math.max(0, Math.min(100, num(v))))
-                });
-            }
-        }
-        if (d.themesTried) out.data.themesTried = keep(d.themesTried, () => true, num);
-        return out;
-    }
     $('#import').addEventListener('change', e => {
         const f = e.target.files[0]; if (!f) return;
         if (f.size > IMPORT_MAX) { $('#io-msg').className = 'form-msg is-error'; $('#io-msg').textContent = 'Die Datei ist zu gross für einen Spielstand.'; e.target.value = ''; return; }
@@ -252,18 +171,11 @@ XIRU.ready(function () {
             let d;
             try { d = JSON.parse(r.result); } catch (err) { d = null; }
             const msg = $('#io-msg');
-            if (!d || d.format !== 'xiru-export' || !d.profile || typeof d.profile !== 'object') { msg.className = 'form-msg is-error'; msg.textContent = 'Das ist keine gültige Xiru-Spielstand-Datei.'; return; }
+            if (!XIRU.savegame.valid(d)) { msg.className = 'form-msg is-error'; msg.textContent = 'Das ist keine gültige Xiru-Spielstand-Datei.'; return; }
             const m = XIRU.modal('<h2>Spielstand importieren?</h2><p class="muted">Der Spielstand von <strong>' + XIRU.esc(d.name || '?') + '</strong> (' + XIRU.esc(String(d.exported || '').slice(0, 10)) + ') ersetzt deinen aktuellen Fortschritt als <strong>' + XIRU.esc(name) + '</strong>.</p>' +
                 '<div class="row mt-2"><button class="btn btn--primary" id="do-import">Importieren</button><button class="btn" data-close>Abbrechen</button></div>');
             m.el.querySelector('#do-import').addEventListener('click', () => {
-                const prof = cleanProfile(d.profile);
-                ['skills', 'eggs', 'visited', 'days', 'scores', 'rewards', 'settings', 'data'].forEach(k => { P[k] = prof[k]; });
-                P.xp = prof.xp; P.bonus = prof.bonus; P.created = prof.created;
-                if (!XIRU.user) P.skills = {};
-                XIRU.persist();
-                // Spielstände: nur bekannte Schlüsselform, Texte entschärft; der Liminal-Teil (why-*) wird nicht übertragen
-                const saves = clean(d.saves && typeof d.saves === 'object' ? d.saves : {}, 0);
-                Object.keys(saves).forEach(k => { if (/^[\w\-.]+$/.test(k) && !/^why-|^liminal-/.test(k)) XIRU.save(k, saves[k]); });
+                XIRU.savegame.apply(d);
                 m.close(); location.reload();
             });
         };
@@ -271,15 +183,48 @@ XIRU.ready(function () {
         e.target.value = '';
     });
 
-    // Passwort & Löschen
+    // Geräte-Sync: Stand, der beim letzten Abgleich ersetzt wurde, kann zurückgeholt werden
+    const bakKey = 'xiru:cloudbak:' + name.toLowerCase(), bak = XIRU.user ? XIRU.store.get(bakKey, null) : null;
+    if (bak && XIRU.savegame.valid(bak.data)) {
+        const box = $('#cloudbak'); box.hidden = false;
+        box.innerHTML = '<b>Sicherung vom Geräte-Sync:</b> Stand von ' + XIRU.esc(bak.from === 'hier' ? 'diesem Gerät' : bak.from) + ', ersetzt am ' + new Date(bak.at).toLocaleString('de-CH', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) +
+            '. <button class="btn btn--sm" type="button" id="bak-use">Diesen Stand zurückholen</button>';
+        $('#bak-use').addEventListener('click', () => {
+            const m = XIRU.modal('<h2>Sicherung zurückholen?</h2><p class="muted">Der gesicherte Stand ersetzt deinen aktuellen Fortschritt. Mit Geräte-Sync wird er danach auf die anderen Geräte übertragen; der jetzige Stand wird dafür selbst zur Sicherung.</p>' +
+                '<div class="row mt-2"><button class="btn btn--primary" id="do-bak">Zurückholen</button><button class="btn" data-close>Abbrechen</button></div>');
+            m.el.querySelector('#do-bak').addEventListener('click', () => {
+                const now = XIRU.savegame.collect(true);
+                XIRU.savegame.apply(bak.data, true);
+                XIRU.store.set(bakKey, { at: Date.now(), from: 'hier', data: now });
+                m.close(); location.reload();
+            });
+        });
+    }
+
+    // Passwort & Löschen (mit Geräte-Sync auch auf dem Xiru-Server)
+    const cloudOn = () => !!(XIRU.user && XIRU.store.get('xiru:cloud:' + XIRU.user.toLowerCase(), null));
     $('#pw-form').addEventListener('submit', async e => {
-        e.preventDefault(); const msg = $('#pw-msg');
-        try { await XIRU.auth.changePassword($('#pw-old').value, $('#pw-new').value); msg.className = 'form-msg is-ok'; msg.textContent = 'Passwort geändert.'; e.target.reset(); }
-        catch (err) { msg.className = 'form-msg is-error'; msg.textContent = err.message; }
+        e.preventDefault(); const msg = $('#pw-msg'), oldPw = $('#pw-old').value, newPw = $('#pw-new').value;
+        try {
+            if (cloudOn() && await XIRU.auth.verify(oldPw)) {
+                if (String(newPw).length < 6) throw new Error('Das neue Passwort braucht mindestens 6 Zeichen.');
+                const o = await XIRU.online.load();
+                await o.cloud.password(oldPw, newPw).catch(err => { throw new Error(err.status ? 'Der Xiru-Server hat das Passwort nicht geändert.' : 'Der Xiru-Server ist nicht erreichbar – versuche es später noch einmal.'); });
+            }
+            await XIRU.auth.changePassword(oldPw, newPw);
+            msg.className = 'form-msg is-ok'; msg.textContent = cloudOn() ? 'Passwort geändert – hier und auf dem Xiru-Server.' : 'Passwort geändert.'; e.target.reset();
+        } catch (err) { msg.className = 'form-msg is-error'; msg.textContent = err.message; }
     });
     $('#del-form').addEventListener('submit', async e => {
-        e.preventDefault(); const msg = $('#del-msg');
-        try { await XIRU.auth.remove($('#del-pw').value); location.href = XIRU.url('index.html'); }
+        e.preventDefault(); const msg = $('#del-msg'), pw = $('#del-pw').value;
+        try {
+            if (cloudOn()) {
+                if (!(await XIRU.auth.verify(pw))) throw new Error('Das Passwort stimmt nicht.');
+                const o = await XIRU.online.load();
+                await o.cloud.remove(pw);
+            }
+            await XIRU.auth.remove(pw); location.href = XIRU.url('index.html');
+        }
         catch (err) { msg.className = 'form-msg is-error'; msg.textContent = err.message; }
     });
 });

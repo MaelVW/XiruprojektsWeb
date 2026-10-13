@@ -78,6 +78,22 @@
             </div>
             <p class="form-msg" id="data-msg"></p>
         </section>
+        <section class="card" id="online">
+            <h2>🌐 Online</h2>
+            <p class="muted small">Freiwillig. Eingeschaltet siehst du, wer sonst unterwegs ist, landest in den weltweiten Bestenlisten der Spielhalle und kannst Grüsse verschicken.
+                Dafür gehen dein <b>Spitzname</b>, deine <b>Rekorde</b> und die <b>Gegend</b>, in der du gerade bist, an den Xiru-Server. Mit dem <b>Geräte-Sync</b> zusätzlich
+                dein Konto (Name und Passwort – auf dem Server nur als Hash) und dein Spielstand, lesbar nur mit deinem Konto. Keine E-Mail.</p>
+            <div class="toggle-row"><div><strong>Online spielen</strong><div class="small muted" id="on-state">aus</div></div>
+                <label class="switch"><input type="checkbox" id="on-toggle" aria-label="Online spielen"><span></span></label></div>
+            <div class="field mt-2"><label for="on-nick">Spitzname</label>
+                <div class="row"><input class="input" id="on-nick" maxlength="20" style="flex:1" placeholder="So sehen dich die anderen"><button class="btn btn--sm" type="button" id="on-nick-save">Speichern</button></div></div>
+            <div class="toggle-row mt-2" id="sync-box" hidden><div><strong>Geräte-Sync</strong><div class="small muted" id="sync-state"></div></div><div class="row" id="sync-actions"></div></div>
+            <details class="small"><summary>Server</summary>
+                <div class="field mt-1"><label for="on-url">Adresse des Xiru-Servers</label>
+                    <div class="row"><input class="input" id="on-url" style="flex:1" spellcheck="false"><button class="btn btn--sm" type="button" id="on-test">Testen</button></div>
+                    <small id="on-test-msg">Standard: <code id="on-default"></code></small></div>
+            </details>
+        </section>
         <section class="card">
             <h2>Deine Xiru-Spiele</h2>
             <p class="small muted">Wir empfehlen gelegentlich eigene Spiele wie PIXMAG Mini. Empfehlungen sind als Eigenwerbung markiert und werden nicht an Dritte übertragen.</p>
@@ -112,6 +128,62 @@ XIRU.ready(function () {
         $('#promo-control').innerHTML = '<p class="small muted">Als Gastkonto bleibt Eigenwerbung eingeschaltet. Mit einem angemeldeten Konto kannst du sie kostenlos ausschalten.</p>';
         $('#promo-account-note').textContent = 'Als Gast kannst du Hinweise schliessen; eine dauerhafte Abschaltung gibt es für angemeldete Konten.';
     }
+    /* Online */
+    const onT = $('#on-toggle'), onState = () => { $('#on-state').textContent = XIRU.online.on() ? 'an – ' + (XIRU.online.status === 'online' ? 'verbunden' : XIRU.online.status === 'error' ? 'Server nicht erreichbar' : 'verbinde …') : 'aus'; };
+    $('#on-default').textContent = XIRU.ONLINE_DEFAULT;
+    $('#on-url').value = XIRU.setting('onlineUrl') || XIRU.ONLINE_DEFAULT;
+    onT.checked = XIRU.online.on(); onState();
+    const nickOf = () => { try { const m = XIRU.store.get('xiru:online:' + (XIRU.user ? XIRU.user.toLowerCase() : 'gast'), null); return (m && m.nick) || XIRU.user || ''; } catch (e) { return ''; } };
+    $('#on-nick').value = nickOf();
+    onT.addEventListener('change', () => { XIRU.online.enable(onT.checked); onState(); syncUI(); setTimeout(() => { onState(); syncUI(); }, 2500); });
+    /* Geräte-Sync: auf jedem Gerät mit Name und Passwort anmelden, Spielstand überall gleich (online.js → XIRU.online.cloud) */
+    const fmtAt = t => new Date(t).toLocaleString('de-CH', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    function syncUI() {
+        const box = $('#sync-box'); if (!XIRU.user) { box.hidden = true; return; }
+        box.hidden = false;
+        const l = XIRU.store.get('xiru:cloud:' + XIRU.user.toLowerCase(), null), st = $('#sync-state'), act = $('#sync-actions');
+        if (!XIRU.online.on()) { st.textContent = l ? 'pausiert – Online ist aus' : 'braucht „Online spielen“'; act.innerHTML = ''; }
+        else if (!l) { st.textContent = 'aus – dein Spielstand liegt nur in diesem Browser'; act.innerHTML = '<button class="btn btn--sm btn--primary" type="button" data-s="connect">Verbinden</button>'; }
+        else if (l.stale) { st.textContent = 'bitte neu anmelden'; act.innerHTML = '<button class="btn btn--sm btn--primary" type="button" data-s="connect">Anmelden</button>'; }
+        else { st.textContent = 'an' + (l.at ? ' – zuletzt abgeglichen ' + fmtAt(l.at) : ''); act.innerHTML = '<button class="btn btn--sm" type="button" data-s="now">Jetzt abgleichen</button><button class="btn btn--sm btn--ghost" type="button" data-s="del">Online-Kopie löschen</button>'; }
+    }
+    syncUI();
+    $('#sync-actions').addEventListener('click', e => {
+        const b = e.target.closest('[data-s]'); if (!b) return;
+        XIRU.online.load().then(o => {
+            o.cloud.onChange(syncUI);
+            if (b.dataset.s === 'connect') return o.cloud.prompt();
+            if (b.dataset.s === 'now') {
+                b.disabled = true;
+                return o.cloud.sync().then(r => { XIRU.toast('Geräte-Sync', r === 'runter' ? 'Neuerer Stand geladen.' : r === 'hoch' ? 'Dein Stand ist jetzt auf dem Server.' : r === 'gleich' ? 'Alles schon auf dem neuesten Stand.' : 'Gerade nicht möglich.', { icon: '🔄' }); syncUI(); })
+                    .catch(() => { XIRU.toast('Geräte-Sync', 'Der Xiru-Server ist gerade nicht erreichbar.', { icon: '⚠', type: 'error' }); b.disabled = false; });
+            }
+            const m = XIRU.modal('<h2>Online-Kopie löschen?</h2><p class="muted">Dein Konto und dein Spielstand werden vom Xiru-Server gelöscht. In diesem Browser bleibt alles, wie es ist – auf anderen Geräten kannst du dich danach nicht mehr mit diesem Konto anmelden.</p>' +
+                '<form data-del><div class="field"><label for="sd-pw">Passwort zur Bestätigung</label><input class="input" type="password" id="sd-pw" autocomplete="current-password" required></div><p class="form-msg" data-msg role="alert"></p>' +
+                '<div class="row"><button class="btn btn--danger" type="submit">Vom Server löschen</button><button class="btn" type="button" data-close>Abbrechen</button></div></form>');
+            m.el.querySelector('[data-del]').addEventListener('submit', async ev => {
+                ev.preventDefault(); const pw = m.el.querySelector('#sd-pw').value, msg = m.el.querySelector('[data-msg]');
+                try {
+                    if (!(await XIRU.auth.verify(pw))) throw new Error('Das Passwort stimmt nicht.');
+                    await o.cloud.remove(pw); o.cloud.forget();
+                    XIRU.store.set('xiru:cloud-later:' + XIRU.user.toLowerCase(), Date.now());
+                    m.close(); syncUI(); XIRU.toast('Online-Kopie gelöscht', 'Dein Spielstand liegt jetzt nur noch in diesem Browser.', { icon: '🗑' });
+                } catch (err) { msg.className = 'form-msg is-error'; msg.textContent = err.message; }
+            });
+        });
+    });
+    $('#on-nick-save').addEventListener('click', () => {
+        const v = $('#on-nick').value;
+        XIRU.online.load().then(o => o.setNick(v)).then(n => XIRU.toast('Spitzname gespeichert', n, { icon: '🌐' })).catch(e => XIRU.toast('Spitzname nicht gespeichert', e.message, { icon: '⚠', type: 'error' }));
+    });
+    $('#on-test').addEventListener('click', () => {
+        const u = $('#on-url').value.trim(), msg = $('#on-test-msg');
+        if (u && !/^https?:\/\/[\w.\-:\[\]]+(\/[\w\-]+)*\/?$/.test(u)) { msg.textContent = 'Bitte nur eine Adresse wie https://name.ts.net oder http://name:8090/api eingeben.'; return; }
+        XIRU.setting('onlineUrl', u && u !== XIRU.ONLINE_DEFAULT ? u.replace(/\/+$/, '') : '');
+        msg.textContent = 'Teste …';
+        XIRU.online.load().then(o => o.ping()).then(() => { msg.textContent = '✓ Der Xiru-Server antwortet.'; }).catch(() => { msg.textContent = '✗ Keine Antwort von ' + XIRU.online.url() + '.'; });
+    });
+    if (location.hash === '#online') setTimeout(() => $('#online').scrollIntoView({ block: 'start' }), 200);
     const PREVIEW = {
         nacht: ['#0b0e1a', '#141a2e', '#5eead4', '#a78bfa', '#e8ebf7', '#2a3358'],
         hell: ['#f5f6fb', '#ffffff', '#0d9488', '#7c3aed', '#151a30', '#d8dcec'],

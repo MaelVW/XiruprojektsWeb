@@ -32,8 +32,8 @@
         <div class="card card--flat"><b>0</b><span class="small muted">Drittanbieter-Tracker</span></div>
         <div class="card card--flat"><b>0</b><span class="small muted">Werbe- oder Tracking-Cookies</span></div>
         <div class="card card--flat"><b>2</b><span class="small muted">technische Cookies (nur mit Einwilligung)</span></div>
-        <div class="card card--flat"><b>0</b><span class="small muted">Server-Datenbanken</span></div>
-        <div class="card card--flat"><b>100 %</b><span class="small muted">in deinem Browser</span></div>
+        <div class="card card--flat"><b>1</b><span class="small muted">eigener Xiru-Server – nur wenn du „Online“ einschaltest</span></div>
+        <div class="card card--flat"><b>100 %</b><span class="small muted">in deinem Browser, solange Online aus ist</span></div>
     </div>
 
     <h2>1. Wer ist verantwortlich?</h2>
@@ -80,16 +80,41 @@
         <li>API-Schlüssel liegen unverschlüsselt im localStorage – verwende sie nur auf deinen eigenen Geräten. Sie sind nicht im Spielstand-Export enthalten.</li>
     </ul>
 
-    <h2>5. Hosting</h2>
+    <h2>5. Online-Funktionen (freiwillig)</h2>
+    <p>„Online“ ist standardmässig <strong>aus</strong>. Nach dem Anmelden fragen wir einmal, ob du es einschalten möchtest; ändern kannst du es jederzeit in den
+        <a href="konto/einstellungen.html#online">Einstellungen</a>. Erst wenn es eingeschaltet ist, spricht deine Website mit unserem eigenen <strong>Xiru-Server</strong>
+        (selbst betrieben, kein fremder Analyse- oder Cloud-Dienst). Übertragen werden dann:</p>
+    <ul>
+        <li><strong>Dein Spitzname</strong> (frei wählbar, voreingestellt ist dein Kontoname), dein Level und das Kern-Bauteil deines Mechs,</li>
+        <li><strong>die Gegend, in der du gerade bist</strong> (Insel bzw. Bereich und Seitentitel) – etwa alle 45 Sekunden, solange die Seite offen ist,</li>
+        <li><strong>deine Spielrekorde</strong> für die weltweiten Bestenlisten,</li>
+        <li><strong>Grüsse</strong>, die du verschickst (nur vorgefertigte Sätze, kein Freitext).</li>
+    </ul>
+    <p>Andere, die ebenfalls online sind, sehen deinen Spitznamen, dein Level, deine Gegend und deine Rekorde. Es gibt <strong>keine E-Mail-Adresse und keine Cookies</strong>
+        für Online: Dein Browser erzeugt einen zufälligen Schlüssel, mit dem nur er deinen Eintrag ändern darf. Der Server kann – wie jeder Webserver – technisch deine IP-Adresse sehen;
+        sie wird nicht gespeichert oder ausgewertet, nur kurzzeitig zum Schutz vor zu vielen Anfragen genutzt.
+        Damit der Server bei uns zu Hause über das Internet erreichbar ist, läuft die Verbindung über den Weiterleitungsdienst <strong>Tailscale Funnel</strong>
+        (Tailscale Inc., USA): Er reicht die verschlüsselte HTTPS-Verbindung nur durch – die Inhalte entschlüsselt erst unser Server –, sieht dabei aber technisch deine IP-Adresse. Einträge löschen wir auf Wunsch; schalte Online aus, und dein Eintrag
+        verschwindet nach wenigen Minuten aus der Liste „Gerade unterwegs“.</p>
+    <h3>Geräte-Sync (zusätzlich freiwillig)</h3>
+    <p>Wenn du bei eingeschaltetem Online deinem Konto den <strong>Geräte-Sync</strong> erlaubst (wir fragen dich dafür nach deinem Passwort), legen wir dein Konto
+        auch auf dem Xiru-Server an: <strong>Kontoname</strong> und <strong>Passwort</strong> – das Passwort speichert der Server nur als Hash, also nicht lesbar.
+        Dazu kommt <strong>dein Spielstand</strong> (Fortschritt, Kristalle, Module, Mech, Spielstände der Spiele) und eine grobe Gerätebezeichnung wie „Windows · Firefox“.
+        So kannst du dich auf jedem Gerät mit Name und Passwort anmelden. Lesen und ändern kann diese Daten nur, wer mit deinem Konto angemeldet ist.
+        <strong>Nie</strong> übertragen werden API-Schlüssel aus „Dienste & Schlüssel“ und alles, was nur in diesem Browser bleiben soll.
+        Löschen kannst du die Online-Kopie jederzeit selbst: <a href="konto/einstellungen.html#online">Einstellungen → Online → Online-Kopie löschen</a>;
+        wenn du dein Konto im <a href="konto/profil.html">Profil</a> löschst, wird sie mitgelöscht.</p>
+
+    <h2>6. Hosting</h2>
     <p>Wenn diese Website auf einem Webserver bereitgestellt wird, kann der Hosting-Anbieter technisch notwendige Zugriffsprotokolle führen
         (z. B. IP-Adresse, Zeitpunkt, aufgerufene Seite). Wir werten solche Protokolle nicht aus.</p>
 
-    <h2>6. Links zu anderen Websites</h2>
+    <h2>7. Links zu anderen Websites</h2>
     <p>Einige Seiten verlinken auf externe Websites (z. B. GitHub oder Anbieter von KI-Diensten). Erst wenn du auf so einen Link klickst,
         gelten dort die Regeln des jeweiligen Betreibers.</p>
 
-    <h2>7. Deine Rechte</h2>
-    <p>Wir erhalten keine Nutzungsdaten auf einem Server. In den <a href="konto/einstellungen.html">Einstellungen</a> kannst du deinen Fortschritt zurücksetzen oder alle Daten dieser Website aus deinem Browser löschen.</p>
+    <h2>8. Deine Rechte</h2>
+    <p>Solange „Online“ aus ist, erhalten wir keine Daten von dir auf einem Server; mit Online nur die oben genannten. Auf Wunsch löschen wir deinen Online-Eintrag; die Online-Kopie deines Kontos (Geräte-Sync) kannst du selbst löschen. In den <a href="konto/einstellungen.html">Einstellungen</a> kannst du deinen Fortschritt zurücksetzen oder alle Daten dieser Website aus deinem Browser löschen.</p>
 </main>
 <script>XIRU.ready(function () { XIRU.$('#consent-open').addEventListener('click', () => XIRU.consent.open()); });</script>
 </body>

@@ -153,7 +153,10 @@
     }
     let P = loadProfile(X.user);
     X.profile = () => P;
-    function persist() { X.store.set(profileKey(X.user), P); if (typeof scheduleBackup === 'function') scheduleBackup(); }
+    /* Zeitpunkt der letzten Änderung am Spielstand (für den Geräte-Sync in online.js) */
+    const modKey = name => 'xiru:mod:' + (name ? name.toLowerCase() : GUEST);
+    function touch() { if (X.user) X.store.set(modKey(X.user), Date.now()); }
+    function persist() { X.store.set(profileKey(X.user), P); touch(); if (typeof scheduleBackup === 'function') scheduleBackup(); }
     X.persist = persist;
 
     X.auth = {
@@ -192,9 +195,38 @@
             if (!acc) throw new Error('Name oder Passwort stimmt nicht.');
             if (!window.crypto || !crypto.subtle) throw new Error('Dein Browser unterstützt keine sichere Verschlüsselung.');
             const h = await this.hash(password, acc.salt, acc.iter);
-            if (h.hash !== acc.hash) throw new Error('Name oder Passwort stimmt nicht.');
+            if (h.hash !== acc.hash) { const e = new Error('Name oder Passwort stimmt nicht.'); e.wrongPw = true; throw e; }
             this._start(acc.name, remember);
             return acc.name;
+        },
+        /* Passwort wurde auf einem anderen Gerät geändert und vom Xiru-Server bestätigt → hier übernehmen */
+        async syncPassword(name, password) {
+            const all = this.accounts(), acc = all[String(name || '').toLowerCase()];
+            if (!acc) return;
+            const n = await this.hash(password, null, 150000);
+            Object.assign(acc, { salt: n.salt, hash: n.hash, iter: n.iter });
+            X.store.set('xiru:accounts', all);
+        },
+        /* Passwort des angemeldeten Kontos prüfen (bevor es an den Xiru-Server geht) */
+        async verify(password) {
+            const acc = X.user && this.accounts()[X.user.toLowerCase()];
+            if (!acc || !window.crypto || !crypto.subtle) return false;
+            const h = await this.hash(password, acc.salt, acc.iter);
+            return h.hash === acc.hash;
+        },
+        /* Konto, das es bisher nur auf dem Xiru-Server gibt, in diesem Browser anlegen (Geräte-Sync) */
+        async adopt(name, password, remember) {
+            name = String(name || '').trim();
+            if (!this.validName(name)) throw new Error('Dieser Name passt nicht.');
+            if (!window.crypto || !crypto.subtle) throw new Error('Dein Browser unterstützt keine sichere Verschlüsselung.');
+            const all = this.accounts();
+            if (all[name.toLowerCase()]) throw new Error('Diesen Namen gibt es in diesem Browser schon.');
+            const h = await this.hash(password, null, 150000);
+            all[name.toLowerCase()] = { name, salt: h.salt, hash: h.hash, iter: h.iter, created: Date.now() };
+            X.store.set('xiru:accounts', all);
+            X.store.set(profileKey(name), blankProfile(name));
+            this._start(name, remember);
+            return name;
         },
         _start(name, remember) {
             sessionSet(SESSION_KEY, name);
@@ -232,6 +264,7 @@
             X.store.set('xiru:accounts', all);
             X.store.remove(profileKey(X.user));
             X.store.remove('xiru:keys:' + key);
+            ['xiru:cloud:', 'xiru:cloudbak:', 'xiru:mod:', 'xiru:online:'].forEach(pre => X.store.remove(pre + key));
             X.store.keys('xiru:save:' + key + ':').forEach(k => X.store.remove(k));
             X.cookie.del(backupName());
             const last = X.cookie.getJSON('xiru_zuletzt'); if (last && String(last.n).toLowerCase() === key) X.cookie.del('xiru_zuletzt');
@@ -240,7 +273,7 @@
     };
 
     /* ── Einstellungen ──────────────────────────────────────────────────── */
-    const DEFAULTS = { theme: null, anim: true, sound: true, visitToasts: true, promos: true, modus: 'abenteuer' };
+    const DEFAULTS = { theme: null, anim: true, sound: true, visitToasts: true, promos: true, modus: 'abenteuer', online: false, onlineAsked: false, onlineUrl: '' };
     X.setting = function (key, val) {
         if (arguments.length === 1) return key in P.settings ? P.settings[key] : DEFAULTS[key];
         P.settings[key] = val; persist(); applySettings(); emit('setting', { key, val });
@@ -288,7 +321,123 @@
     /* ── Spielstände ────────────────────────────────────────────────────── */
     const saveKey = k => 'xiru:save:' + (X.user ? X.user.toLowerCase() : GUEST) + ':' + k;
     X.load = (k, def) => X.store.get(saveKey(k), def === undefined ? null : def);
-    X.save = (k, v) => X.store.set(saveKey(k), v);
+    /* Bleiben immer nur in diesem Browser: Liminal-Teil und lokaler Spielzeit-Zähler */
+    const LOCAL_ONLY = /^(why-|liminal-|local-usage$)/;
+    X.save = (k, v) => { X.store.set(saveKey(k), v); if (!LOCAL_ONLY.test(k)) touch(); };
+
+    /* ── Spielstand als Ganzes: Export/Import (Profil) und Geräte-Sync (online.js) ──
+       Eingelesen wird nur nach strenger Prüfung – Dateien und Server-Daten könnten manipuliert sein.
+       Bekanntes nur mit Registereinträgen, Zahlen bleiben Zahlen, Texte in Spielständen werden entschärft. */
+    X.savegame = (function () {
+        const num = v => { v = +v; return isFinite(v) ? v : 0; };
+        const safeKey = k => /^[\w\-.:\/]{1,80}$/.test(k) && !['__proto__', 'constructor', 'prototype'].includes(k);
+        const idSet = list => new Set((list || []).map(x => x.id));
+        function keep(obj, ok, val) {
+            const out = {};
+            if (obj && typeof obj === 'object' && !Array.isArray(obj)) Object.keys(obj).slice(0, 5000).forEach(k => {
+                if (!safeKey(k) || !ok(k)) return;
+                const v = val(obj[k], k);
+                if (v !== undefined) out[k] = v;
+            });
+            return out;
+        }
+        const SAFE_CH = { '<': '‹', '>': '›', '"': '”', "'": '’', '`': 'ˋ' };   // HTML/Attribut-Zeichen → harmlose Typografie
+        function clean(v, depth) {
+            if (depth > 12) return null;
+            if (typeof v === 'string') return v.slice(0, 20000).replace(/[<>"'`]/g, c => SAFE_CH[c]);
+            if (typeof v === 'number') return isFinite(v) ? v : 0;
+            if (typeof v === 'boolean' || v === null) return v;
+            if (Array.isArray(v)) return v.slice(0, 5000).map(x => clean(x, depth + 1));
+            if (typeof v === 'object') return keep(v, () => true, x => clean(x, depth + 1));
+            return null;
+        }
+        function cleanProfile(p) {
+            const eggs = idSet(X.eggs), skills = idSet(X.skills), pages = new Set(X.pages.map(x => x.p));
+            const parts = idSet(X.mechParts), slots = idSet(X.mechSlots), isles = new Set(Object.keys(X.islandReq || {}).concat(X.regions.map(r => r.id)));
+            const themes = idSet(X.themes);
+            const out = {
+                xp: Math.max(0, num(p.xp)), bonus: Math.max(0, Math.min(X.eggs.filter(e => e.r === 4).length, num(p.bonus))), created: num(p.created) || Date.now(),
+                skills: keep(p.skills, k => skills.has(k), num),
+                eggs: keep(p.eggs, k => eggs.has(k), num),
+                visited: keep(p.visited, k => pages.has(k), num),
+                days: keep(p.days, k => /^\d{4}-\d{2}-\d{2}$/.test(k), () => 1),
+                scores: keep(p.scores, () => true, s => s && typeof s === 'object' ? { best: s.best == null ? null : num(s.best), plays: num(s.plays), last: num(s.last), at: num(s.at) } : undefined),
+                rewards: keep(p.rewards, () => true, num),
+                settings: keep(p.settings, k => ['theme', 'anim', 'sound', 'visitToasts', 'promos', 'modus', 'online', 'onlineAsked'].includes(k),
+                    (v, k) => k === 'theme' ? (themes.has(v) ? v : null) : k === 'modus' ? (v === 'entdecker' ? 'entdecker' : 'abenteuer') : typeof v === 'boolean' ? v : undefined),
+                data: {}
+            };
+            const d = p.data && typeof p.data === 'object' ? p.data : {};
+            if (d.mech && typeof d.mech === 'object') {
+                const m = d.mech, int = (v, a, b) => Math.max(a, Math.min(b, Math.floor(num(v))));
+                const base = { islands: keep(m.islands, k => isles.has(k), num), spent: Math.max(0, num(m.spent)), tutorial: int(m.tutorial, 0, 2), testrun: int(m.testrun, 0, 1), trep: int(m.trep, 0, 1) };
+                if (Array.isArray(m.inv)) {   // Mech-Daten Version 2: Inventar mit Seltenheiten
+                    const seen = new Set();
+                    const inv = m.inv.slice(0, X.mech.INV_MAX).filter(it => it && typeof it === 'object' && parts.has(it.id)).map(it => {
+                        let u = String(it.u || '').replace(/[^a-z0-9]/gi, '').slice(0, 24) || 'i' + Math.random().toString(36).slice(2, 10);
+                        while (seen.has(u)) u += 'x'; seen.add(u);
+                        return { u, id: it.id, q: int(it.q, 1, 6), c: int(it.c, 0, 100), up: int(it.up, 0, 5), at: num(it.at) };
+                    });
+                    out.data.mech = Object.assign(base, {
+                        v: 2, inv,
+                        eq: keep(m.eq, k => slots.has(k), (v, k) => { const it = inv.find(x => x.u === v); return it && X.mech.part(it.id).slot === k ? it.u : undefined; }),
+                        mat: keep(m.mat, k => !!X.mech.mat(k), v => int(v, 0, 99999)),
+                        taler: int(m.taler, 0, 10000000),
+                        pos: isles.has(m.pos) && X.mech.isle(m.pos) ? m.pos : 'konto',
+                        bp: keep(m.bp, k => parts.has(k), num), bpv: int(m.bpv, 0, 1),
+                        scan: keep(m.scan, k => isles.has(k), num),
+                        rod: int(m.rod, 1, Math.max(1, (X.rods || []).length - 1)),
+                        fish: keep(m.fish, k => !!X.mech.fishInfo(k), v => int(v, 0, 99999)),
+                        fishbook: keep(m.fishbook, k => !!X.mech.fishInfo(k), num),
+                        fishing: keep(m.fishing, k => !!X.mech.spot(k), v => v && typeof v === 'object' ? { n: int(v.n, 0, 9), t: num(v.t) } : undefined),
+                        joe: { n: int(m.joe && m.joe.n, 0, 1e7), best: int(m.joe && m.joe.best, 0, 1e7), dry: int(m.joe && m.joe.dry, 0, 99), pot: int(m.joe && m.joe.pot, 250, 1e7) },
+                        arena: { rank: int(m.arena && m.arena.rank, 0, 12), wins: int(m.arena && m.arena.wins, 0, 1e6), losses: int(m.arena && m.arena.losses, 0, 1e6) },
+                        stats: { trips: int(m.stats && m.stats.trips, 0, 1e7), km: int(m.stats && m.stats.km, 0, 1e9) }
+                    });
+                    // Weitere (neuere) Felder wie job, flossie, mine, wrack: übernehmen, aber entschärft
+                    Object.keys(m).slice(0, 200).forEach(k => { if (!(k in out.data.mech) && safeKey(k)) out.data.mech[k] = clean(m[k], 1); });
+                } else {   // Version 1 (wird beim Laden automatisch umgewandelt)
+                    out.data.mech = Object.assign(base, {
+                        parts: keep(m.parts, k => slots.has(k), (v, k) => parts.has(v) && X.mech.part(v).slot === k ? v : undefined),
+                        built: keep(m.built, k => parts.has(k), num),
+                        cond: keep(m.cond, k => parts.has(k), v => Math.max(0, Math.min(100, num(v))))
+                    });
+                }
+            }
+            if (d.themesTried) out.data.themesTried = keep(d.themesTried, () => true, num);
+            return out;
+        }
+        function saves(sync) {
+            const prefix = saveKey(''), out = {};
+            X.store.keys(prefix).forEach(k => { const id = k.slice(prefix.length); if (!sync || !LOCAL_ONLY.test(id)) out[id] = X.store.get(k); });
+            return out;
+        }
+        return {
+            /* sync = true: ohne Daten, die nur in diesem Browser bleiben */
+            collect: sync => ({ format: 'xiru-export', v: 1, name: X.user || 'Gast', exported: new Date().toISOString(), profile: P, saves: saves(sync) }),
+            valid: d => !!(d && d.format === 'xiru-export' && d.profile && typeof d.profile === 'object'),
+            /* ersetzt den Fortschritt des aktuellen Kontos; sync = Online-Einstellungen dieses Browsers behalten
+               und Spielstände entfernen, die im neuen Stand fehlen */
+            apply(d, sync) {
+                const prof = cleanProfile(d.profile);
+                const here = { online: P.settings.online, onlineAsked: P.settings.onlineAsked, onlineUrl: P.settings.onlineUrl };
+                // Einträge ausserhalb des Registers (Liminal-Teil) bleiben beim Sync in diesem Browser
+                const pageSet = new Set(X.pages.map(x => x.p)), eggSet = new Set(X.eggs.map(e => e.id));
+                const localV = sync ? Object.keys(P.visited).filter(k => !pageSet.has(k)).map(k => [k, P.visited[k]]) : [];
+                const localE = sync ? Object.keys(P.eggs).filter(k => !eggSet.has(k)).map(k => [k, P.eggs[k]]) : [];
+                ['skills', 'eggs', 'visited', 'days', 'scores', 'rewards', 'settings', 'data'].forEach(k => { P[k] = prof[k]; });
+                P.xp = prof.xp; P.bonus = prof.bonus; P.created = prof.created;
+                if (sync) Object.keys(here).forEach(k => { if (here[k] !== undefined) P.settings[k] = here[k]; else delete P.settings[k]; });
+                localV.forEach(([k, v]) => { P.visited[k] = v; }); localE.forEach(([k, v]) => { P.eggs[k] = v; });
+                if (!X.user) P.skills = {};
+                persist();
+                // Spielstände: nur bekannte Schlüsselform, Texte entschärft; Liminal-Teil und lokale Zähler werden nie übertragen
+                const sv = clean(d.saves && typeof d.saves === 'object' ? d.saves : {}, 0);
+                if (sync) Object.keys(saves(true)).forEach(k => { if (!(k in sv)) X.store.remove(saveKey(k)); });
+                Object.keys(sv).forEach(k => { if (/^[\w\-.]+$/.test(k) && !LOCAL_ONLY.test(k)) X.save(k, sv[k]); });
+            }
+        };
+    })();
     X.promoAllowed = () => !X.user || X.setting('promos') !== false;
     X.activity = {
         arcadeSeconds() {
@@ -897,7 +1046,7 @@
         persist();
         if (s.plays === 1) X.addXP(15, 'Erstes Spiel: ' + game);
         else if (better) X.addXP(5, 'Neuer Rekord');
-        emit('score', { game, value, best: s.best, isNew: better });
+        emit('score', { game, value, best: s.best, isNew: better, lower: !!opts.lower });
         return { best: s.best, isNew: better, plays: s.plays };
     };
     X.best = game => (P.scores[game] && P.scores[game].best != null) ? P.scores[game].best : null;
@@ -1595,6 +1744,42 @@
         else readyQueue.push(fn);
     };
 
+    /* ── Online (freiwillig) ────────────────────────────────────────────────
+       Standardmässig aus. Erst wenn man es einschaltet, lädt core.js assets/js/online.js
+       (Bestenlisten, wer ist unterwegs, Grüsse) und spricht mit dem Xiru-Server.
+       Nach dem Anmelden wird einmal gefragt, ob man online spielen möchte.               */
+    /* Adresse = API-Wurzel des Xiru-Servers (PocketBase hinter Tailscale Funnel, nur /api ist öffentlich).
+       Im Heimnetz ginge auch http://mael.local:8090/api.                                                   */
+    X.ONLINE_DEFAULT = 'https://xiru.tail9e3f56.ts.net';
+    let onlineLoad = null;
+    X.online = {
+        on: () => X.setting('online') === true,
+        url: () => (X.setting('onlineUrl') || X.ONLINE_DEFAULT).replace(/\/+$/, ''),
+        /* lädt online.js (einmal) und gibt XIRU.online zurück */
+        load() {
+            if (onlineLoad) return onlineLoad;
+            onlineLoad = new Promise((res, rej) => {
+                const sc = document.createElement('script'); sc.src = X.url('assets/js/online.js');
+                sc.onload = () => res(X.online); sc.onerror = () => { onlineLoad = null; rej(new Error('online.js fehlt')); };
+                document.head.appendChild(sc);
+            });
+            return onlineLoad;
+        },
+        enable(on) { X.setting('onlineAsked', true); X.setting('online', !!on); if (on) X.online.load().then(o => o.start && o.start()).catch(() => { }); else if (X.online.stop) X.online.stop(); },
+        /* Einmalige Frage nach dem Anmelden */
+        ask() {
+            if (!X.user || X.setting('onlineAsked') || document.documentElement.hasAttribute('data-bare')) return;
+            X.setting('onlineAsked', true);
+            const m = X.modal('<span class="eyebrow">Neu · freiwillig</span><h2>Online mitspielen?</h2>' +
+                '<p>Mit Online siehst du, wer gerade sonst in der Xiru-Welt unterwegs ist, landest mit deinen Rekorden in den <b>weltweiten Bestenlisten</b> und kannst anderen Reisenden Grüsse schicken. ' +
+                'Und mit dem <b>Geräte-Sync</b> spielst du auf jedem Gerät mit demselben Spielstand weiter.</p>' +
+                '<p class="small muted">Dafür gehen dein Spitzname, deine Rekorde und die Gegend, in der du gerade bist, an den Xiru-Server. Keine E-Mail, kein Passwort, keine Werbung. ' +
+                'Du kannst es jederzeit in den <a href="' + X.url('konto/einstellungen.html') + '#online">Einstellungen</a> wieder ausschalten.</p>' +
+                '<div class="row mt-2"><button class="btn btn--primary" type="button" data-on>Online einschalten</button><button class="btn" type="button" data-close>Lieber offline</button></div>');
+            m.el.querySelector('[data-on]').addEventListener('click', () => { m.close(); X.online.enable(true); X.toast('Online eingeschaltet', 'Willkommen in der grossen Xiru-Welt!', { icon: '🌐' }); });
+        }
+    };
+
     function boot() {
         const body = document.body;
         if (document.documentElement.hasAttribute('data-bare')) {   // Liminal-Teil (Why): eigene Welt – keine XP, Kristalle, Besuche
@@ -1647,6 +1832,7 @@
         safe(initConsole);
         safe(trackVisit);
         safe(trackArcadeTime);
+        safe(() => { if (X.online.on()) X.online.load().then(o => o.start && o.start()).catch(() => { }); else setTimeout(X.online.ask, 1200); });
         booted = true;
         readyQueue.splice(0).forEach(fn => { if (!X.locked) safe(fn); });
         safe(initReveal);

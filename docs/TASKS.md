@@ -236,6 +236,40 @@ Der Liminal-Teil (`Why.html`, `why/*`, `liminal*.js`) wird mitgeprüft, aber **n
 
 ## Notizen der letzten Sitzung
 
+- 2026-10-13 nachts: **Mini-MMO-Bausteine gebaut** (Priorität 1). Neu: `assets/js/mnemora-net.js` (`XIRU.mnNet`, ganzer Server-Verkehr,
+  halb-live mit `EVERY`-Takt + Realtime für `mn_feed` – später hier auf Echtzeit umstellen), `assets/js/mnemora-mmo.js` (`XIRU.mnMMO`, Oberfläche),
+  `kampf.js` kann jetzt Trupp-Kamerad:innen (`o.allies`, KI) und Rundenlimit (`o.rounds`, Weltboss; liefert `{ win, dmg, team, rounds }`),
+  `mnemora.js`: Weltbosse (5, wöchentlich, `worldBoss()`), Kampfprofil `kit()/cleanKit()`, `progress()`, Tauschwaren (`itemOk/hasItem/takeItem/giveItem`),
+  Strassen mit Artikel (`roadDat` …). `online.js`: `api`, `ensure`, `beatExtra`, `subscribe`. mnemora.html: Trupp/Weltboss/Schnellchat in der
+  Seitenleiste, Einladen/Duell bei Reisenden, Reiter „Treffpunkt“ (Chronik, Tauschbörse, Duellring, Ranglisten), Chronik-Einträge bei Ankunft/Strasse/Ort/GC.
+  7 neue Pixel-Icons (ic-trupp, ic-duell, ic-tausch, ic-chronik, ic-chat, ic-weltboss, ic-rang). Doku: ONLINE.md (Abschnitt Mnemora-MMO),
+  `docs/pocketbase-mmo-import.json`, Datenschutz §5, Hilfe-FAQ. **Getestet** mit neuem lokalem Nachbau `dev/mock-pocketbase.py` (launch.json „xiru-mock“,
+  Port 8099): Trupp einladen/beitreten/verlassen, Koop-Kampf + Anteil, Weltboss-Angriff + Beute, Duell, Schnellchat, Tausch (anbieten/annehmen/
+  abschliessen/zurückziehen), Nachrichten, Offline- und Entdecker-Ansicht, Arena. Testkonto zurückgesetzt.
+  **OFFEN (Mael):** auf dem echten Server players um `party`, `kit`, `mn`, `mns` ergänzen und `docs/pocketbase-mmo-import.json` importieren
+  (Anleitung ONLINE.md, „Merge“ anhaken!). Danach prüfen, ob die Regeln mit `player.key.secret` beim Anlegen greifen (ich teste anonym mit Wegwerf-Spieler).
+  **Nächstes laut Prioritäten:** 2) begehbare Ort-Maps auf Mnemora + Land-Maps ausbauen, 3) Mech-Redesign.
+
+- **MINI-MMO MNEMORA – Entscheid mit Mael (2026-10-13):** Gewählt: **Trupp & Koop-Kampf** (bis 3 am gleichen Ort, Kameraden als
+  KI-Verbündete), **Weltboss** (wöchentlich, Lebenspunkte auf dem Server, Schadensrangliste), **Duelle** (Geister-PvP gegen KI-Kopie echter
+  Werte, Duell-Rangliste), **Tauschbörse** (Port Puffer/Registra, Vertrauensbasis), dazu **Chronik am Treffpunkt**, **Schnellchat**
+  (Satzbaukasten, kein Freitext), **Mnemora-Rangliste**. Nicht gewählt: Wegzeichen.
+  **Live-Grad:** zuerst *halb-live* (Abfrage alle 10–30 s, KI-Kopien). **Ziel später: Echtzeit** (PocketBase-Realtime/SSE, Figuren sofort,
+  gemeinsame Live-Kämpfe) – darum so bauen, dass Abfragen später durch Realtime-Abos ersetzt werden können (Datenzugriff gebündelt, nicht verstreut).
+  Mael hat dazu später noch mehr Pläne (u. a. etwas mit „echten Maps“) und weitere Punkte → **erst loslegen, wenn Mael alles erklärt hat.**
+  **Prioritäten (Mael, 2026-10-13, „jetzt beginnen“):** 1) die groben MMO-Bausteine oben. 2) **Begehbare Maps** für jeden Ort auf
+  Mnemora: hinreisen, dann die Ort-Map „betreten“, MMO-artig von oben gesehen; zuerst 2D, später schrittweise 3D-artiger (Mael hilft
+  teils mit Assets). Die Land-Maps sind momentan langweilig → mindestens so ausbauen wie die Wasser-Maps (Sektaria), eher mehr.
+  3) **Mech-Redesign** danach.
+
+- **STAND 2026-10-13 abends (vor Komprimierung):** Fertig und getestet: Online öffentlich (Tailscale Funnel), Geräte-Sync, Texte „nur lokal“
+  angepasst, Mnemora komplett (Arche, Karte, Gehäuse/Steckkarten, Strassen, Endgegner) + Begegnungen auf Mnemora (Figuren, Treffpunkte, Grüsse).
+  Mael committet selbst. **Nächstes Thema laut Mael: Mnemora zu einem richtigen Mini-MMO ausbauen** – vorher mit ihm besprechen
+  (Ideen: gemeinsam Strassen freikämpfen, Karten handeln/tauschen, Treffpunkt-Brett mit vorgefertigten Nachrichten).
+  Arbeitsweise: Testkonto vor Tests sichern (localStorage-Schlüssel mit „:tester“ + xiru:accounts → sessionStorage) und danach zurücksetzen,
+  `XIRU.backup.write(true)`; Online-Tests ohne echten Server mit Fetch-Attrappe auf `http://127.0.0.1:9`. Nie selbst Konten/Passwörter am
+  echten Server; Unraid-Logs bei Mael erfragen; Router/Tailscale-Sicherheitseinstellungen klickt Mael.
+
 - 2026-10-13 (mit Mael): **MNEMORA gebaut** (Wunsch von Mael: Arche, Ladebildschirm, eigene Karte, Strasse für Strasse, neue Mech-Bauarten).
   - `welt/arche.html` (Arche-Dock, Heimathafen): 6 teure Bauabschnitte (Kiel … Nebelbrecher, zusammen ~3350 Schrott, viel Material, ~5200 Taler),
     Besatzung wie Noahs Arche (Otto Pflicht + mind. 4 von Rubina/Flossie/Joe/Kiesel/Bolzen/Esse, jede:r mit Vorteil auf Mnemora), Proviant
@@ -248,7 +282,11 @@ Der Liminal-Teil (`Why.html`, `why/*`, `liminal*.js`) wird mitgeprüft, aber **n
   - `assets/js/kampf.js`: Kampf aus arena.html ausgelagert (Arena nutzt ihn jetzt auch; CSS in welt.css, Fix: Icons in den Lebensbalken waren riesig).
   - 32 neue Pixel-Icons, 8 Kristalle (m-arche, m-arche-crew, m-mnemora, m-gehaeuse, m-steckkarte, m-strasse, m-alle-strassen, m-gc),
     Weltkarte-Panel verlinkt Arche/Mnemora, Hilfe-FAQ, Online zeigt „Mnemora“ als Gegend. Getestet mit Testkonto (danach zurückgesetzt).
-  - Ideen für später: Gehäuse-Seltenheiten/Aufwertung, Online-Begegnungen auf Mnemora, die zwei Länder im Norden und Südwesten.
+  - **Begegnungen (Online):** online.js meldet auf Mnemora `mnemora:<Ort>` + aktives Gehäuse, `XIRU.online.nudge()` nach Reisen/Kämpfen.
+    mnemora.html zeigt andere Reisende als Figuren am Ort (Liste alle 30 s), Treffpunkte Port Puffer + Registra (Krug-Symbol, Karte
+    „Reisende hier“), Hinweis „X ist auch hier“ (einmal pro Sitzung), Grüsse an Person oder „Allen hier“ (nur gleicher Ort). Getestet mit
+    nachgebautem Server im Browser. **Nächster Schritt laut Mael: daraus ein richtiges Mini-MMO machen.**
+  - Ideen für später: Gehäuse-Seltenheiten/Aufwertung, gemeinsam kämpfen/handeln (Mini-MMO), die zwei Länder im Norden und Südwesten.
 
 - 2026-10-13 (mit Mael, später): **Geräte-Sync** – auf jedem Gerät mit Name + Passwort anmelden, Spielstand überall gleich (nur mit Online).
   Server: `users` angepasst (username statt E-Mail, eindeutig ohne Gross/Klein, PW ≥ 6, keine Login-Mails, Token 30 Tage), neue Tabelle `saves`

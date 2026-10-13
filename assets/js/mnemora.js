@@ -11,6 +11,7 @@
      ark { Bauabschnitt: Zeit }, crew { Person: Zeit }, arrived (Zeit), at (Ort), seen { Ort: Zeit },
      roads { Strasse: besiegte Gegner }, bpc / bpk { Gehäuse- bzw. Karten-Bauplan: Zeit },
      casings [ { u, id, c (Zustand 0–100), k: [Karten-u …] } ], cards [ { u, id } ], active (u), intro (0–3), boss (Zeit)
+     Online/MMO: party (Trupp-Kennung), wb { key: Woche, last, hits, dmg, claimed }, fx [verarbeitete Nachrichten], tk [abgeschlossene Tausche], dr { Geist: Tag }
 
    XIRU.mnemora – Daten (TERRAIN, CASINGS, CARDS, PLACES, ROADS, STAGES, CREW) und Logik, siehe unten.
    ========================================================================== */
@@ -94,19 +95,19 @@
     const PLACES = Object.keys(EXTRA).map(id => Object.assign({ id }, FEST.find(p => p.id === id) || {}, EXTRA[id]));
     const placeMap = {};
     PLACES.forEach(p => { placeMap[p.id] = p; });
-    /* lvl = Gefahrenstufe, foes = Anzahl Gegner bis die Strasse frei ist */
+    /* lvl = Gefahrenstufe, foes = Anzahl Gegner bis die Strasse frei ist, f = weiblich (die Waldschneise) */
     const ROADS = [
         { id: 's1',  a: 'port',     b: 'duenen',   terr: 'strand', lvl: .7,  foes: 2, n: 'Küstenpfad' },
         { id: 's2',  a: 'duenen',   b: 'registra', terr: 'ebene',  lvl: 1.6, foes: 2, n: 'Weizenweg' },
-        { id: 's3',  a: 'duenen',   b: 'cache',    terr: 'wald',   lvl: 2.2, foes: 2, n: 'Waldschneise' },
-        { id: 's4',  a: 'registra', b: 'bitbrunn', terr: 'furt',   lvl: 3,   foes: 2, n: 'Flashfurt' },
+        { id: 's3',  a: 'duenen',   b: 'cache',    terr: 'wald',   lvl: 2.2, foes: 2, n: 'Waldschneise', f: 1 },
+        { id: 's4',  a: 'registra', b: 'bitbrunn', terr: 'furt',   lvl: 3,   foes: 2, n: 'Flashfurt', f: 1 },
         { id: 's5',  a: 'cache',    b: 'frostkap', terr: 'schnee', lvl: 3.6, foes: 3, n: 'Frostweg' },
         { id: 's6',  a: 'bitbrunn', b: 'moor',     terr: 'sumpf',  lvl: 4,   foes: 3, n: 'Moorpfad' },
         { id: 's7',  a: 'registra', b: 'speicher', terr: 'berg',   lvl: 4.8, foes: 3, n: 'Speicherpass' },
         { id: 's8',  a: 'cache',    b: 'kernel',   terr: 'berg',   lvl: 5.2, foes: 3, n: 'Gipfelsteig' },
         { id: 's9',  a: 'frostkap', b: 'kernel',   terr: 'schnee', lvl: 5.6, foes: 2, n: 'Eisgrat' },
         { id: 's10', a: 'speicher', b: 'cluster',  terr: 'steppe', lvl: 6,   foes: 3, n: 'Clusterweg' },
-        { id: 's11', a: 'moor',     b: 'altrom',   terr: 'asche',  lvl: 6.8, foes: 3, n: 'Ascheschneise' },
+        { id: 's11', a: 'moor',     b: 'altrom',   terr: 'asche',  lvl: 6.8, foes: 3, n: 'Ascheschneise', f: 1 },
         { id: 's12', a: 'cluster',  b: 'altrom',   terr: 'steppe', lvl: 7,   foes: 3, n: 'Steppenpfad' }
     ];
     const roadMap = {};
@@ -152,6 +153,15 @@
             { n: 'Windhosen-Loop', d: 'Ein Wirbelsturm, der immer wieder von vorn beginnt.', p: ['r-kristall', 'a-hover', 'z-kompass', 'f-tesla'] }]
     };
     const BOSS = { n: 'Der Garbage Collector', d: 'Räumt alles weg, was niemand mehr braucht. Auch dich, wenn du nicht aufpasst.', p: ['r-obsidian', 'a-raupe', 'k-fusion', 'p-kristall', 'w-nano', 'f-klinge', 's-auge'], lvl: 9, boss: true };
+    /* ── Weltbosse (Online): jede Woche einer, alle Reisenden kämpfen gemeinsam gegen dieselben Lebenspunkte ── */
+    const WORLD = [
+        { id: 'titan',  n: 'Bluescreen-Titan', place: 'registra', terr: 'ebene',  d: 'Ein Riese aus blauem Licht. Wo er hintritt, stürzt alles ab.', p: ['r-titan', 'a-beine', 'k-fusion', 'p-tower', 'f-tesla', 's-auge'] },
+        { id: 'wal',    n: 'Der Cache-Wal',    place: 'bitbrunn', terr: 'furt',   d: 'Schwimmt durch den Bitbrunn und verschluckt alles, was er sich merken kann.', p: ['r-carbon', 'a-schraube', 'k-kristall', 'p-schild', 'f-bohr', 's-sonar'] },
+        { id: 'hydra',  n: 'Die Thread-Hydra', place: 'moor',     terr: 'sumpf',  d: 'Schlägt man einen Thread ab, starten zwei neue.', p: ['r-kristall', 'a-hover', 'k-kristall', 'w-nano', 'f-laser', 's-prisma'] },
+        { id: 'yeti',   n: 'Der Kaltstart-Yeti', place: 'frostkap', terr: 'schnee', d: 'Braucht ewig zum Hochfahren. Danach hält ihn nichts mehr auf.', p: ['r-kristall', 'a-raupe', 'k-cd', 'p-kristall', 'f-klinge', 'z-laterne'] },
+        { id: 'drache', n: 'Der Defrag-Drache', place: 'speicher', terr: 'berg',  d: 'Sortiert die Speicherberge neu – Block für Block, und dich gleich mit.', p: ['r-obsidian', 'a-duesen', 'k-fusion', 'p-kristall', 'f-klinge', 's-auge'] }
+    ];
+    const WB_HP = 15000, WB_ROUNDS = 6, WB_COOLDOWN = 2 * 3600e3;
 
     /* ── Die Arche ── */
     const STAGES = [
@@ -219,6 +229,8 @@
         place: id => placeMap[id] || null,
         road: id => roadMap[id] || null,
         terrName: t => (TERRAIN[t] || {}).n || t,
+        /* Strassenname mit Artikel: der/den/dem Küstenpfad, die/der Waldschneise */
+        roadNom: r => (r.f ? 'die ' : 'der ') + r.n, roadAkk: r => (r.f ? 'die ' : 'den ') + r.n, roadDat: r => (r.f ? 'der ' : 'dem ') + r.n,
         terrIcon: (t, s) => PX((TERRAIN[t] || {}).i || '_', s),
         costOk, pay, fishTotal,
 
@@ -479,6 +491,102 @@
         },
         SMELT: 35,
         smelt(n) { n = Math.max(1, Math.floor(n || 1)); if (!st().crew.kiesel || !M.spendScrap(this.SMELT * n)) return false; M.addMat('erz', n); return true; },
+
+        /* ── Mini-MMO: Daten und Regeln (Server: mnemora-net.js, Oberfläche: mnemora-mmo.js) ── */
+        WORLD, WB_HP, WB_ROUNDS, WB_COOLDOWN, MEET: ['port', 'registra'],
+        /* Kalenderwoche (ISO) → Schlüssel des Weltbosses, z. B. 2026-W42 */
+        week(t) {
+            const d = new Date(t || Date.now()); d.setHours(0, 0, 0, 0);
+            d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);   // Donnerstag dieser Woche bestimmt das Jahr
+            const y = d.getFullYear(), w1 = new Date(y, 0, 4);
+            const w = 1 + Math.round(((d - w1) / 864e5 - 3 + (w1.getDay() + 6) % 7) / 7);
+            return { y, w, key: y + '-W' + String(w).padStart(2, '0') };
+        },
+        /* Weltboss dieser Woche: { key, def, place, hp } – jede Woche ein anderer, an seinem Ort */
+        worldBoss(t) { const k = this.week(t); const def = WORLD[(k.y * 53 + k.w) % WORLD.length]; return { key: k.key, def, place: def.place, hp: WB_HP }; },
+        /* Er passt sich an: Stärke nach deinem Fortschritt (freie Strassen) */
+        worldFoe() {
+            const b = this.worldBoss(), n = ROADS.filter(r => this.cleared(r.id) >= r.foes).length;
+            const f = this.makeFoe({ n: b.def.n, d: b.def.d, p: b.def.p, boss: true }, X.clamp(1.6 + n * .5, 1.6, 8), b.def.terr);
+            f.c.hp = WB_HP; return f;
+        },
+        wbState() { const s = st(); if (!s.wb || typeof s.wb !== 'object' || Array.isArray(s.wb) || s.wb.key !== this.week().key) s.wb = { key: this.week().key, last: 0, hits: 0, dmg: 0, claimed: 0 }; return s.wb; },
+        wbReady() { return Date.now() - (+this.wbState().last || 0) >= WB_COOLDOWN; },
+        wbHit(dmg) { const w = this.wbState(); w.last = Date.now(); w.hits = (+w.hits || 0) + 1; w.dmg = (+w.dmg || 0) + Math.max(0, Math.round(dmg)); save(); },
+        /* Beute, wenn der Weltboss gefallen ist (einmal pro Woche, nur wer mitgekämpft hat); top = unter den ersten drei */
+        wbClaim(top) {
+            const w = this.wbState(); if (w.claimed || !w.hits) return null;
+            w.claimed = Date.now(); save();
+            const lines = X.werft.grant([{ type: 'taler', n: 250 + (top ? 150 : 0) }, { type: 'mat', id: 'erz', n: 12 + (top ? 8 : 0) }, { type: 'mat', id: 'splitter', n: top ? 3 : 1 }]);
+            const pool = CARDS.filter(c => c.t >= 2 && c.t <= (top ? 4 : 3)), cd = X.pick(pool), it = this.addCard(cd.id);
+            if (it) lines.push(PX(cd.id) + ' <b>Steckkarte: ' + esc(cd.n) + '</b>');
+            X.addXP(top ? 120 : 80, 'Weltboss besiegt');
+            return lines;
+        },
+
+        /* Kampfprofil für andere Spieler:innen (Geist im Duell, Truppkamerad:in): aktives Gehäuse mit Werten */
+        kit() {
+            const cas = this.active(); if (!cas) return null;
+            return { id: cas.id, c: this.combat(cas), cc: cas.c, k: cas.k.map(u => (this.cardItem(u) || {}).id).filter(Boolean).slice(0, 6), t: Array.from(this.terrains(cas)) };
+        },
+        /* Kampfprofil vom Server prüfen (fremde Daten!) → sauberes Profil oder null */
+        cleanKit(k) {
+            if (!k || typeof k !== 'object' || !casingMap[k.id] || !k.c || typeof k.c !== 'object') return null;
+            const n = (v, a, b) => X.clamp(+v || 0, a, b), c = k.c;
+            return { id: k.id, cc: n(k.cc, 0, 100), k: (Array.isArray(k.k) ? k.k : []).filter(id => cardMap[id]).slice(0, 6),
+                c: { hp: n(c.hp, 10, 400), atk: n(c.atk, 1, 60), def: n(c.def, 0, 40), spd: n(c.spd, 1, 30), en: n(c.en, 2, 30), crit: n(c.crit, 0, 45), rep: n(c.rep, 0, .8), regen: n(c.regen, 0, .12) } };
+        },
+        kitArt(k) { const spec = {}, lo = (casingMap[k.id] || {}).lo || {}; Object.keys(lo).forEach(sl => { spec[sl] = [lo[sl][0], lo[sl][1], 0, k.cc]; }); return X.mechArt.loadoutOf(spec); },
+        /* Fortschritt für die Mnemora-Rangliste */
+        progress() {
+            const s = st(), r = ROADS.filter(x => this.cleared(x.id) >= x.foes).length, p = Object.keys(s.seen).filter(id => placeMap[id]).length, b = s.boss ? 1 : 0;
+            return { r, p, b, c: s.casings.length, k: s.cards.length, v: r * 10 + p * 6 + b * 60 + s.casings.length * 4 };
+        },
+        /* Trupp: Kennung (Spieler-ID der Gründerin/des Gründers) oder '' */
+        party: () => String(st().party || ''),
+        setParty(id) { st().party = String(id || '').slice(0, 20); save(); },
+        /* Merker: bis wann Nachrichten an mich verarbeitet sind, welche Tauschgeschäfte schon abgeschlossen sind */
+        mark(k, v) { const s = st(); if (v === undefined) return s[k]; s[k] = v; save(); return v; },
+
+        /* ── Tauschbörse: { k: 'card' | 'mat' | 'taler', id, n } ── */
+        itemName(it) { if (!it) return '?'; if (it.k === 'taler') return it.n + ' Taler'; if (it.k === 'card') return (cardMap[it.id] || {}).n || '?'; const m = M.mat(it.id); return it.n + '× ' + (m ? m.n : '?'); },
+        itemIcon(it, s) { return !it ? '' : it.k === 'taler' ? PX('taler', s) : it.k === 'card' ? PX(it.id, s) : PX('mat-' + it.id, s); },
+        /* Gültig? (fremde Daten vom Server) */
+        itemOk(it) {
+            if (!it || typeof it !== 'object') return false;
+            const n = +it.n;
+            if (it.k === 'card') return !!cardMap[it.id];
+            if (it.k === 'mat') return !!M.mat(it.id) && n >= 1 && n <= 999 && Math.floor(n) === n;
+            if (it.k === 'taler') return n >= 1 && n <= 99999 && Math.floor(n) === n;
+            return false;
+        },
+        freeCard: id => st().cards.find(c => c.id === id && !MN.cardHost(c.u)) || null,
+        hasItem(it) {
+            if (!this.itemOk(it)) return false;
+            if (it.k === 'card') return !!this.freeCard(it.id);
+            if (it.k === 'mat') return (M.mats()[it.id] || 0) >= it.n;
+            return M.taler() >= it.n;
+        },
+        /* Abgeben (beim Anbieten sofort – das Angebot liegt dann „im Treuhandfach“) */
+        takeItem(it) {
+            if (!this.hasItem(it)) return false;
+            if (it.k === 'card') { const c = this.freeCard(it.id), s = st(); s.cards = s.cards.filter(x => x !== c); save(); return true; }
+            if (it.k === 'mat') { M.addMat(it.id, -it.n); return true; }
+            return M.spendTaler(it.n);
+        },
+        giveItem(it) {
+            if (!this.itemOk(it)) return false;
+            if (it.k === 'card') return !!this.addCard(it.id);
+            if (it.k === 'mat') { M.addMat(it.id, it.n); return true; }
+            const m = M.state(); m.taler = Math.max(0, (+m.taler || 0) + it.n); save(); return true;   // ohne Taler-Bonus: getauscht ist getauscht
+        },
+        /* Was kann ich anbieten? Freie Karten (gruppiert) und Material */
+        tradeables() {
+            const out = [], seen = {};
+            st().cards.forEach(c => { if (!this.cardHost(c.u) && !seen[c.id]) { seen[c.id] = 1; out.push({ k: 'card', id: c.id, have: st().cards.filter(x => x.id === c.id && !this.cardHost(x.u)).length }); } });
+            Object.keys(M.mats()).forEach(id => { if (M.mats()[id] > 0 && M.mat(id)) out.push({ k: 'mat', id, have: M.mats()[id] }); });
+            return out;
+        },
 
         /* ── Einführung durch Händlerin Ada ── */
         intro: () => st().intro,

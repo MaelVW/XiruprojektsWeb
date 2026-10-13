@@ -304,6 +304,18 @@ html.no-anim .fighter .pic svg, html.no-anim .pop { animation: none !important; 
 .fight--asche { background: radial-gradient(ellipse at 50% 90%, #ff6a1f 0, #7a2a10 28%, #2a1410 60%, #0b0606 100%); }
 .fight--steppe { background: linear-gradient(#fde68a 0, #fef3c7 30%, #d9b45a 58%, #9a7a32 100%); }
 .fight--festung { background: radial-gradient(ellipse at 50% 85%, #6d28d9 0, #2e1065 32%, #120626 62%, #050208 100%); }
+.fight--weltboss { background: radial-gradient(ellipse at 50% 88%, #f43f5e 0, #7f1d1d 26%, #2a0a12 58%, #060204 100%); }
+/* Trupp: Kamerad:innen stehen kleiner neben dir */
+.fight__team { position: relative; display: flex; align-items: flex-end; justify-content: center; gap: .3rem; min-width: 0; }
+.fight__team .fighter--me { flex: 1 1 44%; min-width: 0; }
+.fighter--ally { flex: 0 1 28%; min-width: 0; }
+.fighter--ally .pic svg { width: min(100%, 150px); }
+.fighter--ally .bars { width: min(100%, 150px); font-size: .66rem; }
+.fighter--ally .bars .hp, .fighter--ally .bars .en { height: 8px; }
+.fight--team .fighter--me .pic svg { width: min(100%, 230px); }
+.fight--team .fighter--me .bars { width: min(100%, 230px); }
+.fighter.is-down .pic svg { filter: grayscale(1) brightness(.45); rotate: -12deg; translate: 0 8%; transition: filter .4s, rotate .4s; }
+.fight__rounds { font: 700 .82rem var(--mono); color: #fecaca; }
 
 /* ── Arche-Dock (welt/arche.html) ──────────────────────────────────────── */
 .ark-yard { display: grid; gap: .6rem; margin: 1rem 0 1.4rem; padding: 1rem; background: linear-gradient(#1b3a5c, #2c5a7e 55%, #5b4a32 56%, #3a2c1c); box-shadow: 0 0 0 3px #000; }
@@ -404,3 +416,57 @@ html.no-anim .mn-token__bob { animation: none; }
 .mn-cardi--pick { cursor: pointer; grid-template-columns: auto 1fr; }
 .mn-cardi--pick:hover:not(:disabled) { box-shadow: 0 0 0 2px #000, inset 0 0 0 2px #fde68a; }
 .mn-cardi--pick:disabled { opacity: .5; cursor: not-allowed; }
+/* Mnemora: andere Reisende und Treffpunkte */
+.mn-others, .mn-meetmark { cursor: pointer; }
+.mn-other { animation: mnBob 2.1s ease-in-out infinite; }
+.mn-others .mn-other:nth-child(2) { animation-delay: -.7s; }
+.mn-others .mn-other:nth-child(3) { animation-delay: -1.4s; }
+.mn-meet { box-shadow: 0 0 0 3px #000, inset 0 0 0 2px #22d3ee; }
+.mn-meet .eyebrow { display: flex; gap: .3rem; align-items: center; }
+.mn-meet .online-greet { max-width: 9.5rem; }
+html.no-anim .mn-other { animation: none; }
+.mn-label--who { font-size: 36px; fill: #67e8f9; }
+
+/* ── Mnemora-MMO (assets/js/mnemora-mmo.js): Trupp, Weltboss, Schnellchat, Treffpunkt ── */
+.mn-mmo .eyebrow { display: flex; gap: .3rem; align-items: center; }
+.mn-dot { display: inline-block; width: 8px; height: 8px; margin-right: .3rem; background: #22c55e; box-shadow: 0 0 0 2px #000; vertical-align: 1px; }
+.mn-people li { grid-template-columns: auto 1fr; }
+.mn-pacts { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: .3rem; align-items: center; }
+.mn-pacts .online-greet { max-width: 9.5rem; }
+.mn-wb { box-shadow: 0 0 0 3px #000, inset 0 0 0 2px #e11d48; }
+.mn-wb.is-here { background: linear-gradient(#3b0a14, var(--surface) 70%); }
+.mn-wb__bar { height: 10px; }
+.mn-wb__bar .bar__fill { background: linear-gradient(90deg, #e11d48, #fb7185); }
+.mn-top { margin: .2rem 0 .3rem; padding-left: 1.3rem; display: grid; gap: .1rem; }
+.mn-top .is-me, .mn-chat .is-me b, .mn-rank .is-me b { color: #67e8f9; }
+.mn-chat { list-style: none; margin: .2rem 0 .4rem; padding: 0; display: grid; gap: .25rem; font-size: .88rem; }
+.mn-chat li { padding: .25rem .45rem; background: var(--surface-2); box-shadow: 0 0 0 2px #000; }
+.mn-chat .muted { font-size: .75rem; }
+.mn-say { display: flex; flex-wrap: wrap; gap: .3rem; align-items: center; }
+.mn-say .select { flex: 1 1 10rem; min-width: 0; }
+.mn-wbmark { cursor: pointer; }
+.mn-wbmark svg { overflow: visible; animation: mnPulse 1.4s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
+.mn-wbmark.is-down svg { animation: none; filter: grayscale(1) brightness(.6); }
+@keyframes mnPulse { 50% { scale: 1.12; filter: drop-shadow(0 0 18px #f43f5e); } }
+html.no-anim .mn-wbmark svg { animation: none; }
+.mn-treff { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: .8rem; align-items: start; }
+.mn-chron { list-style: none; margin: 0; padding: 0; display: grid; gap: .35rem; font-size: .9rem; }
+.mn-chron li { display: flex; flex-wrap: wrap; gap: .3rem; align-items: baseline; padding-bottom: .3rem; border-bottom: 1px dashed var(--border); }
+.mn-chron .px { vertical-align: -3px; }
+.mn-trades { list-style: none; margin: 0; padding: 0; display: grid; gap: .45rem; }
+.mn-trades li { display: grid; grid-template-columns: 1fr auto; gap: .2rem .5rem; align-items: center; padding: .45rem .55rem; background: var(--surface-2); box-shadow: 0 0 0 2px #000; }
+.mn-trades li > .small { grid-column: 1; }
+.mn-trades li > .btn { grid-column: 2; grid-row: 1 / span 2; }
+.mn-trade { display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; font-weight: 700; }
+.mn-trade .px { vertical-align: -6px; }
+.mn-trade--big { justify-content: space-around; text-align: center; gap: 1rem; margin: .6rem 0; font-weight: 400; }
+.mn-ranktabs { display: flex; gap: .25rem; margin-bottom: .5rem; }
+.mn-ranktabs button { flex: 1; padding: .35rem .5rem; border: 0; cursor: pointer; font: 700 .85rem var(--mono); background: var(--surface-2); color: var(--text-muted); box-shadow: 0 0 0 2px #000; }
+.mn-ranktabs button[aria-selected="true"] { background: #1e3a5f; color: var(--text); box-shadow: 0 0 0 2px #000, inset 0 -3px 0 #22d3ee; }
+.mn-rank { list-style: none; margin: 0; padding: 0; display: grid; gap: .25rem; }
+.mn-rank li { display: grid; grid-template-columns: 2rem minmax(0, 1fr) auto; gap: 0 .5rem; align-items: center; padding: .3rem .5rem; background: var(--surface-2); }
+.mn-rank li > .small { grid-column: 2; grid-row: 2; }
+.mn-rank li > span:last-child { grid-column: 3; grid-row: 1 / span 2; font: 800 .95rem var(--mono); }
+.mn-num { width: 6.5rem; }
+.fight--weltboss .fighter--foe .pic svg { width: min(100%, 380px); filter: drop-shadow(0 0 22px rgba(244, 63, 94, .75)) hue-rotate(-25deg) saturate(1.4); }
+.fight--weltboss .fighter--foe.is-hit .pic svg { filter: brightness(2) saturate(0); }

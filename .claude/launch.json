@@ -4,9 +4,22 @@
     {
       "name": "xiru",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-u", "tools/serve.py"],
+      "runtimeArgs": [
+        "-u",
+        "tools/serve.py"
+      ],
       "port": 5510,
       "autoPort": true
+    },
+    {
+      "name": "xiru-mock",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-u",
+        "dev/mock-pocketbase.py",
+        "8099"
+      ],
+      "port": 8099
     }
   ]
 }

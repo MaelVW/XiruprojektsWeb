@@ -1,0 +1,70 @@
+[
+  {
+    "id": "xirumnfeed00001",
+    "name": "mn_feed",
+    "type": "base",
+    "listRule": "",
+    "viewRule": "",
+    "createRule": "player.key.secret = @request.body.secret && (@request.body.kind != \"wb\" || (@request.body.n > 0 && @request.body.n <= 4000))",
+    "updateRule": null,
+    "deleteRule": null,
+    "fields": [
+      { "name": "player", "type": "relation", "collectionId": "pbc_3072146508", "maxSelect": 1, "minSelect": 0, "cascadeDelete": true, "required": true },
+      { "name": "nick", "type": "text", "max": 20 },
+      { "name": "kind", "type": "select", "required": true, "maxSelect": 1, "values": ["say", "inv", "join", "leave", "help", "road", "place", "gc", "wb", "wbdown", "arrive", "duel", "trade"] },
+      { "name": "place", "type": "text", "max": 40 },
+      { "name": "to", "type": "text", "max": 20 },
+      { "name": "a", "type": "text", "max": 40 },
+      { "name": "b", "type": "text", "max": 40 },
+      { "name": "n", "type": "number", "min": 0, "max": 1000000, "onlyInt": true },
+      { "name": "created", "type": "autodate", "onCreate": true, "onUpdate": false }
+    ],
+    "indexes": [
+      "CREATE INDEX `idx_mnfeed_created` ON `mn_feed` (`created`)",
+      "CREATE INDEX `idx_mnfeed_kind_a` ON `mn_feed` (`kind`, `a`)",
+      "CREATE INDEX `idx_mnfeed_to` ON `mn_feed` (`to`)"
+    ]
+  },
+  {
+    "id": "xirumntrades001",
+    "name": "mn_trades",
+    "type": "base",
+    "listRule": "",
+    "viewRule": "",
+    "createRule": "player.key.secret = @request.body.secret && @request.body.status = \"open\"",
+    "updateRule": "player.key.secret = @request.body.secret && (@request.body.status = \"done\" || @request.body.status = \"cancel\") && @request.body.player:isset = false && @request.body.give:isset = false && @request.body.want:isset = false && @request.body.nick:isset = false",
+    "deleteRule": null,
+    "fields": [
+      { "name": "player", "type": "relation", "collectionId": "pbc_3072146508", "maxSelect": 1, "minSelect": 0, "cascadeDelete": true, "required": true },
+      { "name": "nick", "type": "text", "max": 20 },
+      { "name": "give", "type": "json", "maxSize": 400 },
+      { "name": "want", "type": "json", "maxSize": 400 },
+      { "name": "status", "type": "select", "required": true, "maxSelect": 1, "values": ["open", "done", "cancel"] },
+      { "name": "place", "type": "text", "max": 40 },
+      { "name": "created", "type": "autodate", "onCreate": true, "onUpdate": false },
+      { "name": "updated", "type": "autodate", "onCreate": true, "onUpdate": true }
+    ],
+    "indexes": [
+      "CREATE INDEX `idx_mntrades_status` ON `mn_trades` (`status`)"
+    ]
+  },
+  {
+    "id": "xirumntakes0001",
+    "name": "mn_takes",
+    "type": "base",
+    "listRule": "",
+    "viewRule": "",
+    "createRule": "player.key.secret = @request.body.secret && offer.status = \"open\" && offer.player != player",
+    "updateRule": null,
+    "deleteRule": null,
+    "fields": [
+      { "name": "offer", "type": "relation", "collectionId": "xirumntrades001", "maxSelect": 1, "minSelect": 0, "cascadeDelete": true, "required": true },
+      { "name": "player", "type": "relation", "collectionId": "pbc_3072146508", "maxSelect": 1, "minSelect": 0, "cascadeDelete": true, "required": true },
+      { "name": "nick", "type": "text", "max": 20 },
+      { "name": "created", "type": "autodate", "onCreate": true, "onUpdate": false }
+    ],
+    "indexes": [
+      "CREATE UNIQUE INDEX `idx_mntakes_offer` ON `mn_takes` (`offer`)"
+    ]
+  }
+]

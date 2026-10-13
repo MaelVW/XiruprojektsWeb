@@ -15,6 +15,11 @@
      XIRU.online.setNick(nick)              Spitzname ändern
      XIRU.online.placeName(id)              Anzeigename einer Gegend
      XIRU.online.cloud.*                    Geräte-Sync: connect(pw), fetch(name, pw), adopt(s), sync(), password(), remove()
+     Für Spielteile mit eigenen Tabellen (Mnemora-MMO, assets/js/mnemora-net.js):
+     XIRU.online.api(path, opt)             Anfrage an den Server (Pfad ohne /api)
+     XIRU.online.ensure()                   → Promise<{ id, secret, nick }> eigener Spieler (legt ihn beim ersten Mal an)
+     XIRU.online.beatExtra = fn             liefert zusätzliche Felder für den eigenen Spieler-Datensatz (Herzschlag)
+     XIRU.online.subscribe(tabelle, fn)     Live-Ereignisse einer Tabelle (PocketBase-Realtime): fn({ action, record })
    Gespeichert lokal: xiru:online:<konto> = { id, secret, nick, sent: { spiel: wert } }
                       xiru:cloud:<konto>  = { uid, token, tAt, sid, srv, at }  (Geräte-Sync, siehe unten)
    Server-Tabellen: players (öffentlich lesbar, ändern nur mit passendem keys.secret), keys (nur anlegen,
@@ -34,7 +39,8 @@
     ];
     O.status = 'off';
     const LOWER = ['minen', 'reaktion', 'memory', 'memory-gross'];   // Spiele, bei denen weniger besser ist (Zeit, Züge)
-    let beatT = 0, retryT = 0, syncT = 0, es = null, panel = null, pill = null, lastWho = [];
+    let beatT = 0, retryT = 0, syncT = 0, es = null, esId = '', panel = null, pill = null, lastWho = [];
+    const subs = {};   // Live-Abos weiterer Tabellen: { tabelle: [fn …] }
 
     async function api(path, opt) {
         opt = opt || {};
@@ -54,13 +60,28 @@
     const clean = s => String(s || '').replace(/[<>"'`]/g, '').replace(/\s+/g, ' ').trim();
 
     /* Wo bin ich gerade? Im Abenteuer-Modus die Insel des Mechs, sonst die Region der Seite */
+    /* Auf Mnemora: genauer Ort (mnemora:registra), damit man sich an Treffpunkten begegnet */
+    const onMnemora = () => !!(X.page && X.page.p === 'mnemora.html');
     function place() {
-        if (X.page && X.page.p === 'mnemora.html') return 'mnemora';
+        if (onMnemora()) return !X.easy() && X.mnemora && X.mnemora.arrived() ? 'mnemora:' + X.mnemora.at() : 'mnemora';
         if (!X.easy() && X.mech && X.mech.pos) return X.mech.pos();
         return (X.page && X.page.r) || 'zentrum';
     }
-    O.placeName = id => { if (id === 'mnemora') return 'Mnemora'; const i = X.mech && X.mech.isle(id); if (i && !i.secret) return i.n; const r = X.region(id); return r ? r.name : 'irgendwo im Nebel'; };
-    function myMech() { try { const k = X.mech.installed('kern'); return k ? k.id : ''; } catch (e) { return ''; } }
+    O.placeName = id => {
+        id = String(id || '');
+        if (id === 'mnemora') return 'Mnemora';
+        if (id.startsWith('mnemora:')) {   // Ortsname auch auf Seiten ohne mnemora.js
+            const k = id.slice(8), p = (X.mnemora && X.mnemora.place(k)) || ((X.mapArt && X.mapArt.FESTLAND && X.mapArt.FESTLAND.PLACES) || []).find(q => q.id === k);
+            return 'Mnemora · ' + (p ? p.n : ({ duenen: 'Dünenwacht', moor: 'Fragmentmoor' })[k] || '???');
+        }
+        const i = X.mech && X.mech.isle(id); if (i && !i.secret) return i.n; const r = X.region(id); return r ? r.name : 'irgendwo im Nebel'; };
+    /* Auf Mnemora das aktive Gehäuse, sonst das Kern-Bauteil des Seemechs */
+    function myMech() {
+        try {
+            if (onMnemora() && X.mnemora && X.mnemora.active()) return X.mnemora.active().id;
+            const k = X.mech.installed('kern'); return k ? k.id : '';
+        } catch (e) { return ''; }
+    }
     function defaultNick() { return clean(X.user || 'Reisende:r ' + Math.floor(Math.random() * 900 + 100)).slice(0, 20); }
 
     O.me = () => { const m = load(); return m && m.id ? { id: m.id, nick: m.nick } : null; };
@@ -86,7 +107,8 @@
         if (!O.on() || (document.hidden && !force)) return;
         try {
             const m = await ensure();
-            await api('/collections/players/records/' + m.id, { method: 'PATCH', body: { secret: m.secret, nick: m.nick, place: place(), area: (X.page && X.page.t) || '', level: X.levelInfo().level, mech: myMech() } });
+            let extra = {}; try { extra = (O.beatExtra && O.beatExtra()) || {}; } catch (e) { }
+            await api('/collections/players/records/' + m.id, { method: 'PATCH', body: Object.assign(extra, { secret: m.secret, nick: m.nick, place: place(), area: (X.page && X.page.t) || '', level: X.levelInfo().level, mech: myMech() }) });
             setStatus('online');
         } catch (e) {
             if (e.status === 404) { const m = load(); if (m) { delete m.id; save(m); } }   // Datensatz auf dem Server gelöscht → neu anlegen
@@ -125,15 +147,28 @@
         return nick;
     };
     O.ping = () => api('/health');
+    O.api = api;
+    O.ensure = ensure;
+    O.beatExtra = null;
+    /* Ort sofort melden (z. B. nach einer Reise auf Mnemora) */
+    O.nudge = () => beat(true);
 
     /* Live: Grüsse kommen sofort an (PocketBase-Realtime über Server-Sent Events) */
+    const resub = () => { if (esId) api('/realtime', { method: 'POST', body: { clientId: esId, subscriptions: ['greets'].concat(Object.keys(subs)) } }).catch(() => { }); };
+    const listen = topic => es.addEventListener(topic, ev => {
+        let d; try { d = JSON.parse(ev.data); } catch (e) { return; }
+        (subs[topic] || []).forEach(fn => { try { fn(d); } catch (e) { } });
+    });
+    O.subscribe = (topic, fn) => {
+        const fresh = !subs[topic];
+        (subs[topic] = subs[topic] || []).push(fn);
+        if (fresh && es) { listen(topic); resub(); }
+    };
     function live() {
         if (es || typeof EventSource === 'undefined') return;
         es = new EventSource(O.url() + '/realtime');
-        es.addEventListener('PB_CONNECT', ev => {
-            const id = JSON.parse(ev.data).clientId;
-            api('/realtime', { method: 'POST', body: { clientId: id, subscriptions: ['greets'] } }).catch(() => { });
-        });
+        es.addEventListener('PB_CONNECT', ev => { esId = JSON.parse(ev.data).clientId; resub(); });
+        Object.keys(subs).forEach(listen);
         es.addEventListener('greets', ev => {
             const d = JSON.parse(ev.data), r = d.record || {}, m = load();
             if (d.action !== 'create' || !m || r.from === m.id) return;
@@ -393,7 +428,7 @@
         }
     };
     O.stop = function () {
-        clearInterval(beatT); clearInterval(syncT); clearTimeout(retryT); if (es) { es.close(); es = null; }
+        clearInterval(beatT); clearInterval(syncT); clearTimeout(retryT); if (es) { es.close(); es = null; esId = ''; }
         if (pill) { pill.remove(); pill = null; } if (panel) { panel.remove(); panel = null; }
         O.status = 'off';
     };

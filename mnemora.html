@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mnemora · Xiruprojekts</title>
-    <meta name="description" content="Mnemora, das Festland hinter der Nebelwand: Strasse für Strasse freikämpfen, Gehäuse bauen und Steckkarten stecken.">
+    <meta name="description" content="Mnemora, das Festland hinter der Nebelwand: Strasse für Strasse freikämpfen, Gehäuse bauen, Steckkarten stecken – und online mit anderen Reisenden im Trupp kämpfen, tauschen und den Weltboss besiegen.">
     <link rel="stylesheet" href="assets/css/main.css">
     <link rel="stylesheet" href="assets/css/welt.css">
     <script src="assets/js/site.js"></script>
@@ -17,6 +17,8 @@
     <script src="assets/js/kampf.js"></script>
     <script src="assets/js/mnemora.js"></script>
     <script src="assets/js/mnemora-karte.js"></script>
+    <script src="assets/js/mnemora-net.js"></script>
+    <script src="assets/js/mnemora-mmo.js"></script>
 </head>
 <body class="theme-pixel">
 <div class="mn-load" id="load" role="status" aria-live="polite">
@@ -49,16 +51,18 @@
                 <button role="tab" aria-selected="true" data-tab="fuhrpark">Fuhrpark</button>
                 <button role="tab" aria-selected="false" data-tab="werkstatt">Feldwerkstatt</button>
                 <button role="tab" aria-selected="false" data-tab="lager">Lager &amp; Besatzung</button>
+                <button role="tab" aria-selected="false" data-tab="treff">Treffpunkt</button>
             </div>
             <section id="tab-fuhrpark" class="mn-tab"></section>
             <section id="tab-werkstatt" class="mn-tab" hidden></section>
             <section id="tab-lager" class="mn-tab" hidden></section>
+            <section id="tab-treff" class="mn-tab" hidden></section>
         </div>
     </div>
 </main>
 <script>
 XIRU.ready(function () {
-    const X = XIRU, M = X.mech, W = X.werft, MN = X.mnemora, K = X.mnemoraKarte, A = X.mechArt, esc = X.esc, $ = X.$;
+    const X = XIRU, M = X.mech, W = X.werft, MN = X.mnemora, K = X.mnemoraKarte, A = X.mechArt, NET = X.mnNet, MMO = X.mnMMO, esc = X.esc, $ = X.$;
     const arrival = new URLSearchParams(location.search).has('ankunft'), easy = X.easy();
     const PX = W.px;
     W.pxify();
@@ -91,6 +95,30 @@ XIRU.ready(function () {
     $('#game').hidden = false;
     if (easy) { $('#play').hidden = true; $('#lead').textContent = 'Im Entdecker-Modus siehst du ganz Mnemora – ohne Gehäuse und ohne Kämpfe. Klick auf einen Ort, um mehr zu erfahren.'; }
     else { X.egg('m-mnemora'); W.wallet('#wallet', () => '<span title="Speichererz">' + PX('mat-erz', 18) + ' ' + X.fmt(M.mats().erz || 0) + ' <small>Erz</small></span>'); }
+
+    /* ── Andere Reisende (Online): Figuren auf der Karte, Treffpunkte, Grüsse ──
+       online.js meldet auf Mnemora den genauen Ort (mnemora:registra) und das aktive Gehäuse;
+       die Liste kommt aus mnemora-net.js (halb-live, alle 20 s). Trupp, Weltboss, Duelle usw.: mnemora-mmo.js */
+    const MEET = MN.MEET;
+    let others = [];
+    const metKey = 'xiru:mn-met';
+    const met = new Set((() => { try { return JSON.parse(sessionStorage.getItem(metKey) || '[]'); } catch (e) { return []; } })());
+    const onlineOn = () => !easy && !!(X.online && X.online.on && X.online.on());
+    const othersAt = id => others.filter(p => p.place === id);
+    const figIcon = p => /^gh-/.test(p.mech) && X.pix.has(p.mech) ? p.mech : 'gh-itx';
+    NET.on('travellers', list => { others = list; meetCheck(); drawOverlay(); renderSide(); });
+    /* „… ist auch hier“ – einmal pro Person und Ort in dieser Sitzung */
+    function meetCheck() {
+        const here = MN.at();
+        othersAt(here).forEach(p => {
+            const k = p.id + '@' + here; if (met.has(k)) return;
+            met.add(k); try { sessionStorage.setItem(metKey, JSON.stringify(Array.from(met))); } catch (e) { }
+            X.toast(p.nick + ' ist auch hier', 'Gerade in ' + MN.place(here).n + ' – sag Hallo!', { iconHtml: PX(figIcon(p), 26) });
+            X.beep(784, .06, 'square', .03); X.beep(988, .08, 'square', .03);
+        });
+    }
+    /* Neuen Ort sofort melden, kurz danach die Liste auffrischen */
+    const nudge = () => NET.nudge();
 
     /* ── Karte ── */
     const V = K.VIEW, ov = $('#mn-ov'), NS = 'http://www.w3.org/2000/svg';
@@ -137,6 +165,18 @@ XIRU.ready(function () {
                 '<rect x="' + (p.x - 46) + '" y="' + (p.y - 46) + '" width="92" height="92" class="mn-place__bg"/>' + pxAt(seen ? MN.KIND_ICON[p.kind] : '_', p.x, p.y, 72) +
                 '<text x="' + p.x + '" y="' + (p.y + 104) + '" class="mn-label">' + esc(seen ? p.n : '???') + '</text></g>');
         });
+        // Treffpunkte und andere Reisende
+        if (!easy) MN.PLACES.forEach(p => {
+            if (!MN.seen(p.id)) return;
+            if (MEET.includes(p.id)) h.push('<g class="mn-meetmark" data-place="' + p.id + '">' + pxAt('ic-krug', p.x - 70, p.y - 70, 60) + '<title>Treffpunkt der Reisenden</title></g>');
+            const list = othersAt(p.id); if (!list.length) return;
+            const n = Math.min(3, list.length), x0 = p.x + 92;
+            h.push('<g class="mn-others" data-place="' + p.id + '">' + list.slice(0, 3).map((o, i) => '<g class="mn-other">' + pxAt(figIcon(o), x0 + i * 70, p.y - 70, 80) + '</g>').join('') +
+                (list.length > 3 ? '<text class="mn-label mn-label--sm" x="' + (x0 + 3 * 70) + '" y="' + (p.y - 56) + '">+' + (list.length - 3) + '</text>' : '') +
+                '<text class="mn-label mn-label--who" x="' + Math.round(x0 + (n - 1) * 35) + '" y="' + (p.y - 4) + '">' + (list.length === 1 ? esc(list[0].nick) : list.length + ' Reisende') + '</text>' +
+                '<title>' + list.map(o => esc(o.nick) + ' (Level ' + o.level + ')').join(', ') + '</title></g>');
+        });
+        h.push(MMO.marks());
         // Dein Gehäuse
         if (!easy) {
             const P0 = MN.place(at), cas = MN.active();
@@ -175,7 +215,7 @@ XIRU.ready(function () {
         const roads = MN.path(id); if (!roads) return;
         const miss = MN.pathBlocked(roads);
         if (miss.length) { X.toast('Da kommst du nicht hin', 'Gelände ' + miss.map(t => MN.terrName(t)).join(', ') + ': Kein Gehäuse in deinem Fuhrpark kommt da durch.', { iconHtml: MN.terrIcon(miss[0], 26), type: 'error' }); return; }
-        walk(roads, id).then(() => { MN.arrive(id); sel = null; drawOverlay(); renderSide(); renderTabs(); });
+        walk(roads, id).then(() => { MN.arrive(id); sel = null; meetCheck(); drawOverlay(); renderSide(); renderTabs(); nudge(); });
     }
 
     /* ── Kämpfe ── */
@@ -185,9 +225,10 @@ XIRU.ready(function () {
         if (!chk.ok) { X.toast('Noch nicht', chk.why, { iconHtml: MN.terrIcon(r.terr, 26), type: 'error' }); return; }
         const cas = chk.cas, def = MN.casing(cas.id);
         if (MN.active() !== cas) { MN.setActive(cas.u); X.toast('Gehäuse gewechselt', 'Für ' + MN.terrName(r.terr) + ' nimmst du den ' + def.n + '.', { iconHtml: PX(cas.id, 26) }); }
-        const k = MN.cleared(roadId), foe = MN.foe(roadId, k), meC = MN.combat(cas), meLo = MN.loadout(cas);
+        const allies = MMO.allies();
+        const k = MN.cleared(roadId), foe = MMO.scale(MN.foe(roadId, k), allies.length), meC = MN.combat(cas), meLo = MN.loadout(cas);
         X.kampf.fight({
-            label: 'Kampf auf dem ' + r.n, scene: r.terr,
+            label: 'Kampf auf ' + MN.roadDat(r), scene: r.terr, allies,
             me: { name: def.n, icon: cas.id, c: meC, art: f => svgOf(meLo, f) },
             foe: { name: foe.n, icon: MN.TERRAIN[r.terr].i, c: foe.c, art: f => svgOf(foe.lo, f + 1.3) },
             intro: PX(MN.TERRAIN[r.terr].i) + ' <b>' + esc(r.n) + '</b>, Gegner ' + (k + 1) + ' von ' + r.foes + ': <b>' + esc(foe.n) + '</b> – ' + esc(foe.d) + ' ' + (meC.spd >= foe.c.spd ? 'Du bist schneller.' : 'Der Gegner ist schneller.'),
@@ -198,10 +239,12 @@ XIRU.ready(function () {
                     const lines = MN.loot(foe.lvl, false), res = MN.winRoad(roadId) || {};
                     X.addXP(Math.round(8 + foe.lvl * 3), 'Kampf auf Mnemora');
                     html += '<p class="mb-1">Beute: ' + lines.join(' · ') + '</p>';
+                    if (allies.length) { MMO.helped(allies, roadId, foe.lvl); html += '<p class="small muted mb-1">' + PX('ic-trupp') + ' ' + allies.map(a => esc(a.nick)).join(' und ') + (allies.length > 1 ? ' bekommen je' : ' bekommt') + ' einen Anteil – gutgeschrieben beim nächsten Online-Besuch auf Mnemora.</p>'; }
+                    if (res.done) { MMO.log('road', { a: roadId }); if (res.lines && res.lines.length) MMO.log('place', { a: res.to }); }
                     if (res.done) {
                         title = 'Strasse frei!';
                         const p = MN.place(res.to);
-                        html += '<p class="mb-1">' + PX(MN.KIND_ICON[p.kind]) + ' Der <b>' + esc(r.n) + '</b> ist frei. Du ziehst weiter nach <b>' + esc(p.n) + '</b>.</p>' +
+                        html += '<p class="mb-1">' + PX(MN.KIND_ICON[p.kind]) + ' ' + (r.f ? 'Die' : 'Der') + ' <b>' + esc(r.n) + '</b> ist frei. Du ziehst weiter nach <b>' + esc(p.n) + '</b>.</p>' +
                             (res.lines && res.lines.length ? '<p class="mb-1">Neu entdeckt: ' + res.lines.join(' · ') + '</p>' : '');
                         X.confetti(80);
                     } else html += '<p class="small muted mb-1">Noch ' + (r.foes - MN.cleared(roadId)) + ' Gegner auf dieser Strasse.</p>';
@@ -210,13 +253,14 @@ XIRU.ready(function () {
                 html += '<p class="small muted mb-1">Zustand ' + esc(def.n) + ': −' + dmg + ' % → ' + cas.c + ' %' + (win && MN.aboard('flossie') ? ' (inkl. Flossies Fischsuppe)' : '') + '</p>';
                 return { title, html, cheer: 'Der Weg wird freier!', leave: 'Zurück zur Karte' };
             }
-        }).then(() => { drawOverlay(); renderSide(); renderTabs(); });
+        }).then(() => { meetCheck(); drawOverlay(); renderSide(); renderTabs(); nudge(); });
     }
     function fightBoss() {
         const cas = MN.active(); if (!cas || cas.c <= 0) { X.toast('Kein einsatzbereites Gehäuse', 'Repariere dein Gehäuse in der Feldwerkstatt.', { iconHtml: PX('w-schluessel', 26), type: 'error' }); return; }
-        const def = MN.casing(cas.id), foe = MN.makeFoe(MN.BOSS, MN.BOSS.lvl, 'asche'), meC = MN.combat(cas), meLo = MN.loadout(cas);
+        const allies = MMO.allies();
+        const def = MN.casing(cas.id), foe = MMO.scale(MN.makeFoe(MN.BOSS, MN.BOSS.lvl, 'asche'), allies.length), meC = MN.combat(cas), meLo = MN.loadout(cas);
         X.kampf.fight({
-            label: 'Kampf gegen den Garbage Collector', scene: 'festung',
+            label: 'Kampf gegen den Garbage Collector', scene: 'festung', allies,
             me: { name: def.n, icon: cas.id, c: meC, art: f => svgOf(meLo, f) },
             foe: { name: foe.n, icon: 'ic-gc', c: foe.c, art: f => svgOf(foe.lo, f + 1.3, true) },
             intro: PX('ic-gc') + ' Aus den Ruinen von Alt-ROM schiebt sich etwas Riesiges. <b>' + esc(foe.n) + '</b>: „Nicht referenziert. Wird entfernt.“',
@@ -224,6 +268,8 @@ XIRU.ready(function () {
                 const dmg = MN.wear(cas, win, foe.lvl);
                 if (!win) return { title: 'Aufgeräumt …', html: '<p class="mb-1">Der Garbage Collector schiebt dich aus den Ruinen. Er hat dich nicht gelöscht – noch nicht. (Zustand −' + dmg + ' %)</p>', leave: 'Zurück zur Karte' };
                 const first = MN.winBoss(), lines = MN.loot(foe.lvl, true);
+                if (first) MMO.log('gc');
+                if (allies.length) MMO.helped(allies, 'altrom', foe.lvl);
                 if (first) { const p = W.rollPart({ maxT: 5, minT: 4, minQ: 5, maxQ: 5 }); lines.push.apply(lines, W.grant([{ type: 'item', id: p.id, q: 5 }])); X.confetti(160); }
                 return { title: first ? 'Speicher freigegeben!' : 'Wieder gewonnen', cheer: 'Alt-ROM ist frei!', leave: 'Zurück zur Karte',
                     html: '<p class="mb-1">' + (first ? 'Der Garbage Collector zerfällt in tausend Bytes. Zum ersten Mal seit Jahrhunderten bleibt in Mnemora alles, wie es ist. ' : '') + 'Beute: ' + lines.join(' · ') + '</p>' };
@@ -245,7 +291,21 @@ XIRU.ready(function () {
         if (MN.bossDone()) return 'Mnemora ist frei. Aber hinter dem Nebel im Norden und Südwesten liegen noch zwei Länder …';
         return 'Jeder neue Ort bringt Baupläne. Stärkere Strassen brauchen bessere Karten – die Feldwerkstatt baut sie aus Erz.';
     }
-    function renderSide() {
+    function travellersCard(id) {
+        const list = othersAt(id), meet = MEET.includes(id), hereNow = id === MN.at(), pl = MN.place(id);
+        if (!list.length && !(meet && hereNow)) return '';
+        if (!onlineOn()) return meet && hereNow ? '<div class="card mn-card mn-meet"><span class="eyebrow">' + PX('ic-krug') + ' Treffpunkt</span><p class="small mb-0">In ' + esc(pl.n) + ' treffen sich Reisende aus Sektaria: Trupps, Weltboss, Duelle, Tauschbörse und Schnellchat. Schalte <a href="' + X.url('konto/einstellungen.html') + '#online">Online</a> ein, um mitzumachen.</p></div>' : '';
+        const party = NET.party.map(x => x.id), full = party.length >= 3;
+        const acts = p => '<div class="mn-pacts">' + (party.includes(p.id) ? '<span class="chip--ok">Trupp</span>' : '<button class="btn btn--sm" type="button" data-inv-p="' + p.id + '"' + (full ? ' disabled title="Dein Trupp ist voll"' : '') + '>' + PX('ic-trupp') + ' Einladen</button>') +
+            (meet && p.kit && MN.active() ? '<button class="btn btn--sm" type="button" data-duel-p="' + p.id + '">' + PX('ic-duell') + ' Duell</button>' : '') + sel(p.id) + '</div>';
+        const G = X.online.GREETS || [];
+        const sel = to => G.length ? '<select class="select online-greet" data-greet="' + to + '" aria-label="Gruss wählen"><option value="">Grüssen …</option>' + G.map(g => '<option value="' + g.id + '">' + g.i + ' ' + esc(g.t) + '</option>').join('') + '</select>' : '';
+        return '<div class="card mn-card mn-meet"><span class="eyebrow">' + (meet ? PX('ic-krug') + ' Treffpunkt · ' : '') + 'Reisende in ' + esc(pl.n) + '</span>' +
+            (list.length ? '<ul class="mn-roads mn-people">' + list.map(p => '<li>' + PX(figIcon(p), 24) + '<div><b>' + esc(p.nick) + '</b><div class="small muted">Level ' + p.level + (MN.casing(p.mech) ? ' · ' + esc(MN.casing(p.mech).n) : '') + '</div></div>' + (hereNow ? acts(p) : '<span></span>') + '</li>').join('') + '</ul>'
+                : '<p class="small muted mb-0">Gerade ist niemand hier. Wer online ist und nach ' + esc(pl.n) + ' kommt, taucht hier auf.</p>') +
+            (hereNow && list.length ? '<div class="row mt-1"><span class="small">Allen hier:</span>' + sel('') + '</div>' : !hereNow && list.length ? '<p class="small muted mb-0">Reise hin, um zu grüssen.</p>' : '') + '</div>';
+    }
+    function drawSide() {
         const side = $('#side'), at = MN.at(), here = MN.place(at);
         let h = '';
         if (easy) {
@@ -260,7 +320,7 @@ XIRU.ready(function () {
                 '<p class="small mb-1">' + (seen ? esc(p.d || '') : 'Diesen Ort kennst du noch nicht. Kämpf die Strasse dorthin frei.') + '</p>' +
                 (path ? '<button class="btn btn--primary btn--sm" type="button" data-go="' + p.id + '">' + PX('st-spd') + ' Hinreisen (' + path.length + ' Strasse' + (path.length > 1 ? 'n' : '') + ')</button>'
                     : any ? '<p class="small text-danger mb-0">Der freie Weg führt durch ' + esc(MN.pathBlocked(any).map(t => MN.terrName(t)).join(', ')) + ' – dafür fehlt dir ein passendes Gehäuse.</p>'
-                    : seen ? '<p class="small muted mb-0">Kein freier Weg von hier.</p>' : '') + '</div>';
+                    : seen ? '<p class="small muted mb-0">Kein freier Weg von hier.</p>' : '') + '</div>' + (seen ? travellersCard(p.id) : '');
         }
         if (sel && sel.road) {
             const r = MN.road(sel.road), free = MN.free(r.id), A2 = MN.place(r.a), B2 = MN.place(r.b);
@@ -280,20 +340,38 @@ XIRU.ready(function () {
         if (at === 'altrom') h += MN.bossDone() ? '<p class="small text-success mt-1 mb-0">Alt-ROM ist befreit. Der Garbage Collector ist Geschichte.</p>'
             : '<div class="mn-boss mt-1">' + PX('ic-gc', 40) + '<div><b>Der Garbage Collector</b><p class="small mb-1">Räumt alles weg, was niemand mehr braucht.</p><button class="btn btn--primary btn--sm" type="button" data-boss>Herausfordern</button></div></div>';
         h += '</div>';
+        h += travellersCard(at) + MMO.side(at);
         // Aktives Gehäuse
         const cas = MN.active();
         if (cas) { const d = MN.casing(cas.id); h += '<div class="card mn-card"><span class="eyebrow">Aktives Gehäuse</span><h3 class="mb-1">' + PX(cas.id, 24) + ' ' + esc(d.n) + '</h3>' +
             '<div class="bar bar--sm"><div class="bar__fill" style="--v:' + cas.c + '%"></div></div><span class="small muted">Zustand ' + cas.c + ' %</span>' + terrRow(MN.terrains(cas)) + statRow(MN.combat(cas)) + '</div>'; }
         h += '<div class="npc mn-ada"><div class="npc__face">' + PX('npc-ada', 40) + '</div><div><b>Händlerin Ada</b><p class="npc__say small mb-0">' + hint() + '</p></div></div>';
+        // Gewählte Sätze im Schnellchat behalten (die Seitenleiste wird alle paar Sekunden neu gezeichnet)
+        const keep = {}; side.querySelectorAll('select[id]').forEach(x => { keep[x.id] = x.value; });
         side.innerHTML = h;
+        Object.keys(keep).forEach(k => { const x = side.querySelector('#' + k); if (x && keep[k]) { x.value = keep[k]; MMO.change({ target: x }); } });
+        if (!keep['mn-say']) { const x = side.querySelector('#mn-say'); if (x) MMO.change({ target: x }); }
     }
+    /* Nicht neu zeichnen, während jemand eine Liste offen hat */
+    let sidePending = false;
+    const sideBusy = () => { const a = document.activeElement; return !!a && a.tagName === 'SELECT' && $('#side').contains(a); };
+    function renderSide() { if (sideBusy()) { sidePending = true; return; } drawSide(); }
+    $('#side').addEventListener('focusout', () => { if (sidePending) { sidePending = false; setTimeout(renderSide, 60); } });
     $('#side').addEventListener('click', e => {
+        if (MMO.click(e)) return;
         const go = e.target.closest('[data-go]'), f = e.target.closest('[data-fight]'), t = e.target.closest('[data-tab-go]');
         if (go) travelTo(go.dataset.go);
         else if (f) fightRoad(f.dataset.fight);
         else if (e.target.closest('[data-boss]')) fightBoss();
         else if (t) { showTab(t.dataset.tabGo); $('#play').scrollIntoView({ behavior: 'smooth' }); }
         else if (e.target.closest('[data-home]')) goHome();
+    });
+    $('#side').addEventListener('change', e => {
+        if (MMO.change(e)) return;
+        const s = e.target.closest('[data-greet]'); if (!s || !s.value) return;
+        const kind = s.value;
+        X.online.load().then(o => o.greet(s.dataset.greet, kind).then(() => { const g = o.GREETS.find(x => x.id === kind); X.toast('Gruss verschickt', g ? g.t : '', { iconHtml: PX('ic-krug', 26) }); s.value = ''; }))
+            .catch(() => X.toast('Gruss ging nicht durch', 'Der Xiru-Server antwortet gerade nicht.', { iconHtml: PX('ev-sturm', 26), type: 'error' }));
     });
     function goHome() {
         const l = document.createElement('div'); l.className = 'mn-load'; l.innerHTML = '<div class="mn-load__box"><div class="mn-load__ark">' + PX('ic-arche', 96) + '</div><h1 class="mn-load__title">Sektaria</h1><p class="mn-load__sub">Die Arche legt ab …</p></div>';
@@ -303,7 +381,8 @@ XIRU.ready(function () {
     /* ── Reiter ── */
     function showTab(t) {
         X.$$('[data-tab]').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === t));
-        ['fuhrpark', 'werkstatt', 'lager'].forEach(k => { $('#tab-' + k).hidden = k !== t; });
+        ['fuhrpark', 'werkstatt', 'lager', 'treff'].forEach(k => { $('#tab-' + k).hidden = k !== t; });
+        if (t === 'treff') MMO.renderTab($('#tab-treff'));
     }
     X.$$('[data-tab]').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
     const talerChip = n => n ? '<span class="cost-chip' + (M.taler() < n ? ' is-short' : '') + '">' + PX('taler') + ' ' + n + '</span>' : '';
@@ -399,12 +478,13 @@ XIRU.ready(function () {
         else return;
         renderAll();
     });
-    function renderTabs() { if (easy) return; renderFuhrpark(); renderWerkstatt(); renderLager(); }
+    function renderTabs() { if (easy) return; renderFuhrpark(); renderWerkstatt(); renderLager(); if (!$('#tab-treff').hidden) MMO.renderTab($('#tab-treff')); }
     function renderAll() { drawOverlay(); renderSide(); renderTabs(); }
 
     /* ── Händlerin Ada: Einführung bei der ersten Ankunft ── */
     function intro() {
         if (MN.intro() >= 1) return;
+        MMO.log('arrive');
         const step2 = () => {
             MN.adaGift();
             const m = X.modal('<div class="npc"><div class="npc__face">' + PX('npc-ada', 48) + '</div><div><h2 class="mb-1">Händlerin Ada</h2><p class="npc__say">„Hier auf Mnemora baut man <b>Gehäuse</b> – jede Bauart kommt über anderes Gelände: Dünen, Wald, Moor, Gebirge, Frost … ' +
@@ -423,6 +503,8 @@ XIRU.ready(function () {
         drawOverlay(); renderSide(); renderTabs();
         const wait = Math.max(0, minT - (performance.now() - t0));
         setTimeout(() => { hideLoad(); if (!easy) setTimeout(intro, 500); }, wait);
+        // Mini-MMO: Trupp, Weltboss, Duelle, Tausch, Chronik, Schnellchat (nur mit Online)
+        if (!easy) MMO.init({ pxAt, svgOf, refresh: renderAll, side: () => renderSide(), map: drawOverlay });
     });
     X.on('mech', () => { if (!easy) { renderSide(); } });
 });

@@ -236,6 +236,17 @@ Der Liminal-Teil (`Why.html`, `why/*`, `liminal*.js`) wird mitgeprüft, aber **n
 
 ## Notizen der letzten Sitzung
 
+- **NÄCHSTE SITZUNG (Mael, 2026-10-13 spät, „morgen weiter“):**
+  1. **ANTI-CHEAT zuerst, vor allem anderen.** Mael und Luca haben gemerkt: Man kann Level/Attribute ändern und sich Items geben
+     (localStorage bearbeiten oder Profil-Export bearbeiten und wieder importieren). Online soll das nicht gehen → System planen, das beim
+     Online-Spielen solche Manipulationen verhindert bzw. erkennt (vorher mit Mael besprechen; Spielstand ist lokal, Server ist PocketBase).
+  2. **Import der MMO-Tabellen ist fehlgeschlagen.** Meldung beim Import von `docs/pocketbase-mmo-import.json` (mit Merge):
+     `failed to save collection "mn_feed": indexes: (1: Failed to create index idx_mnfeed_kind_a - SQL logic error: no such column: kind (1).;
+     2: Failed to create index idx_mnfeed_to - SQL logic error: no such column: to (1)..)` – Index auf `created` ging durch. Ursache klären
+     (Import legt die Indizes evtl. vor den Feldern an?) – Ausweg: Indizes auf kind/a/to aus der Datei nehmen und später ergänzen. Prüfen, ob
+     der Import ganz zurückgerollt wurde (vermutlich ja, eine Transaktion) und ob die vier players-Felder schon da sind.
+  3. Danach wie geplant: Ort-Maps auf Mnemora, dann Mech-Redesign.
+
 - 2026-10-13 nachts: **Mini-MMO-Bausteine gebaut** (Priorität 1). Neu: `assets/js/mnemora-net.js` (`XIRU.mnNet`, ganzer Server-Verkehr,
   halb-live mit `EVERY`-Takt + Realtime für `mn_feed` – später hier auf Echtzeit umstellen), `assets/js/mnemora-mmo.js` (`XIRU.mnMMO`, Oberfläche),
   `kampf.js` kann jetzt Trupp-Kamerad:innen (`o.allies`, KI) und Rundenlimit (`o.rounds`, Weltboss; liefert `{ win, dmg, team, rounds }`),

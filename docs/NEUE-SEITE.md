@@ -3,7 +3,9 @@
 Die Website ist **reines HTML/CSS/JavaScript**. Kein Build-Schritt, keine Frameworks, keine CDNs.
 Sie läuft über VS Code „Live Server" oder `python tools/serve.py` (→ http://localhost:5510).
 Einzige Ausnahme: Die Hardware-Datenblätter werden mit `python tools/build_hardware.py` aus
-`tools/hardware_data.py` erzeugt.
+`tools/hardware_data.py` erzeugt. Ebenso erzeugt `python tools/build_preise.py` aus
+`tools/preise.csv` die aktuellen CHF-Preise (`hardware/konfigurator-preise.js`) für den
+PC-Konfigurator (`hardware/konfigurator.html`) – Preise nur in der CSV pflegen, kein Shop-Scraping.
 
 ## Ordner
 

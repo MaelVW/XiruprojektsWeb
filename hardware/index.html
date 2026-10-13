@@ -110,8 +110,8 @@ XIRU.ready(function () {
         '<span class="tile__title">' + c.t + '</span><span class="tile__desc">' + c.d + '</span>' +
         '<span class="tile__meta"><span class="badge badge--accent">' + ((hw[c.key] || []).length) + ' Einträge</span></span></a>').join('');
 
-    const tools = XIRU.pages.filter(p => ['hardware/vergleich.html', 'hardware/netzteil-rechner.html', 'hardware/balance.html', 'hardware/builds.html', 'hardware/sockel.html', 'hardware/zeitleiste.html', 'hardware/glossar.html', 'ki/hardware-berater.html', 'arcade/pc-bauer.html', 'arcade/hardware-quiz.html'].includes(p.p));
-    const icons = { 'hardware/vergleich.html': '⚖', 'hardware/netzteil-rechner.html': '🔌', 'hardware/balance.html': '⚖', 'hardware/builds.html': '🧰', 'hardware/sockel.html': '🧩', 'hardware/zeitleiste.html': '🕰', 'hardware/glossar.html': '📖', 'ki/hardware-berater.html': '✦', 'arcade/pc-bauer.html': '🛠', 'arcade/hardware-quiz.html': '❓' };
+    const tools = XIRU.pages.filter(p => ['hardware/konfigurator.html', 'hardware/vergleich.html', 'hardware/netzteil-rechner.html', 'hardware/balance.html', 'hardware/builds.html', 'hardware/sockel.html', 'hardware/zeitleiste.html', 'hardware/glossar.html', 'ki/hardware-berater.html', 'arcade/pc-bauer.html', 'arcade/hardware-quiz.html'].includes(p.p));
+    const icons = { 'hardware/konfigurator.html': '🛠', 'hardware/vergleich.html': '⚖', 'hardware/netzteil-rechner.html': '🔌', 'hardware/balance.html': '⚖', 'hardware/builds.html': '🧰', 'hardware/sockel.html': '🧩', 'hardware/zeitleiste.html': '🕰', 'hardware/glossar.html': '📖', 'ki/hardware-berater.html': '✦', 'arcade/pc-bauer.html': '🛠', 'arcade/hardware-quiz.html': '❓' };
     XIRU.$('#tools').innerHTML = tools.map((p, i) => {
         const locked = !XIRU.isUnlocked(p);
         return '<a class="tile' + (locked ? ' is-locked' : '') + '" href="' + XIRU.url(p.p) + '" data-reveal style="--d:' + (i * .04) + 's"><span class="tile__icon">' + (locked ? '🔒' : icons[p.p]) + '</span>' +

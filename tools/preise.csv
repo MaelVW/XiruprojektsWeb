@@ -1,0 +1,77 @@
+# Preise für den PC-Konfigurator – HIER pflegst du die Zahlen.
+# Danach ausführen:  python tools/build_preise.py
+# Das Skript schreibt daraus hardware/konfigurator-preise.js (von Hand nicht mehr nötig).
+#
+# Spalten:  kategorie,id,preis,bezeichnung
+#   kategorie = cpu | gpu | board | ram | ssd | psu | case   (bezeichnung ist nur für dich, egal was drin steht)
+#   preis     = CHF, ganze Zahl oder mit Punkt (z. B. 409 oder 409.50)
+#   Zeilen mit # am Anfang und leere Zeilen werden ignoriert.
+#   IDs müssen zu assets/js/hardware-data.js passen (cpu/gpu) bzw. zu den festen Listen (board/ram/ssd/psu/case).
+#   Trennzeichen Komma oder Strichpunkt – beides geht.
+kategorie,id,preis,bezeichnung
+# ── Prozessoren (AMD) ──
+cpu,ryzen-5-5600x,125,Ryzen 5 5600X
+cpu,ryzen-7-5800x3d,279,Ryzen 7 5800X3D
+cpu,ryzen-5-7600x,189,Ryzen 5 7600X
+cpu,ryzen-9-7950x,429,Ryzen 9 7950X
+cpu,ryzen-7-7800x3d,399,Ryzen 7 7800X3D
+cpu,ryzen-5-9600x,215,Ryzen 5 9600X
+cpu,ryzen-7-9700x,299,Ryzen 7 9700X
+cpu,ryzen-9-9950x,549,Ryzen 9 9950X
+cpu,ryzen-7-9800x3d,469,Ryzen 7 9800X3D
+cpu,ryzen-9-9950x3d,689,Ryzen 9 9950X3D
+# ── Prozessoren (Intel) ──
+cpu,core-i5-12400f,119,Core i5-12400F
+cpu,core-i5-13600k,269,Core i5-13600K
+cpu,core-i7-13700k,349,Core i7-13700K
+cpu,core-i9-13900k,449,Core i9-13900K
+cpu,core-i5-14600k,279,Core i5-14600K
+cpu,core-i7-14700k,379,Core i7-14700K
+cpu,core-i9-14900k,489,Core i9-14900K
+cpu,core-ultra-5-245k,265,Core Ultra 5 245K
+cpu,core-ultra-7-265k,379,Core Ultra 7 265K
+cpu,core-ultra-9-285k,579,Core Ultra 9 285K
+# ── Grafikkarten (AMD) ──
+gpu,rx-7600,289,Radeon RX 7600
+gpu,rx-7800-xt,489,Radeon RX 7800 XT
+gpu,rx-7900-xtx,949,Radeon RX 7900 XTX
+gpu,rx-9070,589,Radeon RX 9070
+gpu,rx-9070-xt,689,Radeon RX 9070 XT
+# ── Grafikkarten (Intel) ──
+gpu,arc-b580,299,Arc B580
+# ── Grafikkarten (NVIDIA) ──
+gpu,rtx-3060,289,GeForce RTX 3060
+gpu,rtx-4060,319,GeForce RTX 4060
+gpu,rtx-4070,549,GeForce RTX 4070
+gpu,rtx-4070-super,619,GeForce RTX 4070 Super
+gpu,rtx-4080-super,1049,GeForce RTX 4080 Super
+gpu,rtx-5060-ti-16gb,449,GeForce RTX 5060 Ti 16 GB
+gpu,rtx-5070,599,GeForce RTX 5070
+gpu,rtx-5070-ti,849,GeForce RTX 5070 Ti
+gpu,rtx-5080,1149,GeForce RTX 5080
+gpu,rtx-5090,2299,GeForce RTX 5090
+# ── Mainboard nach Chipsatz-Klasse ──
+board,Einsteiger,95,Einsteiger-Board (z. B. A620 / B760)
+board,Mittelklasse,185,Mittelklasse-Board (z. B. B650 / B850 / B860)
+board,Oberklasse,320,Oberklasse-Board (z. B. X870 / Z890)
+# ── Arbeitsspeicher-Kits ──
+ram,ddr4-32,75,32 GB DDR4-3600 (2 × 16)
+ram,ddr5-32,105,32 GB DDR5-6000 (2 × 16)
+ram,ddr5-64,199,64 GB DDR5-6000 (2 × 32)
+# ── Datenträger ──
+ssd,sata-1tb,59,1 TB SATA-SSD
+ssd,nvme4-1tb,75,1 TB NVMe (PCIe 4.0)
+ssd,nvme4-2tb,135,2 TB NVMe (PCIe 4.0)
+ssd,nvme5-2tb,205,2 TB NVMe (PCIe 5.0)
+# ── Netzteile nach Watt ──
+psu,550,75,550 W
+psu,650,90,650 W
+psu,750,110,750 W
+psu,850,135,850 W
+psu,1000,199,1000 W
+# ── Gehäuse ──
+case,itx,115,Mini-ITX-Würfel
+case,matx,80,Micro-ATX-Tower
+case,atx-air,95,Midi-Tower (Airflow)
+case,atx-glass,130,Midi-Tower (Glasseite)
+case,big,180,Big-Tower

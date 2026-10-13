@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PC-Konfigurator · Xiruprojekts</title>
+    <meta name="description" content="Stell dir digital einen PC zusammen: Gehäuse, Prozessor, Mainboard und Grafikkarte. Der Konfigurator prüft, ob alles zusammenpasst, schlägt Teile vor, rechnet den Preis aus und vergleicht ihn mit unseren Beispiel-Builds.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="../assets/css/themes/hardware.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/hardware-data.js"></script>
+    <script src="konfigurator-preise.js"></script>
+    <style>
+        .cfg { display: grid; gap: 1.25rem; grid-template-columns: minmax(0, 1fr) minmax(0, 400px); align-items: start; }
+        @media (max-width: 960px) { .cfg { grid-template-columns: 1fr; } }
+        .cfg aside { position: sticky; top: 1rem; }
+        @media (max-width: 960px) { .cfg aside { position: static; } }
+        .slot { display: grid; grid-template-columns: 2.2rem 1fr; gap: .5rem .7rem; align-items: center; padding: .7rem 0; border-bottom: 1px dashed var(--border); }
+        .slot:last-child { border-bottom: 0; }
+        .slot__ic { font-size: 1.6rem; text-align: center; grid-row: span 2; }
+        .slot__k { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--text-muted); font-weight: 700; }
+        .slot select { margin: 0; }
+        .slot__hint { grid-column: 2; font-size: .8rem; color: var(--text-faint); margin: .1rem 0 0; }
+        .slot__hint.warn { color: var(--warning); }
+        .slot.bad select { border-color: var(--danger); }
+        .price-big { font-size: 2.4rem; font-weight: 900; line-height: 1.05; color: var(--rc); font-variant-numeric: tabular-nums; }
+        .parts { list-style: none; padding: 0; margin: .4rem 0 0; }
+        .parts li { display: flex; justify-content: space-between; gap: 1rem; padding: .32rem 0; font-size: .9rem; border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent); }
+        .parts li:last-child { border-bottom: 0; }
+        .parts .pn { color: var(--text-muted); }
+        .parts .pv { font-variant-numeric: tabular-nums; white-space: nowrap; }
+        .parts .est { color: var(--warning); cursor: help; }
+        .chk { list-style: none; padding: 0; margin: 0; }
+        .chk li { padding: .3rem 0; font-size: .9rem; display: flex; gap: .5rem; align-items: baseline; }
+        .chk li.ok { color: var(--success); }
+        .chk li.bad { color: var(--danger); }
+        .chk li.tip { color: var(--text-muted); }
+        .chk li b { flex: none; }
+        .idx { display: grid; grid-template-columns: 7rem 1fr 2.5rem; gap: .6rem; align-items: center; margin: .5rem 0; }
+        .idx .lbl { font-size: .85rem; color: var(--text-muted); }
+        .idx .val { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
+        .cmp { display: grid; grid-template-columns: 1fr auto 1fr; gap: .5rem 1rem; align-items: center; text-align: center; }
+        .cmp .big { font-size: 1.25rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+        .cmp .vs { color: var(--text-faint); font-weight: 700; }
+        .toolbar { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1rem; }
+    </style>
+</head>
+<body class="theme-hardware">
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">▣ Hardware-Archiv · Werkzeug</span>
+        <h1>PC-Konfigurator</h1>
+        <p class="lead">Stell dir Teil für Teil einen PC zusammen – Gehäuse, Prozessor, Mainboard und Grafikkarte. Der Konfigurator
+            prüft laufend, ob alles zusammenpasst, schlägt dir passende Teile vor, rechnet den ungefähren Preis aus und vergleicht ihn
+            mit unseren <a href="builds.html">Beispiel-Builds</a>.</p>
+    </header>
+
+    <div class="toolbar">
+        <button class="btn btn--sm" id="reset" type="button">↺ Zurücksetzen</button>
+        <button class="btn btn--sm" id="random" type="button">🎲 Überraschungs-Build</button>
+        <span class="small muted" style="align-self:center">Preise: Stand <strong id="stand">–</strong>, ca. in CHF.</span>
+    </div>
+
+    <div class="cfg">
+        <form class="stack" id="f" onsubmit="return false">
+            <section class="card">
+                <h2 class="mb-2">Kernteile</h2>
+                <div class="slot" data-k="case">
+                    <span class="slot__ic">🗄</span>
+                    <div><div class="slot__k">Gehäuse</div><select id="case" class="select"></select></div>
+                    <p class="slot__hint" id="h-case"></p>
+                </div>
+                <div class="slot" data-k="cpu">
+                    <span class="slot__ic">⬛</span>
+                    <div><div class="slot__k">Prozessor (CPU)</div><select id="cpu" class="select"></select></div>
+                    <p class="slot__hint" id="h-cpu"></p>
+                </div>
+                <div class="slot" data-k="chipset">
+                    <span class="slot__ic">▦</span>
+                    <div><div class="slot__k">Mainboard</div><select id="chipset" class="select"></select></div>
+                    <p class="slot__hint" id="h-chipset"></p>
+                </div>
+                <div class="slot" data-k="gpu">
+                    <span class="slot__ic">▤</span>
+                    <div><div class="slot__k">Grafikkarte (GPU)</div><select id="gpu" class="select"></select></div>
+                    <p class="slot__hint" id="h-gpu"></p>
+                </div>
+            </section>
+
+            <section class="card">
+                <h2 class="mb-1">Ergänzungen</h2>
+                <p class="small muted mb-2">Diese ergänzt der Konfigurator automatisch zu deinen Kernteilen. Du kannst sie aber jederzeit selbst wählen.</p>
+                <div class="slot" data-k="ram">
+                    <span class="slot__ic">▥</span>
+                    <div><div class="slot__k">Arbeitsspeicher</div><select id="ram" class="select"></select></div>
+                    <p class="slot__hint" id="h-ram"></p>
+                </div>
+                <div class="slot" data-k="ssd">
+                    <span class="slot__ic">💾</span>
+                    <div><div class="slot__k">Datenträger</div><select id="ssd" class="select"></select></div>
+                </div>
+                <div class="slot" data-k="psu">
+                    <span class="slot__ic">⚡</span>
+                    <div><div class="slot__k">Netzteil</div><select id="psu" class="select"></select></div>
+                    <p class="slot__hint" id="h-psu"></p>
+                </div>
+            </section>
+
+            <div class="callout">
+                <strong>Zu den Preisen:</strong> Das sind ungefähre Schweizer Strassenpreise (Stand oben), keine Tagespreise und keine
+                Kaufempfehlung. Prüfe vor einem Kauf immer selbst den aktuellen Preis. Teile ohne hinterlegten Tagespreis rechnen wir aus
+                der UVP zum Marktstart um – die sind mit <span class="est">*</span> markiert. Gepflegt werden die Preise in
+                <code>hardware/konfigurator-preise.js</code>.
+            </div>
+        </form>
+
+        <aside class="stack">
+            <section class="card card--accent">
+                <h3 class="mb-1">Dein Build</h3>
+                <div class="price-big" id="price">–</div>
+                <p class="small muted" id="price-sub" style="margin:.2rem 0 0"></p>
+                <ul class="parts" id="parts"></ul>
+            </section>
+
+            <section class="card">
+                <h3 class="mb-1">Passt alles zusammen?</h3>
+                <ul class="chk" id="chk"></ul>
+            </section>
+
+            <section class="card">
+                <h3 class="mb-1">Leistung (Richtwert)</h3>
+                <div class="idx"><span class="lbl">Spiele</span><div class="bar"><div class="bar__fill" id="bar-game"></div></div><span class="val" id="v-game">–</span></div>
+                <div class="idx"><span class="lbl">Mehrkern</span><div class="bar"><div class="bar__fill" id="bar-multi"></div></div><span class="val" id="v-multi">–</span></div>
+                <p class="small muted mb-0" id="perf-note"></p>
+            </section>
+
+            <section class="card">
+                <h3 class="mb-1">Vergleich mit einem Beispiel-Build</h3>
+                <div class="field"><select id="cmp-sel" class="select"></select></div>
+                <div class="cmp mt-2">
+                    <div><div class="small muted">Dein Build</div><div class="big accent" id="cmp-you">–</div></div>
+                    <div class="vs">vs</div>
+                    <div><div class="small muted" id="cmp-name">Beispiel</div><div class="big" id="cmp-them">–</div></div>
+                </div>
+                <p class="small muted mt-2 mb-0" id="cmp-note"></p>
+            </section>
+        </aside>
+    </div>
+
+    <div class="callout mt-3">Danach weiterprüfen: <a href="sockel.html">Sockel-Kompatibilität</a> ·
+        <a href="netzteil-rechner.html">Netzteil-Rechner</a> · <a href="balance.html">Balance-Check</a> ·
+        <a href="builds.html">alle Beispiel-Builds</a>.</div>
+</main>
+<script>
+XIRU.ready(function () {
+    const hw = XIRU.hw || { cpu: [], gpu: [], chipset: [] };
+    const P = Object.assign({ stand: '–', spanne: 0.10, usdChf: 0.92, chf: {}, board: {}, ram: {}, ssd: {}, psu: {}, case: {} }, XIRU.hwPreise || {});
+    const $ = XIRU.$, esc = XIRU.esc, fmt = XIRU.fmt;
+
+    // ── Teile-Kataloge, die nicht im Datenblatt-Archiv stehen ───────────────
+    const CASES = [
+        { id: 'matx',      name: 'Micro-ATX-Tower',       form: 'Micro-ATX', boards: 'Mini-ITX & Micro-ATX',               maxGpu: 320 },
+        { id: 'itx',       name: 'Mini-ITX-Würfel',       form: 'Mini-ITX',  boards: 'nur Mini-ITX',                        maxGpu: 335 },
+        { id: 'atx-air',   name: 'Midi-Tower (Airflow)',  form: 'ATX',       boards: 'Mini-ITX, Micro-ATX & ATX',          maxGpu: 360 },
+        { id: 'atx-glass', name: 'Midi-Tower (Glasseite)',form: 'ATX',       boards: 'Mini-ITX, Micro-ATX & ATX',          maxGpu: 345 },
+        { id: 'big',       name: 'Big-Tower',             form: 'E-ATX',     boards: 'bis hinauf zu E-ATX',                 maxGpu: 430 }
+    ];
+    const RAM_KITS = [
+        { id: 'ddr4-32', name: '32 GB DDR4-3600 (2 × 16)', type: 'DDR4' },
+        { id: 'ddr5-32', name: '32 GB DDR5-6000 (2 × 16)', type: 'DDR5' },
+        { id: 'ddr5-64', name: '64 GB DDR5-6000 (2 × 32)', type: 'DDR5' }
+    ];
+    const SSDS = [
+        { id: 'nvme4-1tb', name: '1 TB NVMe (PCIe 4.0)' },
+        { id: 'nvme4-2tb', name: '2 TB NVMe (PCIe 4.0)' },
+        { id: 'nvme5-2tb', name: '2 TB NVMe (PCIe 5.0)' },
+        { id: 'sata-1tb',  name: '1 TB SATA-SSD' }
+    ];
+    const PSU_SIZES = [550, 650, 750, 850, 1000];
+    // GPU-Länge in mm (typischer Partnerkarten-Wert, Richtwert fürs Hineinpassen)
+    const GPU_LEN = {
+        'gtx-1080-ti': 270, 'rtx-2080-ti': 300, 'rtx-3060': 230, 'rtx-3080': 300, 'rtx-3090': 320,
+        'rtx-4060': 200, 'rtx-4070': 285, 'rtx-4070-super': 300, 'rtx-4080-super': 330, 'rtx-4090': 340,
+        'rtx-5060-ti-16gb': 200, 'rtx-5070': 250, 'rtx-5070-ti': 300, 'rtx-5080': 330, 'rtx-5090': 360,
+        'rx-580': 230, 'rx-6700-xt': 270, 'rx-6800-xt': 300, 'rx-7600': 200, 'rx-7800-xt': 300,
+        'rx-7900-xtx': 340, 'rx-9070': 300, 'rx-9070-xt': 330, 'arc-b580': 270
+    };
+    const gpuLen = g => g ? (GPU_LEN[g.id] || Math.max(180, Math.min(360, Math.round(180 + g.tdp * 0.45)))) : 0;
+
+    // ── Beispiel-Builds (Teile aus builds.html, für den Preisvergleich) ─────
+    const BUILDS = [
+        { id: 'einstieg',   icon: '🌱', name: 'Einsteiger-Gaming',  cpu: 'ryzen-5-7600x',     gpu: 'arc-b580',       chipset: 'amd-b650',  ram: 'ddr5-32', ssd: 'nvme4-1tb', psu: 550, case: 'matx' },
+        { id: 'mittel',     icon: '⚔', name: 'Allrounder',          cpu: 'ryzen-7-7800x3d',   gpu: 'rtx-4070-super', chipset: 'amd-b650',  ram: 'ddr5-32', ssd: 'nvme4-2tb', psu: 750, case: 'atx-air' },
+        { id: 'team-rot',   icon: '🔥', name: 'Team Rot',           cpu: 'ryzen-7-9700x',     gpu: 'rx-9070-xt',     chipset: 'amd-b850',  ram: 'ddr5-32', ssd: 'nvme4-2tb', psu: 850, case: 'atx-air' },
+        { id: 'oberklasse', icon: '🚀', name: 'High-End-Gaming',    cpu: 'ryzen-7-9800x3d',   gpu: 'rtx-5080',       chipset: 'amd-x870',  ram: 'ddr5-32', ssd: 'nvme4-2tb', psu: 850, case: 'atx-glass' },
+        { id: 'schaffer',   icon: '🎬', name: 'Streaming & Schnitt',cpu: 'ryzen-9-9950x',     gpu: 'rtx-4070-super', chipset: 'amd-x870e', ram: 'ddr5-64', ssd: 'nvme5-2tb', psu: 850, case: 'big' },
+        { id: 'intel',      icon: '🔷', name: 'Team Blau',          cpu: 'core-ultra-7-265k', gpu: 'rtx-5070-ti',    chipset: 'intel-z890',ram: 'ddr5-32', ssd: 'nvme4-2tb', psu: 850, case: 'atx-air' }
+    ];
+
+    // ── Hilfsfunktionen ─────────────────────────────────────────────────────
+    const find = (cat, id) => (hw[cat] || []).find(x => x.id === id);
+    const byName = (a, b) => a.name.localeCompare(b.name, 'de');
+    function dataPrice(part) {   // CPU/GPU -> { chf, est }
+        if (!part) return { chf: 0, est: false };
+        if (P.chf[part.id] != null) return { chf: P.chf[part.id], est: false };
+        return { chf: Math.round(part.price * (P.usdChf || 0.92) / 5) * 5, est: true };
+    }
+    const hasDDR5 = s => /DDR5/i.test(s || '');
+    const hasDDR4 = s => /DDR4/i.test(s || '');
+    const cpuWatt = c => c ? (c.tdpMax || Math.round(c.tdp * (c.brand === 'AMD' ? 1.35 : 1))) : 0;
+    function recPsu(load, gpu) {
+        const need = Math.max(load * 1.3, gpu ? gpu.psu : 0);
+        return PSU_SIZES.find(s => s >= need) || PSU_SIZES[PSU_SIZES.length - 1];
+    }
+    function suggestBoard(cpu) {   // sinnvoller Chipsatz für eine CPU (nach Sockel & Klasse)
+        if (!cpu) return null;
+        const list = hw.chipset.filter(c => c.socket === cpu.socket);
+        if (!list.length) return null;
+        const highEnd = cpu.multi >= 85 || cpu.price >= 600;
+        const tier = highEnd ? 'Oberklasse' : 'Mittelklasse';
+        return (list.find(c => c.tier === tier) || list.find(c => c.tier === 'Mittelklasse') || list[0]).id;
+    }
+    // „Automatischer" Arbeitsspeicher passend zu Board/CPU
+    function autoRam(cs, cpu) {
+        const ddr5 = (!cs || hasDDR5(cs.ram)) && (!cpu || hasDDR5(cpu.ram));
+        return ddr5 ? 'ddr5-32' : 'ddr4-32';
+    }
+
+    // ── Selects befüllen ─────────────────────────────────────────────────────
+    const opt = (v, t, sel) => '<option value="' + v + '"' + (sel ? ' selected' : '') + '>' + t + '</option>';
+    $('#case').innerHTML = CASES.map(c => opt(c.id, esc(c.name) + ' · ' + c.form)).join('');
+    $('#cpu').innerHTML = hw.cpu.slice().sort(byName).map(c => opt(c.id, esc(c.name))).join('');
+    $('#gpu').innerHTML = opt('', 'Keine (integrierte Grafik)') + hw.gpu.slice().sort(byName).map(g => opt(g.id, esc(g.name))).join('');
+    $('#ram').innerHTML = opt('auto', 'Automatisch (Vorschlag)') + RAM_KITS.map(r => opt(r.id, esc(r.name))).join('');
+    $('#ssd').innerHTML = SSDS.map(s => opt(s.id, esc(s.name))).join('');
+    $('#psu').innerHTML = opt('auto', 'Automatisch (Vorschlag)') + PSU_SIZES.map(w => opt(String(w), w + ' W')).join('');
+    $('#cmp-sel').innerHTML = BUILDS.map(b => opt(b.id, b.icon + ' ' + esc(b.name))).join('');
+    $('#stand').textContent = P.stand;
+
+    function refreshBoards(preferId) {   // Chipsatz-Optionen auf den CPU-Sockel filtern
+        const cpu = find('cpu', $('#cpu').value);
+        const list = cpu ? hw.chipset.filter(c => c.socket === cpu.socket) : hw.chipset.slice();
+        const keep = preferId && list.some(c => c.id === preferId) ? preferId
+            : (list.some(c => c.id === $('#chipset').value) ? $('#chipset').value : (suggestBoard(cpu) || (list[0] && list[0].id)));
+        $('#chipset').innerHTML = list.map(c => opt(c.id, esc(c.name) + ' · ' + c.tier + ' (' + c.socket + ')', c.id === keep)).join('');
+    }
+
+    // ── Startwerte / gespeicherter Stand ─────────────────────────────────────
+    const DEF = { case: 'atx-air', cpu: 'ryzen-7-7800x3d', chipset: '', gpu: 'rtx-4070-super', ram: 'auto', ssd: 'nvme4-2tb', psu: 'auto' };
+    function setState(s) {
+        ['case', 'cpu', 'gpu', 'ram', 'ssd', 'psu'].forEach(k => { if (s[k] != null && $('#' + k).querySelector('[value="' + s[k] + '"]')) $('#' + k).value = s[k]; });
+        refreshBoards(s.chipset);
+    }
+    setState(Object.assign({}, DEF, XIRU.load('konfigurator') || {}));
+
+    // ── Berechnen & Anzeigen ─────────────────────────────────────────────────
+    function render() {
+        const cs = find('chipset', $('#chipset').value);
+        const cpu = find('cpu', $('#cpu').value);
+        const gpu = find('gpu', $('#gpu').value);
+        const cse = CASES.find(c => c.id === $('#case').value);
+
+        const ramId = $('#ram').value === 'auto' ? autoRam(cs, cpu) : $('#ram').value;
+        const ramKit = RAM_KITS.find(r => r.id === ramId);
+        const ssd = SSDS.find(s => s.id === $('#ssd').value);
+        const load = cpuWatt(cpu) + (gpu ? gpu.tdp : 0) + 80;
+        const psuW = $('#psu').value === 'auto' ? recPsu(load, gpu) : +$('#psu').value;
+
+        // Preise
+        const cp = dataPrice(cpu), gp = dataPrice(gpu);
+        const rows = [
+            { n: 'Gehäuse',        t: cse ? cse.name : '–',                               v: cse ? (P.case[cse.id] || 0) : 0, est: false },
+            { n: 'Prozessor',      t: cpu ? cpu.name : '–',                               v: cp.chf, est: cp.est },
+            { n: 'Mainboard',      t: cs ? ('Board mit ' + cs.name) : '–',                v: cs ? (P.board[cs.tier] || 0) : 0, est: false },
+            { n: 'Grafikkarte',    t: gpu ? gpu.name : 'Integrierte Grafik',              v: gp.chf, est: gp.est },
+            { n: 'Arbeitsspeicher',t: ramKit ? ramKit.name : '–',                         v: ramKit ? (P.ram[ramKit.id] || 0) : 0, est: false },
+            { n: 'Datenträger',    t: ssd ? ssd.name : '–',                               v: ssd ? (P.ssd[ssd.id] || 0) : 0, est: false },
+            { n: 'Netzteil',       t: psuW + ' W (80 PLUS Gold, ATX 3.x)',                v: P.psu[String(psuW)] || 0, est: false }
+        ];
+        const total = rows.reduce((s, r) => s + r.v, 0);
+        const spanne = P.spanne || 0.10;
+        const lo = Math.round(total * (1 - spanne) / 10) * 10, hi = Math.round(total * (1 + spanne) / 10) * 10;
+        $('#price').textContent = 'ca. ' + fmt(lo) + '–' + fmt(hi) + ' CHF';
+        $('#price-sub').textContent = 'Mittelwert ca. ' + fmt(total) + ' CHF · Preise Stand ' + P.stand;
+        $('#parts').innerHTML = rows.map(r =>
+            '<li><span class="pn">' + esc(r.n) + ': ' + esc(r.t) + (r.est ? ' <span class="est" title="Kein Tagespreis hinterlegt – aus der UVP zum Marktstart geschätzt.">*</span>' : '') + '</span>' +
+            '<span class="pv">' + (r.v ? fmt(r.v) + ' CHF' : '–') + '</span></li>').join('');
+
+        // Kompatibilität & Vorschläge
+        const chk = [];
+        const add = (ok, text) => chk.push({ ok, text });
+        const tip = text => chk.push({ tip: true, text });
+        if (cpu && cs) add(cpu.socket === cs.socket,
+            cpu.socket === cs.socket ? 'Sockel passt: ' + cpu.socket : 'Sockel passt nicht – CPU ' + cpu.socket + ', Board ' + cs.socket);
+        const ramOkBoard = !cs || !ramKit || (ramKit.type === 'DDR5' ? hasDDR5(cs.ram) : hasDDR4(cs.ram));
+        const ramOkCpu = !cpu || !ramKit || (ramKit.type === 'DDR5' ? hasDDR5(cpu.ram) : hasDDR4(cpu.ram));
+        add(ramOkBoard && ramOkCpu, (ramOkBoard && ramOkCpu)
+            ? 'Arbeitsspeicher passt (' + (ramKit ? ramKit.type : '–') + ')'
+            : 'Dieser RAM-Typ passt nicht' + (!ramOkBoard ? ' zum Board' : '') + (!ramOkCpu ? ' zur CPU' : ''));
+        if (!gpu) add(!(cpu && /Keine/i.test(cpu.igpu)),
+            (cpu && /Keine/i.test(cpu.igpu)) ? 'Kein Bild! Diese CPU hat keine Grafikeinheit – du brauchst eine Grafikkarte.' : 'Integrierte Grafik der CPU reicht fürs Bild.');
+        if (gpu && cse) add(gpuLen(gpu) <= cse.maxGpu,
+            gpuLen(gpu) <= cse.maxGpu ? 'Grafikkarte passt ins Gehäuse (ca. ' + gpuLen(gpu) + ' mm ≤ ' + cse.maxGpu + ' mm)'
+                : 'Grafikkarte zu lang fürs Gehäuse (ca. ' + gpuLen(gpu) + ' mm > ' + cse.maxGpu + ' mm) – grösseres Gehäuse wählen.');
+        add(psuW >= load * 1.15, psuW >= load * 1.15
+            ? 'Netzteil reicht (' + psuW + ' W für ca. ' + load + ' W Last)'
+            : 'Netzteil zu schwach für ca. ' + load + ' W Last.');
+
+        // Vorschläge (Tipps, kein ✓/✕)
+        if (cpu) { const sb = suggestBoard(cpu); const sbo = find('chipset', sb); if (sbo && (!cs || cs.id !== sb) && cs && cs.socket === cpu.socket) tip('Tipp: Für diese CPU bietet sich ein ' + sbo.name + ' an (' + sbo.tier + ').'); }
+        if (cse) tip('Gehäuse: Mainboard im Format ' + cse.boards + '.');
+        if (cpu && gpu) {
+            const g = Math.round(Math.min(cpu.game, gpu.perf) * 0.7 + Math.max(cpu.game, gpu.perf) * 0.3);
+            if (gpu.perf - cpu.game >= 25) tip('Die Grafikkarte ist deutlich stärker als die CPU – in Spielen könnte die CPU bremsen.');
+            else if (cpu.game - gpu.perf >= 25) tip('Die CPU ist deutlich stärker als die Grafikkarte – fürs Gaming lohnt sich eher eine schnellere GPU.');
+            void g;
+        }
+        $('#chk').innerHTML = chk.map(i => i.tip
+            ? '<li class="tip"><b>›</b><span>' + esc(i.text) + '</span></li>'
+            : '<li class="' + (i.ok ? 'ok' : 'bad') + '"><b>' + (i.ok ? '✓' : '✕') + '</b><span>' + esc(i.text) + '</span></li>').join('');
+
+        // schlechte Slots markieren
+        const badSlots = {};
+        if (cpu && cs && cpu.socket !== cs.socket) badSlots.chipset = 1;
+        if (!(ramOkBoard && ramOkCpu)) badSlots.ram = 1;
+        if (gpu && cse && gpuLen(gpu) > cse.maxGpu) badSlots.gpu = 1;
+        if (psuW < load * 1.15) badSlots.psu = 1;
+        XIRU.$$('.slot').forEach(s => s.classList.toggle('bad', !!badSlots[s.dataset.k]));
+
+        // Leistung
+        const gameIdx = gpu ? Math.round(Math.min(cpu ? cpu.game : 0, gpu.perf) * 0.7 + Math.max(cpu ? cpu.game : 0, gpu.perf) * 0.3)
+            : Math.round((cpu ? cpu.game : 0) * 0.22);
+        const multiIdx = cpu ? cpu.multi : 0;
+        $('#bar-game').style.setProperty('--v', Math.min(100, gameIdx) + '%');
+        $('#bar-multi').style.setProperty('--v', Math.min(100, multiIdx) + '%');
+        $('#v-game').textContent = gameIdx;
+        $('#v-multi').textContent = multiIdx;
+        const klass = gameIdx >= 85 ? 'High-End' : gameIdx >= 60 ? 'Oberklasse' : gameIdx >= 35 ? 'Mittelklasse' : 'Einstieg';
+        $('#perf-note').textContent = 'Spiele-Klasse: ' + klass + (gpu ? ' · ' + gpu.vram + ' GB Grafikspeicher' : ' · ohne eigene Grafikkarte');
+
+        // Vergleich mit Beispiel-Build
+        const buildTotal = b => {
+            const bc = find('cpu', b.cpu), bg = find('gpu', b.gpu), bcs = find('chipset', b.chipset);
+            return dataPrice(bc).chf + dataPrice(bg).chf + (bcs ? (P.board[bcs.tier] || 0) : 0)
+                + (P.ram[b.ram] || 0) + (P.ssd[b.ssd] || 0) + (P.psu[String(b.psu)] || 0) + (P.case[b.case] || 0);
+        };
+        const buildGame = b => { const bc = find('cpu', b.cpu), bg = find('gpu', b.gpu); return bg ? Math.round(Math.min(bc ? bc.game : 0, bg.perf) * 0.7 + Math.max(bc ? bc.game : 0, bg.perf) * 0.3) : 0; };
+        const sel = BUILDS.find(b => b.id === $('#cmp-sel').value) || BUILDS[0];
+        const bt = buildTotal(sel);
+        const range = v => 'ca. ' + fmt(Math.round(v * (1 - spanne) / 10) * 10) + '–' + fmt(Math.round(v * (1 + spanne) / 10) * 10) + ' CHF';
+        $('#cmp-you').textContent = range(total);
+        $('#cmp-them').textContent = range(bt);
+        $('#cmp-name').textContent = sel.icon + ' ' + sel.name;
+        const diff = total - bt, pct = bt ? Math.round(Math.abs(diff) / bt * 100) : 0;
+        const dg = gameIdx - buildGame(sel);
+        $('#cmp-note').textContent =
+            (Math.abs(diff) < bt * 0.05 ? 'Preislich etwa gleichauf.' : 'Dein Build ist ca. ' + pct + '% ' + (diff > 0 ? 'teurer' : 'günstiger') + '.')
+            + (gpu ? ' Spiele-Index ' + (dg === 0 ? 'identisch.' : (dg > 0 ? dg + ' Punkte höher.' : (-dg) + ' Punkte tiefer.')) : '');
+
+        // speichern + Kristall
+        XIRU.save('konfigurator', { case: $('#case').value, cpu: $('#cpu').value, chipset: $('#chipset').value, gpu: $('#gpu').value, ram: $('#ram').value, ssd: $('#ssd').value, psu: $('#psu').value });
+        const alleOk = chk.filter(i => !i.tip).every(i => i.ok);
+        if (alleOk && hi >= 4000) XIRU.egg('hw-traumbau');
+    }
+
+    // ── Ereignisse ───────────────────────────────────────────────────────────
+    $('#cpu').addEventListener('change', () => { refreshBoards(); render(); });
+    ['case', 'chipset', 'gpu', 'ram', 'ssd', 'psu', 'cmp-sel'].forEach(id => $('#' + id).addEventListener('change', render));
+    $('#reset').addEventListener('click', () => { setState(DEF); render(); });
+    $('#random').addEventListener('click', () => {
+        $('#case').value = XIRU.pick(CASES).id;
+        $('#cpu').value = XIRU.pick(hw.cpu).id;
+        refreshBoards();
+        $('#gpu').value = Math.random() < 0.85 ? XIRU.pick(hw.gpu).id : '';
+        $('#ram').value = 'auto'; $('#psu').value = 'auto';
+        $('#ssd').value = XIRU.pick(SSDS).id;
+        render();
+    });
+    render();
+});
+</script>
+</body>
+</html>

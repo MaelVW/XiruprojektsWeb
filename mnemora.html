@@ -42,8 +42,16 @@
         <div class="wallet" id="wallet"></div>
         <div class="mn-layout">
             <div class="mn-mapbox" id="mapbox">
-                <canvas id="mn-canvas" aria-hidden="true"></canvas>
-                <svg id="mn-ov" class="mn-ov" role="img" aria-label="Karte von Mnemora"></svg>
+                <div class="mn-cam" id="mncam">
+                    <canvas id="mn-canvas" aria-hidden="true"></canvas>
+                    <canvas id="mn-life" class="mn-life" aria-hidden="true"></canvas>
+                    <svg id="mn-ov" class="mn-ov" role="img" aria-label="Karte von Mnemora"></svg>
+                </div>
+                <div class="mn-zoom" role="group" aria-label="Karte zoomen">
+                    <button class="btn btn--sm" type="button" data-zoom="in" aria-label="Hineinzoomen">+</button>
+                    <button class="btn btn--sm" type="button" data-zoom="out" aria-label="Herauszoomen">−</button>
+                    <button class="btn btn--sm" type="button" data-zoom="me" aria-label="Zu deinem Gehäuse">◎</button>
+                </div>
             </div>
             <aside class="mn-side" id="side"></aside>
         </div>
@@ -133,7 +141,47 @@ XIRU.ready(function () {
         const cx = (a.x + b.x) / 2 - dy / len * bend, cy = (a.y + b.y) / 2 + dx / len * bend;
         return { d: 'M' + a.x + ' ' + a.y + ' Q' + Math.round(cx) + ' ' + Math.round(cy) + ' ' + b.x + ' ' + b.y, mx: .25 * a.x + .5 * cx + .25 * b.x, my: .25 * a.y + .5 * cy + .25 * b.y };
     }
+    /* ── Kamera: Mausrad, Knöpfe oder zwei Finger zoomen, ziehen schiebt (wie die Karte von Sektaria) ── */
+    const cam = { z: 1, x: 0, y: 0 }, camEl = $('#mncam'), box = $('#mapbox');
+    /* zf: Symbole, Schrift und Strassen wachsen beim Zoomen nur wenig mit (sonst würden sie riesig) */
+    let zf = 1, zfT = 0;
+    const sc = (x, y, inner) => zf > .99 ? inner : '<g transform="translate(' + x + ' ' + y + ') scale(' + zf.toFixed(3) + ') translate(' + (-x) + ' ' + (-y) + ')">' + inner + '</g>';
+    function applyCam() {
+        const w = box.clientWidth, h = box.clientHeight;
+        cam.z = X.clamp(cam.z, 1, 5); cam.x = X.clamp(cam.x, w - w * cam.z, 0); cam.y = X.clamp(cam.y, h - h * cam.z, 0);
+        camEl.style.transform = 'translate(' + cam.x.toFixed(1) + 'px,' + cam.y.toFixed(1) + 'px) scale(' + cam.z.toFixed(3) + ')';
+        box.classList.toggle('is-zoomed', cam.z > 1.01);
+        const nz = Math.pow(cam.z, -.6);
+        ov.style.setProperty('--zf', nz.toFixed(3));
+        if (Math.abs(nz - zf) > .02) { zf = nz; clearTimeout(zfT); zfT = setTimeout(drawOverlay, 90); }
+    }
+    function zoomAt(f, px, py) { const z = X.clamp(cam.z * f, 1, 5), k = z / cam.z; cam.x = px - (px - cam.x) * k; cam.y = py - (py - cam.y) * k; cam.z = z; applyCam(); }
+    /* auf einen Weltpunkt schauen (z. B. dein Gehäuse) */
+    function lookAt(wx, wy, z) { const w = box.clientWidth, h = box.clientHeight; cam.z = z || Math.max(cam.z, 2.2); cam.x = w / 2 - (wx - V.x) / V.w * w * cam.z; cam.y = h / 2 - (wy - V.y) / V.h * h * cam.z; applyCam(); }
+    box.addEventListener('wheel', e => { e.preventDefault(); const r = box.getBoundingClientRect(); zoomAt(e.deltaY < 0 ? 1.25 : 1 / 1.25, e.clientX - r.left, e.clientY - r.top); }, { passive: false });
+    const ptrs = new Map(); let drag = null, pinch = 0, moved = false;
+    box.addEventListener('pointerdown', e => { if (e.target.closest('.mn-zoom')) return; ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY }); moved = false; drag = { x: e.clientX, y: e.clientY, cx: cam.x, cy: cam.y }; if (ptrs.size === 2) { const [a, b] = Array.from(ptrs.values()); pinch = Math.hypot(a.x - b.x, a.y - b.y); } });
+    box.addEventListener('pointermove', e => {
+        if (!ptrs.has(e.pointerId)) return; ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (ptrs.size === 2 && pinch) { const [a, b] = Array.from(ptrs.values()), d = Math.hypot(a.x - b.x, a.y - b.y), r = box.getBoundingClientRect(); zoomAt(d / pinch, (a.x + b.x) / 2 - r.left, (a.y + b.y) / 2 - r.top); pinch = d; moved = true; return; }
+        if (!drag || cam.z <= 1.01) return;
+        const dx = e.clientX - drag.x, dy = e.clientY - drag.y; if (!moved && Math.hypot(dx, dy) < 5) return;
+        moved = true; box.setPointerCapture && box.setPointerCapture(e.pointerId); cam.x = drag.cx + dx; cam.y = drag.cy + dy; applyCam();
+    });
+    const endPtr = e => { ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = 0; if (!ptrs.size) drag = null; };
+    box.addEventListener('pointerup', endPtr); box.addEventListener('pointercancel', endPtr);
+    box.addEventListener('click', e => { if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; } }, true);   // nach dem Ziehen nichts anklicken
+    box.querySelector('.mn-zoom').addEventListener('click', e => {
+        const b = e.target.closest('[data-zoom]'); if (!b) return;
+        const w = box.clientWidth, h = box.clientHeight;
+        if (b.dataset.zoom === 'in') zoomAt(1.5, w / 2, h / 2); else if (b.dataset.zoom === 'out') zoomAt(1 / 1.5, w / 2, h / 2);
+        else { const P0 = MN.place(MN.at()); if (P0) lookAt(P0.x, P0.y, 2.6); }
+    });
+    addEventListener('resize', applyCam);
+
     let sel = null;   // ausgewählter Ort oder Strasse: { place } | { road }
+    /* Gehäuse-Figur über einem Punkt (mit Zoom-Faktor) */
+    const tokT = (x, y) => 'translate(' + x + ' ' + y + ') scale(' + zf.toFixed(3) + ') translate(0 -120)';
     function drawOverlay() {
         const at = MN.at(), h = [];
         const holes = [];
@@ -154,8 +202,8 @@ XIRU.ready(function () {
         MN.ROADS.forEach(r => {
             if (!MN.roadVisible(r) || MN.free(r.id)) return;
             const g = roadGeo(r);
-            h.push('<g class="mn-mark" data-road="' + r.id + '">' + pxAt('st-atk', g.mx - 30, g.my, 64) + pxAt(MN.TERRAIN[r.terr].i, g.mx + 36, g.my, 56) +
-                '<text x="' + Math.round(g.mx) + '" y="' + Math.round(g.my + 70) + '" class="mn-label mn-label--sm">' + MN.cleared(r.id) + '/' + r.foes + '</text></g>');
+            h.push('<g class="mn-mark" data-road="' + r.id + '">' + sc(Math.round(g.mx), Math.round(g.my), pxAt('st-atk', g.mx - 30, g.my, 64) + pxAt(MN.TERRAIN[r.terr].i, g.mx + 36, g.my, 56) +
+                '<text x="' + Math.round(g.mx) + '" y="' + Math.round(g.my + 70) + '" class="mn-label mn-label--sm">' + MN.cleared(r.id) + '/' + r.foes + '</text>') + '</g>');
         });
         // Orte
         MN.PLACES.forEach(p => {
@@ -163,25 +211,25 @@ XIRU.ready(function () {
             if (!seen && !near) return;
             const isSel = sel && sel.place === p.id;
             h.push('<g class="mn-place' + (seen ? '' : ' is-unknown') + (p.id === at ? ' is-here' : '') + (isSel ? ' is-sel' : '') + '" data-place="' + p.id + '">' +
-                '<rect x="' + (p.x - 46) + '" y="' + (p.y - 46) + '" width="92" height="92" class="mn-place__bg"/>' + pxAt(seen ? MN.KIND_ICON[p.kind] : '_', p.x, p.y, 72) +
-                '<text x="' + p.x + '" y="' + (p.y + 104) + '" class="mn-label">' + esc(seen ? p.n : '???') + '</text></g>');
+                sc(p.x, p.y, '<rect x="' + (p.x - 46) + '" y="' + (p.y - 46) + '" width="92" height="92" class="mn-place__bg"/>' + pxAt(seen ? MN.KIND_ICON[p.kind] : '_', p.x, p.y, 72) +
+                '<text x="' + p.x + '" y="' + (p.y + 104 + (zf < .99 ? 30 / zf : 0)) + '" class="mn-label">' + esc(seen ? p.n : '???') + '</text>') + '</g>');
         });
         // Treffpunkte und andere Reisende
         if (!easy) MN.PLACES.forEach(p => {
             if (!MN.seen(p.id)) return;
-            if (MEET.includes(p.id)) h.push('<g class="mn-meetmark" data-place="' + p.id + '">' + pxAt('ic-krug', p.x - 70, p.y - 70, 60) + '<title>Treffpunkt der Reisenden</title></g>');
+            if (MEET.includes(p.id)) h.push('<g class="mn-meetmark" data-place="' + p.id + '">' + sc(p.x, p.y, pxAt('ic-krug', p.x - 70, p.y - 70, 60)) + '<title>Treffpunkt der Reisenden</title></g>');
             const list = othersAt(p.id); if (!list.length) return;
             const n = Math.min(3, list.length), x0 = p.x + 92;
-            h.push('<g class="mn-others" data-place="' + p.id + '">' + list.slice(0, 3).map((o, i) => '<g class="mn-other">' + pxAt(figIcon(o), x0 + i * 70, p.y - 70, 80) + '</g>').join('') +
+            h.push('<g class="mn-others" data-place="' + p.id + '">' + sc(p.x, p.y, list.slice(0, 3).map((o, i) => '<g class="mn-other">' + pxAt(figIcon(o), x0 + i * 70, p.y - 70, 80) + '</g>').join('') +
                 (list.length > 3 ? '<text class="mn-label mn-label--sm" x="' + (x0 + 3 * 70) + '" y="' + (p.y - 56) + '">+' + (list.length - 3) + '</text>' : '') +
-                '<text class="mn-label mn-label--who" x="' + Math.round(x0 + (n - 1) * 35) + '" y="' + (p.y - 4) + '">' + (list.length === 1 ? esc(list[0].nick) : list.length + ' Reisende') + '</text>' +
+                '<text class="mn-label mn-label--who" x="' + Math.round(x0 + (n - 1) * 35) + '" y="' + (p.y - 4) + '">' + (list.length === 1 ? esc(list[0].nick) : list.length + ' Reisende') + '</text>') +
                 '<title>' + list.map(o => esc(o.nick) + ' (Level ' + o.level + ')').join(', ') + '</title></g>');
         });
-        h.push(MMO.marks());
+        { const wbp = MN.place(MN.worldBoss().place); h.push(wbp ? sc(wbp.x, wbp.y, MMO.marks()) : MMO.marks()); }
         // Dein Gehäuse
         if (!easy) {
             const P0 = MN.place(at), cas = MN.active();
-            h.push('<g class="mn-token" transform="translate(' + P0.x + ' ' + (P0.y - 120) + ')"><g class="mn-token__bob">' + pxAt(cas ? cas.id : 'ic-arche', 0, 0, 120) + '</g></g>');
+            h.push('<g class="mn-token" transform="' + tokT(P0.x, P0.y) + '"><g class="mn-token__bob">' + pxAt(cas ? cas.id : 'ic-arche', 0, 0, 120) + '</g></g>');
         }
         ov.innerHTML = h.join('');
     }
@@ -204,7 +252,7 @@ XIRU.ready(function () {
                 const len = path.getTotalLength(), rev = r.a !== from, dur = X.setting('anim') === false ? 1 : 900, t0 = performance.now();
                 const frame = now => {
                     const k = Math.min(1, (now - t0) / dur), pt = path.getPointAtLength((rev ? 1 - k : k) * len);
-                    tok.setAttribute('transform', 'translate(' + pt.x.toFixed(1) + ' ' + (pt.y - 120).toFixed(1) + ')');
+                    tok.setAttribute('transform', tokT(pt.x.toFixed(1), pt.y.toFixed(1)));
                     if (k < 1) return requestAnimationFrame(frame);
                     path.remove(); from = MN.other(r, from); i++; X.beep(330 + i * 40, .05, 'square', .03); step();
                 };
@@ -543,6 +591,7 @@ XIRU.ready(function () {
     /* ── Los: Karte zeichnen, dann Ladebildschirm weg ── */
     K.render($('#mn-canvas'), p => { $('#load-bar').style.width = (p * 100).toFixed(0) + '%'; }).then(() => {
         drawOverlay(); renderSide(); renderTabs();
+        if (K.animate) K.animate($('#mn-life'));   // Brandung, Fluss, Lava, Rauch, Wolken, Vögel
         const wait = Math.max(0, minT - (performance.now() - t0));
         setTimeout(() => { hideLoad(); if (!easy) setTimeout(intro, 500); }, wait);
         // Mini-MMO: Trupp, Weltboss, Duelle, Tausch, Chronik, Schnellchat (nur mit Online)

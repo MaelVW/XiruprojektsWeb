@@ -370,9 +370,9 @@ html.no-anim .mn-load__ark { animation: none; }
 .mn-mapbox { position: relative; width: min(100%, calc(84vh * 0.66)); margin-inline: auto; background: #0a2442; box-shadow: 0 0 0 3px #000, 0 0 0 6px #7a6230; overflow: hidden; }
 .mn-mapbox canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
 .mn-ov { position: absolute; inset: 0; width: 100%; height: 100%; }
-.mn-road__hit { fill: none; stroke: transparent; stroke-width: 70; cursor: pointer; }
-.mn-road__bed { fill: none; stroke: #2a1d10; stroke-width: 22; stroke-linecap: round; }
-.mn-road__line { fill: none; stroke: #f4e3ae; stroke-width: 10; stroke-linecap: round; stroke-dasharray: 26 16; }
+.mn-road__hit { fill: none; stroke: transparent; stroke-width: calc(70px * var(--zf, 1)); cursor: pointer; }
+.mn-road__bed { fill: none; stroke: #2a1d10; stroke-width: calc(22px * var(--zf, 1)); stroke-linecap: round; }
+.mn-road__line { fill: none; stroke: #f4e3ae; stroke-width: calc(10px * var(--zf, 1)); stroke-linecap: round; stroke-dasharray: 26 16; }
 .mn-road.is-open .mn-road__line { stroke: #ef4444; stroke-dasharray: 20 20; }
 .mn-road.is-sel .mn-road__bed { stroke: #fde68a; }
 .mn-mark { cursor: pointer; }
@@ -488,3 +488,17 @@ html.no-anim .mn-wbmark svg { animation: none; }
 .ort__tag.is-me { color: #a7f3d0; font-size: .62rem; opacity: .8; }
 .ort__tag.is-boss { color: #fda4af; font-size: .8rem; }
 .mn-enter { margin: .2rem 0 .4rem; justify-self: start; }
+/* Grosse Mnemora-Karte: Kamera (Zoomen/Schieben) und Leben */
+.mn-cam { position: absolute; inset: 0; transform-origin: 0 0; will-change: transform; }
+.mn-cam canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+.mn-life { pointer-events: none; }
+.mn-mapbox { touch-action: pan-y; }
+.mn-mapbox.is-zoomed { touch-action: none; }
+.mn-mapbox.is-zoomed { cursor: grab; }
+.mn-mapbox.is-zoomed:active { cursor: grabbing; }
+.mn-zoom { position: absolute; right: .5rem; top: .5rem; display: grid; gap: .25rem; z-index: 2; }
+.mn-zoom .btn { min-width: 2.2rem; justify-content: center; padding-inline: .4rem; font: 800 1rem var(--mono); }
+/* gezoomt: Ortsmarken durchsichtig, damit die Pixel-Orte darunter zu sehen sind */
+.mn-mapbox.is-zoomed .mn-place__bg { fill-opacity: .08; stroke-opacity: .55; stroke-width: 4; }
+.mn-mapbox.is-zoomed .mn-place > svg { opacity: 0; transition: opacity .2s; }
+.mn-mapbox.is-zoomed .mn-place.is-unknown > svg, .mn-mapbox.is-zoomed .mn-place:hover > svg { opacity: 1; }

@@ -99,13 +99,18 @@
         tower: { s: ['.rr.', 'rrrr', '.ww.', '.wk.', '.ww.', 'wwww'], c: { r: '#b91c1c', w: '#e7d7b0', k: '#3a2618' } },
         hut: { s: ['..r..', '.rrr.', 'rrrrr', '.wkw.', '.www.'], c: { r: '#7c2d12', w: '#e2e8f0', k: '#1f2937' } }
     };
-    function stamp(D, name, px, py) {
+    /* k = Vergrösserung (Orte werden doppelt gross gestempelt, damit man sie gezoomt gut sieht) */
+    function stamp(D, name, px, py, k) {
         const st = STAMP[name]; if (!st) return;
+        k = k || 1;
         const h = st.s.length, w = Math.max.apply(null, st.s.map(r => r.length));
         for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
             const ch = st.s[y][x] || '.'; if (ch === '.' || !st.c[ch]) continue;
-            const X2 = px - (w >> 1) + x, Y2 = py - h + 1 + y; if (X2 < 0 || Y2 < 0 || X2 >= CW || Y2 >= CH) continue;
-            const c = hex(st.c[ch]), k = (Y2 * CW + X2) * 4; D[k] = c[0]; D[k + 1] = c[1]; D[k + 2] = c[2]; D[k + 3] = 255;
+            const c = hex(st.c[ch]);
+            for (let j = 0; j < k; j++) for (let i = 0; i < k; i++) {
+                const X2 = px - ((w * k) >> 1) + x * k + i, Y2 = py - h * k + 1 + y * k + j; if (X2 < 0 || Y2 < 0 || X2 >= CW || Y2 >= CH) continue;
+                const o = (Y2 * CW + X2) * 4; D[o] = c[0]; D[o + 1] = c[1]; D[o + 2] = c[2]; D[o + 3] = 255;
+            }
         }
     }
     Object.assign(STAMP, {
@@ -208,7 +213,7 @@
                     }
                 }
                 // Orte
-                ((X.mnemora && X.mnemora.PLACES) || []).forEach(p => { const sn = PLACE_STAMP[p.kind]; if (sn && p.x != null) stamp(D, sn, Math.round((p.x - VIEW.x) / S), Math.round((p.y - VIEW.y) / S) + 4); });
+                ((X.mnemora && X.mnemora.PLACES) || []).forEach(p => { const sn = PLACE_STAMP[p.kind]; if (sn && p.x != null) stamp(D, sn, Math.round((p.x - VIEW.x) / S), Math.round((p.y - VIEW.y) / S) + 9, 2); });
                 ctx.putImageData(img, 0, 0);
                 // Für die Animation: Küste, Fluss, Lava, Seeufer (je jedes zweite Pixel reicht)
                 const coast = [], river = [], lava = [], lake = [];
@@ -252,7 +257,7 @@
             // Rauch über bewohnten Orten
             places.forEach((p, n) => {
                 if (!/hafen|stadt|kap|see|moor/.test(p.kind)) return;
-                const px = Math.round((p.x - VIEW.x) / S), py = Math.round((p.y - VIEW.y) / S) - 6;
+                const px = Math.round((p.x - VIEW.x) / S), py = Math.round((p.y - VIEW.y) / S) - 14;
                 for (let k = 0; k < 3; k++) { const tt = (f * .35 + k / 3 + n * .13) % 1; g.fillStyle = 'rgba(226,232,240,' + (.55 * (1 - tt)).toFixed(2) + ')'; g.fillRect(px + 3 + Math.round(Math.sin(tt * 5 + n) * 2), py - Math.round(tt * 14), 2, 2); }
             });
             // Wolkenschatten ziehen über das Land

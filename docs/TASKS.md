@@ -236,6 +236,19 @@ Der Liminal-Teil (`Why.html`, `why/*`, `liminal*.js`) wird mitgeprüft, aber **n
 
 ## Notizen der letzten Sitzung
 
+- 2026-10-14 (später): **MAPS (Priorität 2) – erster Wurf.** Neu `assets/js/mnemora-ort.js` (`XIRU.mnemoraOrt`): **begehbare Orte** für alle 11 Orte
+  (Top-down 2D-Pixel, Karte 56×40 Kacheln, aus Daten erzeugt: `gen()` → Kacheln/Objekte/Ziele/Ausgänge; Zeichnen getrennt, damit später ein 3D-artigerer
+  Zeichner oder Maels Grafiken andocken können). Port Puffer (Meer, Stege, Arche, Leuchtturm, Stände der Besatzung mit NPCs, Taverne = Treffpunkt, Otto → Sektaria),
+  Registra (Mauer mit Toren, Marktplatz/Brunnen, Tauschhalle, Duellring, Anschlagbrett, Felder), Dünenwacht (Turm), Cachewald (Riesenbaum mit Laternen),
+  Bitbrunnen (See mit Insel, Stege), Moor (Bohlenwege, Irrlicht), Frostkap (Eis, Hütte mit Rauch), Berge (Mine, Lore, Kristalle), Steppe (Monolith-Kreis),
+  Alt-ROM (Lava, Säulen, Hort des GC). Wegweiser am Rand = Strassen (frei → reisen und am Ziel gleich weiter, sonst Kampf → danach zurück auf die Ort-Karte),
+  Weltboss steht im Ort, Feldwerkstatt-Wagen überall. Steuerung WASD/Pfeile + E, Klick/Tippen mit Wegsuche. Online: Position als `mnemora:<Ort>@x,y`
+  im players.place, Abfrage alle 3 s auf der Ort-Karte → andere Reisende laufen herum (halb-live), Klick auf sie → Einladen/Duell/Grüssen.
+  **Grosse Karte:** Zoomen/Schieben (Mausrad, Knöpfe, zwei Finger), Leben (`K.animate`: Brandung, Fluss, Lava, Rauch, Wolkenschatten, Vögel),
+  grosse Pixel-Orte (doppelt gestempelt), Überlagerung wächst beim Zoomen nur wenig mit (`zf`). Hilfe-FAQ ergänzt. Getestet im Browser (alle Orte, Aktionen,
+  Reise über Wegweiser, Kampf → zurück, Zoom). **Ideen als Nächstes:** Ort-Karten noch dichter (Innenräume, mehr NPC-Leben, Tag/Nacht), Wege auf der
+  grossen Karte als Pixelpfade, Echtzeit-Positionen (Realtime-Abo auf players), Mech-Redesign (Priorität 3).
+
 - 2026-10-14: **ANTI-CHEAT gebaut** (Mael: alle drei Schichten, bei Manipulation Online sperren, Ranglisten/MMO nur mit Konto).
   Siegel im Browser (core.js: `X.store` versiegelt Profil + Spielstände je Eintrag `xiru:sg:…`, `X.taint`, versiegelte Exporte und Cookie-Sicherung,
   Import-Warnung in profil.html, Reset in den Einstellungen entsiegelt), Server-Prüfstelle als PocketBase-Hooks `server/pb_hooks/` (Level, Mech-Werte,

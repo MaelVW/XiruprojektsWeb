@@ -20,6 +20,19 @@
         "8099"
       ],
       "port": 8099
+    },
+    {
+      "name": "xiru-pb",
+      "runtimeExecutable": "dev/pocketbase/bin/pocketbase.exe",
+      "runtimeArgs": [
+        "serve",
+        "--http=127.0.0.1:8091",
+        "--dir=dev/pocketbase/pb_data",
+        "--hooksDir=server/pb_hooks",
+        "--migrationsDir=server/pb_migrations",
+        "--dev"
+      ],
+      "port": 8091
     }
   ]
 }

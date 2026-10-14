@@ -236,6 +236,23 @@ Der Liminal-Teil (`Why.html`, `why/*`, `liminal*.js`) wird mitgeprüft, aber **n
 
 ## Notizen der letzten Sitzung
 
+- 2026-10-14: **ANTI-CHEAT gebaut** (Mael: alle drei Schichten, bei Manipulation Online sperren, Ranglisten/MMO nur mit Konto).
+  Siegel im Browser (core.js: `X.store` versiegelt Profil + Spielstände je Eintrag `xiru:sg:…`, `X.taint`, versiegelte Exporte und Cookie-Sicherung,
+  Import-Warnung in profil.html, Reset in den Einstellungen entsiegelt), Server-Prüfstelle als PocketBase-Hooks `server/pb_hooks/` (Level, Mech-Werte,
+  Mnemora-Rang aus dem geprüften Stand; Rekorde nur wie im geprüften Stand; Weltboss/Duelle/Chronik/Tausch geprüft), geprüfter Spielstand
+  (Eimer-Prinzip in `xiru_lib.js`, Sperre `users.locked`), Migration `server/pb_migrations/1760436000_xiru_mmo_anticheat.js` (ersetzt den
+  fehlgeschlagenen Import – Ursache war: Import-Seite von PocketBase entfernt Felder ohne `id`), Spieldaten `tools/build_server_data.py` → `xiru_data.js`
+  (check_site meldet Veraltung). online.js: Anmeldung bei players/scores/mn_*, `verified()`, `lockReason()`, Sperr-Hinweis, Rekorde erst nach Abgleich.
+  MMO: ohne Konto nur Reisende + Schnellchat. Doku ONLINE.md → Anti-Cheat (mit Einrichtung auf Unraid), Datenschutz, Hilfe.
+  **Getestet** mit echtem PocketBase 0.23.12 lokal (`dev/pocketbase/`, launch.json „xiru-pb“): `test_anticheat.py` 30/30, im Browser: Speicher von Hand
+  geändert → erkannt; ehrlicher Rekord → Weltrangliste; +80 000 XP/+500 000 Taler per Konsole → abgelehnt + gesperrt; Reset → entsperrt; Weltboss über
+  Server-Prüfung; Ansicht ohne Konto; Export-Siegel. Testkonto zurückgesetzt.
+  **AUF DEM SERVER AKTIV (2026-10-14):** Pfad `/pb_hooks` im Docker-Template ergänzt (Claude, `/pb_migrations` gab es schon), Mael hat die 5 Dateien
+  kopiert, Neustart → Migration gelaufen (mn_* + Felder da), `/xiru/me` = 401, Score ohne Konto = 403 „Xiru-auth“. Website-Code muss Mael noch pushen.
+  **TODO:** realistische
+  Höchstwerte je Spielhallen-Spiel (`SCORE_CAP` in xiru_lib.js) mit Mael/Luca festlegen; alte, ungeprüfte `scores` evtl. löschen.
+  Danach weiter mit Prioritäten: Ort-Maps auf Mnemora, dann Mech-Redesign.
+
 - **NÄCHSTE SITZUNG (Mael, 2026-10-13 spät, „morgen weiter“):**
   1. **ANTI-CHEAT zuerst, vor allem anderen.** Mael und Luca haben gemerkt: Man kann Level/Attribute ändern und sich Items geben
      (localStorage bearbeiten oder Profil-Export bearbeiten und wieder importieren). Online soll das nicht gehen → System planen, das beim

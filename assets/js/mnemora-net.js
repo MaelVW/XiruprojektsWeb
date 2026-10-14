@@ -8,7 +8,8 @@
      SPÄTER Echtzeit: die Abfragen in PULL durch Abos ersetzen (players, mn_trades …) – die Ereignisse bleiben gleich.
 
    XIRU.mnNet
-     .ok()                  Online an und Abenteuer-Modus
+     .ok()                  Online an, Abenteuer-Modus, Konto nicht gesperrt → Reisende sehen, Schnellchat
+     .full()                + verbundenes, geprüftes Konto (Geräte-Sync) → Trupp, Weltboss, Duelle, Tausch, Chronik, Ranglisten-Einträge
      .start()               Verbinden, eigenen Spieler melden, Abfragen starten
      .on(ev, fn)            'travellers' Reisende auf Mnemora (letzte 3 min)   'party'  Truppmitglieder (auch offline)
                             'feed'  Mnemora-Funk (Chronik, Schnellchat …)        'live'   ein neuer Funk-Eintrag, gerade eben
@@ -26,7 +27,13 @@
     const fns = {};
     N.on = (ev, fn) => { (fns[ev] = fns[ev] || []).push(fn); };
     const emit = (ev, d) => (fns[ev] || []).forEach(fn => { try { fn(d); } catch (e) { console.error(e); } });
-    N.ok = () => !X.easy() && !!(X.online && X.online.on && X.online.on());
+    N.ok = () => !X.easy() && !!(X.online && X.online.on && X.online.on()) && !(X.online.lockReason && X.online.lockReason());
+    /* Anti-Cheat: alles, was andere betrifft, nur mit geprüftem Konto – der Server rechnet aus dem geprüften Spielstand */
+    N.full = () => N.ok() && !!(X.online.verified && X.online.verified());
+    const need = () => { if (!N.full()) throw new Error('Dafür brauchst du ein verbundenes Konto (Geräte-Sync).'); };
+    /* Erst den Spielstand abgleichen (der Server prüft gegen den geprüften Stand), dann senden; „xiru-sync“ → einmal nachholen */
+    const synced = () => O && O.cloud ? O.cloud.sync({ quiet: true }).catch(() => { }) : Promise.resolve();
+    const retry = fn => fn().catch(e => { if (e.code !== 'sync') throw e; return synced().then(fn); });
 
     /* Halb-live: so oft wird nachgeschaut (ms) */
     const EVERY = { travellers: 20e3, feed: 25e3, party: 30e3, boss: 60e3, trades: 45e3 };
@@ -80,8 +87,10 @@
     const PULL = {
         async travellers() {
             const res = await api('/collections/players/records?perPage=80&sort=-updated&filter=' + q('updated >= "' + pbDate(Date.now() - RECENT) + '" && place ~ "mnemora:"'));
-            N.travellers = (res.items || []).map(player).filter(p => p.id && p.id !== (N.me && N.me.id) && p.place.startsWith('mnemora:') && MN.place(p.place.slice(8)));
-            N.travellers.forEach(p => { p.place = p.place.slice(8); });
+            // Gegend „mnemora:port“ oder auf der begehbaren Karte „mnemora:port@12,7“ (Kachel)
+            N.travellers = (res.items || []).map(player).filter(p => p.id && p.id !== (N.me && N.me.id) && p.place.startsWith('mnemora:'));
+            N.travellers.forEach(p => { const m = /^mnemora:([a-z]+)(?:@(\d{1,2}),(\d{1,2}))?$/.exec(p.place) || []; p.place = m[1] || ''; p.pos = m[2] ? m[2] + ',' + m[3] : ''; });
+            N.travellers = N.travellers.filter(p => MN.place(p.place));
             emit('travellers', N.travellers);
         },
         async party() {
@@ -134,6 +143,8 @@
         try { await PULL[what](); } catch (e) { emit('error', { what, e }); }
     }
     N.refresh = what => what ? pull(what) : Promise.all(Object.keys(PULL).map(pull));
+    /* Auf einer begehbaren Ort-Karte: Reisende öfter abfragen, damit man sie laufen sieht (halb-live) */
+    N.fast = on => { EVERY.travellers = on ? 3000 : 20e3; if (on) pull('travellers'); };
 
     /* ── Funk schreiben ── */
     async function post(kind, d) {
@@ -145,18 +156,18 @@
     }
     N.say = (phrase, arg) => post('say', { a: str(phrase, 20), b: str(arg, 20) });
     /* Chronik-Eintrag (still: Fehler egal) */
-    N.log = (kind, d) => N.ok() && O ? post(kind, d).catch(() => { }) : Promise.resolve();
+    N.log = (kind, d) => N.full() && O ? synced().then(() => retry(() => post(kind, d))).catch(() => { }) : Promise.resolve();
 
     /* ── Trupp ── */
     N.invite = async p => {
-        const m = await me();
+        need(); const m = await me();
         // Neuer Trupp: eigene, zufällige Kennung (nicht die Spieler-ID – sonst landete man nach dem Verlassen wieder im alten Trupp)
         if (!MN.party()) { MN.setParty(Array.from(crypto.getRandomValues(new Uint8Array(10)), b => (b % 36).toString(36)).join('') + Date.now().toString(36).slice(-4)); await O.nudge(); }
         await post('inv', { to: id(p.id), a: MN.party(), b: str(p.nick, 20) });
         pull('party');
     };
     N.join = async (pid, from) => {
-        pid = id(pid); if (!pid) throw new Error('Diesen Trupp gibt es nicht.');
+        need(); pid = id(pid); if (!pid) throw new Error('Diesen Trupp gibt es nicht.');
         const m = await me();
         const res = await api('/collections/players/records?perPage=6&fields=id&filter=' + q('party = "' + pid + '" && updated >= "' + pbDate(Date.now() - 14 * DAY) + '"'));
         if ((res.items || []).filter(x => x.id !== m.id).length >= 3) throw new Error('Der Trupp ist schon voll – höchstens drei Reisende.');
@@ -170,12 +181,12 @@
         if (pid) post('leave', { a: pid }).catch(() => { });
     };
     /* Nach einem Kampf: Kamerad:innen bekommen einen Anteil (wird bei ihnen gutgeschrieben, sobald sie online sind) */
-    N.help = (allies, road, n) => Promise.all(allies.map(a => post('help', { to: id(a.id), a: str(road, 40), b: str(a.nick, 20), n: Math.round(n) }))).catch(() => { });
+    N.help = (allies, road, n) => !N.full() ? Promise.resolve() : Promise.all(allies.map(a => post('help', { to: id(a.id), a: str(road, 40), b: str(a.nick, 20), n: Math.round(n) }))).catch(() => { });
 
     /* ── Weltboss ── */
     N.hit = async dmg => {
-        const b = MN.worldBoss();
-        await post('wb', { a: b.key, b: b.def.id, n: X.clamp(Math.round(dmg), 1, 4000) });
+        need(); const b = MN.worldBoss();
+        await retry(() => post('wb', { a: b.key, b: b.def.id, n: X.clamp(Math.round(dmg), 1, 4000) }));
         await pull('boss');
         return N.boss;
     };
@@ -186,7 +197,7 @@
         const res = await api('/collections/players/records?perPage=40&sort=-mns&filter=' + q('mns > 0 && updated >= "' + pbDate(Date.now() - 30 * DAY) + '"'));
         return (res.items || []).map(player).filter(p => p.id && p.id !== m.id && p.kit);
     };
-    N.duel = (g, win) => post('duel', { to: id(g.id), b: str(g.nick, 20), a: (MN.active() || {}).id || '', n: win ? 1 : 0 });
+    N.duel = (g, win) => !N.full() ? Promise.resolve() : retry(() => post('duel', { to: id(g.id), b: str(g.nick, 20), a: (MN.active() || {}).id || '', n: win ? 1 : 0 }));
 
     /* ── Ranglisten: Entdecker (Fortschritt), Duelle (dieser Monat), Weltboss (diese Woche) ── */
     N.ranks = async () => {
@@ -210,19 +221,21 @@
     /* ── Tauschbörse: Angebot liegt im „Treuhandfach“ (sofort aus deinem Lager), mn_takes hat einen eindeutigen Index je Angebot → nur eine:r bekommt es ── */
     const closeOffer = async (tid, status) => { const m = await me(); return api('/collections/mn_trades/records/' + id(tid), { method: 'PATCH', body: { secret: m.secret, status } }); };
     N.offer = async (give, want) => {
+        need();
         if (!MN.itemOk(give) || !MN.itemOk(want)) throw new Error('Das Angebot ist unvollständig.');
         if (!MN.takeItem(give)) throw new Error('Das hast du nicht (mehr) im Lager.');
         try {
             const m = await me();
-            const r = await api('/collections/mn_trades/records', { method: 'POST', body: { secret: m.secret, player: m.id, nick: m.nick, give, want, status: 'open', place: MN.at() } });
+            const r = await retry(() => api('/collections/mn_trades/records', { method: 'POST', body: { secret: m.secret, player: m.id, nick: m.nick, give, want, status: 'open', place: MN.at() } }));
             pull('trades'); return r;
-        } catch (e) { MN.giveItem(give); throw new Error(e.status ? 'Der Xiru-Server hat das Angebot nicht angenommen.' : 'Der Xiru-Server antwortet gerade nicht.'); }
+        } catch (e) { MN.giveItem(give); throw new Error(e.code === 'sync' ? 'Das steht noch nicht in deinem geprüften Spielstand. Versuch es in einer Minute noch einmal.' : e.status ? 'Der Xiru-Server hat das Angebot nicht angenommen.' : 'Der Xiru-Server antwortet gerade nicht.'); }
     };
     N.take = async t => {
+        need();
         if (!MN.hasItem(t.want)) throw new Error('Dafür fehlt dir: ' + MN.itemName(t.want) + '.');
         const m = await me();
-        try { await api('/collections/mn_takes/records', { method: 'POST', body: { secret: m.secret, offer: id(t.id), player: m.id, nick: m.nick } }); }
-        catch (e) { pull('trades'); throw e.status && e.status < 500 ? new Error('Zu spät – jemand war schneller, oder das Angebot wurde zurückgezogen.') : e; }
+        try { await retry(() => api('/collections/mn_takes/records', { method: 'POST', body: { secret: m.secret, offer: id(t.id), player: m.id, nick: m.nick } })); }
+        catch (e) { pull('trades'); throw e.code === 'sync' ? new Error('Das hast du noch nicht in deinem geprüften Spielstand. Versuch es in einer Minute noch einmal.') : e.status && e.status < 500 ? new Error('Zu spät – jemand war schneller, oder das Angebot wurde zurückgezogen.') : e; }
         MN.takeItem(t.want); MN.giveItem(t.give);
         post('trade', { to: id(t.player), b: str(t.nick, 20), a: str(MN.itemName(t.give), 40) }).catch(() => { });
         pull('trades');
@@ -236,6 +249,7 @@
     };
     /* Eigene Angebote, die jemand angenommen hat: gewünschte Ware gutschreiben, Angebot abschliessen */
     async function settle() {
+        if (!N.full()) return;
         const m = await me();
         const res = await api('/collections/mn_takes/records?perPage=30&expand=offer&filter=' + q('offer.player = "' + id(m.id) + '" && offer.status != "done"'));
         const out = [];

@@ -72,3 +72,13 @@ for k in sorted(unregistered_eggs):
 print('\n== Registrierte Kristalle, die nirgends ausgelöst werden (%d)' % len(never_used))
 for e in never_used:
     print('   ', e)
+
+# Anti-Cheat: Spieldaten für den Xiru-Server (server/pb_hooks/xiru_data.js) müssen zur Website passen
+try:
+    import sys
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import build_server_data as bsd
+    fresh = io.open(bsd.OUT, encoding='utf-8').read() == bsd.current() if os.path.exists(bsd.OUT) else False
+    print('\n== Server-Spieldaten (Anti-Cheat): ' + ('aktuell' if fresh else 'VERALTET → python tools/build_server_data.py ausführen und xiru_data.js auf den Server kopieren'))
+except Exception as e:
+    print('\n== Server-Spieldaten (Anti-Cheat): nicht prüfbar (%s)' % e)

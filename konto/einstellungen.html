@@ -80,7 +80,7 @@
         </section>
         <section class="card" id="online">
             <h2>🌐 Online</h2>
-            <p class="muted small">Freiwillig. Eingeschaltet siehst du, wer sonst unterwegs ist, landest in den weltweiten Bestenlisten der Spielhalle und kannst Grüsse verschicken.
+            <p class="muted small">Freiwillig. Eingeschaltet siehst du, wer sonst unterwegs ist, und kannst Grüsse verschicken. Mit verbundenem Konto (Geräte-Sync) landest du ausserdem in den weltweiten Bestenlisten und machst beim Mnemora-MMO mit – dafür prüft der Server deinen Spielstand (Anti-Cheat).
                 Dafür gehen dein <b>Spitzname</b>, deine <b>Rekorde</b> und die <b>Gegend</b>, in der du gerade bist, an den Xiru-Server. Mit dem <b>Geräte-Sync</b> zusätzlich
                 dein Konto (Name und Passwort – auf dem Server nur als Hash) und dein Spielstand, lesbar nur mit deinem Konto. Keine E-Mail.</p>
             <div class="toggle-row"><div><strong>Online spielen</strong><div class="small muted" id="on-state">aus</div></div>
@@ -88,6 +88,7 @@
             <div class="field mt-2"><label for="on-nick">Spitzname</label>
                 <div class="row"><input class="input" id="on-nick" maxlength="20" style="flex:1" placeholder="So sehen dich die anderen"><button class="btn btn--sm" type="button" id="on-nick-save">Speichern</button></div></div>
             <div class="toggle-row mt-2" id="sync-box" hidden><div><strong>Geräte-Sync</strong><div class="small muted" id="sync-state"></div></div><div class="row" id="sync-actions"></div></div>
+            <div class="toggle-row mt-2" id="ac-box" hidden><div><strong>Anti-Cheat</strong><div class="small muted" id="ac-state"></div></div><div class="row" id="ac-actions"></div></div>
             <details class="small"><summary>Server</summary>
                 <div class="field mt-1"><label for="on-url">Adresse des Xiru-Servers</label>
                     <div class="row"><input class="input" id="on-url" style="flex:1" spellcheck="false"><button class="btn btn--sm" type="button" id="on-test">Testen</button></div>
@@ -148,6 +149,25 @@ XIRU.ready(function () {
         else { st.textContent = 'an' + (l.at ? ' – zuletzt abgeglichen ' + fmtAt(l.at) : ''); act.innerHTML = '<button class="btn btn--sm" type="button" data-s="now">Jetzt abgleichen</button><button class="btn btn--sm btn--ghost" type="button" data-s="del">Online-Kopie löschen</button>'; }
     }
     syncUI();
+    /* Anti-Cheat: Online zählt nur ein geprüfter, unveränderter Spielstand (core.js X.taint, online.js, server/pb_hooks) */
+    function acUI() {
+        const box = $('#ac-box'), st = $('#ac-state'), act = $('#ac-actions');
+        if (!XIRU.user) { box.hidden = true; return; }
+        box.hidden = false; act.innerHTML = '';
+        const t = XIRU.taint.get(), l = XIRU.store.get('xiru:cloud:' + XIRU.user.toLowerCase(), null);
+        const resetBtn = '<button class="btn btn--sm btn--danger" type="button" data-ac="reset">Fortschritt zurücksetzen</button>';
+        if (t) { st.innerHTML = '<span class="text-danger">Online gesperrt:</span> ' + XIRU.esc(t.why) + '. Offline geht alles weiter; online erst wieder nach einem Neustart.'; act.innerHTML = resetBtn; }
+        else if (l && l.locked) { st.innerHTML = '<span class="text-danger">Vom Xiru-Server gesperrt:</span> ' + XIRU.esc(l.locked); act.innerHTML = resetBtn; }
+        else if (!l) st.textContent = 'Weltranglisten und Mnemora-MMO zählen nur mit verbundenem Konto (Geräte-Sync) – dort prüft der Server deinen Spielstand.';
+        else {
+            st.textContent = 'Dein Spielstand wird bei jedem Abgleich vom Server geprüft.';
+            if (XIRU.online.on()) XIRU.online.load().then(o => o.cloud.me()).then(me => {
+                st.textContent = me.locked ? 'Gesperrt: ' + me.locked : '✓ Geprüft' + (me.checked ? ' · zuletzt ' + fmtAt(me.checked) : '') + (me.level ? ' · Level ' + me.level : '');
+            }).catch(() => { });
+        }
+    }
+    acUI();
+    $('#ac-actions').addEventListener('click', e => { if (e.target.closest('[data-ac="reset"]')) $('#reset-progress').click(); });
     $('#sync-actions').addEventListener('click', e => {
         const b = e.target.closest('[data-s]'); if (!b) return;
         XIRU.online.load().then(o => {
@@ -294,7 +314,9 @@ XIRU.ready(function () {
             '<div class="row mt-2"><button class="btn btn--danger" id="ok">Zurücksetzen</button><button class="btn" data-close>Abbrechen</button></div>');
         m.el.querySelector('#ok').addEventListener('click', () => {
             ['skills', 'eggs', 'visited', 'days', 'scores', 'rewards', 'data'].forEach(k => { P[k] = {}; });
-            P.xp = 0; P.bonus = 0; XIRU.persist(); XIRU.save('local-usage', { arcadeSeconds: 0 }); XIRU.cookie.del(XIRU.backup.name()); location.reload();
+            P.xp = 0; P.bonus = 0; XIRU.persist(); XIRU.save('local-usage', { arcadeSeconds: 0 }); XIRU.cookie.del(XIRU.backup.name());
+            XIRU.taint.reset();   // Anti-Cheat: frisch versiegelt; mit Geräte-Sync prüft der Server den neuen Stand und hebt eine Sperre auf
+            location.reload();
         });
     });
     $('#wipe').addEventListener('click', () => {

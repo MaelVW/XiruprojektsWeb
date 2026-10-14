@@ -103,6 +103,10 @@
     <p>Wenn du bei eingeschaltetem Online deinem Konto den <strong>Geräte-Sync</strong> erlaubst (wir fragen dich dafür nach deinem Passwort), legen wir dein Konto
         auch auf dem Xiru-Server an: <strong>Kontoname</strong> und <strong>Passwort</strong> – das Passwort speichert der Server nur als Hash, also nicht lesbar.
         Dazu kommt <strong>dein Spielstand</strong> (Fortschritt, Kristalle, Module, Mech, Spielstände der Spiele) und eine grobe Gerätebezeichnung wie „Windows · Firefox“.
+        Damit online niemand schummeln kann, prüft der Server jeden hochgeladenen Spielstand auf Plausibilität und speichert dazu eine Zusammenfassung
+        (Level, Fortschritt, Inventar-Übersicht, Zeitpunkt der Prüfung). Level, Ranglisten und Mech-Werte, die andere sehen, rechnet er daraus selbst.
+        Ist ein Sprung unmöglich (oder wurde der Spielstand im Browser von Hand verändert), wird dein Online-Konto gesperrt – mit Grund, offline
+        spielst du weiter; „Fortschritt zurücksetzen“ hebt die Sperre auf.
         So kannst du dich auf jedem Gerät mit Name und Passwort anmelden. Lesen und ändern kann diese Daten nur, wer mit deinem Konto angemeldet ist.
         <strong>Nie</strong> übertragen werden API-Schlüssel aus „Dienste & Schlüssel“, Notizen und andere Werkzeug-Daten, KI-Ergebnisse und Mixer-Werke – die bleiben immer nur in diesem Browser.
         Löschen kannst du die Online-Kopie jederzeit selbst: <a href="konto/einstellungen.html#online">Einstellungen → Online → Online-Kopie löschen</a>;

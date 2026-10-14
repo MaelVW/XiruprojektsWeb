@@ -14,6 +14,7 @@ einem kleinen eigenen Server: **PocketBase** als Docker-Container auf Maels Unra
 | Begegnungen auf Mnemora | mnemora.html: Figuren anderer Reisender an ihrem Ort, Treffpunkte Port Puffer + Registra, „… ist auch hier“, Grüsse an Ort | Gegend = `mnemora:<Ort>`, Mech = aktives Gehäuse (gleiche Felder wie oben, kein neuer Server-Teil) |
 | Geräte-Sync | Einstellungen → Online, Anmeldeseite | Kontoname + Passwort (Server speichert nur den Hash), Spielstand, grobe Gerätebezeichnung |
 | Mnemora-MMO | mnemora.html: Seitenleiste (Trupp, Weltboss, Schnellchat), Reiter „Treffpunkt“ (Chronik, Tauschbörse, Duellring, Ranglisten) | `players.party/kit/mn/mns`, Tabellen `mn_feed`, `mn_trades`, `mn_takes` (siehe unten) |
+| Anti-Cheat | überall (Siegel), Einstellungen → Online (Status), Hooks auf dem Server | geprüfte Zusammenfassung des Spielstands je Konto (`users.ac`), Sperrgrund (`users.locked`), Verknüpfung Spieler ↔ Konto (`players.user`) |
 
 Kein Passwort, keine E-Mail, keine Cookies. Jeder Browser legt beim ersten Online-Gang einen
 zufälligen Schlüssel an (48 Hex-Zeichen) – gespeichert in der Tabelle `keys`, die von aussen **nur
@@ -55,16 +56,62 @@ Code: `assets/js/mnemora-net.js` (`XIRU.mnNet`: **alles**, was das MMO mit dem S
 
 Nachrichten an dich (`mn_feed.to`) werden nur einmal verarbeitet (`mnemora.fx` im Spielstand, auch über Geräte hinweg).
 
-**Einrichtung auf dem Server (einmalig, macht Mael in der Admin-Oberfläche `http://mael.local:8090/_/`):**
-1. Tabelle **players** → Bearbeiten → vier Felder hinzufügen: `party` (Plain text, Max 20), `kit` (JSON, Max size 4000), `mn` (JSON, Max size 1000), `mns` (Number, Min 0, Max 1000000, „No decimals“). Speichern.
-2. Settings → **Import collections** → Inhalt von `docs/pocketbase-mmo-import.json` einfügen → **„Merge“ anhaken** (sonst würden alle anderen Tabellen gelöscht!) →
-   in der Vorschau dürfen nur **drei neue** Tabellen (`mn_feed`, `mn_trades`, `mn_takes`) stehen, nichts Rotes/Gelöschtes → Import bestätigen.
-   (Die Datei verweist auf die players-Tabelle per ID `pbc_3072146508` – das ist die ID auf Maels Server. Auf einem neuen Server die ID dort ersetzen.)
-3. Optional: Settings → Rate limits: `mn_feed:create` 8 / 10 s, `mn_trades:create` 5 / 60 s, `mn_takes:create` 5 / 60 s.
-4. Pflege: alte `mn_feed`-Einträge gelegentlich löschen (älter als ~60 Tage; Ranglisten brauchen nur den laufenden Monat bzw. die Woche).
+Mit dem Anti-Cheat (unten) gibt es Trupp, Weltboss, Duelle, Tausch und Chronik-Einträge **nur mit verbundenem Konto** (Geräte-Sync);
+ohne Konto sieht man andere Reisende und darf den Schnellchat benutzen. Tabellen und Regeln legt die Migration an (siehe Anti-Cheat → Einrichtung).
+Pflege: alte `mn_feed`-Einträge gelegentlich löschen (älter als ~60 Tage; Ranglisten brauchen nur den laufenden Monat bzw. die Woche).
 
-**Lokal testen ohne echten Server:** `dev/mock-pocketbase.py` (Nachbau der API inkl. Regeln, Realtime und Test-Helfern `/_mock/seed`, `/_mock/dump`),
-starten über `.claude/launch.json` „xiru-mock“ (Port 8099), dann `XIRU.setting('onlineUrl', 'http://localhost:8099')`. `dev/` wird nicht veröffentlicht.
+## Anti-Cheat (seit 2026-10-14)
+
+Ziel: **Manipulationen bringen online nichts.** Alles, was andere sehen oder was andere betrifft – Level, Weltranglisten, Mech-Werte im Duell
+und im Trupp, Mnemora-Rangliste, Weltboss, Tausch –, kommt aus dem **geprüften Spielstand** des Kontos, nicht aus dem, was der Browser behauptet.
+Offline bleibt das Spiel frei: Wer schummelt, schummelt nur für sich.
+
+**Drei Schichten:**
+1. **Siegel im Browser** (`core.js`, `X.store` / `X.taint`): Jeder Schreibvorgang des Spiels legt neben Profil und Spielständen eine Prüfsumme ab
+   (`xiru:sg:<Schlüssel>`). Wer den Speicher von Hand ändert (Entwicklerwerkzeuge) oder eine bearbeitete/alte Export-Datei einliest, bricht das
+   Siegel → `xiru:taint:<konto>`, Online für dieses Konto gesperrt, der Server wird benachrichtigt (`POST /xiru/taint`). Export-Dateien und die
+   Cookie-Sicherung tragen ebenfalls ein Siegel. Hält keine Profis auf – darum die Schichten 2 und 3.
+2. **Prüfstelle auf dem Server** (PocketBase-Hooks `server/pb_hooks/`):
+   - `players`: verknüpft den Eintrag mit dem Konto (`players.user`); **Level, Mech-Werte (`kit`), Mnemora-Fortschritt** rechnet der Server selbst
+     aus dem geprüften Stand (Gehäuse + Steckkarten + Pilotenbonus aus dem Seemech). Ohne Konto: Level 0 (in der Liste „–“), kein Mech, kein Trupp.
+   - `scores`: nur mit Konto und nur genau der Rekord, der im geprüften Stand steht (sonst 409 → die Website gleicht ab und meldet nach).
+     Grobe Höchstwerte je Spiel in `xiru_lib.js` (`SCORE_CAP`) – Rekorde darüber zählen nicht für die Weltrangliste. **TODO: realistische Höchstwerte mit Mael/Luca.**
+   - `mn_feed`: Weltboss-Schaden höchstens, was das Gehäuse in 6 Runden schafft, 2 h Abkühlzeit; Duell-Sieg nur bei plausibler Stärke;
+     Chronik (Strasse, Ort, Garbage Collector) nur, wenn es im geprüften Stand steht. `mn_trades`/`mn_takes`: Ware muss frei im geprüften Stand liegen.
+3. **Geprüfter Spielstand** (Hook auf `saves`): Jeder Geräte-Sync wird mit der letzten Prüfung (`users.ac`, nur für Superuser sichtbar) verglichen.
+   Zuwachs, der an Ereignisse gebunden ist (neue Kristalle mit ihren XP, Orte, Spieltage, erste Spiele, Verkäufe, Tausch, Trupp-Anteile), ist frei;
+   alles andere kommt aus „Eimern“, die sich mit der Zeit füllen (je Stunde: 2500 XP, 5000 Taler, 700 Material, 200 Fische, 30 Teile, 25 Karten;
+   Werte in `xiru_lib.js`). Unmöglich → Spielstand abgelehnt, **Konto gesperrt** (`users.locked` = Grund). Erster Abgleich eines Kontos: nur grobe
+   Obergrenzen (z. B. höchstens 250 000 XP).
+
+**Gesperrt** heisst: kein Online für dieses Konto (Plakette „gesperrt“, Hinweis mit Grund). Offline geht alles weiter.
+**Entsperren:** Einstellungen → Fortschritt zurücksetzen (der frische Stand wird hochgeladen, geprüft und die Sperre aufgehoben) –
+oder ein Superuser leert in der Admin-Oberfläche bei `users` das Feld `locked` (z. B. bei einem Irrtum). Nutzer:innen können `locked` nicht selbst ändern.
+
+Antworten der Hooks beginnen mit einer Kennung, auf die `online.js` reagiert: `xiru-locked:` (sperren), `xiru-auth:` (neu anmelden), `xiru-sync:` (erst abgleichen).
+
+**Dateien:**
+- `server/pb_hooks/xiru.pb.js` (Hooks), `xiru_hooks.js` (Logik mit Datenbank), `xiru_lib.js` (Regeln, Grenzwerte), `xiru_data.js` (Spieldaten,
+  **erzeugt** von `python tools/build_server_data.py` aus site.js/mnemora.js – nach Änderungen an Kristallen, Seiten, Mech-Teilen, Gehäusen, Karten
+  neu erzeugen und auf den Server kopieren; `tools/check_site.py` meldet, wenn sie veraltet ist).
+- `server/pb_migrations/1760436000_xiru_mmo_anticheat.js`: legt beim Start alles an, was fehlt (users `locked`/`ac`, players `user`/`party`/`kit`/`mn`/`mns`,
+  `mn_feed`, `mn_trades`, `mn_takes`) und setzt die Regeln (scores nur mit Konto, MMO nur mit Konto). Darf mehrfach laufen, löscht nie Daten.
+
+**Einrichtung auf Maels Unraid (einmalig – erledigt am 2026-10-14; `/pb_migrations` war schon gemappt, PocketBase startet ohne `--hooksDir` und sucht die Hooks darum in `/pb_hooks`):**
+1. Ordner anlegen: `/mnt/user/appdata/pocketbase/pb_hooks` und `/mnt/user/appdata/pocketbase/pb_migrations`.
+2. Unraid → Docker → pocketbase → Edit → „Add another Path“ (zweimal): Container `/pb_hooks` → Host `/mnt/user/appdata/pocketbase/pb_hooks`,
+   Container `/pb_migrations` → Host `/mnt/user/appdata/pocketbase/pb_migrations`. Apply.
+3. Die vier Dateien aus `server/pb_hooks/` und die Datei aus `server/pb_migrations/` in diese Ordner kopieren.
+4. Container neu starten. Im Log sollte die Migration `1760436000_xiru_mmo_anticheat.js` erscheinen. Test von aussen:
+   `https://xiru.tail9e3f56.ts.net/xiru/me` muss **401** liefern (Route existiert, braucht Anmeldung) – 404 hiesse: Hooks nicht geladen.
+5. Optional: alte Einträge der Weltranglisten (`scores`, vor dem Anti-Cheat ungeprüft) löschen. Rate limits: `mn_feed:create` 8 / 10 s,
+   `mn_trades:create` 5 / 60 s, `mn_takes:create` 5 / 60 s.
+(Die frühere Datei `docs/pocketbase-mmo-import.json` ist damit überflüssig und wurde entfernt.)
+
+**Lokal testen:** echtes PocketBase 0.23.12 in `dev/pocketbase/` (nicht im Git): `python dev/pocketbase/setup.py admin`, dann `.claude/launch.json`
+„xiru-pb“ starten (Port 8091, Hooks und Migrationen direkt aus `server/`), `python dev/pocketbase/setup.py schema` (Tabellen wie auf Maels Server),
+Website: `XIRU.setting('onlineUrl', 'http://127.0.0.1:8091/api')`. Automatischer Test: `python dev/pocketbase/test_anticheat.py` (30 Fälle).
+Der ältere Python-Nachbau `dev/mock-pocketbase.py` kennt Anmeldung und Hooks nicht – nur noch für einfache Oberflächen-Tests ohne Konto.
 
 ## Server (Unraid, seit 2026-10-13 öffentlich über Tailscale Funnel)
 

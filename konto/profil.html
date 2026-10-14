@@ -172,10 +172,14 @@ XIRU.ready(function () {
             try { d = JSON.parse(r.result); } catch (err) { d = null; }
             const msg = $('#io-msg');
             if (!XIRU.savegame.valid(d)) { msg.className = 'form-msg is-error'; msg.textContent = 'Das ist keine gültige Xiru-Spielstand-Datei.'; return; }
+            // Anti-Cheat: Nur eine unveränderte Export-Datei (mit gültigem Siegel) lässt das Konto online spielen
+            const sealed = XIRU.savegame.sealed(d);
             const m = XIRU.modal('<h2>Spielstand importieren?</h2><p class="muted">Der Spielstand von <strong>' + XIRU.esc(d.name || '?') + '</strong> (' + XIRU.esc(String(d.exported || '').slice(0, 10)) + ') ersetzt deinen aktuellen Fortschritt als <strong>' + XIRU.esc(name) + '</strong>.</p>' +
-                '<div class="row mt-2"><button class="btn btn--primary" id="do-import">Importieren</button><button class="btn" data-close>Abbrechen</button></div>');
+                (sealed ? '' : '<div class="callout callout--warning small"><b>Diese Datei wurde verändert</b> – oder sie stammt aus einer älteren Version ohne Siegel. Du kannst sie offline weiterspielen, aber <b>online ist dieses Konto danach gesperrt</b>, bis du den Fortschritt zurücksetzt.</div>') +
+                '<div class="row mt-2"><button class="btn ' + (sealed ? 'btn--primary' : 'btn--danger') + '" id="do-import">' + (sealed ? 'Importieren' : 'Trotzdem importieren') + '</button><button class="btn" data-close>Abbrechen</button></div>');
             m.el.querySelector('#do-import').addEventListener('click', () => {
                 XIRU.savegame.apply(d);
+                if (!sealed && XIRU.user) XIRU.taint.set('Veränderte oder alte Export-Datei importiert');
                 m.close(); location.reload();
             });
         };
@@ -193,8 +197,9 @@ XIRU.ready(function () {
             const m = XIRU.modal('<h2>Sicherung zurückholen?</h2><p class="muted">Der gesicherte Stand ersetzt deinen aktuellen Fortschritt. Mit Geräte-Sync wird er danach auf die anderen Geräte übertragen; der jetzige Stand wird dafür selbst zur Sicherung.</p>' +
                 '<div class="row mt-2"><button class="btn btn--primary" id="do-bak">Zurückholen</button><button class="btn" data-close>Abbrechen</button></div>');
             m.el.querySelector('#do-bak').addEventListener('click', () => {
-                const now = XIRU.savegame.collect(true);
+                const now = XIRU.savegame.collect(true), sealed = XIRU.savegame.sealed(bak.data);
                 XIRU.savegame.apply(bak.data, true);
+                if (!sealed) XIRU.taint.set('Veränderte Sicherung zurückgeholt');
                 XIRU.store.set(bakKey, { at: Date.now(), from: 'hier', data: now });
                 m.close(); location.reload();
             });

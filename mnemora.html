@@ -17,6 +17,7 @@
     <script src="assets/js/kampf.js"></script>
     <script src="assets/js/mnemora.js"></script>
     <script src="assets/js/mnemora-karte.js"></script>
+    <script src="assets/js/mnemora-ort.js"></script>
     <script src="assets/js/mnemora-net.js"></script>
     <script src="assets/js/mnemora-mmo.js"></script>
 </head>
@@ -62,7 +63,7 @@
 </main>
 <script>
 XIRU.ready(function () {
-    const X = XIRU, M = X.mech, W = X.werft, MN = X.mnemora, K = X.mnemoraKarte, A = X.mechArt, NET = X.mnNet, MMO = X.mnMMO, esc = X.esc, $ = X.$;
+    const X = XIRU, M = X.mech, W = X.werft, MN = X.mnemora, K = X.mnemoraKarte, A = X.mechArt, NET = X.mnNet, MMO = X.mnMMO, ORT = X.mnemoraOrt, esc = X.esc, $ = X.$;
     const arrival = new URLSearchParams(location.search).has('ankunft'), easy = X.easy();
     const PX = W.px;
     W.pxify();
@@ -103,7 +104,7 @@ XIRU.ready(function () {
     let others = [];
     const metKey = 'xiru:mn-met';
     const met = new Set((() => { try { return JSON.parse(sessionStorage.getItem(metKey) || '[]'); } catch (e) { return []; } })());
-    const onlineOn = () => !easy && !!(X.online && X.online.on && X.online.on());
+    const onlineOn = () => !easy && NET.ok();
     const othersAt = id => others.filter(p => p.place === id);
     const figIcon = p => /^gh-/.test(p.mech) && X.pix.has(p.mech) ? p.mech : 'gh-itx';
     NET.on('travellers', list => { others = list; meetCheck(); drawOverlay(); renderSide(); });
@@ -184,6 +185,7 @@ XIRU.ready(function () {
         }
         ov.innerHTML = h.join('');
     }
+    ov.addEventListener('dblclick', e => { const pl = e.target.closest('[data-place]'); if (!easy && pl && pl.dataset.place === MN.at()) ORT.open(MN.at()); });
     ov.addEventListener('click', e => {
         const p = e.target.closest('[data-place]'), r = e.target.closest('[data-road]');
         if (p) sel = { place: p.dataset.place }; else if (r) sel = { road: r.dataset.road }; else return;
@@ -211,11 +213,16 @@ XIRU.ready(function () {
             step();
         });
     }
-    function travelTo(id) {
+    function travelTo(id, opts) {
+        opts = opts || {};
         const roads = MN.path(id); if (!roads) return;
         const miss = MN.pathBlocked(roads);
-        if (miss.length) { X.toast('Da kommst du nicht hin', 'Gelände ' + miss.map(t => MN.terrName(t)).join(', ') + ': Kein Gehäuse in deinem Fuhrpark kommt da durch.', { iconHtml: MN.terrIcon(miss[0], 26), type: 'error' }); return; }
-        walk(roads, id).then(() => { MN.arrive(id); sel = null; meetCheck(); drawOverlay(); renderSide(); renderTabs(); nudge(); });
+        if (miss.length) { X.toast('Da kommst du nicht hin', 'Gelände ' + miss.map(t => MN.terrName(t)).join(', ') + ': Kein Gehäuse in deinem Fuhrpark kommt da durch.', { iconHtml: MN.terrIcon(miss[0], 26), type: 'error' }); if (opts.enter) ORT.open(MN.at(), { from: opts.from, quiet: true }); return; }
+        if (opts.enter) $('#mapbox').scrollIntoView({ block: 'center' });
+        walk(roads, id).then(() => {
+            MN.arrive(id); sel = null; meetCheck(); drawOverlay(); renderSide(); renderTabs(); nudge();
+            if (opts.enter) setTimeout(() => ORT.open(id, { from: roads[roads.length - 1].id }), 250);   // vom Wegweiser aus losgezogen → am Ziel gleich weiter
+        });
     }
 
     /* ── Kämpfe ── */
@@ -253,8 +260,11 @@ XIRU.ready(function () {
                 html += '<p class="small muted mb-1">Zustand ' + esc(def.n) + ': −' + dmg + ' % → ' + cas.c + ' %' + (win && MN.aboard('flossie') ? ' (inkl. Flossies Fischsuppe)' : '') + '</p>';
                 return { title, html, cheer: 'Der Weg wird freier!', leave: 'Zurück zur Karte' };
             }
-        }).then(() => { meetCheck(); drawOverlay(); renderSide(); renderTabs(); nudge(); });
+        }).then(() => { meetCheck(); drawOverlay(); renderSide(); renderTabs(); nudge(); backToOrt(roadId); });
     }
+    /* War der Kampf von der begehbaren Karte aus? Dann geht es dort weiter (am Wegweiser der Strasse) */
+    let fromOrt = false;
+    function backToOrt(roadId) { if (!fromOrt) return; fromOrt = false; setTimeout(() => ORT.open(MN.at(), { from: roadId, quiet: true }), 150); }
     function fightBoss() {
         const cas = MN.active(); if (!cas || cas.c <= 0) { X.toast('Kein einsatzbereites Gehäuse', 'Repariere dein Gehäuse in der Feldwerkstatt.', { iconHtml: PX('w-schluessel', 26), type: 'error' }); return; }
         const allies = MMO.allies();
@@ -274,7 +284,37 @@ XIRU.ready(function () {
                 return { title: first ? 'Speicher freigegeben!' : 'Wieder gewonnen', cheer: 'Alt-ROM ist frei!', leave: 'Zurück zur Karte',
                     html: '<p class="mb-1">' + (first ? 'Der Garbage Collector zerfällt in tausend Bytes. Zum ersten Mal seit Jahrhunderten bleibt in Mnemora alles, wie es ist. ' : '') + 'Beute: ' + lines.join(' · ') + '</p>' };
             }
-        }).then(() => { drawOverlay(); renderSide(); renderTabs(); });
+        }).then(() => { drawOverlay(); renderSide(); renderTabs(); backToOrt(); });
+    }
+
+    /* ── Begehbare Orte (assets/js/mnemora-ort.js) ── */
+    ORT.ctx = {
+        tab: t => { showTab(t); renderTabs(); setTimeout(() => $('#play').scrollIntoView({ behavior: 'smooth' }), 60); },
+        road: id => { const r = MN.road(id); if (!r) return; if (MN.free(id)) travelTo(MN.other(r, MN.at()), { enter: true, from: id }); else { fromOrt = true; fightRoad(id); if (!document.querySelector('.fight')) backToOrt(id); } },
+        boss: () => { fromOrt = true; fightBoss(); if (!document.querySelector('.fight')) backToOrt(); },
+        world: () => { const pr = MMO.fightWorld(); if (pr && pr.then) pr.then(() => ORT.open(MN.at(), { quiet: true })); else ORT.open(MN.at(), { quiet: true }); },
+        home: goHome,
+        hint: () => hint(),
+        others: () => others,
+        player: p => playerMenu(p),
+        onClose: () => { drawOverlay(); renderSide(); nudge(); }
+    };
+    /* Andere Reisende auf der Ort-Karte angeklickt */
+    function playerMenu(p) {
+        const full = NET.full(), meet = MEET.includes(MN.at()), G = (X.online.GREETS || []);
+        const m = X.modal('<div class="npc"><div class="npc__face">' + PX(figIcon(p), 48) + '</div><div><span class="eyebrow">Reisende:r</span><h2 class="mb-1">' + esc(p.nick) + '</h2>' +
+            '<p class="small muted mb-1">' + (p.level ? 'Level ' + p.level : 'ohne verbundenes Konto') + (MN.casing(p.mech) ? ' · ' + esc(MN.casing(p.mech).n) : '') + '</p></div></div>' +
+            '<div class="row mt-2">' + (full && p.level ? '<button class="btn btn--sm" type="button" data-inv-p="' + p.id + '">' + PX('ic-trupp') + ' In den Trupp einladen</button>' : '') +
+            (full && meet && p.kit && MN.active() ? '<button class="btn btn--sm" type="button" data-duel-p="' + p.id + '">' + PX('ic-duell') + ' Duell</button>' : '') +
+            (G.length ? '<select class="select online-greet" data-greet="' + p.id + '" aria-label="Gruss wählen"><option value="">Grüssen …</option>' + G.map(g => '<option value="' + g.id + '">' + g.i + ' ' + esc(g.t) + '</option>').join('') + '</select>' : '') +
+            '<button class="btn btn--sm btn--ghost" type="button" data-close>Schliessen</button></div>');
+        m.el.addEventListener('click', e => { if (MMO.click(e)) m.close(); });
+        m.el.addEventListener('change', e => {
+            const s2 = e.target.closest('[data-greet]'); if (!s2 || !s2.value) return;
+            const kind = s2.value;
+            X.online.load().then(o => o.greet(p.id, kind)).then(() => { X.toast('Gruss verschickt', ((X.online.GREETS || []).find(g => g.id === kind) || {}).t || '', { iconHtml: PX('ic-krug', 26) }); m.close(); })
+                .catch(() => X.toast('Gruss ging nicht durch', 'Der Xiru-Server antwortet gerade nicht.', { iconHtml: PX('ev-sturm', 26), type: 'error' }));
+        });
     }
 
     /* ── Seitenleiste ── */
@@ -295,13 +335,13 @@ XIRU.ready(function () {
         const list = othersAt(id), meet = MEET.includes(id), hereNow = id === MN.at(), pl = MN.place(id);
         if (!list.length && !(meet && hereNow)) return '';
         if (!onlineOn()) return meet && hereNow ? '<div class="card mn-card mn-meet"><span class="eyebrow">' + PX('ic-krug') + ' Treffpunkt</span><p class="small mb-0">In ' + esc(pl.n) + ' treffen sich Reisende aus Sektaria: Trupps, Weltboss, Duelle, Tauschbörse und Schnellchat. Schalte <a href="' + X.url('konto/einstellungen.html') + '#online">Online</a> ein, um mitzumachen.</p></div>' : '';
-        const party = NET.party.map(x => x.id), full = party.length >= 3;
-        const acts = p => '<div class="mn-pacts">' + (party.includes(p.id) ? '<span class="chip--ok">Trupp</span>' : '<button class="btn btn--sm" type="button" data-inv-p="' + p.id + '"' + (full ? ' disabled title="Dein Trupp ist voll"' : '') + '>' + PX('ic-trupp') + ' Einladen</button>') +
-            (meet && p.kit && MN.active() ? '<button class="btn btn--sm" type="button" data-duel-p="' + p.id + '">' + PX('ic-duell') + ' Duell</button>' : '') + sel(p.id) + '</div>';
+        const party = NET.party.map(x => x.id), full = party.length >= 3, ok = NET.full();   // Trupp und Duell nur mit geprüftem Konto (Anti-Cheat)
+        const acts = p => '<div class="mn-pacts">' + (!ok || !p.level ? '' : party.includes(p.id) ? '<span class="chip--ok">Trupp</span>' : '<button class="btn btn--sm" type="button" data-inv-p="' + p.id + '"' + (full ? ' disabled title="Dein Trupp ist voll"' : '') + '>' + PX('ic-trupp') + ' Einladen</button>') +
+            (ok && meet && p.kit && MN.active() ? '<button class="btn btn--sm" type="button" data-duel-p="' + p.id + '">' + PX('ic-duell') + ' Duell</button>' : '') + sel(p.id) + '</div>';
         const G = X.online.GREETS || [];
         const sel = to => G.length ? '<select class="select online-greet" data-greet="' + to + '" aria-label="Gruss wählen"><option value="">Grüssen …</option>' + G.map(g => '<option value="' + g.id + '">' + g.i + ' ' + esc(g.t) + '</option>').join('') + '</select>' : '';
         return '<div class="card mn-card mn-meet"><span class="eyebrow">' + (meet ? PX('ic-krug') + ' Treffpunkt · ' : '') + 'Reisende in ' + esc(pl.n) + '</span>' +
-            (list.length ? '<ul class="mn-roads mn-people">' + list.map(p => '<li>' + PX(figIcon(p), 24) + '<div><b>' + esc(p.nick) + '</b><div class="small muted">Level ' + p.level + (MN.casing(p.mech) ? ' · ' + esc(MN.casing(p.mech).n) : '') + '</div></div>' + (hereNow ? acts(p) : '<span></span>') + '</li>').join('') + '</ul>'
+            (list.length ? '<ul class="mn-roads mn-people">' + list.map(p => '<li>' + PX(figIcon(p), 24) + '<div><b>' + esc(p.nick) + '</b><div class="small muted">' + (p.level ? 'Level ' + p.level : 'ohne Konto') + (MN.casing(p.mech) ? ' · ' + esc(MN.casing(p.mech).n) : '') + '</div></div>' + (hereNow ? acts(p) : '<span></span>') + '</li>').join('') + '</ul>'
                 : '<p class="small muted mb-0">Gerade ist niemand hier. Wer online ist und nach ' + esc(pl.n) + ' kommt, taucht hier auf.</p>') +
             (hereNow && list.length ? '<div class="row mt-1"><span class="small">Allen hier:</span>' + sel('') + '</div>' : !hereNow && list.length ? '<p class="small muted mb-0">Reise hin, um zu grüssen.</p>' : '') + '</div>';
     }
@@ -329,7 +369,8 @@ XIRU.ready(function () {
                 '<p class="small mb-0">' + (free ? 'Frei.' : 'Noch ' + (r.foes - MN.cleared(r.id)) + ' von ' + r.foes + ' Gegnern.') + '</p></div>';
         }
         // Hier
-        h += '<div class="card mn-card"><span class="eyebrow">Du bist in</span><h2 class="mb-1">' + PX(MN.KIND_ICON[here.kind], 24) + ' ' + esc(here.n) + '</h2><p class="small">' + esc(here.d || '') + '</p>';
+        h += '<div class="card mn-card"><span class="eyebrow">Du bist in</span><h2 class="mb-1">' + PX(MN.KIND_ICON[here.kind], 24) + ' ' + esc(here.n) + '</h2><p class="small">' + esc(here.d || '') + '</p>' +
+            '<button class="btn btn--primary mn-enter" type="button" data-enter>' + PX('st-spd') + ' ' + esc(here.n) + ' betreten</button>';
         h += '<h3 class="mn-sub">Wege von hier</h3><ul class="mn-roads">' + MN.roadsAt(at).map(r => {
             const to = MN.other(r, at), tp = MN.place(to), free = MN.free(r.id), chk = free ? null : MN.fightCheck(r.id), can = free ? !!MN.bestFor(r.terr) : chk.ok;
             return '<li><span title="' + esc(MN.terrName(r.terr)) + '">' + MN.terrIcon(r.terr, 22) + '</span><div><b>' + esc(r.n) + '</b> → ' + esc(MN.seen(to) ? tp.n : '???') +
@@ -359,6 +400,7 @@ XIRU.ready(function () {
     $('#side').addEventListener('focusout', () => { if (sidePending) { sidePending = false; setTimeout(renderSide, 60); } });
     $('#side').addEventListener('click', e => {
         if (MMO.click(e)) return;
+        if (e.target.closest('[data-enter]')) { ORT.open(MN.at()); return; }
         const go = e.target.closest('[data-go]'), f = e.target.closest('[data-fight]'), t = e.target.closest('[data-tab-go]');
         if (go) travelTo(go.dataset.go);
         else if (f) fightRoad(f.dataset.fight);

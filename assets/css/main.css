@@ -790,6 +790,8 @@ html.no-anim [data-reveal] { opacity: 1; transform: none; }
 .online-pill__dot { width: 9px; height: 9px; border-radius: 50%; background: var(--warning); }
 .online-pill[data-s="online"] .online-pill__dot { background: var(--success); box-shadow: 0 0 8px var(--success); }
 .online-pill[data-s="error"] .online-pill__dot { background: var(--danger); }
+.online-pill[data-s="locked"] .online-pill__dot { background: var(--danger); border-radius: 0; }
+.online-pill[data-s="locked"] { opacity: .85; }
 .online-panel { position: fixed; left: 1rem; bottom: 3.6rem; z-index: 61; width: min(360px, calc(100vw - 2rem)); max-height: min(60vh, 520px); overflow: auto; padding: 1rem;
     border-radius: var(--radius); border: 1px solid var(--border-strong); background: var(--surface); box-shadow: var(--shadow); display: grid; gap: .7rem; animation: fadeIn .2s both; }
 .online-panel__list { display: grid; gap: .45rem; }

@@ -20,6 +20,11 @@
      XIRU.online.ensure()                   → Promise<{ id, secret, nick }> eigener Spieler (legt ihn beim ersten Mal an)
      XIRU.online.beatExtra = fn             liefert zusätzliche Felder für den eigenen Spieler-Datensatz (Herzschlag)
      XIRU.online.subscribe(tabelle, fn)     Live-Ereignisse einer Tabelle (PocketBase-Realtime): fn({ action, record })
+     XIRU.online.verified()                 Konto verbunden (Geräte-Sync), nicht gesperrt, nicht verändert → Ranglisten und MMO
+     XIRU.online.lockReason()               Grund einer Sperre ('' = keine)
+   Anti-Cheat (docs/ONLINE.md): Der Server rechnet Level, Mech-Werte und Ranglisten aus dem geprüften Spielstand.
+   Anfragen an players, scores und mn_* tragen darum die Anmeldung des Kontos. Antworten mit „xiru-locked:“ sperren
+   Online für dieses Konto, „xiru-auth:“ verlangt eine neue Anmeldung, „xiru-sync:“ heisst: erst abgleichen.
    Gespeichert lokal: xiru:online:<konto> = { id, secret, nick, sent: { spiel: wert } }
                       xiru:cloud:<konto>  = { uid, token, tAt, sid, srv, at }  (Geräte-Sync, siehe unten)
    Server-Tabellen: players (öffentlich lesbar, ändern nur mit passendem keys.secret), keys (nur anlegen,
@@ -42,17 +47,30 @@
     let beatT = 0, retryT = 0, syncT = 0, es = null, esId = '', panel = null, pill = null, lastWho = [];
     const subs = {};   // Live-Abos weiterer Tabellen: { tabelle: [fn …] }
 
+    /* Diese Anfragen tragen die Anmeldung des Kontos (Geräte-Sync), damit der Server sie dem geprüften Spielstand zuordnet */
+    const AUTH_PATH = /^\/(collections\/(players|scores|mn_feed|mn_trades|mn_takes)\/|xiru\/)/;
     async function api(path, opt) {
         opt = opt || {};
         const headers = {};
         if (opt.body) headers['Content-Type'] = 'application/json';
-        if (opt.token) headers.Authorization = opt.token;
+        let token = opt.token;
+        if (token === undefined && AUTH_PATH.test(path)) { const l = link(); if (l && !l.stale && l.token) token = l.token; }
+        if (token) headers.Authorization = token;
         const r = await fetch(O.url() + path, {
             method: opt.method || 'GET', credentials: 'omit', cache: 'no-store', headers,
             body: opt.body ? JSON.stringify(opt.body) : undefined,
             signal: window.AbortSignal && AbortSignal.timeout ? AbortSignal.timeout(15000) : undefined
         });
-        if (!r.ok) { const e = new Error('HTTP ' + r.status); e.status = r.status; try { e.data = await r.json(); } catch (x) { } throw e; }
+        if (!r.ok) {
+            const e = new Error('HTTP ' + r.status); e.status = r.status; try { e.data = await r.json(); } catch (x) { }
+            const msg = String((e.data && e.data.message) || ''), m = /^xiru-(locked|auth|sync):\s*(.*)$/i.exec(msg);
+            if (m) {
+                e.code = m[1].toLowerCase(); e.message = m[2] || msg;
+                if (e.code === 'locked') serverLock(m[2]);
+                else if (e.code === 'auth' && link() && !link().stale) { const l = link(); l.stale = true; setLink(l); setTimeout(() => linkPrompt(true), 600); }
+            }
+            throw e;
+        }
         return r.status === 204 ? null : r.json();
     }
     const q = s => encodeURIComponent(s);
@@ -63,7 +81,11 @@
     /* Auf Mnemora: genauer Ort (mnemora:registra), damit man sich an Treffpunkten begegnet */
     const onMnemora = () => !!(X.page && X.page.p === 'mnemora.html');
     function place() {
-        if (onMnemora()) return !X.easy() && X.mnemora && X.mnemora.arrived() ? 'mnemora:' + X.mnemora.at() : 'mnemora';
+        if (onMnemora()) {
+            if (X.easy() || !X.mnemora || !X.mnemora.arrived()) return 'mnemora';
+            const pos = X.mnemoraOrt && X.mnemoraOrt.pos ? X.mnemoraOrt.pos() : '';   // auf der begehbaren Ort-Karte: auch wo genau
+            return 'mnemora:' + X.mnemora.at() + (pos ? '@' + pos : '');
+        }
         if (!X.easy() && X.mech && X.mech.pos) return X.mech.pos();
         return (X.page && X.page.r) || 'zentrum';
     }
@@ -71,7 +93,7 @@
         id = String(id || '');
         if (id === 'mnemora') return 'Mnemora';
         if (id.startsWith('mnemora:')) {   // Ortsname auch auf Seiten ohne mnemora.js
-            const k = id.slice(8), p = (X.mnemora && X.mnemora.place(k)) || ((X.mapArt && X.mapArt.FESTLAND && X.mapArt.FESTLAND.PLACES) || []).find(q => q.id === k);
+            const k = id.slice(8).split('@')[0], p = (X.mnemora && X.mnemora.place(k)) || ((X.mapArt && X.mapArt.FESTLAND && X.mapArt.FESTLAND.PLACES) || []).find(q => q.id === k);
             return 'Mnemora · ' + (p ? p.n : ({ duenen: 'Dünenwacht', moor: 'Fragmentmoor' })[k] || '???');
         }
         const i = X.mech && X.mech.isle(id); if (i && !i.secret) return i.n; const r = X.region(id); return r ? r.name : 'irgendwo im Nebel'; };
@@ -111,7 +133,8 @@
             await api('/collections/players/records/' + m.id, { method: 'PATCH', body: Object.assign(extra, { secret: m.secret, nick: m.nick, place: place(), area: (X.page && X.page.t) || '', level: X.levelInfo().level, mech: myMech() }) });
             setStatus('online');
         } catch (e) {
-            if (e.status === 404) { const m = load(); if (m) { delete m.id; save(m); } }   // Datensatz auf dem Server gelöscht → neu anlegen
+            // Datensatz auf dem Server gelöscht – oder er gehört zu einem Konto, das hier nicht mehr verbunden ist → neu anlegen
+            if (e.status === 404 || (e.code === 'auth' && !link())) { const m = load(); if (m) { delete m.id; save(m); } }
             setStatus('error');
         }
     }
@@ -129,10 +152,11 @@
         return Object.values(best).sort((a, b) => lower ? a.value - b.value : b.value - a.value).slice(0, n || 10);
     };
     O.submit = async (game, value, lower) => {
-        if (!O.on() || typeof value !== 'number' || !isFinite(value)) return;
+        if (!O.on() || !O.verified() || typeof value !== 'number' || !isFinite(value)) return;
         const m = await ensure(), prev = m.sent[game];
         if (prev != null && (lower ? value >= prev : value <= prev)) return;
-        await api('/collections/scores/records', { method: 'POST', body: { game: clean(game).slice(0, 40), value, lower: !!lower, nick: m.nick, player: m.id } });
+        if (X.best(game) !== value) return;   // nur der eigene Bestwert – genau der steht im geprüften Spielstand
+        await api('/collections/scores/records', { method: 'POST', body: { game: clean(game).slice(0, 40), value, lower: !!lower, nick: m.nick, player: m.id, secret: m.secret } });
         m.sent[game] = value; save(m);
     };
     O.greet = async (toId, kind) => {
@@ -216,6 +240,8 @@
         const l = link();
         if (!l || !O.on() || paused) return 'aus';
         if (l.stale) return 'anmelden';
+        if (X.taint.get()) return 'gesperrt';
+        if (l.locked && !fresh()) return 'gesperrt';
         if (Date.now() - (l.tAt || 0) > 864e5) {   // Anmeldung auffrischen, solange sie noch gilt
             try { const r = await api('/collections/users/auth-refresh', { method: 'POST', token: l.token }); l.token = r.token; l.tAt = Date.now(); setLink(l); }
             catch (e) { if (e.status >= 400 && e.status < 500) { l.stale = true; setLink(l); setTimeout(() => linkPrompt(true), 600); return 'anmelden'; } throw e; }
@@ -240,6 +266,7 @@
         const rec = sid ? await api('/collections/saves/records/' + sid + '?fields=id,updated', { method: 'PATCH', token: l.token, body })
             : await api('/collections/saves/records?fields=id,updated', { method: 'POST', token: l.token, body: Object.assign({ owner: l.uid }, body) });
         Object.assign(l, { sid: rec.id, srv: rec.updated, at: t0 }); setLink(l);
+        setTimeout(resubmit, 500);
         return 'hoch';
     }
     async function download(l, sid, opts) {
@@ -265,6 +292,7 @@
     }
     /* Bestehendes Konto dieses Browsers verbinden – Passwort wird vorher lokal geprüft */
     function linkPrompt(force) {
+        if (X.taint.get() || (link() && link().locked)) return;
         if (!X.user || document.documentElement.hasAttribute('data-bare') || (X.page && X.page.p === 'konto/login.html') || document.querySelector('.modal [data-cloud]')) return;
         const l = link(), later = 'xiru:cloud-later:' + X.user.toLowerCase();
         if (l && !l.stale) return;
@@ -294,14 +322,55 @@
     const changeFns = [];
     const emitChange = () => changeFns.forEach(fn => { try { fn(); } catch (e) { } });
 
+    /* ── Anti-Cheat: Sperre ────────────────────────────────────────────────
+       Zwei Wege: Der Browser erkennt ein gebrochenes Siegel (X.taint, core.js) und meldet es dem Server,
+       oder der Server lehnt einen unmöglichen Spielstand ab (Antwort „xiru-locked: Grund“).
+       Gesperrt heisst: kein Online für dieses Konto. Offline geht alles weiter. Entsperren: Fortschritt zurücksetzen
+       (der frische Spielstand wird hochgeladen und vom Server geprüft) oder ein Admin hebt die Sperre auf. */
+    const fresh = () => (+X.profile().xp || 0) <= 300 && !Object.keys(X.profile().eggs || {}).length;
+    O.verified = () => { const l = link(); return !!(l && !l.stale && !l.locked && !X.taint.get()); };
+    O.lockReason = () => { const t = X.taint.get(), l = link(); return t ? t.why : l && l.locked ? l.locked : ''; };
+    let lockShown = false;
+    function serverLock(why) {
+        const l = link(); if (l && !l.locked) { l.locked = String(why || 'Spielstand abgelehnt').slice(0, 280); setLink(l); }
+        stopLive(); setStatus('locked'); showLock(); emitChange();
+    }
+    function showLock() {
+        if (lockShown || document.documentElement.hasAttribute('data-bare') || !O.lockReason()) return;
+        lockShown = true;
+        X.modal('<span class="eyebrow">Anti-Cheat</span><h2>Online ist für dieses Konto gesperrt</h2>' +
+            '<p>' + X.esc(O.lockReason()) + '</p>' +
+            '<p class="small muted">Offline spielst du ganz normal weiter. Ranglisten, Mnemora-MMO und alles, was andere sehen, gibt es erst wieder nach einem Neustart: ' +
+            '<a href="' + X.url('konto/einstellungen.html') + '">Einstellungen → Fortschritt zurücksetzen</a>. Hältst du das für einen Irrtum, melde dich beim Xiru-Team.</p>' +
+            '<div class="row mt-2"><button class="btn" type="button" data-close>Verstanden</button></div>');
+    }
+    /* Beim Start: verändertes Konto melden; Server-Sperre aufgehoben? frischer Stand → hochladen und entsperren */
+    async function lockCheck() {
+        const l = link(), t = X.taint.get();
+        if (t) {
+            if (l && !l.stale && !l.tainted) { try { await api('/xiru/taint', { method: 'POST', body: { why: t.why } }); } catch (e) { } const l2 = link(); if (l2) { l2.tainted = 1; l2.locked = l2.locked || t.why; setLink(l2); } }
+            return true;
+        }
+        if (!l || !l.locked || l.stale) return false;
+        try {
+            if (fresh()) await sync({ quiet: true });
+            const me = await api('/xiru/me');
+            if (!me.locked) { const l2 = link(); delete l2.locked; delete l2.tainted; setLink(l2); emitChange(); return false; }
+        } catch (e) { }
+        return true;
+    }
+
     O.cloud = {
         info: () => link(),
+        /* Prüfstatus vom Server: { locked, checked, level, mns } */
+        me: () => api('/xiru/me'),
         onChange: fn => changeFns.push(fn),
         prompt: () => linkPrompt(true),
         sync: opts => sync(opts),
         /* Konto dieses Browsers mit dem Server verbinden: dort anmelden oder neu anlegen, danach abgleichen */
         async connect(password, opts) {
             if (!X.user) throw new Error('Nicht angemeldet.');
+            if (X.taint.get()) throw new Error('Dieser Spielstand wurde verändert und darf nicht online. Setze zuerst den Fortschritt zurück (Einstellungen).');
             let s;
             try { s = await signIn(X.user, password); }
             catch (e) {
@@ -317,7 +386,9 @@
             setLink({ uid: s.uid, token: s.token, tAt: s.tAt, sid: same ? prev.sid : '', srv: same ? prev.srv : '', at: same ? prev.at : 0 });
             X.store.remove('xiru:cloud-later:' + X.user.toLowerCase());
             paused = false;
-            return sync(opts);
+            const r = await sync(opts);
+            beat(true);   // Spieler-Eintrag gleich mit dem Konto verknüpfen (Anti-Cheat: Server-Werte aus dem geprüften Stand)
+            return r;
         },
         /* Neues Gerät: das Konto gibt es hier noch nicht → beim Server anmelden und den Spielstand holen */
         async fetch(name, password) {
@@ -348,7 +419,7 @@
             await api('/collections/users/records/' + s.uid, { method: 'DELETE', token: s.token });
         },
         /* Online aus: Verbindung vergessen (das Server-Konto bleibt, bis man es im Profil löscht) */
-        forget() { if (X.user) X.store.remove(CLOUD()); }
+        forget() { if (!X.user) return; X.store.remove(CLOUD()); const m = load(); if (m) { delete m.id; save(m); } }   // neuer, anonymer Spieler-Eintrag
     };
 
     /* Anzeige: kleine Plakette unten links, Klick öffnet die Liste der Reisenden */
@@ -356,8 +427,9 @@
         O.status = s;
         if (!pill) return;
         pill.dataset.s = s;
-        pill.querySelector('b').textContent = s === 'online' ? (lastWho.length || 1) : s === 'error' ? '!' : '…';
-        pill.title = s === 'error' ? 'Xiru-Server nicht erreichbar' : 'Online';
+        pill.querySelector('b').textContent = s === 'online' ? (lastWho.length || 1) : s === 'error' ? '!' : s === 'locked' ? '×' : '…';
+        pill.querySelector('b + span').textContent = s === 'locked' ? 'gesperrt' : 'online';
+        pill.title = s === 'error' ? 'Xiru-Server nicht erreichbar' : s === 'locked' ? 'Online gesperrt: ' + O.lockReason() : 'Online';
     }
     function ui() {
         if (pill || document.documentElement.hasAttribute('data-bare')) return;
@@ -368,6 +440,7 @@
         document.body.appendChild(pill);
     }
     async function togglePanel() {
+        if (O.status === 'locked') { lockShown = false; showLock(); return; }
         if (panel) { panel.remove(); panel = null; return; }
         panel = document.createElement('section'); panel.className = 'online-panel'; panel.setAttribute('aria-label', 'Reisende online');
         panel.innerHTML = '<div class="row"><h3 class="mb-0">🌐 Gerade unterwegs</h3><span class="spacer"></span><button class="btn btn--ghost btn--sm" type="button" data-x aria-label="Schliessen">×</button></div><div class="online-panel__list"><p class="small muted">Lade …</p></div>' +
@@ -378,7 +451,7 @@
             const list = await O.who(), me = O.me(), here = place();
             setStatus('online');
             const greetSel = (to) => '<select class="select online-greet" data-to="' + to + '" aria-label="Gruss wählen"><option value="">Grüssen …</option>' + O.GREETS.map(g => '<option value="' + g.id + '">' + g.i + ' ' + X.esc(g.t) + '</option>').join('') + '</select>';
-            panel.querySelector('.online-panel__list').innerHTML = (list.length ? list.map(p => '<div class="online-row' + (me && p.id === me.id ? ' is-me' : '') + '"><span class="online-row__lvl">' + (+p.level || 1) + '</span><span><b>' + X.esc(clean(p.nick)) + (me && p.id === me.id ? ' (du)' : '') + '</b><small>' + X.esc(O.placeName(p.place)) + (p.place === here && !(me && p.id === me.id) ? ' · in deiner Nähe' : '') + '</small></span>' +
+            panel.querySelector('.online-panel__list').innerHTML = (list.length ? list.map(p => '<div class="online-row' + (me && p.id === me.id ? ' is-me' : '') + '"><span class="online-row__lvl" title="' + (+p.level ? 'Level (geprüft)' : 'ohne verbundenes Konto – Level ungeprüft') + '">' + (+p.level || '–') + '</span><span><b>' + X.esc(clean(p.nick)) + (me && p.id === me.id ? ' (du)' : '') + '</b><small>' + X.esc(O.placeName(p.place)) + (p.place === here && !(me && p.id === me.id) ? ' · in deiner Nähe' : '') + '</small></span>' +
                 (me && p.id === me.id ? '' : greetSel(p.id)) + '</div>').join('') : '<p class="small muted">Gerade ist niemand sonst unterwegs.</p>') +
                 '<div class="online-row online-row--all"><span></span><span><b>Allen hier</b><small>' + X.esc(O.placeName(here)) + '</small></span>' + greetSel('') + '</div>';
             X.$$('.online-greet', panel).forEach(sel => sel.addEventListener('change', () => {
@@ -402,35 +475,42 @@
         const draw = async () => {
             try {
                 const top = await O.top(game, 10), me = O.me();
-                card.querySelector('ol').innerHTML = top.length ? top.map((r, i) => '<li class="' + (me && r.player === me.id ? 'is-me' : '') + '"><span>' + (i + 1) + '.</span><b>' + X.esc(clean(r.nick)) + '</b><span>' + X.fmt(r.value) + '</span></li>').join('')
-                    : '<li class="small muted">Noch kein Eintrag – sei die erste Person!</li>';
+                card.querySelector('ol').innerHTML = (top.length ? top.map((r, i) => '<li class="' + (me && r.player === me.id ? 'is-me' : '') + '"><span>' + (i + 1) + '.</span><b>' + X.esc(clean(r.nick)) + '</b><span>' + X.fmt(r.value) + '</span></li>').join('')
+                    : '<li class="small muted">Noch kein Eintrag – sei die erste Person!</li>') +
+                    (O.verified() ? '' : '<li class="small muted">Dein Rekord zählt hier, sobald dein Konto verbunden ist (Einstellungen → Online → Geräte-Sync).</li>');
             } catch (e) { card.querySelector('ol').innerHTML = '<li class="small muted">Server nicht erreichbar.</li>'; }
         };
         draw();
         X.on('score', ev => { if (ev.game === game && ev.isNew) setTimeout(draw, 800); });
     }
 
-    O.start = function () {
-        if (!O.on() || O.status === 'online' || O.status === 'connecting') return;
+    O.start = async function () {
+        if (!O.on() || O.status === 'online' || O.status === 'connecting' || O.status === 'locked') return;
         setStatus('connecting'); ui(); setStatus('connecting');
+        if (X.user && await lockCheck()) { setStatus('locked'); showLock(); return; }
         beat(true).then(() => O.who().then(() => setStatus(O.status)).catch(() => { }));
-        // Bisherige Rekorde einmal nachmelden
-        ensure().then(m => Object.keys(X.profile().scores).forEach(g => { const s = X.profile().scores[g]; if (s && s.best != null && m.sent[g] == null) O.submit(g, s.best, LOWER.includes(g)).catch(() => { }); })).catch(() => { });
+        // Rekorde, die noch nicht in der Weltrangliste stehen, nachmelden (nur mit geprüftem Konto; nach dem ersten Abgleich)
         clearInterval(beatT); beatT = setInterval(beat, BEAT_MS);
         document.addEventListener('visibilitychange', () => { if (!document.hidden) beat(); });
         live(); leaderboard();
         // Geräte-Sync: beim Laden abgleichen, danach Neues jede Minute und beim Verlassen hochladen
         if (X.user) {
-            if (link()) sync().catch(() => { });
+            if (link()) sync().catch(() => { }).then(resubmit);
             else setTimeout(() => linkPrompt(false), 1500);
             clearInterval(syncT); syncT = setInterval(() => { const l = link(); if (l && modAt() > (l.at || 0)) sync().catch(() => { }); }, 60 * 1000);
             document.addEventListener('visibilitychange', () => { const l = link(); if (document.hidden && l && modAt() > (l.at || 0)) sync().catch(() => { }); });
         }
     };
+    function stopLive() { clearInterval(beatT); clearInterval(syncT); clearTimeout(retryT); if (es) { es.close(); es = null; esId = ''; } }
     O.stop = function () {
-        clearInterval(beatT); clearInterval(syncT); clearTimeout(retryT); if (es) { es.close(); es = null; esId = ''; }
+        stopLive();
         if (pill) { pill.remove(); pill = null; } if (panel) { panel.remove(); panel = null; }
         O.status = 'off';
     };
-    X.on('score', ev => { if (ev.isNew) O.submit(ev.game, ev.value, ev.lower).catch(() => { }); });
+    /* Neuer Rekord: erst den Spielstand abgleichen (der Server nimmt nur Rekorde aus dem geprüften Stand), dann melden */
+    X.on('score', ev => { if (ev.isNew && O.verified()) sync({ quiet: true }).catch(() => { }).then(() => O.submit(ev.game, ev.best, ev.lower)).catch(() => { }); });
+    function resubmit() {
+        if (!O.verified()) return;
+        ensure().then(m => Object.keys(X.profile().scores).forEach(g => { const s = X.profile().scores[g]; if (s && s.best != null && m.sent[g] !== s.best) O.submit(g, s.best, LOWER.includes(g)).catch(() => { }); })).catch(() => { });
+    }
 })();

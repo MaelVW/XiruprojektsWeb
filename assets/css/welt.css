@@ -470,3 +470,21 @@ html.no-anim .mn-wbmark svg { animation: none; }
 .mn-num { width: 6.5rem; }
 .fight--weltboss .fighter--foe .pic svg { width: min(100%, 380px); filter: drop-shadow(0 0 22px rgba(244, 63, 94, .75)) hue-rotate(-25deg) saturate(1.4); }
 .fight--weltboss .fighter--foe.is-hit .pic svg { filter: brightness(2) saturate(0); }
+
+/* ── Begehbare Orte auf Mnemora (assets/js/mnemora-ort.js) ── */
+.ort { position: fixed; inset: 0; z-index: 1050; background: #0b0d14; overflow: hidden; touch-action: none; user-select: none; }
+.ort__cv { position: absolute; left: 0; top: 0; image-rendering: pixelated; image-rendering: crisp-edges; cursor: pointer; }
+.ort__hud { position: absolute; left: .6rem; right: .6rem; top: .6rem; display: flex; gap: .4rem; align-items: flex-start; pointer-events: none; }
+.ort__hud .btn { pointer-events: auto; }
+.ort__title { display: grid; padding: .35rem .7rem; background: rgba(11, 13, 20, .82); box-shadow: 0 0 0 2px #000, inset 0 0 0 1px #7a6230; color: #f4e3ae; font: 800 1rem var(--mono); letter-spacing: .04em; }
+.ort__title span { font: 600 .72rem var(--mono); color: #93c5fd; letter-spacing: 0; }
+.ort__prompt { position: absolute; left: 50%; bottom: 1.2rem; transform: translateX(-50%); padding: .55rem .9rem; border: 0; cursor: pointer; background: rgba(11, 13, 20, .9); color: #fde68a; box-shadow: 0 0 0 2px #000, inset 0 0 0 2px #fde68a; font: 700 .92rem var(--mono); max-width: calc(100% - 2rem); }
+.ort__prompt kbd { display: inline-block; min-width: 1.4em; padding: 0 .3em; margin-right: .35em; background: #fde68a; color: #0b0d14; font: 800 .8rem var(--mono); text-align: center; }
+.ort__help { position: absolute; left: .6rem; top: 3.6rem; max-width: 22rem; margin: 0; padding: .5rem .7rem; background: rgba(11, 13, 20, .9); color: #e2e8f0; box-shadow: 0 0 0 2px #000; }
+.ort__tags { position: absolute; inset: 0; pointer-events: none; }
+.ort__tag { position: absolute; left: 0; top: 0; margin-left: -50px; width: 100px; text-align: center; font: 700 .7rem var(--mono); color: #fff; text-shadow: 0 1px 0 #000, 1px 0 0 #000, -1px 0 0 #000, 0 -1px 0 #000; white-space: nowrap; }
+.ort__tag.is-npc { color: #fde68a; }
+.ort__tag.is-other { color: #67e8f9; }
+.ort__tag.is-me { color: #a7f3d0; font-size: .62rem; opacity: .8; }
+.ort__tag.is-boss { color: #fda4af; font-size: .8rem; }
+.mn-enter { margin: .2rem 0 .4rem; justify-self: start; }

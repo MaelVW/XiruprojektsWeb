@@ -52,7 +52,14 @@
     }
 
     /* ── Seitenleiste ── */
-    MMO.side = at => X.easy() || !on() ? '' : partyCard() + bossCard(at) + chatCard(at);
+    MMO.side = at => X.easy() || !X.online.on() ? '' : lockedWhy() ? lockCard() : (N.full() ? partyCard() : accountCard()) + bossCard(at) + chatCard(at);
+    /* Anti-Cheat: gesperrt → nichts; ohne verbundenes Konto → Hinweis statt Trupp, Weltboss nur zum Ansehen */
+    const lockedWhy = () => (X.online.lockReason && X.online.lockReason()) || '';
+    const lockCard = () => '<div class="card mn-card mn-mmo mn-wb"><span class="eyebrow">' + PX('ic-weltboss') + ' Online gesperrt</span><p class="small mb-1">' + esc(lockedWhy()) + '</p>' +
+        '<p class="small muted mb-0">Offline spielst du Mnemora ganz normal weiter. Trupp, Weltboss, Duelle und Tausch gibt es erst nach einem Neustart: <a href="' + X.url('konto/einstellungen.html') + '#online">Einstellungen</a>.</p></div>';
+    const accountCard = () => '<div class="card mn-card mn-mmo"><span class="eyebrow">' + PX('ic-trupp') + ' Konto verbinden</span>' +
+        '<p class="small">Trupp, Weltboss, Duelle, Tauschbörse und Ranglisten zählen nur mit verbundenem Konto (Geräte-Sync). Dort prüft der Xiru-Server deinen Spielstand – damit niemand schummeln kann.</p>' +
+        (X.user ? '<button class="btn btn--sm btn--primary" type="button" data-mmo="link">Konto verbinden</button>' : '<a class="btn btn--sm btn--primary" href="' + X.url('konto/login.html') + '">Anmelden</a>') + '</div>';
     function partyCard() {
         const list = N.party, mine = meId();
         if (!MN.party()) return '<div class="card mn-card mn-mmo"><span class="eyebrow">' + PX('ic-trupp') + ' Trupp</span><p class="small mb-0">Allein unterwegs. Lade Reisende am gleichen Ort in deinen Trupp ein (bis zu drei). Ihre Mechs kämpfen dann auf den Strassen als KI-Kopien mit – auch wenn sie gerade offline sind.</p></div>';
@@ -78,6 +85,7 @@
         if (B.hits.length) h += '<ol class="mn-top small">' + B.hits.slice(0, 3).map(x => '<li' + (x.player === meId() ? ' class="is-me"' : '') + '><b>' + esc(x.nick) + '</b> <span class="muted">' + X.fmt(x.n) + '</span></li>').join('') + '</ol>';
         if (down) h += mine && !w.claimed ? '<button class="btn btn--primary btn--sm" type="button" data-mmo="claim">' + PX('box-gold') + ' Beute abholen</button>'
             : '<p class="small ' + (mine ? 'text-success' : 'muted') + ' mb-0">' + (mine ? 'Beute abgeholt. ' : 'Diesmal warst du nicht dabei. ') + 'Nächste Woche kommt ein neuer.</p>';
+        else if (!N.full()) h += '<p class="small muted mb-0 mt-1">Mitkämpfen geht mit verbundenem Konto.</p>';
         else if (here) {
             const ready = MN.wbReady(), cas = MN.active();
             h += '<button class="btn btn--primary btn--sm mt-1" type="button" data-mmo="wb"' + (ready && cas && cas.c > 0 ? '' : ' disabled') + '>' + PX('st-atk') + ' Angreifen · ' + MN.WB_ROUNDS + ' Runden</button>' +
@@ -109,7 +117,7 @@
     };
 
     /* ── Trupp im Strassenkampf ── */
-    MMO.allies = () => !on() ? [] : N.party.filter(p => p.id !== meId() && p.kit).slice(0, 2).map(p => {
+    MMO.allies = () => !N.full() ? [] : N.party.filter(p => p.id !== meId() && p.kit).slice(0, 2).map(p => {
         const lo = MN.kitArt(p.kit);
         return { id: p.id, nick: p.nick, name: p.nick, icon: p.kit.id, c: Object.assign({}, p.kit.c), art: f => C.svgOf(lo, f) };
     });
@@ -126,7 +134,7 @@
         const B = N.boss.key === wb.key ? N.boss : { total: 0 }, left = wb.hp - B.total;
         if (left <= 0) return;
         const def = MN.casing(cas.id), foe = MN.worldFoe(), meC = MN.combat(cas), meLo = MN.loadout(cas);
-        X.kampf.fight({
+        return X.kampf.fight({
             label: 'Weltboss: ' + wb.def.n, scene: 'weltboss', rounds: MN.WB_ROUNDS,
             me: { name: def.n, icon: cas.id, c: meC, art: f => C.svgOf(meLo, f) },
             foe: { name: wb.def.n, icon: 'ic-weltboss', c: foe.c, hp: left, art: f => C.svgOf(foe.lo, f, true) },
@@ -229,6 +237,7 @@
             b.disabled = true;
             N.invite(p).then(() => X.toast('Einladung verschickt', p.nick + ' kann jetzt deinem Trupp beitreten.', { iconHtml: PX('ic-trupp', 26) })).catch(() => fail('Einladung ging nicht durch'));
         } else if (b.dataset.duelP) duel(N.travellers.find(x => x.id === b.dataset.duelP));
+        else if (act === 'link') X.online.load().then(o => o.cloud.prompt());
         else if (act === 'leave') N.leave().then(() => { X.toast('Trupp verlassen', 'Du bist wieder allein unterwegs.', { iconHtml: PX('ic-trupp', 26) }); C.side(); }).catch(() => fail('Das ging nicht'));
         else if (act === 'wb') fightWorld();
         else if (act === 'claim') claim();
@@ -270,7 +279,7 @@
         const list = N.trades, mine = meId();
         if (!list.length) return '<p class="small muted mb-0">Gerade keine Angebote.' + (meet ? ' Mach das erste!' : '') + '</p>';
         return '<ul class="mn-trades">' + list.map(t => {
-            const own = t.player === mine, can = meet && !own && MN.hasItem(t.want);
+            const own = t.player === mine && N.full(), can = meet && !own && MN.hasItem(t.want);
             return '<li><div class="mn-trade"><span>' + MN.itemIcon(t.give, 24) + ' ' + esc(MN.itemName(t.give)) + '</span><span class="muted small">gegen</span><span>' + MN.itemIcon(t.want, 24) + ' ' + esc(MN.itemName(t.want)) + '</span></div>' +
                 '<span class="small muted">' + (own ? 'dein Angebot' : esc(t.nick)) + ' · ' + ago(t.at) + '</span>' +
                 (own ? '<button class="btn btn--sm btn--ghost" type="button" data-cancel="' + t.id + '">Zurückziehen</button>'
@@ -298,14 +307,16 @@
     MMO.renderTab = function (box) {
         if (box) { tabBox = box; if (!box.dataset.bound) { box.dataset.bound = '1'; box.addEventListener('click', tabClick); } }
         if (!tabBox) return;
+        if (X.online.on() && lockedWhy()) { tabBox.innerHTML = lockCard(); return; }
         if (!on()) {
             tabBox.innerHTML = '<div class="card easy-note"><div>' + PX('ic-trupp', 56) + '</div><h3>Treffpunkt der Reisenden</h3><p class="muted">Trupps, der Weltboss der Woche, Duelle gegen Geister anderer Reisender, Tauschbörse, Schnellchat und Ranglisten gibt es mit <b>Online</b>. ' +
                 'Geteilt werden dabei nur dein Spitzname, Level, Ort und die Werte deines aktiven Gehäuses.</p><a class="btn btn--primary" href="' + X.url('konto/einstellungen.html') + '#online">Online einschalten</a></div>';
             return;
         }
-        const at = MN.at(), meet = MN.MEET.includes(at);
-        tabBox.innerHTML = '<p class="small muted">' + (meet ? PX('ic-krug') + ' Du bist am Treffpunkt <b>' + esc(placeName(at)) + '</b>: Hier kannst du tauschen und Geister zum Duell fordern.'
-            : 'Tauschen und Duelle gehen nur an den Treffpunkten <b>Port Puffer</b> und <b>Registra</b>. Chronik und Ranglisten siehst du überall.') + '</p>' +
+        const at = MN.at(), meet = MN.MEET.includes(at) && N.full();
+        tabBox.innerHTML = (N.full() ? '' : accountCard()) + '<p class="small muted">' + (meet ? PX('ic-krug') + ' Du bist am Treffpunkt <b>' + esc(placeName(at)) + '</b>: Hier kannst du tauschen und Geister zum Duell fordern.'
+            : N.full() ? 'Tauschen und Duelle gehen nur an den Treffpunkten <b>Port Puffer</b> und <b>Registra</b>. Chronik und Ranglisten siehst du überall.'
+            : 'Chronik, Angebote und Ranglisten kannst du ansehen. Mitmachen geht mit verbundenem Konto.') + '</p>' +
             '<div class="mn-treff">' +
             '<section class="card mn-card"><h3>' + PX('ic-chronik', 20) + ' Chronik</h3>' + chronik() + '</section>' +
             '<section class="card mn-card"><div class="row mb-1"><h3 class="mb-0">' + PX('ic-tausch', 20) + ' Tauschbörse</h3><span class="spacer"></span>' + (meet ? '<button class="btn btn--sm btn--primary" type="button" data-t="offer">Angebot machen</button>' : '') + '</div>' + tradesHtml(meet) + '</section>' +
@@ -314,6 +325,7 @@
             '</div>';
     };
     function tabClick(e) {
+        if (e.target.closest('[data-mmo="link"]')) { X.online.load().then(o => o.cloud.prompt()); return; }
         const b = e.target.closest('[data-t],[data-take],[data-cancel],[data-duel],[data-rank]'); if (!b || b.disabled || busy) return;
         const t = b.dataset.t;
         if (t === 'offer') offerModal();
@@ -369,5 +381,11 @@
         });
     }
 
+    /* Weltboss angreifen (auch von der begehbaren Ort-Karte aus) → Promise oder undefined */
+    MMO.fightWorld = () => {
+        if (!N.full()) { X.toast('Konto verbinden', 'Gegen den Weltboss kämpfst du mit verbundenem Konto (Geräte-Sync).', { iconHtml: PX('ic-weltboss', 26) }); return; }
+        if (!MN.wbReady()) { X.toast('Noch nicht', 'Dein Gehäuse kühlt noch ab – wieder bereit in ' + later(MN.wbState().last + MN.WB_COOLDOWN - Date.now()) + '.', { iconHtml: PX('ic-weltboss', 26) }); return; }
+        return fightWorld();
+    };
     MMO.init = function (ctx) { C = Object.assign(C, ctx); N.start(); };
 })();

@@ -57,16 +57,40 @@
     }
     pickBackend();
     const mem = {};
+    /* ── Siegel (Anti-Cheat) ────────────────────────────────────────────────
+       Jeder Schreibvorgang des Spiels versiegelt Profil und Spielstände: neben jedem Eintrag liegt eine
+       Prüfsumme (xiru:sg:<Schlüssel>). Wer den Speicher von Hand ändert (Entwicklerwerkzeuge) oder eine bearbeitete
+       Export-Datei einliest, bricht das Siegel → das Konto gilt als verändert (X.taint) und darf nicht mehr online
+       spielen, bis der Fortschritt zurückgesetzt ist. Offline geht alles weiter. Das Siegel ist nur die erste Hürde –
+       der Xiru-Server prüft jeden Spielstand selbst (server/pb_hooks, docs/ONLINE.md → Anti-Cheat).
+       Eigene Prüfsumme je Eintrag (statt einer Liste), damit sich zwei offene Tabs nicht gegenseitig überschreiben. */
+    const LOCAL_ONLY = /^(why-|liminal-|local-usage$|notizen$|timer-tag$|einheiten-|bildwerk|orakel|mixer-)/;
+    const SEAL_SALT = 'xiru\u00b7siegel\u00b7v1\u00b7Mnemora-vergisst-nichts';
+    const cyrb = (str, seed) => {
+        let h1 = 0xdeadbeef ^ (seed || 0), h2 = 0x41c6ce57 ^ (seed || 0);
+        for (let i = 0, ch; i < str.length; i++) { ch = str.charCodeAt(i); h1 = Math.imul(h1 ^ ch, 2654435761); h2 = Math.imul(h2 ^ ch, 1597334677); }
+        h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+        h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+        return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
+    };
+    /* als JSON-Text gespeichert, damit X.store.get auch Siegel lesen kann (z. B. Speicheranzeige in den Einstellungen) */
+    const sig = (key, raw) => cyrb(SEAL_SALT + '|' + key + '|' + raw, 7) + cyrb(raw + '|' + key, 31);
+    const seal = (key, raw) => '"' + sig(key, raw) + '"';
+    /* Versiegelte Einträge: Profil (xiru:p:<konto>) und Spielstände (xiru:save:<konto>:<id>), ausser was nur im Browser bleibt */
+    function sealOwner(key) {
+        let m = /^xiru:p:(.+)$/.exec(key); if (m) return m[1];
+        m = /^xiru:save:([^:]+):(.+)$/.exec(key); return m && !LOCAL_ONLY.test(m[2]) ? m[1] : null;
+    }
     X.store = {
         get(key, def) {
             try { const v = backend.getItem(key); return v === null ? def : JSON.parse(v); }
             catch (e) { return key in mem ? mem[key] : def; }
         },
         set(key, val) {
-            try { backend.setItem(key, JSON.stringify(val)); }
+            try { const raw = JSON.stringify(val); backend.setItem(key, raw); if (sealOwner(key)) backend.setItem('xiru:sg:' + key, seal(key, raw)); }
             catch (e) { mem[key] = val; }
         },
-        remove(key) { try { backend.removeItem(key); } catch (e) { delete mem[key]; } },
+        remove(key) { try { backend.removeItem(key); backend.removeItem('xiru:sg:' + key); } catch (e) { delete mem[key]; } },
         keys(prefix) {
             try { return Object.keys(backend).filter(k => k.startsWith(prefix || 'xiru:') && k !== CONSENT_KEY && !SESSION_ONLY.includes(k)); }
             catch (e) { return Object.keys(mem).filter(k => k.startsWith(prefix || 'xiru:')); }
@@ -153,6 +177,29 @@
     }
     let P = loadProfile(X.user);
     X.profile = () => P;
+    function reseal(n) { try { Object.keys(backend).filter(k => sealOwner(k) === n).forEach(k => backend.setItem('xiru:sg:' + k, seal(k, backend.getItem(k)))); } catch (e) { } }
+    /* Siegel prüfen: → null (in Ordnung) oder was verändert wurde. Noch nie versiegelt (älterer Stand) → jetzt versiegeln. */
+    function sealCheck(name) {
+        const n = name.toLowerCase();
+        let keys; try { keys = Object.keys(backend).filter(k => sealOwner(k) === n); } catch (e) { return null; }
+        if (!keys.length) return null;
+        if (!keys.some(k => backend.getItem('xiru:sg:' + k) !== null)) { reseal(n); return null; }
+        const bad = keys.filter(k => backend.getItem('xiru:sg:' + k) !== seal(k, backend.getItem(k)));
+        return bad.length ? bad.slice(0, 3).map(k => k.startsWith('xiru:p:') ? 'Profil' : k.split(':').slice(3).join(':')).join(', ') : null;
+    }
+    /* Konto verändert? { at, why } – online gesperrt, bis der Fortschritt zurückgesetzt ist */
+    const taintKey = () => 'xiru:taint:' + (X.user ? X.user.toLowerCase() : GUEST);
+    X.taint = {
+        get: () => X.user ? X.store.get(taintKey(), null) : null,
+        set(why) { if (!X.user || X.taint.get()) return; X.store.set(taintKey(), { at: Date.now(), why: String(why).slice(0, 160) }); emit('taint', why); },
+        clear() { X.store.remove(taintKey()); },
+        /* Nach „Fortschritt zurücksetzen“: alles neu versiegeln, Markierung weg (der Server prüft den frischen Stand selbst) */
+        reset() { if (X.user) reseal(X.user.toLowerCase()); X.store.remove(taintKey()); },
+        /* Daten mit Siegel (Export-Datei, Sicherungen) */
+        sign: d => sig('export', JSON.stringify(d.profile) + '|' + JSON.stringify(d.saves || {})),
+        ok: d => !!(d && d.seal && d.seal === sig('export', JSON.stringify(d.profile) + '|' + JSON.stringify(d.saves || {})))
+    };
+    if (X.user) { const bad = sealCheck(X.user); if (bad) X.taint.set('Spielstand im Browser verändert (' + bad + ')'); }
     /* Zeitpunkt der letzten Änderung am Spielstand (für den Geräte-Sync in online.js) */
     const modKey = name => 'xiru:mod:' + (name ? name.toLowerCase() : GUEST);
     function touch() { if (X.user) X.store.set(modKey(X.user), Date.now()); }
@@ -264,7 +311,7 @@
             X.store.set('xiru:accounts', all);
             X.store.remove(profileKey(X.user));
             X.store.remove('xiru:keys:' + key);
-            ['xiru:cloud:', 'xiru:cloudbak:', 'xiru:mod:', 'xiru:online:'].forEach(pre => X.store.remove(pre + key));
+            ['xiru:cloud:', 'xiru:cloudbak:', 'xiru:mod:', 'xiru:online:', 'xiru:taint:'].forEach(pre => X.store.remove(pre + key));
             X.store.keys('xiru:save:' + key + ':').forEach(k => X.store.remove(k));
             X.cookie.del(backupName());
             const last = X.cookie.getJSON('xiru_zuletzt'); if (last && String(last.n).toLowerCase() === key) X.cookie.del('xiru_zuletzt');
@@ -323,7 +370,6 @@
     X.load = (k, def) => X.store.get(saveKey(k), def === undefined ? null : def);
     /* Bleiben immer nur in diesem Browser (auch mit Geräte-Sync): Liminal-Teil, lokaler Spielzeit-Zähler und alles, was
        Werkzeuge, KI-Labor und Mixer speichern – deren Seiten versprechen „bleibt in deinem Browser“. Synchronisiert wird nur der Spielfortschritt. */
-    const LOCAL_ONLY = /^(why-|liminal-|local-usage$|notizen$|timer-tag$|einheiten-|bildwerk|orakel|mixer-)/;
     X.save = (k, v) => { X.store.set(saveKey(k), v); if (!LOCAL_ONLY.test(k)) touch(); };
 
     /* ── Spielstand als Ganzes: Export/Import (Profil) und Geräte-Sync (online.js) ──
@@ -415,7 +461,9 @@
         }
         return {
             /* sync = true: ohne Daten, die nur in diesem Browser bleiben */
-            collect: sync => ({ format: 'xiru-export', v: 1, name: X.user || 'Gast', exported: new Date().toISOString(), profile: P, saves: saves(sync) }),
+            collect: sync => { const d = { format: 'xiru-export', v: 1, name: X.user || 'Gast', exported: new Date().toISOString(), profile: P, saves: saves(sync) }; d.seal = X.taint.sign(d); return d; },
+            /* Unverändert seit dem Export? (Datei, Sicherung) */
+            sealed: d => X.taint.ok(d),
             valid: d => !!(d && d.format === 'xiru-export' && d.profile && typeof d.profile === 'object'),
             /* ersetzt den Fortschritt des aktuellen Kontos; sync = Online-Einstellungen dieses Browsers behalten
                und Spielstände entfernen, die im neuen Stand fehlen */
@@ -483,14 +531,17 @@
             const E = X.eggs.map(e => e.id), PG = X.pages.map(p => p.p), SK = X.skills.map(k => k.id), IS = (X.islands || []).map(i => i.id);
             const m = mechState();
             const eqU = Object.values(m.eq), inv = m.inv.slice().sort((a, b) => (eqU.includes(b.u) - eqU.includes(a.u)) || (b.q - a.q) || ((b.up || 0) - (a.up || 0))).slice(0, 24);
-            return {
+            const b = {
                 v: 1, t: Date.now(), n: X.user || '', xp: P.xp, bo: P.bonus,
                 e: toBits(E, id => P.eggs[id]), eh: fnv(E.join()), pv: toBits(PG, p => P.visited[p]), ph: fnv(PG.join()),
                 sk: toBits(SK, id => P.skills[id]), sh: fnv(SK.join()),
                 m: { sp: m.spent, ta: m.taler, po: m.pos, tu: m.tutorial, is: toBits(IS, id => m.islands[id]), ih: fnv(IS.join()), mt: m.mat,
                      it: inv.map(x => [x.id, x.q, x.up || 0, x.c, eqU.includes(x.u) ? 1 : 0]), ar: m.arena && m.arena.rank || 0 }
             };
+            return b;
         },
+        /* Siegel über alles ausser dem Siegel selbst */
+        signed(b) { const c = Object.assign({}, b); delete c.sg; return sig('cookie', JSON.stringify(c)); },
         /* Ist eine Sicherung deutlich weiter als der aktuelle Stand? Dann nicht überschreiben (ausser force),
            bis die Person sich entschieden hat (Wiederherstellen oder „Nein“). */
         ahead(b) { b = b || this.read(); if (!b) return false; return b.xp > P.xp + 60 || fromBits(X.eggs.map(e => e.id), b.e).length > X.eggCount() + 2; },
@@ -498,10 +549,12 @@
             if (!X.cookie.ok() || document.documentElement.hasAttribute('data-bare')) return false;
             if (!force && !sessionGet('xiru:restore-skip') && this.ahead()) return false;
             const b = this.make();
-            while (b64e(JSON.stringify(b)).length > 3300 && b.m.it.length) b.m.it.pop();
+            while (b64e(JSON.stringify(b)).length > 3260 && b.m.it.length) b.m.it.pop();
+            b.sg = this.signed(b);
             return X.cookie.setJSON(backupName(), b, 400);
         },
-        read() { return X.cookie.getJSON(backupName()); },
+        /* Nur eine unveränderte Sicherung zählt (ältere ohne Siegel werden nicht mehr angeboten) */
+        read() { const b = X.cookie.getJSON(backupName()); return b && b.sg && b.sg === this.signed(b) ? b : null; },
         /* Zusammenführen: nichts geht verloren – es wird nur ergänzt */
         restore() {
             const b = this.read(); if (!b) return null;

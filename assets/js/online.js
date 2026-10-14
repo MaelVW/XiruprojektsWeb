@@ -152,7 +152,7 @@
         return Object.values(best).sort((a, b) => lower ? a.value - b.value : b.value - a.value).slice(0, n || 10);
     };
     O.submit = async (game, value, lower) => {
-        if (!O.on() || !O.verified() || typeof value !== 'number' || !isFinite(value)) return;
+        if (!O.on() || !O.verified() || O.isAdmin() || typeof value !== 'number' || !isFinite(value)) return;
         const m = await ensure(), prev = m.sent[game];
         if (prev != null && (lower ? value >= prev : value <= prev)) return;
         if (X.best(game) !== value) return;   // nur der eigene Bestwert – genau der steht im geprüften Spielstand
@@ -328,6 +328,7 @@
        Gesperrt heisst: kein Online für dieses Konto. Offline geht alles weiter. Entsperren: Fortschritt zurücksetzen
        (der frische Spielstand wird hochgeladen und vom Server geprüft) oder ein Admin hebt die Sperre auf. */
     const fresh = () => (+X.profile().xp || 0) <= 300 && !Object.keys(X.profile().eggs || {}).length;
+    O.isAdmin = () => { const l = link(); return !!(l && l.role === 'admin'); };   // Admin-Konten zählen in keiner Rangliste
     O.verified = () => { const l = link(); return !!(l && !l.stale && !l.locked && !X.taint.get()); };
     O.lockReason = () => { const t = X.taint.get(), l = link(); return t ? t.why : l && l.locked ? l.locked : ''; };
     let lockShown = false;
@@ -348,6 +349,8 @@
     async function lockCheck() {
         const l = link(), t = X.taint.get();
         if (t) {
+            // Hat ein Admin die Sperre aufgehoben (konto/admin.html)? Dann gilt auch das Siegel-Merkmal als erledigt
+            if (l && !l.stale) { try { const me = await api('/xiru/me'); if (me.pardon && me.pardon > t.at && !me.locked) { X.taint.reset(); const l2 = link(); delete l2.locked; delete l2.tainted; setLink(l2); emitChange(); return false; } } catch (e) { } }
             if (l && !l.stale && !l.tainted) { try { await api('/xiru/taint', { method: 'POST', body: { why: t.why } }); } catch (e) { } const l2 = link(); if (l2) { l2.tainted = 1; l2.locked = l2.locked || t.why; setLink(l2); } }
             return true;
         }
@@ -488,6 +491,7 @@
         if (!O.on() || O.status === 'online' || O.status === 'connecting' || O.status === 'locked') return;
         setStatus('connecting'); ui(); setStatus('connecting');
         if (X.user && await lockCheck()) { setStatus('locked'); showLock(); return; }
+        if (link() && !link().stale) api('/xiru/me').then(me => { const l = link(); if (l && l.role !== (me.role || '')) { l.role = me.role || ''; setLink(l); } }).catch(() => { });
         beat(true).then(() => O.who().then(() => setStatus(O.status)).catch(() => { }));
         // Rekorde, die noch nicht in der Weltrangliste stehen, nachmelden (nur mit geprüftem Konto; nach dem ersten Abgleich)
         clearInterval(beatT); beatT = setInterval(beat, BEAT_MS);

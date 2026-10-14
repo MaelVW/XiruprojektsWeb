@@ -55,6 +55,13 @@ function save(e) {
     const data = json(e.record, 'data');
     if (!data || data.format !== 'xiru-export' || !data.profile) fail('Kein gültiger Spielstand.');
     const now = Date.now(), old = json(user, 'ac');
+    // Admin-Konten (Testkonten mit allem) werden nicht geprüft – zählen dafür in keiner Rangliste
+    if (user.getString('role') === 'admin') {
+        const r = L.check(null, data, now); r.ac.admin = 1;
+        e.next();
+        const u = freshUser(user.id); u.set('locked', ''); u.set('ac', r.ac); $app.save(u);
+        return;
+    }
     if (user.getString('locked')) {
         // Gesperrt: nur ein frisch zurückgesetzter Spielstand entsperrt
         if (!L.isFresh(data)) locked(user.getString('locked'));
@@ -79,7 +86,7 @@ function player(e, create) {
         const ac = json(user, 'ac');
         rec.set('user', user.id);
         rec.set('level', ac ? ac.level : 0);
-        rec.set('mns', ac ? ac.mns : 0);
+        rec.set('mns', ac && !ac.admin ? ac.mns : 0);   // Admin-Konten nicht in der Mnemora-Rangliste
         rec.set('mn', ac ? ac.mn : null);
         rec.set('kit', ac && ac.kit ? ac.kit : null);
         if (!/^([a-z0-9]{5,20})?$/.test(rec.getString('party'))) rec.set('party', '');
@@ -102,6 +109,7 @@ function score(e) {
     if (e.hasSuperuserAuth()) { e.next(); return; }
     const user = authUser(e); if (!user) needAuth('Für die Weltrangliste brauchst du ein verbundenes Konto (Geräte-Sync).');
     if (user.getString('locked')) locked(user.getString('locked'));
+    if (user.getString('role') === 'admin') fail('Admin-Konten zählen nicht für die Weltrangliste.');
     const rec = e.record, p = byId('players', rec.getString('player'));
     if (p && !p.getString('user')) adopt(p, user, e);
     if (!p || p.getString('user') !== user.id) throw new ForbiddenError('Fremder Spieler.');

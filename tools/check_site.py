@@ -79,6 +79,6 @@ try:
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     import build_server_data as bsd
     fresh = io.open(bsd.OUT, encoding='utf-8').read() == bsd.current() if os.path.exists(bsd.OUT) else False
-    print('\n== Server-Spieldaten (Anti-Cheat): ' + ('aktuell' if fresh else 'VERALTET → python tools/build_server_data.py ausführen und xiru_data.js auf den Server kopieren'))
+    print('\n== Server-Spieldaten (Anti-Cheat): ' + ('aktuell' if fresh else 'VERALTET -> python tools/build_server_data.py ausführen und xiru_data.js auf den Server kopieren'))
 except Exception as e:
     print('\n== Server-Spieldaten (Anti-Cheat): nicht prüfbar (%s)' % e)

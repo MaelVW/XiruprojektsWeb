@@ -31,7 +31,8 @@ onRecordCreateRequest((e) => { require(`${__hooks}/xiru_hooks.js`.replace(/^[A-Z
 onRecordUpdateRequest((e) => {
     if (!e.hasSuperuserAuth()) {
         const o = e.record.original();
-        if (e.record.getString("locked") !== o.getString("locked")) throw new ForbiddenError("Die Sperre kann nur ein Admin ändern.");
+        if (e.record.getString("locked") !== o.getString("locked") || e.record.getString("role") !== o.getString("role") || e.record.getInt("pardon") !== o.getInt("pardon"))
+            throw new ForbiddenError("Sperre und Rolle kann nur ein Admin ändern.");
     }
     e.next();
 }, "users");
@@ -51,5 +52,11 @@ routerAdd("POST", "/api/xiru/taint", (e) => {
 routerAdd("GET", "/api/xiru/me", (e) => {
     const H = require(`${__hooks}/xiru_hooks.js`.replace(/^[A-Za-z]:/, '').replace(/\\/g, '/'));
     const user = $app.findRecordById("users", e.auth.id), ac = H.json(user, "ac");
-    return e.json(200, { locked: user.getString("locked"), checked: ac ? ac.t : 0, level: ac ? ac.level : 0, mns: ac ? ac.mns : 0, data: H.lib().D.version });
+    return e.json(200, { locked: user.getString("locked"), role: user.getString("role"), pardon: user.getInt("pardon"), checked: ac ? ac.t : 0, level: ac ? ac.level : 0, mns: ac ? ac.mns : 0, data: H.lib().D.version });
 }, $apis.requireAuth("users"));
+
+/* ── Admin-Seite (konto/admin.html): nur Konten mit role = admin ── */
+routerAdd("GET", "/api/xiru/admin/users", (e) => require(`${__hooks}/xiru_admin.js`.replace(/^[A-Za-z]:/, '').replace(/\\/g, '/')).users(e), $apis.requireAuth("users"));
+routerAdd("POST", "/api/xiru/admin/act", (e) => require(`${__hooks}/xiru_admin.js`.replace(/^[A-Za-z]:/, '').replace(/\\/g, '/')).act(e), $apis.requireAuth("users"));
+routerAdd("POST", "/api/xiru/admin/create", (e) => require(`${__hooks}/xiru_admin.js`.replace(/^[A-Za-z]:/, '').replace(/\\/g, '/')).create(e), $apis.requireAuth("users"));
+routerAdd("POST", "/api/xiru/admin/purge", (e) => require(`${__hooks}/xiru_admin.js`.replace(/^[A-Za-z]:/, '').replace(/\\/g, '/')).purge(e), $apis.requireAuth("users"));

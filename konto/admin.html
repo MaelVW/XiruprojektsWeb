@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin · Xiruprojekts</title>
+    <meta name="description" content="Moderation für Xiru-Admins: Konten, Sperren, Admin-Konten.">
+    <meta name="robots" content="noindex">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="../assets/js/mech-art.js"></script>
+    <script src="../assets/js/weltkarte-art.js"></script>
+    <script src="../assets/js/pixel-icons.js"></script>
+    <script src="../assets/js/werft.js"></script>
+    <script src="../assets/js/mnemora.js"></script>
+    <style>
+        .adm-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+        .adm-table th, .adm-table td { padding: .4rem .5rem; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+        .adm-table td .row { gap: .25rem; flex-wrap: wrap; }
+        .adm-bad { color: var(--danger); }
+        .adm-tag { display: inline-block; padding: 0 .35rem; font: 700 .72rem var(--mono); background: var(--surface-3); border-radius: 4px; }
+        .adm-tag--admin { background: #7c3aed; color: #fff; }
+    </style>
+</head>
+<body>
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">Nur für Xiru-Admins</span>
+        <h1>Admin</h1>
+        <p class="lead">Moderation auf dem Xiru-Server: Konten ansehen, sperren und entsperren, Admin-Konten anlegen. Jede Aktion prüft der Server selbst – ohne Admin-Rolle geht hier nichts.</p>
+    </header>
+
+    <section class="card" id="a-login">
+        <h2>Anmelden</h2>
+        <form id="a-form" class="mt-1">
+            <div class="field"><label for="a-name">Kontoname</label><input class="input" id="a-name" autocomplete="username" required></div>
+            <div class="field"><label for="a-pw">Passwort</label><input class="input" type="password" id="a-pw" autocomplete="current-password" required></div>
+            <p class="form-msg" id="a-msg" role="alert"></p>
+            <button class="btn btn--primary" type="submit">Anmelden</button>
+        </form>
+        <p class="small muted mt-1">Server: <code id="a-srv"></code> (Einstellungen → Online). Den ersten Admin legt der Superuser in der PocketBase-Oberfläche fest: users → Konto → <code>role</code> = <code>admin</code>.</p>
+    </section>
+
+    <div id="a-app" hidden>
+        <section class="card">
+            <div class="row"><h2 class="mb-0">Konten</h2><span class="spacer"></span><span class="small muted" id="a-who"></span><button class="btn btn--sm btn--ghost" type="button" id="a-out">Abmelden</button></div>
+            <div class="row mt-1">
+                <input class="input" id="a-q" placeholder="Name suchen …" style="flex:1;min-width:10rem">
+                <select class="select" id="a-f"><option value="all">Alle</option><option value="locked">Gesperrt</option><option value="admins">Admins</option></select>
+                <button class="btn" type="button" id="a-load">Laden</button>
+            </div>
+            <div style="overflow-x:auto" class="mt-1"><table class="adm-table"><thead><tr><th>Konto</th><th>Stand (geprüft)</th><th>Status</th><th>Aktionen</th></tr></thead><tbody id="a-list"></tbody></table></div>
+            <p class="small muted mt-1"><b>Entsperren</b>: Sperre weg, der Server prüft weiter gegen den letzten geprüften Stand (wer wirklich geschummelt hat, wird beim nächsten Abgleich wieder gesperrt).
+                <b>Entsperren + Stand annehmen</b>: der nächste Spielstand gilt als neuer Ausgangspunkt (nur grobe Obergrenzen) – für Irrtümer.</p>
+        </section>
+
+        <section class="card">
+            <h2>Admin-Konto anlegen</h2>
+            <p class="small muted">Admin-Konten werden vom Anti-Cheat nicht geprüft, zählen aber in keiner Rangliste – gedacht zum Testen. Danach auf der Website mit diesem Namen anmelden („Vom Server holen“) und unten alles freischalten.</p>
+            <form id="c-form" class="row">
+                <input class="input" id="c-name" placeholder="Kontoname" autocomplete="off" required style="flex:1;min-width:9rem">
+                <input class="input" type="password" id="c-pw" placeholder="Passwort (min. 6)" autocomplete="new-password" required style="flex:1;min-width:9rem">
+                <button class="btn btn--primary" type="submit">Anlegen</button>
+            </form>
+            <p class="form-msg" id="c-msg" role="alert"></p>
+        </section>
+
+        <section class="card">
+            <h2>Admin-Spielkonto ausstatten</h2>
+            <p class="small" id="u-state"></p>
+            <button class="btn" type="button" id="u-go" disabled>Alles freischalten</button>
+            <p class="small muted mt-1">Wie das Testkonto: alle Module, Inseln und Baupläne, jedes Mech-Teil mythisch, Level 99, viel Material und Taler, auf Mnemora Arche, Besatzung, alle Orte, Strassen, Gehäuse und Steckkarten. Kristalle bleiben zum Finden. Geht nur für das Admin-Konto, mit dem du hier angemeldet bist.</p>
+        </section>
+
+        <section class="card">
+            <h2>Wartung</h2>
+            <div class="row">
+                <button class="btn btn--sm" type="button" data-purge="scores-unverified">Ungeprüfte Weltranglisten-Einträge löschen</button>
+                <button class="btn btn--sm" type="button" data-purge="feed-old">Mnemora-Funk älter als 60 Tage löschen</button>
+            </div>
+            <p class="form-msg" id="p-msg"></p>
+        </section>
+    </div>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU, $ = X.$, esc = X.esc;
+    const KEY = 'xiru:admin';
+    const srv = () => X.online.url();
+    $('#a-srv').textContent = srv();
+    let auth = (() => { try { return JSON.parse(sessionStorage.getItem(KEY) || 'null'); } catch (e) { return null; } })();
+    async function api(path, opt) {
+        opt = opt || {};
+        const r = await fetch(srv() + path, { method: opt.method || 'GET', cache: 'no-store', credentials: 'omit',
+            headers: Object.assign({ 'Content-Type': 'application/json' }, auth ? { Authorization: auth.token } : {}), body: opt.body ? JSON.stringify(opt.body) : undefined });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) { const e = new Error(d.message || ('HTTP ' + r.status)); e.status = r.status; throw e; }
+        return d;
+    }
+    const fmt = t => t ? new Date(typeof t === 'number' ? t : String(t).replace(' ', 'T')).toLocaleString('de-CH', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '–';
+
+    $('#a-form').addEventListener('submit', async e => {
+        e.preventDefault(); const msg = $('#a-msg'); msg.textContent = '';
+        try {
+            const r = await api('/collections/users/auth-with-password', { method: 'POST', body: { identity: $('#a-name').value.trim(), password: $('#a-pw').value } });
+            auth = { token: r.token, name: r.record.username, id: r.record.id };
+            const me = await api('/xiru/me');
+            if (me.role !== 'admin') { auth = null; throw new Error('Dieses Konto ist kein Admin.'); }
+            sessionStorage.setItem(KEY, JSON.stringify(auth)); $('#a-pw').value = ''; show();
+        } catch (err) { msg.className = 'form-msg is-error'; msg.textContent = err.status === 400 ? 'Name oder Passwort stimmt nicht.' : err.message; auth = null; }
+    });
+    $('#a-out').addEventListener('click', () => { auth = null; sessionStorage.removeItem(KEY); $('#a-app').hidden = true; $('#a-login').hidden = false; });
+
+    async function show() {
+        try { const me = await api('/xiru/me'); if (me.role !== 'admin') throw new Error('kein Admin'); }
+        catch (e) { auth = null; sessionStorage.removeItem(KEY); return; }
+        $('#a-login').hidden = true; $('#a-app').hidden = false; $('#a-who').textContent = 'angemeldet als ' + auth.name;
+        unlockState(); load();
+    }
+    async function load() {
+        const tb = $('#a-list'); tb.innerHTML = '<tr><td colspan="4" class="muted">Lade …</td></tr>';
+        try {
+            const d = await api('/xiru/admin/users?f=' + encodeURIComponent($('#a-f').value) + '&q=' + encodeURIComponent($('#a-q').value.trim()));
+            tb.innerHTML = d.items.length ? d.items.map(u => '<tr data-id="' + esc(u.id) + '"><td><b>' + esc(u.username) + '</b>' + (u.role === 'admin' ? ' <span class="adm-tag adm-tag--admin">Admin</span>' : '') + '<div class="small muted">seit ' + fmt(u.created) + '</div></td>' +
+                '<td>' + (u.checked ? 'Level ' + u.level + ' · ' + X.fmt(u.xp) + ' XP<div class="small muted">' + u.eggs + ' Kristalle · ' + u.scores + ' Rekorde · geprüft ' + fmt(u.checked) + '</div>' : '<span class="muted">noch kein Abgleich</span>') + '</td>' +
+                '<td>' + (u.locked ? '<span class="adm-bad">Gesperrt</span><div class="small">' + esc(u.locked) + '</div>' : 'in Ordnung') + '</td>' +
+                '<td><div class="row">' + (u.locked ? '<button class="btn btn--sm btn--primary" type="button" data-act="unlock">Entsperren</button><button class="btn btn--sm" type="button" data-act="accept">Entsperren + Stand annehmen</button>'
+                    : '<button class="btn btn--sm btn--danger" type="button" data-act="lock">Sperren</button>') +
+                (u.role === 'admin' ? '<button class="btn btn--sm btn--ghost" type="button" data-act="unadmin">Admin entziehen</button>' : '<button class="btn btn--sm btn--ghost" type="button" data-act="admin">Zum Admin machen</button>') + '</div></td></tr>').join('')
+                : '<tr><td colspan="4" class="muted">Keine Konten gefunden.</td></tr>';
+        } catch (e) { tb.innerHTML = '<tr><td colspan="4" class="adm-bad">' + esc(e.message) + '</td></tr>'; }
+    }
+    $('#a-load').addEventListener('click', load);
+    $('#a-q').addEventListener('keydown', e => { if (e.key === 'Enter') load(); });
+    $('#a-f').addEventListener('change', load);
+    $('#a-list').addEventListener('click', async e => {
+        const b = e.target.closest('[data-act]'); if (!b) return;
+        const id = b.closest('tr').dataset.id, act = b.dataset.act, name = b.closest('tr').querySelector('b').textContent;
+        let reason = '';
+        if (act === 'lock') { reason = prompt('Grund für die Sperre von „' + name + '“ (sieht die Person):', ''); if (reason === null) return; }
+        else if (!confirm({ unlock: 'Sperre von „' + name + '“ aufheben?', accept: '„' + name + '“ entsperren und den nächsten Spielstand als neuen Ausgangspunkt annehmen?', admin: '„' + name + '“ zum Admin machen?', unadmin: '„' + name + '“ die Admin-Rolle entziehen?' }[act])) return;
+        b.disabled = true;
+        try { await api('/xiru/admin/act', { method: 'POST', body: { id, act, reason } }); X.toast('Erledigt', name, { icon: '✓' }); }
+        catch (err) { X.toast('Ging nicht', err.message, { icon: '⚠', type: 'error' }); }
+        load();
+    });
+    $('#c-form').addEventListener('submit', async e => {
+        e.preventDefault(); const msg = $('#c-msg');
+        try { const u = await api('/xiru/admin/create', { method: 'POST', body: { username: $('#c-name').value.trim(), password: $('#c-pw').value } }); msg.className = 'form-msg is-ok'; msg.textContent = 'Admin-Konto „' + u.username + '“ angelegt.'; $('#c-pw').value = ''; load(); }
+        catch (err) { msg.className = 'form-msg is-error'; msg.textContent = err.message; }
+    });
+    X.$$('[data-purge]').forEach(b => b.addEventListener('click', async () => {
+        if (!confirm(b.textContent + '?')) return;
+        try { const r = await api('/xiru/admin/purge', { method: 'POST', body: { what: b.dataset.purge } }); $('#p-msg').className = 'form-msg is-ok'; $('#p-msg').textContent = r.deleted + ' Einträge gelöscht.'; }
+        catch (err) { $('#p-msg').className = 'form-msg is-error'; $('#p-msg').textContent = err.message; }
+    }));
+
+    /* ── Admin-Spielkonto in diesem Browser voll ausstatten (wie dev/testkonto.html) ── */
+    function unlockState() {
+        const ok = X.user && auth && X.user.toLowerCase() === auth.name.toLowerCase();
+        $('#u-state').innerHTML = ok ? 'Im Spiel angemeldet als <b>' + esc(X.user) + '</b> – das ist dein Admin-Konto.' : 'Melde dich im Spiel (oben rechts) als <b>' + esc(auth ? auth.name : '?') + '</b> an – nur ein Admin-Konto darf voll ausgestattet werden.';
+        $('#u-go').disabled = !ok;
+    }
+    $('#u-go').addEventListener('click', () => {
+        if (!confirm('Spielkonto „' + X.user + '“ jetzt voll ausstatten? Der bisherige Fortschritt wird ergänzt, nicht gelöscht.')) return;
+        const P = X.profile(), M = X.mech, m = M.state(), MN = X.mnemora, now = Date.now();
+        let xp = 0; for (let l = 1; l < 99; l++) xp += X.xpForNext(l);
+        P.xp = Math.max(P.xp, xp); P.bonus = Math.max(P.bonus, X.eggs.filter(e => e.r === 4).length);
+        X.skills.forEach(s => { P.skills[s.id] = P.skills[s.id] || now; });
+        // Seemech: jedes Teil mythisch und voll aufgewertet, je Bauplatz das stärkste eingebaut
+        m.tutorial = 2; m.testrun = 1; m.trep = 1; m.inv = []; m.eq = {};
+        const best = {};
+        X.mechParts.forEach(p => { const it = M.add(p.id, 6, { neu: 0 }); if (it) { it.up = 5; it.c = 100; if (!best[p.slot] || p.t > best[p.slot].t) best[p.slot] = { t: p.t, u: it.u }; } });
+        Object.values(best).forEach(b => M.equip(b.u));
+        (X.islands || []).forEach(i => { m.islands[i.id] = m.islands[i.id] || now; });
+        (X.materials || []).forEach(x => { m.mat[x.id] = 999; });
+        X.mechParts.forEach(p => { m.bp[p.id] = m.bp[p.id] || now; });
+        m.taler = Math.max(m.taler || 0, 99999); m.arena = Object.assign({}, m.arena, { rank: 12 });
+        // Mnemora: Arche, Besatzung, alles entdeckt und frei, alle Gehäuse mit passenden Karten
+        const s = MN.state();
+        MN.STAGES.forEach(x => { s.ark[x.id] = s.ark[x.id] || now; }); MN.CREW.forEach(c => { s.crew[c.id] = s.crew[c.id] || now; });
+        s.arrived = s.arrived || now; s.intro = 3; s.boss = s.boss || now;
+        MN.PLACES.forEach(p => { s.seen[p.id] = s.seen[p.id] || now; }); MN.ROADS.forEach(r => { s.roads[r.id] = r.foes; });
+        MN.CASINGS.forEach(c => { MN.learnCasing(c.id); if (!MN.owns(c.id)) MN.addCasing(c.id); });
+        MN.CARDS.forEach(c => MN.learnCard(c.id));
+        const order = ['kt-quanten', 'kt-rtx', 'kt-ecc', 'kt-hotfix', 'kt-kletter', 'kt-schwimm', 'kt-ketten', 'kt-kuehl', 'kt-sound', 'kt-raid', 'kt-netz', 'kt-psu', 'kt-gpu'];
+        MN.casings().forEach(cas => { cas.c = 100; order.forEach(id => { if (MN.used(cas) + MN.card(id).w <= MN.casing(cas.id).slots) { const it = MN.addCard(id); MN.insert(cas.u, it.u); } }); });
+        const top = MN.casings().find(c => c.id === 'gh-beige'); if (top) MN.setActive(top.u);
+        X.persist();
+        X.toast('Ausgestattet', X.user + ' hat jetzt alles. Mit Geräte-Sync geht der Stand beim nächsten Abgleich auf den Server.', { icon: '✓' });
+    });
+
+    if (auth) show();
+});
+</script>
+</body>
+</html>

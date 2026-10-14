@@ -108,6 +108,16 @@ Antworten der Hooks beginnen mit einer Kennung, auf die `online.js` reagiert: `x
    `mn_trades:create` 5 / 60 s, `mn_takes:create` 5 / 60 s.
 (Die frühere Datei `docs/pocketbase-mmo-import.json` ist damit überflüssig und wurde entfernt.)
 
+**Admin-Seite (seit 2026-10-14):** `konto/admin.html` (versteckt, `noindex`). Anmelden mit einem Xiru-Konto, das `users.role = admin` hat –
+der Server prüft das bei jeder Anfrage (`server/pb_hooks/xiru_admin.js`, Routen `/xiru/admin/users|act|create|purge`). Kann: Konten suchen/filtern
+(gesperrt, Admins) mit geprüftem Stand, **sperren** (mit Grund), **entsperren** (setzt `users.pardon`; der Browser hebt dann auch ein gebrochenes Siegel auf),
+**entsperren + Stand annehmen** (löscht `users.ac` → nächster Spielstand = neuer Ausgangspunkt), Admin-Rolle geben/entziehen, **Admin-Konten anlegen**,
+Wartung (ungeprüfte Weltranglisten-Einträge, alter Mnemora-Funk). **Admin-Konten** = Testkonten: werden vom Anti-Cheat nicht geprüft, zählen in keiner
+Rangliste; „Admin-Spielkonto ausstatten“ schaltet im Browser alles frei (Level 99, alle Teile mythisch, Mnemora komplett), der Sync nimmt es an.
+`role` und `pardon` können Nutzer:innen nicht selbst setzen. Feld-Migration: `server/pb_migrations/1760500000_xiru_admin.js`.
+**Ersten Admin festlegen:** PocketBase-Oberfläche (Heimnetz) → users → Konto → `role` = `admin`. Weitere Admins danach über die Admin-Seite.
+Test lokal: `python dev/pocketbase/test_admin.py` (14 Fälle).
+
 **Lokal testen:** echtes PocketBase 0.23.12 in `dev/pocketbase/` (nicht im Git): `python dev/pocketbase/setup.py admin`, dann `.claude/launch.json`
 „xiru-pb“ starten (Port 8091, Hooks und Migrationen direkt aus `server/`), `python dev/pocketbase/setup.py schema` (Tabellen wie auf Maels Server),
 Website: `XIRU.setting('onlineUrl', 'http://127.0.0.1:8091/api')`. Automatischer Test: `python dev/pocketbase/test_anticheat.py` (30 Fälle).

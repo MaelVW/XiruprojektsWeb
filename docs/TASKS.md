@@ -236,6 +236,13 @@ Der Liminal-Teil (`Why.html`, `why/*`, `liminal*.js`) wird mitgeprüft, aber **n
 
 ## Notizen der letzten Sitzung
 
+- 2026-10-14 (abends): **ADMIN-SEITE** `konto/admin.html` für Mael und Luca (Moderation: sperren/entsperren/Stand annehmen, Admins geben/entziehen,
+  Admin-Konten anlegen, Wartung; Admin-Konten ohne Anti-Cheat und ohne Ranglisten, „alles freischalten“ wie Testkonto). Server: `xiru_admin.js`,
+  Migration `1760500000_xiru_admin.js` (users.role, users.pardon), Hooks angepasst, `xiru_data.js` neu erzeugt (neue Seite). Test lokal 14/14 + 30/30.
+  **OFFEN (Mael):** auf den Unraid kopieren: `server/pb_hooks/` (xiru.pb.js, xiru_hooks.js, xiru_lib.js, xiru_data.js, **neu xiru_admin.js**) und
+  `server/pb_migrations/1760500000_xiru_admin.js`, Container neu starten, dann in der PocketBase-Oberfläche beim eigenen Konto `role` = `admin`.
+  Luca über die Admin-Seite zum Admin machen (sein Konto muss mit Geräte-Sync verbunden sein). Website pushen.
+
 - 2026-10-14 (später): **MAPS (Priorität 2) – erster Wurf.** Neu `assets/js/mnemora-ort.js` (`XIRU.mnemoraOrt`): **begehbare Orte** für alle 11 Orte
   (Top-down 2D-Pixel, Karte 56×40 Kacheln, aus Daten erzeugt: `gen()` → Kacheln/Objekte/Ziele/Ausgänge; Zeichnen getrennt, damit später ein 3D-artigerer
   Zeichner oder Maels Grafiken andocken können). Port Puffer (Meer, Stege, Arche, Leuchtturm, Stände der Besatzung mit NPCs, Taverne = Treffpunkt, Otto → Sektaria),

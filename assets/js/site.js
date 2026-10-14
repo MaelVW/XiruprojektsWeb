@@ -48,6 +48,7 @@ XIRU.pages = [
     { p: 'konto/erfolge.html',       t: 'Rekorde',             r: 'konto', d: 'Deine Bestwerte in der Spielhalle.', nav: true },
     { p: 'konto/einstellungen.html', t: 'Einstellungen',       r: 'konto', d: 'Design, Animationen, Ton und Daten.', nav: true },
     { p: 'konto/dienste.html',       t: 'Dienste & Schlüssel', r: 'konto', d: 'API-Schlüssel für Hugging Face und Co. verwalten.', nav: true },
+    { p: 'konto/admin.html',         t: 'Admin',               r: 'konto', d: 'Moderation für Xiru-Admins (Server prüft die Rolle).', hidden: true },
     { p: 'welt/markt.html',          t: 'Händlerbucht',        r: 'meer', isle: 'markt',    d: 'Bauteile und Materialien kaufen, verkaufen und tauschen.' },
     { p: 'welt/schmiede.html',       t: 'Funkenschmiede',      r: 'meer', isle: 'schmiede', d: 'Teile aufwerten, zerlegen und verschmelzen.' },
     { p: 'welt/arena.html',          t: 'Schrott-Arena',       r: 'meer', isle: 'arena',    d: 'Mech gegen Mech – steig in der Rangliste auf.' },

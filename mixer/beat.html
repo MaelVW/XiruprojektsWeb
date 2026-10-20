@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Beatmaschine · Xiruprojekts</title>
-    <meta name="description" content="Beatmaschine: Step-Sequencer mit 16 Schritten und 6 synthetisierten Drums. Tempo, Vorlagen und Speichern inklusive.">
+    <meta name="description" content="Beatmaschine: Step-Sequencer mit 16, 32 oder 64 Schritten und 6 synthetisierten Drums. Tempo, Vorlagen und Speichern inklusive.">
     <link rel="stylesheet" href="../assets/css/main.css">
     <link rel="stylesheet" href="css/mixer.css">
     <link rel="stylesheet" href="../assets/css/themes/mixer.css">
@@ -34,6 +34,7 @@
             <button class="btn btn--primary" type="button" id="play">▶ Play <kbd>Leertaste</kbd></button>
             <div class="field mb-0 bm-bpm"><label for="bpm">Tempo <span id="bpm-v"></span></label><input type="range" class="mx-range" id="bpm" min="60" max="180" value="110"></div>
             <select class="select bm-sel" id="preset" aria-label="Vorlage"><option value="">Vorlage laden …</option><option value="0">Rock</option><option value="1">Hip-Hop</option><option value="2">Techno</option><option value="3">Reggaeton</option></select>
+            <select class="select bm-sel" id="len" aria-label="Schritte"><option value="16">16 Schritte</option><option value="32">32 Schritte</option><option value="64">64 Schritte</option></select>
             <button class="btn btn--sm" type="button" id="clear">Leeren</button>
         </div>
         <div class="bm" id="grid"></div>
@@ -50,10 +51,17 @@ XIRU.ready(function () {
         ['x...x...x...x...', '................', '..x...x...x...x.', '....x.......x...', '................', 'x..x..x...x..x..'],
         ['x...x...x...x...', '...x..x....x..x.', 'x.x.x.x.x.x.x.x.', '................', '......x.......x.', '................']
     ];
-    let pat = M.load('beat', null) || PRE[0].map(r => r.split('').map(c => c === 'x'));
+    let LEN = +M.load('beat-len', 16); if ([16, 32, 64].indexOf(LEN) < 0) LEN = 16;
+    const tile = (row, len) => Array.from({ length: len }, (_, i) => !!row[i % row.length]);   // 16er-Muster füllt längere Spur
+    const fit = (row, len) => { const b = row.slice(0, len); while (b.length < len) b.push(false); return b; };   // Nutzer-Muster: mit Stille auffüllen
+    let pat = (M.load('beat', null) || PRE[0].map(r => r.split('').map(c => c === 'x'))).map(r => fit(r, LEN));
     let ctx = null, playing = false, step = 0, next = 0, timer = null;
     const grid = $('#grid');
-    grid.innerHTML = INS.map((n, r) => '<div class="bm__name">' + n + '</div>' + Array.from({ length: 16 }, (_, s) => '<button type="button" class="bm__s' + (s % 4 === 0 ? ' is-beat' : '') + '" data-r="' + r + '" data-s="' + s + '" aria-label="' + n + ' Schritt ' + (s + 1) + '"></button>').join('')).join('');
+    function build() {
+        grid.style.gridTemplateColumns = '4.6rem repeat(' + LEN + ', minmax(1.5rem, 1fr))';
+        grid.innerHTML = INS.map((n, r) => '<div class="bm__name">' + n + '</div>' + Array.from({ length: LEN }, (_, s) => '<button type="button" class="bm__s' + (s % 4 === 0 ? ' is-beat' : '') + '" data-r="' + r + '" data-s="' + s + '" aria-label="' + n + ' Schritt ' + (s + 1) + '"></button>').join('')).join('');
+        paint();
+    }
     function paint() { X.$$('.bm__s', grid).forEach(b => b.classList.toggle('is-on', pat[b.dataset.r][b.dataset.s])); }
     grid.addEventListener('click', e => { const b = e.target.closest('.bm__s'); if (!b) return; pat[b.dataset.r][b.dataset.s] = !pat[b.dataset.r][b.dataset.s]; M.save('beat', pat); paint(); if (pat[b.dataset.r][b.dataset.s] && engine()) hit(+b.dataset.r, ctx.currentTime); });
     function engine() { if (ctx) return true; if (!gate.check()) return false; ctx = M.ctx(); return !!ctx; }
@@ -74,7 +82,7 @@ XIRU.ready(function () {
             const s = step; pat.forEach((row, r) => { if (row[s]) hit(r, next); });
             const delay = Math.max(0, (next - ctx.currentTime) * 1000);
             setTimeout(() => { X.$$('.bm__s.is-now', grid).forEach(b => b.classList.remove('is-now')); X.$$('.bm__s[data-s="' + s + '"]', grid).forEach(b => b.classList.add('is-now')); }, delay);
-            next += spb; step = (step + 1) % 16;
+            next += spb; step = (step + 1) % LEN;
         }
     }
     function toggle() {
@@ -85,10 +93,16 @@ XIRU.ready(function () {
     $('#play').addEventListener('click', toggle);
     document.addEventListener('keydown', e => { if (e.key === ' ' && !M.isTyping(e)) { e.preventDefault(); toggle(); } });
     $('#bpm').addEventListener('input', () => { $('#bpm-v').textContent = $('#bpm').value + ' BPM'; M.paintRange($('#bpm')); M.save('beat-bpm', +$('#bpm').value); });
-    $('#preset').addEventListener('change', e => { if (e.target.value === '') return; pat = PRE[+e.target.value].map(r => r.split('').map(c => c === 'x')); M.save('beat', pat); paint(); e.target.value = ''; });
+    $('#preset').addEventListener('change', e => { if (e.target.value === '') return; pat = PRE[+e.target.value].map(r => tile(r.split('').map(c => c === 'x'), LEN)); M.save('beat', pat); paint(); e.target.value = ''; });
     $('#clear').addEventListener('click', () => { pat = pat.map(r => r.map(() => false)); M.save('beat', pat); paint(); });
+    $('#len').addEventListener('change', e => {
+        const nl = +e.target.value; if (nl === LEN) return;
+        if (playing) toggle();
+        LEN = nl; M.save('beat-len', LEN); pat = pat.map(r => fit(r, LEN)); M.save('beat', pat); step = 0; build();
+    });
+    $('#len').value = String(LEN);
     $('#bpm').value = M.load('beat-bpm', 110); $('#bpm-v').textContent = $('#bpm').value + ' BPM';
-    paint(); M.paintRanges(document);
+    build(); M.paintRanges(document);
 });
 </script>
 </body>

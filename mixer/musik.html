@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Musik-Studio · Xiruprojekts</title>
+    <meta name="description" content="Die Songwerkstatt: Drums, Bass und Synth-Lead in einem Step-Sequencer, Patterns von 8 bis 64 Schritten zu ganzen Songs zusammenketten, Ambiente drunterlegen und als WAV exportieren – alles live im Browser.">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="css/mixer.css">
+    <link rel="stylesheet" href="../assets/css/themes/mixer.css">
+    <script src="../assets/js/site.js"></script>
+    <script src="../assets/js/core.js"></script>
+    <script src="js/mixer.js"></script>
+    <style>
+        .ms-bar { display: flex; flex-wrap: wrap; gap: .6rem 1rem; align-items: flex-end; }
+        .ms-bar .field { margin-bottom: 0; }
+        .ms-bar .field--sm { max-width: 8.5rem; }
+        .ms-tabs { display: flex; flex-wrap: wrap; gap: .4rem; margin: 1rem 0 .5rem; }
+        .ms-seq { overflow-x: auto; padding-bottom: .4rem; }
+        .ms-grid { display: grid; gap: 3px; width: max-content; min-width: 100%; }
+        .ms-row { display: contents; }
+        .ms-name { font: 700 .72rem var(--mono); color: var(--text-muted); align-self: center; padding-right: .5rem; white-space: nowrap; position: sticky; left: 0; background: var(--bg); z-index: 1; }
+        .ms-cell { width: 1.55rem; height: 1.4rem; border-radius: 4px; border: 1px solid var(--border-strong); background: var(--surface-2); cursor: pointer; padding: 0; }
+        .ms-cell.is-grp { background: color-mix(in srgb, var(--surface-2) 78%, var(--text)); }
+        .ms-cell.is-on { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 55%, transparent); }
+        .ms-cell.is-on.is-mel { background: var(--accent-2); border-color: var(--accent-2); box-shadow: 0 0 8px color-mix(in srgb, var(--accent-2) 55%, transparent); }
+        .ms-col-now { outline: 2px solid var(--warning); outline-offset: 1px; }
+        .ms-patrow { display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; }
+        .ms-pat { min-width: 2.1rem; }
+        .ms-pat.is-cur { outline: 2px solid var(--accent); }
+        .ms-song { display: flex; flex-wrap: wrap; gap: .3rem; align-items: center; }
+        .ms-slot { width: 2.4rem; text-align: center; padding: .25rem; font-weight: 800; }
+        .ms-slot.is-play { outline: 2px solid var(--warning); }
+        .ms-amb { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: .5rem 1rem; }
+        .ms-amb .field { margin-bottom: .2rem; }
+        .ms-amb label { display: flex; justify-content: space-between; }
+        .pianokey { position: sticky; left: 0; }
+        .pianokey.blk::after { content: "♭"; color: var(--text-faint); font-size: .7em; }
+    </style>
+</head>
+<body class="theme-mixer">
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">🎛 Mixer-Studio</span>
+        <h1>Musik-Studio</h1>
+        <p class="lead">Die Songwerkstatt: Setz Drums, Bass und Synth-Lead zusammen, bau aus mehreren Patterns einen ganzen Song,
+            leg Ambiente wie ein Lagerfeuer drunter – und exportier das Ganze als Audiodatei. Alle Klänge entstehen live im Browser.</p>
+    </header>
+    <div id="sound-off" hidden></div>
+
+    <section class="card">
+        <div class="ms-bar">
+            <button class="btn btn--primary" type="button" id="play">▶ Play <kbd>Leertaste</kbd></button>
+            <div class="field field--sm"><label>Modus</label>
+                <select class="select" id="mode"><option value="pattern">Pattern (Schleife)</option><option value="song">Ganzer Song</option></select></div>
+            <div class="field bm-bpm" style="flex:1 1 11rem"><label for="bpm">Tempo <span id="bpm-v"></span></label><input type="range" class="mx-range" id="bpm" min="60" max="190" value="110"></div>
+            <div class="field field--sm"><label for="len">Schritte</label>
+                <select class="select" id="len"><option>8</option><option selected>16</option><option>32</option><option>64</option></select></div>
+            <div class="field field--sm"><label for="swing">Swing <span id="swing-v"></span></label><input type="range" class="mx-range" id="swing" min="0" max="55" value="0"></div>
+            <div class="field field--sm"><label for="master">Lautstärke <span id="master-v"></span></label><input type="range" class="mx-range" id="master" min="0" max="100" value="90"></div>
+        </div>
+        <div class="ms-bar mt-2">
+            <div class="field field--sm"><label for="key">Tonart</label>
+                <select class="select" id="key"></select></div>
+            <div class="field field--sm"><label for="scale">Skala</label>
+                <select class="select" id="scale"></select></div>
+            <select class="select bm-sel" id="preset" aria-label="Vorlage"><option value="">Vorlage laden …</option></select>
+            <button class="btn btn--sm" type="button" id="clearpat">Pattern leeren</button>
+        </div>
+    </section>
+
+    <section class="card mt-3">
+        <h2 class="mb-1">Patterns</h2>
+        <p class="small muted mb-2">Jedes Pattern ist ein kurzer Baustein. Weiter unten reihst du sie zu einem Song.</p>
+        <div class="ms-patrow" id="patrow"></div>
+
+        <div class="ms-tabs" id="insttabs"></div>
+        <div class="ms-seq"><div class="ms-grid" id="grid"></div></div>
+        <p class="small muted mt-1" id="inst-hint"></p>
+    </section>
+
+    <section class="card mt-3">
+        <h2 class="mb-1">Song-Abfolge</h2>
+        <p class="small muted mb-2">Klick auf einen Platz, um das nächste Pattern zu wählen – so wird aus Bausteinen ein Lied. „Ganzer Song“ oben spielt alles ab.</p>
+        <div class="ms-song" id="song"></div>
+        <div class="row mt-2">
+            <button class="btn btn--primary" type="button" id="song-play">▶ Ganzen Song anhören</button>
+            <button class="btn btn--sm" type="button" id="song-add">+ Platz</button>
+            <button class="btn btn--sm" type="button" id="song-del">− Platz</button>
+            <span class="small muted" id="song-info"></span>
+        </div>
+        <p class="small muted mt-1">Spielt die ganze Abfolge einmal durch – genau so, wie sie exportiert wird (inkl. Ambiente). So hörst du den Song vor dem Export.</p>
+    </section>
+
+    <section class="card mt-3">
+        <h2 class="mb-1">Ambiente drunter</h2>
+        <p class="small muted mb-2">Hintergrund-Klänge, die unter dem Beat mitlaufen – zum Beispiel ein Lagerfeuer beim Schlagzeug.</p>
+        <div class="ms-amb" id="amb"></div>
+    </section>
+
+    <section class="card mt-3">
+        <h2 class="mb-1">Speichern & Export</h2>
+        <div class="row">
+            <button class="btn" type="button" id="export">⬇ Als WAV exportieren</button>
+            <button class="btn btn--sm" type="button" id="save">Speichern</button>
+            <button class="btn btn--sm btn--ghost" type="button" id="reset">Zurücksetzen</button>
+            <span class="small muted" id="exp-info"></span>
+        </div>
+        <p class="small muted mt-2">Der Export nimmt immer die ganze <strong>Song-Abfolge</strong> (oben) auf – unabhängig vom Wiedergabe-Modus – rendert sie offline und lädt eine WAV-Datei herunter.
+            WAV ist verlustfrei und lässt sich in jedem Programm in MP3 oder MP4 umwandeln. Echtes MP4 direkt im Browser ginge nur mit einer
+            externen Bibliothek – die nutzt diese Seite bewusst nicht.</p>
+    </section>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU, M = X.Mixer, $ = s => X.$(s), $$ = (s, r) => X.$$(s, r);
+    const gate = M.soundGate('#sound-off');
+
+    /* ── Musiktheorie ──────────────────────────────────────────────────────── */
+    const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'H'];
+    const SCALES = {
+        'Moll': [0, 2, 3, 5, 7, 8, 10], 'Dur': [0, 2, 4, 5, 7, 9, 11],
+        'Moll-Pentatonik': [0, 3, 5, 7, 10], 'Dur-Pentatonik': [0, 2, 4, 7, 9], 'Dorisch': [0, 2, 3, 5, 7, 9, 10]
+    };
+    const ROWS = 13;                       // Tonhöhen-Zeilen je Melodiespur
+    const ROOT = { bass: 36, lead: 60 };   // C2 bzw. C5 als unterster Ton
+    const midiFreq = m => 440 * Math.pow(2, (m - 69) / 12);
+    function pitches(inst) {               // aufsteigende MIDI-Noten aus Tonart + Skala
+        const sc = SCALES[song.scale] || SCALES.Moll, out = [];
+        let oct = 0, i = 0;
+        while (out.length < ROWS) { out.push(ROOT[inst] + song.key + 12 * oct + sc[i]); if (++i >= sc.length) { i = 0; oct++; } }
+        return out;
+    }
+
+    /* ── Instrumente ───────────────────────────────────────────────────────── */
+    const DRUMS = [['kick', 'Kick'], ['snare', 'Snare'], ['hihat', 'Hi-Hat'], ['openhat', 'Open-Hat'], ['clap', 'Clap'], ['tom', 'Tom']];
+    const INSTS = [['drums', '🥁 Drums'], ['bass', '🎸 Bass'], ['lead', '🎹 Lead']];
+
+    /* ── Datenmodell ───────────────────────────────────────────────────────── */
+    const PAT_NAMES = ['A', 'B', 'C', 'D', 'E', 'F'];
+    function emptyPattern(name, len) {
+        const d = {}; DRUMS.forEach(([id]) => d[id] = Array(len).fill(false));
+        return { name: name, drums: d, bass: Array(len).fill(null), lead: Array(len).fill(null) };
+    }
+    function defaultSong() {
+        return {
+            bpm: 110, len: 16, swing: 0, master: 90, key: 0, scale: 'Moll',
+            cur: 0, inst: 'drums', mode: 'pattern',
+            patterns: [emptyPattern('A', 16)],
+            song: [0],
+            amb: { fire: 0, rain: 0, wind: 0, sea: 0, crickets: 0, vinyl: 0 }
+        };
+    }
+    let song = normalize(M.load('musik', null)) || demoSong();
+
+    function normalize(s) {
+        if (!s || !s.patterns) return null;
+        s.amb = Object.assign({ fire: 0, rain: 0, wind: 0, sea: 0, crickets: 0, vinyl: 0 }, s.amb || {});
+        s.patterns.forEach(p => { DRUMS.forEach(([id]) => { if (!p.drums[id]) p.drums[id] = Array(s.len).fill(false); }); if (!p.bass) p.bass = Array(s.len).fill(null); if (!p.lead) p.lead = Array(s.len).fill(null); });
+        return s;
+    }
+
+    /* ── Audio-Synthese (für Live und Offline gleich) ──────────────────────── */
+    function master(ctx) {
+        const out = ctx.createGain(); out.gain.value = song.master / 100;
+        const comp = ctx.createDynamicsCompressor();
+        comp.threshold.value = -14; comp.knee.value = 24; comp.ratio.value = 3; comp.attack.value = .004; comp.release.value = .18;
+        const conv = ctx.createConvolver(); conv.buffer = M.impulse(ctx, 1.8, 2.8);
+        const rev = ctx.createGain(); rev.gain.value = 1; const revRet = ctx.createGain(); revRet.gain.value = .35;
+        out.connect(comp); comp.connect(ctx.destination);
+        rev.connect(conv); conv.connect(revRet); revRet.connect(comp);
+        return { ctx, out, rev };
+    }
+    function env(g, t, peak, dur, rel) { g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + .004); g.gain.exponentialRampToValueAtTime(.0001, t + (dur || .2) + (rel || 0)); }
+    function tone(B, t, f0, f1, d, type, vol, dest) { const o = B.ctx.createOscillator(), g = B.ctx.createGain(); o.type = type; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(Math.max(1, f1), t + d); o.connect(g); g.connect(dest || B.out); env(g, t, vol, d); o.start(t); o.stop(t + d + .08); }
+    function noise(B, t, d, type, f, vol, dest) { const s = B.ctx.createBufferSource(); s.buffer = M.noise(B.ctx, 'white'); const fl = B.ctx.createBiquadFilter(), g = B.ctx.createGain(); fl.type = type; fl.frequency.value = f; s.connect(fl); fl.connect(g); g.connect(dest || B.out); env(g, t, vol, d); s.start(t, Math.random() * 2); s.stop(t + d + .08); }
+    function drum(B, id, t) {
+        if (id === 'kick') tone(B, t, 150, 40, .35, 'sine', .95);
+        else if (id === 'snare') { noise(B, t, .18, 'highpass', 1200, .5); tone(B, t, 220, 120, .1, 'triangle', .3); }
+        else if (id === 'hihat') noise(B, t, .05, 'highpass', 7000, .3);
+        else if (id === 'openhat') noise(B, t, .32, 'highpass', 7000, .22);
+        else if (id === 'clap') [0, .012, .026].forEach(o => noise(B, t + o, .09, 'bandpass', 1600, .45));
+        else if (id === 'tom') tone(B, t, 200, 90, .3, 'sine', .6);
+    }
+    function melody(B, inst, freq, t, dur) {
+        const o = B.ctx.createOscillator(), o2 = B.ctx.createOscillator(), g = B.ctx.createGain(), fl = B.ctx.createBiquadFilter();
+        fl.type = 'lowpass'; fl.Q.value = 6;
+        if (inst === 'bass') { o.type = 'sawtooth'; o2.type = 'square'; fl.frequency.setValueAtTime(900, t); fl.frequency.exponentialRampToValueAtTime(220, t + dur); }
+        else { o.type = 'sawtooth'; o2.type = 'sawtooth'; fl.frequency.setValueAtTime(5000, t); fl.frequency.exponentialRampToValueAtTime(1400, t + dur); }
+        o.frequency.value = freq; o2.frequency.value = freq; o2.detune.value = inst === 'bass' ? -8 : 7;
+        const peak = inst === 'bass' ? .5 : .32;
+        g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + .008); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+        o.connect(fl); o2.connect(fl); fl.connect(g); g.connect(B.out);
+        if (inst === 'lead') g.connect(B.rev);
+        o.start(t); o2.start(t); o.stop(t + dur + .05); o2.stop(t + dur + .05);
+    }
+    function triggerStep(B, pat, pos, t, spb) {
+        DRUMS.forEach(([id]) => { if (pat.drums[id][pos]) drum(B, id, t); });
+        const bp = pitches('bass'), lp = pitches('lead');
+        if (pat.bass[pos] != null) melody(B, 'bass', midiFreq(bp[pat.bass[pos]]), t, spb * 0.92);
+        if (pat.lead[pos] != null) melody(B, 'lead', midiFreq(lp[pat.lead[pos]]), t, spb * 0.55);
+    }
+
+    /* ── Ambiente-Betten (Live + Offline) ──────────────────────────────────── */
+    const AMB = [
+        ['fire', '🔥 Lagerfeuer'], ['rain', '🌧 Regen'], ['wind', '🌬 Wind'],
+        ['sea', '🌊 Meer'], ['crickets', '🦗 Grillen'], ['vinyl', '💿 Vinyl-Knistern']
+    ];
+    function bed(B, id, startT, dur) {
+        const ctx = B.ctx, g = ctx.createGain(); g.connect(B.out);
+        const bq = (type, f, q) => { const b = ctx.createBiquadFilter(); b.type = type; b.frequency.value = f; if (q != null) b.Q.value = q; return b; };
+        const src = kind => { const s = ctx.createBufferSource(); s.buffer = M.noise(ctx, kind); s.loop = true; return s; };
+        const made = [g];
+        function chain() { for (let i = 0; i < arguments.length - 1; i++) arguments[i].connect(arguments[i + 1]); }
+        if (id === 'rain') { const n = src('pink'); chain(n, bq('highpass', 500), bq('lowpass', 7000), g); n.start(startT); made.push(n); }
+        else if (id === 'wind') { const n = src('pink'), bp = bq('bandpass', 500, .8), vg = ctx.createGain(); vg.gain.value = .6; const lfo = ctx.createOscillator(), la = ctx.createGain(); lfo.frequency.value = .12; la.gain.value = .4; lfo.connect(la); la.connect(vg.gain); chain(n, bp, vg, g); n.start(startT); lfo.start(startT); made.push(n, lfo); }
+        else if (id === 'sea') { const n = src('brown'), lp = bq('lowpass', 650), vg = ctx.createGain(); vg.gain.value = .5; const lfo = ctx.createOscillator(), la = ctx.createGain(); lfo.frequency.value = .16; la.gain.value = .42; lfo.connect(la); la.connect(vg.gain); chain(n, lp, vg, g); n.start(startT); lfo.start(startT); made.push(n, lfo); }
+        else if (id === 'fire') { const n = src('brown'), lp = bq('lowpass', 800), bg = ctx.createGain(); bg.gain.value = .5; chain(n, lp, bg, g); n.start(startT); made.push(n); }
+        else if (id === 'vinyl') { const n = src('pink'), lp = bq('lowpass', 3500), bg = ctx.createGain(); bg.gain.value = .12; chain(n, lp, bg, g); n.start(startT); made.push(n); }
+        // diskrete Ereignisse (Knistern/Zirpen/Klicks) im Fenster [t0,t1) planen
+        function fill(t0, t1) {
+            if (id === 'fire') for (let t = t0; t < t1; t += .03 + Math.random() * .14) { const b = ctx.createBufferSource(); b.buffer = M.noise(ctx, 'white'); const f = bq('bandpass', 1200 + Math.random() * 2500, 3), eg = ctx.createGain(); b.connect(f); f.connect(eg); eg.connect(g); const v = .05 + Math.random() * .22; env(eg, t, v, .02 + Math.random() * .05); b.start(t, Math.random() * 2); b.stop(t + .12); }
+            if (id === 'crickets') for (let t = t0; t < t1; t += .25) { if (Math.random() < .5) continue; for (let k = 0; k < 3; k++) { const o = ctx.createOscillator(), eg = ctx.createGain(); o.type = 'square'; o.frequency.value = 4300 + Math.random() * 500; o.connect(eg); eg.connect(g); env(eg, t + k * .03, .05, .02); o.start(t + k * .03); o.stop(t + k * .03 + .05); } }
+            if (id === 'vinyl') for (let t = t0; t < t1; t += .04 + Math.random() * .2) { const b = ctx.createBufferSource(); b.buffer = M.noise(ctx, 'white'); const eg = ctx.createGain(); b.connect(eg); eg.connect(g); env(eg, t, .06 + Math.random() * .12, .006); b.start(t, Math.random() * 2); b.stop(t + .03); }
+        }
+        if (dur != null) fill(startT, startT + dur);   // Offline: alles auf einmal
+        return { gain: g, fill, made, stop() { made.forEach(n => { try { n.stop ? n.stop() : n.disconnect(); } catch (e) {} }); } };
+    }
+
+    /* ── Transport (Live) ──────────────────────────────────────────────────── */
+    let liveCtx = null, B = null, playing = false, absStep = 0, nextT = 0, timer = null, liveBeds = {}, bedFilled = 0;
+    let playMode = 'pattern', stopAtEnd = false, endScheduled = false;
+    function engine() { if (liveCtx) return true; if (!gate.check()) return false; liveCtx = M.ctx(); if (!liveCtx) return false; return true; }
+    function patFor(step) { if (playMode === 'pattern') return song.patterns[song.cur]; const pi = Math.floor(step / song.len) % song.song.length; return song.patterns[song.song[pi]]; }
+    function spb() { return 60 / song.bpm / 4; }
+    function sched() {
+        const step = spb(), horizon = liveCtx.currentTime + .14, total = song.song.length * song.len;
+        while (nextT < horizon) {
+            if (stopAtEnd && playMode === 'song' && absStep >= total) {
+                if (!endScheduled) { endScheduled = true; setTimeout(() => { if (playing) stop(); }, Math.max(0, (nextT - liveCtx.currentTime) * 1000) + 600); }
+                break;
+            }
+            const pos = absStep % song.len, pat = patFor(absStep);
+            const sw = (pos % 2 === 1) ? step * song.swing / 100 : 0;
+            triggerStep(B, pat, pos, nextT + sw, step);
+            const songPi = Math.floor(absStep / song.len) % song.song.length;
+            const delay = Math.max(0, (nextT - liveCtx.currentTime) * 1000);
+            const showPat = (playMode === 'song') ? song.song[songPi] : song.cur;
+            setTimeout(() => highlight(pos, showPat, songPi), delay);
+            absStep++; nextT += step;
+        }
+        // Ambiente nachfüllen
+        AMB.forEach(([id]) => { if (liveBeds[id]) liveBeds[id].fill(bedFilled, horizon + .3); });
+        bedFilled = horizon + .3;
+    }
+    function startBeds() {
+        AMB.forEach(([id]) => { if (liveBeds[id]) { liveBeds[id].stop(); delete liveBeds[id]; } const v = song.amb[id]; if (v > 0) { const h = bed(B, id, liveCtx.currentTime + .05); h.gain.gain.value = v / 100 * 0.9; liveBeds[id] = h; } });
+        bedFilled = liveCtx.currentTime;
+    }
+    function setBtns() {
+        $('#play').innerHTML = playing ? '⏸ Stopp <kbd>Leertaste</kbd>' : '▶ Play <kbd>Leertaste</kbd>';
+        const sp = $('#song-play'); if (sp) sp.innerHTML = playing ? '⏸ Stopp' : '▶ Ganzen Song anhören';
+    }
+    function start(opts) {
+        opts = opts || {};
+        if (playing) return stop();
+        if (!engine()) return;
+        playMode = opts.mode || song.mode; stopAtEnd = !!opts.once; endScheduled = false;
+        B = master(liveCtx); playing = true; absStep = 0; nextT = liveCtx.currentTime + .08;
+        startBeds(); timer = setInterval(sched, 25); sched();
+        setBtns();
+        X.once('mx-musik', 10, 'Erster Song');
+    }
+    function play() { start({}); }
+    function playSong() { start({ mode: 'song', once: true }); }
+    function stop() {
+        playing = false; clearInterval(timer);
+        AMB.forEach(([id]) => { if (liveBeds[id]) { liveBeds[id].stop(); delete liveBeds[id]; } });
+        if (B) { try { B.out.disconnect(); } catch (e) {} B = null; }
+        setBtns();
+        $$('.ms-col-now').forEach(c => c.classList.remove('ms-col-now'));
+        $$('.ms-slot.is-play').forEach(s => s.classList.remove('is-play'));
+    }
+    function highlight(pos, patIdx, songPi) {
+        $$('.ms-col-now').forEach(c => c.classList.remove('ms-col-now'));
+        if (patIdx === song.cur) $$('.ms-cell[data-s="' + pos + '"]').forEach(c => c.classList.add('ms-col-now'));
+        $$('.ms-slot').forEach((s, i) => s.classList.toggle('is-play', playMode === 'song' && i === songPi));
+    }
+
+    /* ── Oberfläche ────────────────────────────────────────────────────────── */
+    function selOpts(el, arr, val) { el.innerHTML = arr.map(o => '<option value="' + o[0] + '"' + (o[0] == val ? ' selected' : '') + '>' + o[1] + '</option>').join(''); }
+    // Tonart + Skala
+    $('#key').innerHTML = NOTE_NAMES.map((n, i) => '<option value="' + i + '"' + (i === song.key ? ' selected' : '') + '>' + n + '</option>').join('');
+    $('#scale').innerHTML = Object.keys(SCALES).map(n => '<option' + (n === song.scale ? ' selected' : '') + '>' + n + '</option>').join('');
+    // Instrument-Reiter
+    function drawTabs() { $('#insttabs').innerHTML = INSTS.map(([id, label]) => '<button class="chip' + (id === song.inst ? ' is-active' : '') + '" type="button" data-inst="' + id + '">' + label + '</button>').join(''); }
+    // Pattern-Reiter
+    function drawPats() {
+        $('#patrow').innerHTML = song.patterns.map((p, i) => '<button class="btn btn--sm ms-pat' + (i === song.cur ? ' is-cur' : '') + '" type="button" data-pat="' + i + '">' + X.esc(p.name) + '</button>').join('') +
+            (song.patterns.length < PAT_NAMES.length ? '<button class="btn btn--sm btn--ghost" type="button" id="pat-add">+ Pattern</button>' : '') +
+            (song.patterns.length > 1 ? '<button class="btn btn--sm btn--ghost" type="button" id="pat-dup">Duplizieren</button><button class="btn btn--sm btn--danger" type="button" id="pat-del">Pattern löschen</button>' : '');
+    }
+    // Sequencer-Gitter für aktuelles Pattern + Instrument
+    function drawGrid() {
+        const pat = song.patterns[song.cur], len = song.len, cols = '7.5rem repeat(' + len + ', 1.55rem)';
+        const grid = $('#grid'); grid.style.gridTemplateColumns = cols;
+        let html = '';
+        if (song.inst === 'drums') {
+            DRUMS.forEach(([id, name]) => {
+                html += '<div class="ms-name">' + name + '</div>';
+                for (let s = 0; s < len; s++) html += '<button class="ms-cell' + (s % 4 === 0 ? ' is-grp' : '') + (pat.drums[id][s] ? ' is-on' : '') + '" data-id="' + id + '" data-s="' + s + '" aria-label="' + name + ' ' + (s + 1) + '"></button>';
+            });
+            $('#inst-hint').textContent = 'Felder anklicken setzt Schläge. Jede 4. Spalte ist ein Taktviertel.';
+        } else {
+            const ps = pitches(song.inst), arr = pat[song.inst];
+            for (let r = ROWS - 1; r >= 0; r--) {
+                const name = NOTE_NAMES[((ps[r] % 12) + 12) % 12], blk = name.indexOf('#') >= 0;
+                html += '<div class="ms-name pianokey' + (blk ? ' blk' : '') + '">' + name + (Math.floor(ps[r] / 12) - 1) + '</div>';
+                for (let s = 0; s < len; s++) html += '<button class="ms-cell' + (s % 4 === 0 ? ' is-grp' : '') + (arr[s] === r ? ' is-on is-mel' : '') + '" data-row="' + r + '" data-s="' + s + '" aria-label="' + name + ' ' + (s + 1) + '"></button>';
+            }
+            $('#inst-hint').textContent = 'Pro Spalte klingt ein Ton. Nochmal klicken entfernt ihn. Höher = oben.';
+        }
+        grid.innerHTML = html;
+    }
+    // Song-Abfolge
+    function drawSong() {
+        $('#song').innerHTML = song.song.map((pi, i) => '<button class="btn btn--sm ms-slot" type="button" data-slot="' + i + '">' + X.esc(song.patterns[pi] ? song.patterns[pi].name : '?') + '</button>').join('');
+        $('#song-info').textContent = song.song.length + ' Plätze · ' + M.mmss(song.song.length * song.len * spb()) + ' lang';
+    }
+    // Ambiente-Regler
+    function drawAmb() {
+        $('#amb').innerHTML = AMB.map(([id, label]) => '<div class="field"><label for="amb-' + id + '">' + label + ' <span id="amb-' + id + '-v">' + song.amb[id] + '</span></label><input type="range" class="mx-range" id="amb-' + id + '" data-amb="' + id + '" min="0" max="100" value="' + song.amb[id] + '"></div>').join('');
+        M.paintRanges($('#amb'));
+    }
+    function drawAll() { drawTabs(); drawPats(); drawGrid(); drawSong(); drawAmb(); }
+
+    /* ── Ereignisse ────────────────────────────────────────────────────────── */
+    function save() { M.save('musik', song); }
+    // Gitter-Klicks
+    $('#grid').addEventListener('click', e => {
+        const c = e.target.closest('.ms-cell'); if (!c) return; const pat = song.patterns[song.cur], s = +c.dataset.s;
+        if (song.inst === 'drums') { const id = c.dataset.id; pat.drums[id][s] = !pat.drums[id][s]; if (pat.drums[id][s] && engine()) drum(B || (B = master(liveCtx)), id, liveCtx.currentTime); }
+        else { const r = +c.dataset.row, arr = pat[song.inst]; arr[s] = (arr[s] === r) ? null : r; if (arr[s] != null && engine()) melody(B || (B = master(liveCtx)), song.inst, midiFreq(pitches(song.inst)[r]), liveCtx.currentTime, .25); }
+        save(); drawGrid();
+    });
+    $('#insttabs').addEventListener('click', e => { const t = e.target.closest('[data-inst]'); if (!t) return; song.inst = t.dataset.inst; save(); drawTabs(); drawGrid(); });
+    $('#patrow').addEventListener('click', e => {
+        const t = e.target.closest('[data-pat]');
+        if (t) { song.cur = +t.dataset.pat; save(); drawPats(); drawGrid(); return; }
+        if (e.target.id === 'pat-add') { const i = song.patterns.length; song.patterns.push(emptyPattern(PAT_NAMES[i], song.len)); song.cur = i; }
+        else if (e.target.id === 'pat-dup') { const src = song.patterns[song.cur], c = JSON.parse(JSON.stringify(src)); c.name = PAT_NAMES[song.patterns.length]; song.patterns.push(c); song.cur = song.patterns.length - 1; }
+        else if (e.target.id === 'pat-del') { if (song.patterns.length <= 1) return; song.patterns.splice(song.cur, 1); song.patterns.forEach((p, i) => p.name = PAT_NAMES[i]); song.song = song.song.map(x => x >= song.patterns.length ? 0 : x); song.cur = Math.min(song.cur, song.patterns.length - 1); }
+        else return;
+        save(); drawPats(); drawGrid(); drawSong();
+    });
+    $('#song').addEventListener('click', e => { const t = e.target.closest('[data-slot]'); if (!t) return; const i = +t.dataset.slot; song.song[i] = (song.song[i] + 1) % song.patterns.length; save(); drawSong(); });
+    $('#song-add').addEventListener('click', () => { if (song.song.length >= 32) return; song.song.push(song.song[song.song.length - 1] || 0); if (song.mode !== 'song') { song.mode = 'song'; $('#mode').value = 'song'; } save(); drawSong(); });
+    $('#song-del').addEventListener('click', () => { if (song.song.length <= 1) return; song.song.pop(); save(); drawSong(); });
+    $('#amb').addEventListener('input', e => { const el = e.target.closest('[data-amb]'); if (!el) return; const id = el.dataset.amb; song.amb[id] = +el.value; $('#amb-' + id + '-v').textContent = el.value; if (liveBeds[id]) liveBeds[id].gain.gain.setTargetAtTime(+el.value / 100 * 0.9, liveCtx.currentTime, .05); else if (playing && +el.value > 0 && B) { const h = bed(B, id, liveCtx.currentTime + .03); h.gain.gain.value = +el.value / 100 * 0.9; h.fill(liveCtx.currentTime, liveCtx.currentTime + .4); liveBeds[id] = h; } save(); });
+
+    // Transport-Regler
+    $('#play').addEventListener('click', play);
+    $('#song-play').addEventListener('click', playSong);
+    document.addEventListener('keydown', e => { if (e.key === ' ' && !M.isTyping(e)) { e.preventDefault(); play(); } });
+    $('#mode').addEventListener('change', e => { song.mode = e.target.value; save(); });
+    $('#bpm').addEventListener('input', () => { song.bpm = +$('#bpm').value; $('#bpm-v').textContent = song.bpm + ' BPM'; M.paintRange($('#bpm')); drawSong(); save(); });
+    $('#swing').addEventListener('input', () => { song.swing = +$('#swing').value; $('#swing-v').textContent = song.swing + ' %'; M.paintRange($('#swing')); save(); });
+    $('#master').addEventListener('input', () => { song.master = +$('#master').value; $('#master-v').textContent = song.master + ' %'; M.paintRange($('#master')); if (B) B.out.gain.setTargetAtTime(song.master / 100, liveCtx.currentTime, .03); save(); });
+    $('#len').addEventListener('change', e => { setLen(+e.target.value); });
+    function setLen(len) {
+        const old = song.len; if (len === old) return;
+        song.patterns.forEach(p => {
+            DRUMS.forEach(([id]) => p.drums[id] = resize(p.drums[id], len, false));
+            p.bass = resize(p.bass, len, null); p.lead = resize(p.lead, len, null);
+        });
+        song.len = len; save(); drawGrid(); drawSong();
+    }
+    function resize(a, len, fill) { const b = a.slice(0, len); while (b.length < len) b.push(fill); return b; }
+    $('#key').addEventListener('change', e => { song.key = +e.target.value; save(); if (song.inst !== 'drums') drawGrid(); });
+    $('#scale').addEventListener('change', e => { song.scale = e.target.value; save(); if (song.inst !== 'drums') drawGrid(); });
+    $('#clearpat').addEventListener('click', () => { song.patterns[song.cur] = emptyPattern(PAT_NAMES[song.cur], song.len); save(); drawGrid(); });
+    $('#reset').addEventListener('click', () => {
+        const m = X.modal('<h2>Alles zurücksetzen?</h2><p>Dein Song wird gelöscht und durch das Beispiel ersetzt.</p><div class="row"><button class="btn btn--danger" type="button" data-yes>Ja, zurücksetzen</button><button class="btn btn--ghost" type="button" data-close>Abbrechen</button></div>');
+        m.el.querySelector('[data-yes]').addEventListener('click', () => { song = demoSong(); save(); applySong(); m.close(); });
+    });
+    $('#save').addEventListener('click', () => { save(); X.toast('Gespeichert', 'Dein Song ist im Browser gesichert.', { icon: '💾', time: 2000 }); });
+
+    // Vorlagen
+    const PRESETS = { 'Leeres Pattern': null, 'Beispiel-Song': demoSong, 'Lagerfeuer-Groove': campfireSong, 'Techno': technoSong };
+    $('#preset').innerHTML = '<option value="">Vorlage laden …</option>' + Object.keys(PRESETS).filter(k => PRESETS[k]).map(k => '<option>' + k + '</option>').join('');
+    $('#preset').addEventListener('change', e => { const f = PRESETS[e.target.value]; if (f) { song = f(); save(); applySong(); } e.target.value = ''; });
+
+    function applySong() {
+        if (playing) stop();
+        $('#bpm').value = song.bpm; $('#bpm-v').textContent = song.bpm + ' BPM';
+        $('#swing').value = song.swing; $('#swing-v').textContent = song.swing + ' %';
+        $('#master').value = song.master; $('#master-v').textContent = song.master + ' %';
+        $('#len').value = song.len; $('#mode').value = song.mode;
+        $('#key').value = song.key; $('#scale').value = song.scale;
+        M.paintRanges(document); drawAll();
+    }
+
+    /* ── WAV-Export (Offline-Render) ───────────────────────────────────────── */
+    $('#export').addEventListener('click', async () => {
+        if (!window.OfflineAudioContext && !window.webkitOfflineAudioContext) { X.toast('Export nicht möglich', 'Dein Browser kann nicht offline rendern.', { type: 'error', icon: '⚠' }); return; }
+        const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+        const sr = 44100, step = spb();
+        const steps = song.song.length * song.len;   // Export = IMMER die ganze Song-Abfolge
+        const dur = steps * step + 2.2;   // +Ausklang
+        const info = $('#exp-info'); info.textContent = 'rendere …';
+        try {
+            const ctx = new OAC(2, Math.ceil(sr * dur), sr);
+            const OB = master(ctx);
+            for (let i = 0; i < steps; i++) { const pos = i % song.len, pi = Math.floor(i / song.len) % song.song.length, pat = song.patterns[song.song[pi]]; const sw = (pos % 2 === 1) ? step * song.swing / 100 : 0; triggerStep(OB, pat, pos, i * step + 0.05 + sw, step); }
+            AMB.forEach(([id]) => { if (song.amb[id] > 0) { const h = bed(OB, id, 0.02, dur); h.gain.gain.value = song.amb[id] / 100 * 0.9; } });
+            const rendered = await ctx.startRendering();
+            M.download('xiru-song.wav', audioBufferToWav(rendered));
+            info.textContent = 'fertig: xiru-song.wav (' + M.mmss(dur) + ')';
+            X.egg('x-produzent'); X.confetti && X.confetti();
+        } catch (err) { console.error(err); info.textContent = 'Fehler beim Rendern.'; X.toast('Export fehlgeschlagen', String(err && err.message || err), { type: 'error', icon: '⚠' }); }
+    });
+    function audioBufferToWav(buf) {
+        const nch = buf.numberOfChannels, len = buf.length, sr = buf.sampleRate, ba = nch * 2, dataLen = len * ba;
+        const ab = new ArrayBuffer(44 + dataLen), dv = new DataView(ab); let p = 0;
+        const ws = s => { for (let i = 0; i < s.length; i++) dv.setUint8(p++, s.charCodeAt(i)); };
+        const u32 = v => { dv.setUint32(p, v, true); p += 4; }, u16 = v => { dv.setUint16(p, v, true); p += 2; };
+        ws('RIFF'); u32(36 + dataLen); ws('WAVE'); ws('fmt '); u32(16); u16(1); u16(nch); u32(sr); u32(sr * ba); u16(ba); u16(16); ws('data'); u32(dataLen);
+        const ch = []; for (let c = 0; c < nch; c++) ch.push(buf.getChannelData(c));
+        for (let i = 0; i < len; i++) for (let c = 0; c < nch; c++) { let s = Math.max(-1, Math.min(1, ch[c][i])); dv.setInt16(p, s < 0 ? s * 0x8000 : s * 0x7fff, true); p += 2; }
+        return new Blob([ab], { type: 'audio/wav' });
+    }
+
+    /* ── Beispiel-Songs ────────────────────────────────────────────────────── */
+    function fromRows(rows) { return rows.map(r => r.split('').map(c => c === 'x')); }
+    function demoSong() {
+        const s = defaultSong(); s.bpm = 112; s.scale = 'Moll'; s.key = 9; /* A-Moll */
+        s.patterns = [emptyPattern('A', 16), emptyPattern('B', 16)];
+        const d0 = fromRows(['x...x...x...x...', '....x.......x...', 'x.x.x.x.x.x.x.x.', '................', '................', '..............x.']);
+        DRUMS.forEach(([id], r) => s.patterns[0].drums[id] = d0[r].slice());
+        s.patterns[0].bass = [0, null, null, 0, null, null, 3, null, 4, null, null, 4, null, 2, null, null];
+        s.patterns[0].lead = [null, null, 7, null, 6, null, null, 5, null, null, 4, null, null, 6, null, 7];
+        const d1 = fromRows(['x...x...x..x.x..x', '....x.......x...', 'x.x.x.x.x.x.x.xxx', '....x.......x...', '................', '................'].map(r => r.slice(0, 16)));
+        DRUMS.forEach(([id], r) => s.patterns[1].drums[id] = d1[r].slice());
+        s.patterns[1].bass = [0, 0, null, 2, null, 2, 3, null, 4, 4, null, 5, null, 4, 2, null];
+        s.song = [0, 0, 1, 0]; s.mode = 'song'; s.amb.vinyl = 20;
+        return s;
+    }
+    function campfireSong() {
+        const s = defaultSong(); s.bpm = 96; s.scale = 'Moll-Pentatonik'; s.key = 4; /* E */
+        const d = fromRows(['x.......x.......', '....x.......x...', '..x...x...x...x.', '................', '................', '................']);
+        DRUMS.forEach(([id], r) => s.patterns[0].drums[id] = d[r].slice());
+        s.patterns[0].bass = [0, null, null, null, 2, null, null, null, 3, null, null, null, 2, null, null, null];
+        s.patterns[0].lead = [null, null, 4, null, null, 5, null, 4, null, null, 2, null, null, null, null, null];
+        s.amb.fire = 70; s.amb.crickets = 40; s.amb.wind = 18; s.mode = 'pattern';
+        return s;
+    }
+    function technoSong() {
+        const s = defaultSong(); s.bpm = 128; s.len = 16; s.scale = 'Moll'; s.key = 0;
+        const d = fromRows(['x...x...x...x...', '................', '..x...x...x...x.', '....x.......x...', '................', 'x..x..x...x..x..']);
+        DRUMS.forEach(([id], r) => s.patterns[0].drums[id] = d[r].slice());
+        s.patterns[0].bass = [0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 2, 2, 2, 2];
+        s.amb.rain = 12; s.mode = 'pattern';
+        return s;
+    }
+
+    /* ── Start ─────────────────────────────────────────────────────────────── */
+    applySong();
+    addEventListener('blur', () => { if (playing) stop(); });
+});
+</script>
+</body>
+</html>

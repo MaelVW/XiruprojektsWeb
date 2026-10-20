@@ -86,6 +86,10 @@ XIRU.pages = [
     { p: 'hardware/code/lua.html', t: 'Lua lernen', r: 'hardware', d: 'Kurs und Cheat-Sheet: die Skriptsprache von Roblox.' },
     { p: 'hardware/code/powershell.html', t: 'PowerShell lernen', r: 'hardware', d: 'Kurs und Cheat-Sheet: Windows automatisieren wie Floppy Hub.' },
     { p: 'hardware/code/bash.html', t: 'Bash lernen', r: 'hardware', d: 'Kurs und Cheat-Sheet: Linux, macOS und Raspberry Pi steuern.' },
+    { p: 'hardware/code/python-pro.html', t: 'Python Fortgeschritten', r: 'hardware', d: 'Aufbaukurs: Comprehensions, OOP, Dekoratoren, Generatoren, Pakete und Tests.' },
+    { p: 'hardware/code/csharp-pro.html', t: 'C# Fortgeschritten', r: 'hardware', d: 'Aufbaukurs: LINQ, Generics, Interfaces, Records, Delegates, async/await.' },
+    { p: 'hardware/code/glossar.html', t: 'Glossar & Shortcuts', r: 'hardware', d: 'Windows-10/11-Tastenkürzel und ein Steckbrief besonderer Programmiersprachen.' },
+    { p: 'hardware/code/netzwerk.html', t: 'Netzwerke & IT', r: 'hardware', d: 'IT-Grundlagen: Netzwerke, IP, Router, WLAN, DNS und das Internet – Schritt für Schritt.' },
     /* GEN:HW START – automatisch erzeugt von tools/build_hardware.py, nicht von Hand ändern */
     { p: 'hardware/cpu/ryzen-7-1800x.html', t: "Ryzen 7 1800X", r: 'hardware', d: "Prozessor · 8 Kerne · 2017", hw: 'cpu' },
     { p: 'hardware/cpu/ryzen-5-3600.html', t: "Ryzen 5 3600", r: 'hardware', d: "Prozessor · 6 Kerne · 2019", hw: 'cpu' },

@@ -35,6 +35,15 @@ XIRU.hwPreise = {
         'core-ultra-5-245k': 265,
         'core-ultra-7-265k': 379,
         'core-ultra-9-285k': 579,
+        'ryzen-5-5600': 115,
+        'ryzen-7-5700x3d': 229,
+        'ryzen-7-7700x': 309,
+        'ryzen-9-7900x': 379,
+        'ryzen-9-7950x3d': 619,
+        'ryzen-7-8700g': 299,
+        'core-i5-12600k': 189,
+        'core-i5-13400f': 179,
+        'core-i9-12900k': 279,
 
         // Grafikkarten
         'rtx-3060': 289,
@@ -52,20 +61,29 @@ XIRU.hwPreise = {
         'rx-7900-xtx': 949,
         'rx-9070': 589,
         'rx-9070-xt': 689,
-        'arc-b580': 299
+        'arc-b580': 299,
+        'arc-a770': 289,
+        'rtx-3070': 349,
+        'rtx-3060-ti': 299,
+        'rtx-4080': 999,
+        'rtx-4060-ti': 429,
+        'rtx-5060': 399,
+        'rx-6600': 199,
+        'rx-7700-xt': 399,
+        'rx-7900-xt': 749
     },
 
     board: { Einsteiger: 95, Mittelklasse: 185, Oberklasse: 320 },
     ram: {
-        'ddr4-32': 75,
-        'ddr5-32': 105,
-        'ddr5-64': 199
+        'ddr4-32': 589,
+        'ddr5-32': 699,
+        'ddr5-64': 1399
     },
     ssd: {
-        'sata-1tb': 59,
-        'nvme4-1tb': 75,
-        'nvme4-2tb': 135,
-        'nvme5-2tb': 205
+        'sata-1tb': 95,
+        'nvme4-1tb': 119,
+        'nvme4-2tb': 209,
+        'nvme5-2tb': 299
     },
     psu: {
         '550': 75,

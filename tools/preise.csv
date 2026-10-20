@@ -55,14 +55,14 @@ board,Einsteiger,95,Einsteiger-Board (z. B. A620 / B760)
 board,Mittelklasse,185,Mittelklasse-Board (z. B. B650 / B850 / B860)
 board,Oberklasse,320,Oberklasse-Board (z. B. X870 / Z890)
 # ── Arbeitsspeicher-Kits ──
-ram,ddr4-32,75,32 GB DDR4-3600 (2 × 16)
-ram,ddr5-32,105,32 GB DDR5-6000 (2 × 16)
-ram,ddr5-64,199,64 GB DDR5-6000 (2 × 32)
+ram,ddr4-32,589,32 GB DDR4-3600 (2 × 16)
+ram,ddr5-32,699,32 GB DDR5-6000 (2 × 16)
+ram,ddr5-64,1399,64 GB DDR5-6000 (2 × 32)
 # ── Datenträger ──
-ssd,sata-1tb,59,1 TB SATA-SSD
-ssd,nvme4-1tb,75,1 TB NVMe (PCIe 4.0)
-ssd,nvme4-2tb,135,2 TB NVMe (PCIe 4.0)
-ssd,nvme5-2tb,205,2 TB NVMe (PCIe 5.0)
+ssd,sata-1tb,95,1 TB SATA-SSD
+ssd,nvme4-1tb,119,1 TB NVMe (PCIe 4.0)
+ssd,nvme4-2tb,209,2 TB NVMe (PCIe 4.0)
+ssd,nvme5-2tb,299,2 TB NVMe (PCIe 5.0)
 # ── Netzteile nach Watt ──
 psu,550,75,550 W
 psu,650,90,650 W
@@ -75,3 +75,23 @@ case,matx,80,Micro-ATX-Tower
 case,atx-air,95,Midi-Tower (Airflow)
 case,atx-glass,130,Midi-Tower (Glasseite)
 case,big,180,Big-Tower
+# ── Nachträge: neue Prozessoren (Strassenpreise ca.) ──
+cpu,ryzen-5-5600,115,Ryzen 5 5600
+cpu,ryzen-7-5700x3d,229,Ryzen 7 5700X3D
+cpu,ryzen-7-7700x,309,Ryzen 7 7700X
+cpu,ryzen-9-7900x,379,Ryzen 9 7900X
+cpu,ryzen-9-7950x3d,619,Ryzen 9 7950X3D
+cpu,ryzen-7-8700g,299,Ryzen 7 8700G (APU)
+cpu,core-i5-12600k,189,Core i5-12600K
+cpu,core-i5-13400f,179,Core i5-13400F
+cpu,core-i9-12900k,279,Core i9-12900K
+# ── Nachträge: neue Grafikkarten (Strassenpreise ca.) ──
+gpu,rtx-3070,349,GeForce RTX 3070
+gpu,rtx-3060-ti,299,GeForce RTX 3060 Ti
+gpu,rtx-4080,999,GeForce RTX 4080 (16 GB)
+gpu,rtx-4060-ti,429,GeForce RTX 4060 Ti (8 GB)
+gpu,rtx-5060,399,GeForce RTX 5060 (8 GB)
+gpu,rx-6600,199,Radeon RX 6600
+gpu,rx-7700-xt,399,Radeon RX 7700 XT
+gpu,rx-7900-xt,749,Radeon RX 7900 XT
+gpu,arc-a770,289,Arc A770 (16 GB)

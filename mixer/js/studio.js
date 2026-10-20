@@ -10,7 +10,8 @@ XIRU.ready(function () {
         'mixer/namen.html': { i: '🔤', tc: 'var(--warning)', tags: ['7 Generatoren', 'Kofferwörter'] },
         'mixer/wesen.html': { i: '🐲', tc: 'var(--success)', tags: ['Pixel-Art', 'Bestiarium', 'PNG'] },
         'mixer/synth.html': { i: '🎹', tc: 'var(--accent)', tags: ['Ton', 'Keyboard', 'Oszilloskop'] },
-        'mixer/beat.html':  { i: '🥁', tc: 'var(--danger)', tags: ['Ton', '16 Schritte', 'Teilen-Code'] }
+        'mixer/beat.html':  { i: '🥁', tc: 'var(--danger)', tags: ['Ton', 'bis 64 Schritte', 'Vorlagen'] },
+        'mixer/musik.html': { i: '🎶', tc: 'var(--accent-2)', tags: ['Ton', 'Drums + Synth', 'Song-Abfolge', 'WAV-Export'] }
     };
     const pages = X.pages.filter(p => p.r === 'mixer' && p.p !== 'mixer/index.html');
     const nose = X.hasSkill('e2');

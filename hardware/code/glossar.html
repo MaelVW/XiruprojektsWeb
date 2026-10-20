@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Glossar & Shortcuts · Code-Bibliothek · Xiruprojekts</title>
+    <meta name="description" content="Nachschlagewerk: alle wichtigen Tastenkürzel für Windows 10 und Windows 11, und ein Steckbrief zu besonderen und ungewöhnlichen Programmiersprachen – von Rust über HolyC bis Brainfuck.">
+    <link rel="stylesheet" href="../../assets/css/main.css">
+    <link rel="stylesheet" href="../../assets/css/themes/hardware.css">
+    <link rel="stylesheet" href="css/code.css">
+    <script src="../../assets/js/site.js"></script>
+    <script src="../../assets/js/core.js"></script>
+    <style>
+        .gl-search { max-width: 460px; }
+        .kbd-table { width: 100%; }
+        .kbd-table td { vertical-align: top; }
+        .kbd-table td:first-child { white-space: nowrap; width: 1%; padding-right: 1.2rem; }
+        .keys kbd { font: 600 .8rem var(--mono); }
+        .keys .plus { color: var(--text-faint); margin: 0 .15rem; }
+        .badge-win11 { background: color-mix(in srgb, var(--accent-2) 20%, var(--surface-2)); color: var(--accent-2); border: 1px solid color-mix(in srgb, var(--accent-2) 45%, transparent); }
+        .langs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 1rem; }
+        .langc { border-left: 3px solid var(--lc, var(--accent)); }
+        .langc__head { display: flex; align-items: baseline; gap: .5rem; flex-wrap: wrap; }
+        .langc__icon { font: 800 1.1rem var(--mono); color: var(--lc, var(--accent)); }
+        .langc__meta { font-size: .78rem; color: var(--text-muted); margin: .3rem 0 .6rem; }
+        .langc ul { margin: .2rem 0 .6rem; padding-left: 1.1rem; }
+        .langc li { margin: .2rem 0; font-size: .92rem; }
+        .langc pre { background: var(--surface-3); border-radius: var(--radius-sm); padding: .6rem .7rem; overflow-x: auto; font: .8rem/1.4 var(--mono); margin: 0; }
+        .gl-empty { color: var(--text-muted); }
+    </style>
+</head>
+<body class="theme-hardware">
+<main class="content">
+    <header class="page-head">
+        <span class="eyebrow">⌨ Code-Bibliothek · Nachschlagen</span>
+        <h1>Glossar & Shortcuts</h1>
+        <p class="lead">Zwei Nachschlagewerke in einem: alle wichtigen <strong>Tastenkürzel für Windows 10 und 11</strong>,
+            und ein Steckbrief zu <strong>besonderen Programmiersprachen</strong> – damit du mitreden kannst, wenn jemand
+            von Rust, HolyC oder Brainfuck schwärmt.</p>
+    </header>
+
+    <div class="field gl-search">
+        <input class="input" type="search" id="q" placeholder="Suchen … (z. B. „Screenshot“, „Rust“, „virtueller Desktop“)" aria-label="Im Glossar suchen">
+    </div>
+
+    <div class="tabs mt-3" role="tablist">
+        <button class="tab" role="tab" data-t="keys" aria-selected="true">⌨ Windows-Shortcuts</button>
+        <button class="tab" role="tab" data-t="langs" aria-selected="false">🧪 Besondere Sprachen</button>
+    </div>
+
+    <section id="t-keys">
+        <p class="small muted mt-2">Die meisten Kürzel gelten in Windows 10 <em>und</em> 11. Unterschiede sind mit
+            <span class="badge badge-win11">Win 11</span> markiert. <kbd>Win</kbd> ist die Windows-Taste (Flaggensymbol).</p>
+        <div id="keys"></div>
+    </section>
+
+    <section id="t-langs" hidden>
+        <p class="small muted mt-2">Diese Sprachen begegnen dir selten im Alltag – aber jede erzählt etwas über das Programmieren.
+            Ein Steckbrief, ein paar Eckpunkte und ein Mini-Beispiel pro Sprache.</p>
+        <div class="langs-grid mt-2" id="langs"></div>
+    </section>
+
+    <div class="callout mt-4">Mehr lernen? Zurück zur <a href="index.html">Code-Bibliothek</a> mit Kursen zu C#, Python, Rust und mehr –
+        jeweils mit Cheat-Sheet als Word-Datei.</div>
+</main>
+<script>
+XIRU.ready(function () {
+    const X = XIRU, $ = s => X.$(s), esc = X.esc;
+
+    /* ── Tastenkürzel ──────────────────────────────────────────────────────── */
+    // [Tasten (mit + getrennt), Beschreibung, win11?]
+    const KEYS = [
+        { g: 'Täglich gebraucht', items: [
+            ['Ctrl+C / Ctrl+V', 'Kopieren bzw. Einfügen.'],
+            ['Ctrl+X', 'Ausschneiden.'],
+            ['Ctrl+Z / Ctrl+Y', 'Rückgängig bzw. Wiederholen.'],
+            ['Ctrl+A', 'Alles markieren.'],
+            ['Ctrl+F', 'Suchen (in fast jedem Programm und Browser).'],
+            ['Ctrl+S', 'Speichern.'],
+            ['Alt+Tab', 'Zwischen offenen Fenstern wechseln (gedrückt halten für die Auswahl).'],
+            ['Alt+F4', 'Aktuelles Fenster schliessen.'],
+            ['Win', 'Startmenü öffnen.'],
+            ['Win+D', 'Desktop zeigen / alle Fenster minimieren.'],
+            ['Win+L', 'Bildschirm sperren.']
+        ] },
+        { g: 'Fenster anordnen (Snap)', items: [
+            ['Win+Left / Win+Right', 'Fenster an die linke bzw. rechte Hälfte andocken.'],
+            ['Win+Up / Win+Down', 'Fenster maximieren bzw. minimieren/verkleinern.'],
+            ['Win+Shift+Left / Right', 'Fenster auf den anderen Monitor verschieben.'],
+            ['Win+Z', 'Snap-Layouts öffnen (die Kachel-Vorschläge oben am Fenster).', true],
+            ['Win+Home', 'Alle Fenster ausser dem aktiven minimieren.']
+        ] },
+        { g: 'Virtuelle Desktops', items: [
+            ['Win+Tab', 'Taskansicht mit allen Fenstern und Desktops öffnen.'],
+            ['Win+Ctrl+D', 'Neuen virtuellen Desktop erstellen.'],
+            ['Win+Ctrl+Left / Right', 'Zwischen virtuellen Desktops wechseln.'],
+            ['Win+Ctrl+F4', 'Aktuellen virtuellen Desktop schliessen.']
+        ] },
+        { g: 'Screenshots', items: [
+            ['Win+Shift+S', 'Ausschnitt-Werkzeug: Bereich wählen und in die Zwischenablage kopieren.'],
+            ['PrtScn', 'Ganzen Bildschirm in die Zwischenablage kopieren.'],
+            ['Win+PrtScn', 'Ganzen Bildschirm als Datei in „Bilder/Screenshots“ speichern.'],
+            ['Alt+PrtScn', 'Nur das aktive Fenster kopieren.']
+        ] },
+        { g: 'System & Navigation', items: [
+            ['Win+E', 'Datei-Explorer öffnen.'],
+            ['Win+I', 'Einstellungen öffnen.'],
+            ['Win+X', 'Schnellmenü (Geräte-Manager, Terminal, Herunterfahren …).'],
+            ['Ctrl+Shift+Esc', 'Task-Manager direkt öffnen.'],
+            ['Win+.', 'Emoji- und Symbol-Auswahl.'],
+            ['Win+V', 'Zwischenablage-Verlauf (mehrere kopierte Dinge).'],
+            ['Win+Zahl', 'Das n-te Programm in der Taskleiste öffnen/wechseln.']
+        ] },
+        { g: 'Text schneller bearbeiten', items: [
+            ['Ctrl+Left / Right', 'Wortweise statt buchstabenweise springen.'],
+            ['Ctrl+Shift+Pfeil', 'Wortweise markieren.'],
+            ['Home / End', 'An Zeilenanfang bzw. -ende springen.'],
+            ['Ctrl+Home / End', 'An den Anfang bzw. das Ende des Dokuments.'],
+            ['Shift+Pfeile', 'Zeichen für Zeichen markieren.'],
+            ['Ctrl+Backspace', 'Ganzes Wort links löschen.']
+        ] },
+        { g: 'Neu oder anders in Windows 11', items: [
+            ['Win+W', 'Widgets öffnen (in Win 10: „News und Interessen“).', true],
+            ['Win+A', 'Schnelleinstellungen (WLAN, Lautstärke, Helligkeit).', true],
+            ['Win+N', 'Benachrichtigungen und Kalender.', true],
+            ['Win+C', 'Copilot öffnen (früher Cortana).', true],
+            ['Win+Alt+Up / Down', 'Fenster nach oben/unten in ein Snap-Feld schieben.', true]
+        ] }
+    ];
+    function keyHTML(combo) {
+        return '<span class="keys">' + combo.split('+').map(k => '<kbd>' + esc(k.trim()) + '</kbd>').join('<span class="plus">+</span>') + '</span>';
+    }
+    function renderKeys(q) {
+        const groups = KEYS.map(g => ({ g: g.g, items: g.items.filter(it => !q || (it[0] + ' ' + it[1]).toLowerCase().includes(q)) })).filter(g => g.items.length);
+        $('#keys').innerHTML = groups.length ? groups.map(g =>
+            '<h2 class="mt-3">' + esc(g.g) + '</h2><div class="table-wrap"><table class="table kbd-table"><tbody>' +
+            g.items.map(it => '<tr><td>' + keyHTML(it[0]) + (it[2] ? ' <span class="badge badge-win11">Win 11</span>' : '') + '</td><td>' + esc(it[1]) + '</td></tr>').join('') +
+            '</tbody></table></div>').join('') : '<p class="gl-empty mt-3">Kein Kürzel gefunden.</p>';
+    }
+
+    /* ── Besondere Sprachen ────────────────────────────────────────────────── */
+    const LANGS = [
+        { n: 'Rust', icon: 'Rs', color: '#dea584', year: '2010', by: 'Mozilla / Graydon Hoare', para: 'systemnah, sicher',
+            points: ['So schnell wie C/C++, aber der „Borrow-Checker“ verhindert zur Compile-Zeit ganze Fehlerklassen (Speicherfehler, Datenrennen).', 'Kein Garbage Collector – Speicher wird über Besitz („Ownership“) geregelt.', 'Jahrelang „most loved language“ in Umfragen; zunehmend sogar im Linux-Kernel.'],
+            code: 'fn main() {\n    println!("Hallo, Rust!");\n}' },
+        { n: 'HolyC', icon: 'HC', color: '#ffd84d', year: '~2005', by: 'Terry A. Davis', para: 'C-Dialekt, JIT',
+            points: ['Die Haus-Sprache von TempleOS – einem kompletten Betriebssystem, das Terry Davis im Alleingang schrieb.', 'Code kann direkt in der Shell ausgeführt werden (JIT-Compiler); jede Zeile ist quasi ein Programm.', 'Ein Stück Computer-Folklore: ein eigenes OS, eigener Compiler, eigene Sprache – von einer Person.'],
+            code: '"Hallo, HolyC!\\n";' },
+        { n: 'C', icon: 'C', color: '#60a5fa', year: '1972', by: 'Dennis Ritchie', para: 'systemnah, prozedural',
+            points: ['Die Mutter vieler Sprachen (C++, C#, Java, JavaScript lehnen sich an ihre Syntax an).', 'Nah an der Hardware: direkter Speicherzugriff über Zeiger – mächtig, aber fehleranfällig.', '„Unholy C“ ist übrigens keine echte Sprache, sondern ein Augenzwinkern – gemeint ist oft genau dieser rohe, pointer-lastige C-Stil.'],
+            code: '#include <stdio.h>\nint main(void) {\n    printf("Hallo, C!\\n");\n    return 0;\n}' },
+        { n: 'Assembly', icon: 'ASM', color: '#f87171', year: '1947', by: 'div.', para: 'maschinennah',
+            points: ['Die tiefste lesbare Ebene: jeder Befehl entspricht fast direkt einem Maschinenbefehl der CPU.', 'Je nach Prozessor anders (x86, ARM, RISC-V) – es gibt nicht „die eine“ Assembly.', 'Heute selten von Hand geschrieben, aber unverzichtbar für Treiber, Bootloader und das Verständnis, wie CPUs ticken.'],
+            code: 'mov  eax, 1      ; Systemaufruf „exit“\nmov  ebx, 0      ; Rückgabewert 0\nint  0x80        ; Kernel aufrufen' },
+        { n: 'Haskell', icon: 'Hs', color: '#a78bfa', year: '1990', by: 'Komitee', para: 'rein funktional',
+            points: ['Rein funktional: Funktionen haben keine Seiteneffekte, Werte sind unveränderlich.', '„Lazy“ – Werte werden erst berechnet, wenn sie gebraucht werden (unendliche Listen sind möglich).', 'Sehr mächtiges Typsystem; beliebt in Forschung, Finanzwelt und bei Sprach-Enthusiasten.'],
+            code: 'main :: IO ()\nmain = putStrLn "Hallo, Haskell!"' },
+        { n: 'Lisp', icon: '()', color: '#4ade80', year: '1958', by: 'John McCarthy', para: 'funktional, Makros',
+            points: ['Eine der ältesten Sprachen – und ihrer Zeit weit voraus (Rekursion, Garbage Collection).', 'Alles ist eine Liste in Klammern; Code und Daten haben dieselbe Form (deshalb extrem mächtige Makros).', 'Lebt weiter in Clojure, Scheme, Racket und im Editor Emacs.'],
+            code: '(defun gruss (name)\n  (format t "Hallo, ~a!" name))\n(gruss "Lisp")' },
+        { n: 'Prolog', icon: 'Pl', color: '#22d3ee', year: '1972', by: 'Colmerauer & Roussel', para: 'logisch',
+            points: ['Du beschreibst Fakten und Regeln – das Programm findet die Lösung selbst durch Logik.', 'Kein „mach dies, dann das“, sondern „was ist wahr?“. Völlig anderes Denken als übliche Sprachen.', 'Stark in KI-Forschung, Sprachverarbeitung und Rätsel-Lösern.'],
+            code: 'elternteil(tom, mia).\nelternteil(mia, jo).\ngrosseltern(X, Z) :-\n    elternteil(X, Y), elternteil(Y, Z).' },
+        { n: 'COBOL', icon: 'CB', color: '#fbbf24', year: '1959', by: 'Grace Hopper u. a.', para: 'geschäftlich',
+            points: ['Fast englischer Satzbau, extra für Geschäftsanwendungen entworfen.', 'Läuft bis heute auf Grossrechnern in Banken und Versicherungen – Milliarden Zeilen im Einsatz.', 'Gilt als „Oma-Sprache“, ist aber so stabil, dass COBOL-Fachleute gesucht werden.'],
+            code: 'DISPLAY "Hallo, COBOL!".' },
+        { n: 'Fortran', icon: 'Fo', color: '#818cf8', year: '1957', by: 'IBM / John Backus', para: 'numerisch',
+            points: ['Die erste verbreitete Hochsprache überhaupt.', 'Extrem schnell beim Rechnen mit grossen Zahlenfeldern – darum bis heute in Wetter- und Physik-Simulationen.', 'Beweis, dass gut optimierter alter Code jahrzehntelang relevant bleiben kann.'],
+            code: 'program hallo\n  print *, "Hallo, Fortran!"\nend program hallo' },
+        { n: 'Brainfuck', icon: 'BF', color: '#f472b6', year: '1993', by: 'Urban Müller', para: 'esoterisch, minimal',
+            points: ['Nur acht Zeichen: > < + - . , [ ]. Bewusst so klein wie möglich.', 'Eine „esoterische“ Sprache (Esolang) – als Scherz und Denksport gedacht, nicht für echte Projekte.', 'Zeigt eindrücklich, wie wenig eine Sprache theoretisch braucht, um alles berechnen zu können.'],
+            code: '++++++++[>++++++++<-]>+.   kurzer Ausschnitt,\ngibt ein Zeichen aus (hier: „A“)' },
+        { n: 'LOLCODE', icon: 'LOL', color: '#fb923c', year: '2007', by: 'Adam Lindsay', para: 'esoterisch, Spass',
+            points: ['Syntax im Stil der „LOLcat“-Memes – HAI, VISIBLE, KTHXBYE.', 'Reine Spassprache, aber tatsächlich lauffähig.', 'Gutes Beispiel dafür, dass Programmiersprachen auch Kunst und Humor sein dürfen.'],
+            code: 'HAI 1.2\n  VISIBLE "Hallo, LOLCODE!"\nKTHXBYE' },
+        { n: 'Go', icon: 'Go', color: '#2dd4bf', year: '2009', by: 'Google', para: 'systemnah, einfach',
+            points: ['Bewusst klein und einfach gehalten – schnell zu lernen, schnell zu kompilieren.', 'Eingebaute „Goroutines“ machen Nebenläufigkeit (viele Dinge gleichzeitig) leicht.', 'Hinter vielen Cloud-Werkzeugen: Docker, Kubernetes und Co. sind in Go geschrieben.'],
+            code: 'package main\nimport "fmt"\nfunc main() {\n    fmt.Println("Hallo, Go!")\n}' }
+    ];
+    function renderLangs(q) {
+        const list = LANGS.filter(l => !q || (l.n + ' ' + l.para + ' ' + l.by + ' ' + l.points.join(' ')).toLowerCase().includes(q));
+        $('#langs').innerHTML = list.length ? list.map(l =>
+            '<article class="card langc" style="--lc:' + l.color + '"><div class="langc__head"><span class="langc__icon">' + esc(l.icon) + '</span>' +
+            '<h3 style="margin:0">' + esc(l.n) + '</h3></div>' +
+            '<p class="langc__meta">seit ' + esc(l.year) + ' · ' + esc(l.by) + ' · <em>' + esc(l.para) + '</em></p>' +
+            '<ul>' + l.points.map(p => '<li>' + esc(p) + '</li>').join('') + '</ul>' +
+            (l.code ? '<pre><code>' + esc(l.code) + '</code></pre>' : '') + '</article>').join('') :
+            '<p class="gl-empty">Keine Sprache gefunden.</p>';
+    }
+
+    /* ── Reiter & Suche ────────────────────────────────────────────────────── */
+    const tabs = X.$$('.tabs .tab');
+    function show(t) { tabs.forEach(b => b.setAttribute('aria-selected', b.dataset.t === t)); $('#t-keys').hidden = t !== 'keys'; $('#t-langs').hidden = t !== 'langs'; }
+    tabs.forEach(b => b.addEventListener('click', () => show(b.dataset.t)));
+    $('#q').addEventListener('input', () => {
+        const q = $('#q').value.toLowerCase().trim();
+        renderKeys(q); renderLangs(q);
+        if (q) { // beim Suchen beide Bereiche zeigen, damit nichts übersehen wird
+            const kHit = $('#keys').querySelector('table'), lHit = $('#langs').querySelector('.langc');
+            if (!kHit && lHit) show('langs'); else if (kHit && !lHit) show('keys');
+        }
+    });
+    renderKeys(''); renderLangs('');
+});
+</script>
+</body>
+</html>
